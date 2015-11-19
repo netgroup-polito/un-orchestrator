@@ -1,7 +1,7 @@
 #ifdef UNIFY_NFFG
 	#include <Python.h>
 	#include "node_resource_manager/virtualizer/virtualizer.h"
-#endif	
+#endif
 
 #include "utils/constants.h"
 #include "utils/logger.h"
@@ -37,54 +37,54 @@ void terminateRestServer(void);
 */
 
 void singint_handler(int sig)
-{    
+{
     logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is terminating...",MODULE_NAME);
 
 	MHD_stop_daemon(http_daemon);
 	terminateRestServer();
-	
+
 #ifdef UNIFY_NFFG
 	terminateVirtualizer();
 #endif
-	
+
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Bye :D");
 	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
 {
-	//Check for root privileges 
+	//Check for root privileges
 	if(geteuid() != 0)
-	{	
+	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Root permissions are required to run %s\n",argv[0]);
-		exit(EXIT_FAILURE);	
+		exit(EXIT_FAILURE);
 	}
-	
+
 	if(!doChecks())
-		exit(EXIT_FAILURE);	
-	
+		exit(EXIT_FAILURE);
+
 	//XXX: change this line to use different versions of Openflow
-	OFP_VERSION = OFP_12;	
-	
+	OFP_VERSION = OFP_13;
+
 	int core_mask;
 	int rest_port;
 	char *ports_file_name = NULL;
 	char *nffg_file_name = NULL;
 
 	if(!parse_command_line(argc,argv,&rest_port,&nffg_file_name,&core_mask,&ports_file_name))
-		exit(EXIT_FAILURE);	
+		exit(EXIT_FAILURE);
 
 	//XXX: this code avoids that the program terminates when system() is executed
 	sigset_t mask;
 	sigfillset(&mask);
 	sigprocmask(SIG_SETMASK, &mask, NULL);
-	
+
 #ifdef UNIFY_NFFG
 	//Initialize the Python code
 	setenv("PYTHONPATH",PYTHON_DIRECTORY ,1);
 	Py_SetProgramName(argv[0]);  /* optional but recommended */
     Py_Initialize();
-    
+
     if(!Virtualizer::init())
     {
     	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the virtualizer. The %s cannot be run.",MODULE_NAME);
@@ -98,32 +98,32 @@ int main(int argc, char *argv[])
 #ifdef UNIFY_NFFG
 		terminateVirtualizer();
 #endif
-		exit(EXIT_FAILURE);	
+		exit(EXIT_FAILURE);
 	}
 
-	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, rest_port, NULL, NULL,&RestServer::answer_to_connection, 
+	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, rest_port, NULL, NULL,&RestServer::answer_to_connection,
 		NULL, MHD_OPTION_NOTIFY_COMPLETED, &RestServer::request_completed, NULL,MHD_OPTION_END);
-	
+
 	if (NULL == http_daemon)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the HTTP deamon. The %s cannot be run.",MODULE_NAME);
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Please, check that the TCP port %d is not used (use the command \"netstat -a | grep %d\")",rest_port,rest_port);
-		
+
 		terminateRestServer();
 #ifdef UNIFY_NFFG
 		terminateVirtualizer();
 #endif
-		
+
 		return EXIT_FAILURE;
 	}
-	
-	signal(SIGINT,singint_handler);
-	
+
+        signal(SIGINT,singint_handler);
+
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is started!",MODULE_NAME);
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Waiting for commands on TCP port \"%d\"",rest_port);
-	
+
 	rofl::cioloop::get_loop().run();
-	
+
 	return 0;
 }
 
@@ -132,7 +132,7 @@ bool parse_command_line(int argc, char *argv[],int *rest_port, char **nffg_file_
 	int opt;
 	char **argvopt;
 	int option_index;
-	
+
 static struct option lgopts[] = {
 		{"p", 1, 0, 0},
 		{"c", 1, 0, 0},
@@ -166,9 +166,9 @@ static struct option lgopts[] = {
 	   				}
 	   				char *port = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
 	   				strcpy(port,optarg);
-	   				
+
 	   				sscanf(port,"%x",&(*core_mask));
-	   				
+
 	   				arg_c++;
 	   			}
 				else if (!strcmp(lgopts[option_index].name, "f"))
@@ -198,12 +198,12 @@ static struct option lgopts[] = {
 		   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--p\" can appear only once in the command line");
 	   					return usage();
 	   				}
-	   			
+
 	   				char *port = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
 	   				strcpy(port,optarg);
-	   				
+
 	   				sscanf(port,"%d",rest_port);
-	   				
+
 	   				arg_p++;
 				}
 				else if (!strcmp(lgopts[option_index].name, "h"))/* help */
@@ -223,7 +223,7 @@ static struct option lgopts[] = {
 
 	/* Check that all mandatory arguments are provided */
 
-	if (arg_f == 0) 
+	if (arg_f == 0)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Not all mandatory arguments are present in the command line");
 		return usage();
@@ -259,7 +259,7 @@ bool usage(void)
 	"  sudo ./node-orchestrator --f config/example.xml                                        \n\n";
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\n\n%s",message);
-	
+
 	return false;
 }
 

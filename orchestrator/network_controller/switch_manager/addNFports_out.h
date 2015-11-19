@@ -32,18 +32,18 @@ private:
 	*		be later used by the node resource manager to properly create the graph.
 	*/
 	map<string, unsigned int> ports;
-	
+
 	/**
 	*	@brief: list of ports on the vSwitch that are associated with the network function
 	*		The name of the port created on the switch may differ from the name used by the node resource manager to refer to
-	*		such a port. Since the name of the ports created on the switch must be used by the compute controller and conneted 
+	*		such a port. Since the name of the ports created on the switch must be used by the compute controller and conneted
 	*		to the network function, these names must be returned to the node resource manager.
-	*		Note that the name of the ports defined by the node resource manager and the name of the ports connected to the 
+	*		Note that the name of the ports defined by the node resource manager and the name of the ports connected to the
 	*		vSwitch can be the same.
 	*/
 	list<string> ports_name_on_switch;
-	
-protected:
+
+public:
 
 	string getNFname()
 	{
@@ -54,18 +54,17 @@ protected:
 	{
 		return ports;
 	}
-	
+
 	list<string> getPortsNameOnSwitch()
 	{
 		return ports_name_on_switch;
 	}
 
-public:
-	AddNFportsOut(string nf_name,map<string, unsigned int> ports, list<string> ports_name_on_switch) 
+	AddNFportsOut(string nf_name,map<string, unsigned int> ports, list<string> ports_name_on_switch)
 		: nf_name(nf_name), ports(ports.begin(),ports.end()), ports_name_on_switch(ports_name_on_switch.begin(),ports_name_on_switch.end())
 	{
 	}
-	
+
 };
 
 

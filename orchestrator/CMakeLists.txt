@@ -37,8 +37,8 @@ ENDIF()
 # End of the rather complicated CMake code for setting the logging level
 
 # Rather complicated CMake code for selecting the virtual switch implementation
-SET(VSWITCH_IMPLEMENTATION "OVS-OVSDB" CACHE STRING "vSwitch implementation: XDPD, OVS-OFCONFIG, OVS-DPDK, OVS-OVSDB")
-SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD" "OVS-OFCONFIG" "OVS-DPDK" "OVS-OVSDB") #Add here other implementations
+SET(VSWITCH_IMPLEMENTATION "OVS-OVSDB" CACHE STRING "vSwitch implementation: XDPD, OVS-OFCONFIG, OVS-DPDK, OVS-OVSDB, ERFS")
+SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD" "OVS-OFCONFIG" "OVS-DPDK" "OVS-OVSDB" "ERFS") #Add here other implementations
 SET_PROPERTY(CACHE VSWITCH_IMPLEMENTATION PROPERTY STRINGS ${VSWITCH_IMPLEMENTATION_VALUES})
 LIST(FIND VSWITCH_IMPLEMENTATION_VALUES ${VSWITCH_IMPLEMENTATION} VSWITCH_IMPLEMENTATION_INDEX)
 
@@ -56,6 +56,9 @@ IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2)
 ENDIF()
 IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 3)
 	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_OVSDB)
+ENDIF()
+IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 4)
+        ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_ERFS)
 ENDIF()
 
 
@@ -103,11 +106,10 @@ IF(ENABLE_DPDK_PROCESSES)
 ENDIF(ENABLE_DPDK_PROCESSES)
 
 
-OPTION(DEBUG_KVM 
-	"Turn on the debug of the KVM-libvirt compute plugin" 
+OPTION(DEBUG_KVM
+	"Turn on the debug of the KVM-libvirt compute plugin"
 	OFF
 )
-
 IF(DEBUG_KVM)
 	ADD_DEFINITIONS(-DDEBUG_KVM)
 ENDIF(DEBUG_KVM)
@@ -166,7 +168,7 @@ MARK_AS_ADVANCED(
 # Set source files
 SET(SOURCES
 	node_orchestrator.cc
-	
+
 	node_resource_manager/graph_manager/graph_manager.h
 	node_resource_manager/graph_manager/graph_manager.cc
 	node_resource_manager/graph_manager/graph_info.h
@@ -180,14 +182,14 @@ SET(SOURCES
 	node_resource_manager/graph_manager/virtual_link.cc
 	node_resource_manager/graph_manager/fileParser.h
 	node_resource_manager/graph_manager/fileParser.cc
-	
+
 	node_resource_manager/graph/match.h
 	node_resource_manager/graph/match.cc
 	node_resource_manager/graph/generic_action.h
 	node_resource_manager/graph/generic_action.cc
 	node_resource_manager/graph/vlan_action.h
 	node_resource_manager/graph/vlan_action.cc
-	
+
 	node_resource_manager/graph/low_level_graph/output_action.h
 	node_resource_manager/graph/low_level_graph/output_action.cc
 	node_resource_manager/graph/low_level_graph/graph.h
@@ -196,7 +198,7 @@ SET(SOURCES
 	node_resource_manager/graph/low_level_graph/low_level_match.cc
 	node_resource_manager/graph/low_level_graph/rule.h
 	node_resource_manager/graph/low_level_graph/rule.cc
-	
+
 	node_resource_manager/graph/high_level_graph/high_level_output_action.h
 	node_resource_manager/graph/high_level_graph/high_level_output_action.cc
 	node_resource_manager/graph/high_level_graph/high_level_output_action_nf.h
@@ -211,20 +213,20 @@ SET(SOURCES
 	node_resource_manager/graph/high_level_graph/high_level_graph.cc
 	node_resource_manager/graph/high_level_graph/high_level_match.h
 	node_resource_manager/graph/high_level_graph/high_level_match.cc
-	
-	network_controller/switch_manager/switch_manager.h		
+
+	network_controller/switch_manager/switch_manager.h
 	network_controller/switch_manager/addNFports_in.h
 	network_controller/switch_manager/addNFports_out.h
 	network_controller/switch_manager/addVirtualLink_in.h
 	network_controller/switch_manager/addVirtualLink_out.h
 	network_controller/switch_manager/createLSIout.h
 	network_controller/switch_manager/destroyNFports_in.h
-	network_controller/switch_manager/destroyVirtualLink_in.h 
-	network_controller/switch_manager/checkPhysicalPorts_in.h 
-	
+	network_controller/switch_manager/destroyVirtualLink_in.h
+	network_controller/switch_manager/checkPhysicalPorts_in.h
+
 	network_controller/openflow_controller/controller.h
 	network_controller/openflow_controller/controller.cc
-	
+
 	compute_controller/nfs_manager.h
 	compute_controller/nfs_manager.cc
 	compute_controller/compute_controller.h
@@ -236,7 +238,7 @@ SET(SOURCES
 	compute_controller/description.cc
 	compute_controller/startNF_in.h
 	compute_controller/stopNF_in.h
-	
+
 	node_resource_manager/rest_server/rest_server.h
 	node_resource_manager/rest_server/rest_server.cc
 	node_resource_manager/rest_server/match_parser.h
@@ -289,6 +291,15 @@ IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 3)
     )
 ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 3)
 
+IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 4)
+    SET(SOURCES2
+    ${SOURCES}
+	network_controller/switch_manager/plugins/erfs/manager.h
+	network_controller/switch_manager/plugins/erfs/manager.cc
+	network_controller/switch_manager/plugins/erfs/constants.h
+    )
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 4)
+
 IF((${ENABLE_KVM_INDEX} EQUAL 1) OR (${ENABLE_KVM_INDEX} EQUAL 2))
     SET(SOURCES3
     ${SOURCES2}
@@ -333,10 +344,10 @@ IF(${ENABLE_KVM_INDEX} EQUAL 2)
 	compute_controller/plugins/kvm-libvirt/ivshmem_cmdline_generator.cc
 	compute_controller/plugins/kvm-libvirt/ivshmem_cmdline_generator.h
 	)
-	
+
 	IF(NOT DEFINED ENV{DPDK_PATH})
 		message(FATAL_ERROR "Could not find DPDK_PATH environment variable. Please set it to [dpdk-folder]/x86_64-ivshmem-linuxapp-gcc/")
-	ENDIF(NOT DEFINED ENV{DPDK_PATH}) 
+	ENDIF(NOT DEFINED ENV{DPDK_PATH})
 ELSE()
 	SET(SOURCES6
 	${SOURCES5}
@@ -388,7 +399,7 @@ LINK_DIRECTORIES(
 	/usr/local/lib/
 	/usr/x86_64-linux-gnu/
 	/usr/lib/x86_64-linux-gnu/
-	/usr/lib/python2.7/config-x86_64-linux-gnu/	
+	/usr/lib/python2.7/config-x86_64-linux-gnu/
 )
 
 IF(${ENABLE_KVM_INDEX} EQUAL 2)
@@ -426,8 +437,8 @@ ENDIF((${ENABLE_KVM_INDEX} EQUAL 1) OR (${ENABLE_KVM_INDEX} EQUAL 2))
 #Links specific for KVM when used with ivshmem
 IF(${ENABLE_KVM_INDEX} EQUAL 2)
     TARGET_LINK_LIBRARIES( node-orchestrator
-			$ENV{DPDK_PATH}/lib/libdpdk.a 
-			-ldl 
+			$ENV{DPDK_PATH}/lib/libdpdk.a
+			-ldl
 			-latomic
 			-lpthread
 			-lm
@@ -453,22 +464,22 @@ ENDIF(UNIFY_NFFG)
 #Check unsupported configurations
 
 IF(ENABLE_DOCKER AND (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2) )
-	#This configuration (ovs-dpdk + docker) is not supported 
+	#This configuration (ovs-dpdk + docker) is not supported
 	message(FATAL_ERROR "OvS-DPDK not supported with Docker")
 ENDIF(ENABLE_DOCKER AND (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2) )
 
 IF(ENABLE_DPDK_PROCESSES AND ( (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1) OR (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 3) ) )
-	#This configuration (ovs (ofconfig/ovsdb) + dpdk processes) is not supported 
+	#This configuration (ovs (ofconfig/ovsdb) + dpdk processes) is not supported
 	message(FATAL_ERROR "OvS not supported with Dpdk processes")
 ENDIF(ENABLE_DPDK_PROCESSES AND ( (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1) OR (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 3) ) )
 
 IF((${ENABLE_KVM_INDEX} EQUAL 2) AND ( (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1) OR (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 3) ) )
-	#This configuration (ovs (ofconfig/ovsdb) + kvm-ivshmem) is not supported 
+	#This configuration (ovs (ofconfig/ovsdb) + kvm-ivshmem) is not supported
 	message(FATAL_ERROR "OvS not supported with KVM-IVSHMEM")
 ENDIF((${ENABLE_KVM_INDEX} EQUAL 2) AND ( (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1) OR (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 3) ) )
 
 IF((${ENABLE_KVM_INDEX} EQUAL 2) AND  (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 0) )
-	#This configuration (xdpd + kvm-ivshmem) is not supported 
+	#This configuration (xdpd + kvm-ivshmem) is not supported
 	message(FATAL_ERROR "xDPd not supported with KVM-IVSHMEM")
 ENDIF((${ENABLE_KVM_INDEX} EQUAL 2) AND  (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 0) )
 
