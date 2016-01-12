@@ -367,7 +367,7 @@ bool Libvirt::startNF(StartNFIn sni)
 
 	return true;
 }
-#else
+#else // if not defined(ENABLE_KVM_IVSHMEM)
 bool Libvirt::startNF(StartNFIn sni)
 {
 	//XXX: Libvirt do not define xml tags to define an ivhsmem device to be attached with the virtual machine.
@@ -456,6 +456,33 @@ after_parsing:
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Virtual machine disk available at path: '%s'",disk_path);
 
+#ifdef VSWITCH_IMPLEMENTATION_ERFS
+        // No need for command line generator, ERFS generates the command line for Qemu
+
+        stringstream ports;
+        list<string> namesOfPortsOnTheSwitch = sni.getNamesOfPortsOnTheSwitch();
+	for(list<string>::iterator name = namesOfPortsOnTheSwitch.begin(); name != namesOfPortsOnTheSwitch.end(); name++)
+	{
+            ports << *name << ",";
+	}
+
+        pthread_mutex_lock(&Libvirt_mutex);
+        // TODO: number of cores and core mask is to be added
+	stringstream command;
+        command << QEMU_ERFS << " " << sni.getLsiID() << " " << sni.getNfName() << " " << next_tcp_port;
+        command << " " << disk_path << " " << ports.str().c_str();
+
+        stringstream portstream;
+	portstream << next_tcp_port;
+	monitor[domain_name] = portstream.str();
+	next_tcp_port++;
+	pthread_mutex_unlock(&Libvirt_mutex);
+
+	int retVal = system(command.str().c_str());
+	if(retVal != 0)
+		return false;
+	return true;
+#else
 
 	//Get the command line generator and prepare the command line
 	IvshmemCmdLineGenerator cmdgenerator;
@@ -502,8 +529,9 @@ after_parsing:
 		return false;
 
 	return true;
+#endif // ifdef VSWITCH_IMPLEMENTATION_ERFS
 }
-#endif
+#endif // if not defined(ENABLE_KVM_IVSHMEM)
 
 bool Libvirt::stopNF(StopNFIn sni)
 {

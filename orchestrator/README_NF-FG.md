@@ -107,7 +107,7 @@ Json description of the graph:
 				"id": "00000001",
 				"match":
 				{
-					"port" : "eth0"   	
+					"port" : "eth0"
 				},
 				"action":
 				{
@@ -313,14 +313,14 @@ following fields **MUST** be specified:
 	"VNF_id"       //only if "port" and "endpoint_id" are not specified
 	"endpoint_id"  //only if "port" and "VNF_id" are not specified
 
-The previous fields indicates an output port through which packets can be sent.	
+The previous fields indicates an output port through which packets can be sent.
 Other actions can be specified together with the previous ones:
 
 *  *vlan push*, which adds a specific vlan label to the packet;
 *  *vlan pop*, which removes the more external vlan label to the packet.
 
 The syntax to be used for these operations is the following:
- 
+
 	"action":
 	{
         	"vlan":

@@ -37,8 +37,8 @@ ENDIF()
 # End of the rather complicated CMake code for setting the logging level
 
 # Rather complicated CMake code for selecting the virtual switch implementation
-SET(VSWITCH_IMPLEMENTATION "OVS-OVSDB" CACHE STRING "vSwitch implementation: XDPD, OVS-OFCONFIG, OVS-DPDK, OVS-OVSDB")
-SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD" "OVS-OFCONFIG" "OVS-DPDK" "OVS-OVSDB") #Add here other implementations
+SET(VSWITCH_IMPLEMENTATION "OVS-OVSDB" CACHE STRING "vSwitch implementation: XDPD, OVS-OFCONFIG, OVS-DPDK, OVS-OVSDB, ERFS")
+SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD" "OVS-OFCONFIG" "OVS-DPDK" "OVS-OVSDB" "ERFS") #Add here other implementations
 SET_PROPERTY(CACHE VSWITCH_IMPLEMENTATION PROPERTY STRINGS ${VSWITCH_IMPLEMENTATION_VALUES})
 LIST(FIND VSWITCH_IMPLEMENTATION_VALUES ${VSWITCH_IMPLEMENTATION} VSWITCH_IMPLEMENTATION_INDEX)
 
@@ -56,6 +56,9 @@ IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2)
 ENDIF()
 IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 3)
 	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_OVSDB)
+ENDIF()
+IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 4)
+        ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_ERFS)
 ENDIF()
 
 ##############################################################################################################
@@ -312,6 +315,15 @@ IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 3)
     )
 ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 3)
 
+IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 4)
+    SET(SOURCES2
+    ${SOURCES}
+	network_controller/switch_manager/plugins/erfs/manager.h
+	network_controller/switch_manager/plugins/erfs/manager.cc
+	network_controller/switch_manager/plugins/erfs/constants.h
+    )
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 4)
+
 IF(ENABLE_KVM OR ENABLE_KVM-IVSHMEM)
     SET(SOURCES3
     ${SOURCES2}
@@ -386,7 +398,7 @@ INCLUDE_DIRECTORIES (
 
 IF(ENABLE_KVM-IVSHMEM)
 	INCLUDE_DIRECTORIES (
-		$ENV{DPDK_PATH}/include
+		$ENV{RTE_SDK}/x86_64-ivshmem-linuxapp-gcc/include
 )
 ENDIF(ENABLE_KVM-IVSHMEM)
 
@@ -414,7 +426,7 @@ LINK_DIRECTORIES(
 
 IF(ENABLE_KVM-IVSHMEM)
 	LINK_DIRECTORIES(
-		$ENV{DPDK_PATH}/lib
+		$ENV{RTE_SDK}/x86_64-ivshmem-linuxapp-gcc/lib
 	)
 ENDIF(ENABLE_KVM-IVSHMEM)
 
@@ -442,7 +454,6 @@ IF(ENABLE_KVM OR ENABLE_KVM-IVSHMEM)
 	)
 ENDIF(ENABLE_KVM OR ENABLE_KVM-IVSHMEM)
 
-#Links specific for the virtualizer NF-FG model defined in WP3
 IF(VIRTUALIZER_NFFG)
     TARGET_LINK_LIBRARIES( node-orchestrator
 		libpython2.7.so

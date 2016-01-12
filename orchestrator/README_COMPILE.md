@@ -3,7 +3,7 @@
 In order to execute the un-orchestrator, we need to setup different components, namely:
 
   * a set of libraries needed to compile the un-orchestrator code
-  * a virtual switch (either xDPd or OpenvSwitch) as a base switch for
+  * a virtual switch (either xDPd, ERFS or OpenvSwitch) as a base switch for
     our platform
   * one or more execution environments for virtual network functions, e.g., KVM for
     executing VM, Docker, or other.
@@ -86,7 +86,7 @@ as the OF-CONFIG support in OpenvSwitch is rather primitive).
 OvS with the OFCONFIG support can be installed as follows:
 
 	$ sudo apt-get install autoconf automake gcc libtool libxml2 libxml2-dev m4 make openssl dbus
-	
+
 	; Download LIBSSH from
 	;       https://red.libssh.org/projects/libssh/files
 	; Now install the above library following the INSTALL file provided in the root directory
@@ -106,7 +106,7 @@ OvS with the OFCONFIG support can be installed as follows:
     $ ./configure --prefix=/ --datarootdir=/usr/share --with-linux=/lib/modules/$(uname -r)/build
     $ make
     $ sudo make install
-	
+
 	; Clone the of-config repository
 	$ git clone https://github.com/openvswitch/of-config
 
@@ -132,7 +132,7 @@ Before installing OvS with DPDK, you must download and compile the DPDK library.
 the source code from:
 
 	http://dpdk.org/browse/dpdk/snapshot/dpdk-2.1.0.tar.gz
-	
+
 Then execute the following commands:
 
     $ tar -xf dpdk-2.1.0.tar.gz
@@ -161,9 +161,9 @@ Then execute the following commands:
 	$ ./configure --with-dpdk=$DPDK_BUILD
 	$ make
 	$ sudo make install
-	
-Now create the ovsdb database:	
-	
+
+Now create the ovsdb database:
+
 	$ mkdir -p /usr/local/etc/openvswitch
 	$ mkdir -p /usr/local/var/run/openvswitch
 	$ sudo rm /usr/local/etc/openvswitch/conf.db

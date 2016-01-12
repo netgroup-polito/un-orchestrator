@@ -21,22 +21,22 @@ below.
 Folder `config` contains some configuration file examples that can be used
 to configure/test the un-orchestrator.
 
-  * [config/universal-node-example.xml](config/universal-node-example.xml): 
-    configuration file describing the physical ports to be handled by the 
-    un-orchestrator, as well as the amount of CPU, memory and storage provided 
+  * [config/universal-node-example.xml](config/universal-node-example.xml):
+    configuration file describing the physical ports to be handled by the
+    un-orchestrator, as well as the amount of CPU, memory and storage provided
     to the Universal Node;
-  * [config/simple_passthrough_nffg.json](config/simple_passthrough_nffg.json): 
-    simple graph that implements a simple passthrough function, i.e., traffic is 
-    received from a first physical port and sent out from a second physical port, 
-    after having been handled to the vswitch. This graph is written according to 
+  * [config/simple_passthrough_nffg.json](config/simple_passthrough_nffg.json):
+    simple graph that implements a simple passthrough function, i.e., traffic is
+    received from a first physical port and sent out from a second physical port,
+    after having been handled to the vswitch. This graph is written according to
     the original NF-FG definition (WP5-based);
-  * [config/passthrough_with_vnf_nffg.json](config/passthrough_with_vnf_nffg.json): 
+  * [config/passthrough_with_vnf_nffg.json](config/passthrough_with_vnf_nffg.json):
     graph that includes a VNF. Traffic is received from a first physical port, provided
-    to a network function, and then sent out from a second physical port. This graph 
+    to a network function, and then sent out from a second physical port. This graph
     is written according to the original NF-FG definition (WP5-based).
 
-The same graphs of [config/simple_passthrough_nffg.json](config/simple_passthrough_nffg.json) 
-and [config/passthrough_with_vnf_nffg.json](config/passthrough_with_vnf_nffg.json) are described 
+The same graphs of [config/simple_passthrough_nffg.json](config/simple_passthrough_nffg.json)
+and [config/passthrough_with_vnf_nffg.json](config/passthrough_with_vnf_nffg.json) are described
 through the WP3 definition based on the *virtualizer* in files [config/virtualizer/simple_passthrough_nffg.xml](config/virtualizer/simple_passthrough_nffg.xml) and [config/virtualizer/passthrough_with_vnf_nffg.xml](config/virtualizer/passthrough_with_vnf_nffg.xml).
 
 ## How to start xDPd with DPDK support to work with the un-orchestrator
@@ -96,7 +96,7 @@ Start OVS:
 Start ovsdb-server:
 
     $ sudo ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632
-	
+
 ## How to start OvS (managed through OVSDB) with DPDK support to work with the un-orchestrator
 
 Configure the system (after each reboot of the physical machine):
@@ -104,11 +104,11 @@ Configure the system (after each reboot of the physical machine):
     $ sudo su
     ; Set the huge pages of 2MB; 4096 huge pages should be reasonable.
     $ echo 4096 > /proc/sys/vm/nr_hugepages
-	
+
     ; Umount previous hugepages dir
     $ umount /dev/hugepages
     $ rm -r /dev/hugepages
-	
+
     ; Mount huge pages directory
     $ mkdir /dev/hugepages
     $ mount -t hugetlbfs nodev /dev/hugepages
@@ -128,12 +128,12 @@ Start `ovsdb-server`:
 
     $ sudo ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
         --remote=db:Open_vSwitch,Open_vSwitch,manager_options  --pidfile --detach
-	
+
 The first time after the ovsdb database creation, initialize it:
 
     $ sudo ovs-vsctl --no-wait init
 
-Start the switching daemon:	
+Start the switching daemon:
 
     $ export DB_SOCK=/usr/local/var/run/openvswitch/db.sock
     $ sudo ovs-vswitchd --dpdk -c 0x1 -n 4 --socket-mem 1024,0 \

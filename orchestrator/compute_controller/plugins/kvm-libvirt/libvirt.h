@@ -21,7 +21,7 @@
 #include "../../nfs_manager.h"
 #include "../../startNF_in.h"
 
-	#include "ivshmem_cmdline_generator.h"
+#include "ivshmem_cmdline_generator.h"
 #ifdef ENABLE_KVM_IVSHMEM
 	#include "../../../utils/sockutils.h"
 #endif
@@ -59,7 +59,7 @@ private:
 	*		the next VM to be executed
 	*/
 	static unsigned int next_tcp_port;
-	
+
 	/**
 	*	@brief: The map associates each VNF with the TCP port to
 	*		be used to connect to it
@@ -73,12 +73,12 @@ private:
 	*	@brief:	Open a connection with QEMU/KVM
 	*/
 	void connect();
-	
+
 	/**
 	*	@brief: Disconnect from QEMU/KVM
 	*/
 	void disconnect();
-	
+
 	/**
 	*	@brief: Custom error handler
 	*/
@@ -89,9 +89,9 @@ public:
 
 	Libvirt();
 	~Libvirt();
-	
+
 	bool isSupported();
-	
+
 	bool startNF(StartNFIn sni);
 	bool stopNF(StopNFIn sni);
 };

@@ -45,7 +45,7 @@ It consists of two parts:
     and more. In practice, it allows the un-orchestrator to
     interact with the vSwitch in order to perform management operations. Each
     virtual switch implementation (e.g., xDPd, OvS) may require a different
-    implementation for the switch manager, according to the API exported by 
+    implementation for the switch manager, according to the API exported by
     the vSwitch itself.
 
 Currently, the un-orchestrator supports OpenvSwitch (OvS) and the extensible DataPath daemon
@@ -53,24 +53,24 @@ Currently, the un-orchestrator supports OpenvSwitch (OvS) and the extensible Dat
 If you are interested to add the support for a new virtual switch, please
 check the file [network_controller/switch_manager/README.md](network_controller/switch_manager/README.md).
 
-Note that, according to the picture above, several LSIs may be deployed on the UN. 
-In particular, in the boot phase the network controller creates a first LSI (called LSI-0) 
-that is connected to the physical interfaces; then, for each new graph to be deployed, 
-a new `tenant-LSI` is created and connected to the LSI-0 through a number of 
-internal links. Since each one of these additional LSIs corresponds to a different 
-NF-FG, it is connected to the VNFs of such a NF-FG, and takes care of steering the 
-traffic among them as required by the graph description. Instead the LSI-0, being 
-the only one connected to the physical interfaces of the UN and to all the other 
-graphs, dispatches the traffic entering into the node to the proper graph, and properly 
+Note that, according to the picture above, several LSIs may be deployed on the UN.
+In particular, in the boot phase the network controller creates a first LSI (called LSI-0)
+that is connected to the physical interfaces; then, for each new graph to be deployed,
+a new `tenant-LSI` is created and connected to the LSI-0 through a number of
+internal links. Since each one of these additional LSIs corresponds to a different
+NF-FG, it is connected to the VNFs of such a NF-FG, and takes care of steering the
+traffic among them as required by the graph description. Instead the LSI-0, being
+the only one connected to the physical interfaces of the UN and to all the other
+graphs, dispatches the traffic entering into the node to the proper graph, and properly
 handles the packets already processed in a graph.
 
 ### The compute controller
 
-The compute controller is the sub-module that interacts with the virtual execution
-environment(s) (i.e., the hypervisor) and handles the lifecycle of a Virtual Network 
-Function (i.e., creating, updating, destroying a VNF), including the operations 
-needed to attach VNF ports already created on the vSwitch, to the VNF itself. 
-Each execution environment may require a different implementation for the compute 
+The compute controller is the sub-module that interacts with the hypervisor
+and handles the lifecycle of a virtual network function (i.e., creating,
+updating, destroying a VNF), including the operations needed to attach
+VNF ports (already created on the the vSwitch) to the VNF itself. Each
+execution environment may require a different implementation for the compute
 controller, according to the commands supported by the hypervisor itself.
 
 Currently the prototype supports virtual network functions as (KVM) VMs, Docker and DPDK
@@ -88,6 +88,7 @@ are supported with the different vSwitches.
 | **xDPd-DPDK**              |    **Yes***   | **Yes*** |          No            |         **Yes**        |
 | **OvS (OVSDB / OFconfig)** |    **Yes**    | **Yes**  | No (requires OvS-DPDK) | No (requires OvS-DPDK) |
 | **OvS-DPDK**               |    **Yes***   | **Yes**  |        **Yes**         |         **Yes**        |
+| **ERFS**                   |    **Yes***   | **No**   |        **Yes**         |         **Yes**        |
 
 \* In this case the packet exchange between the virtual switch and the execution
 environment is not optimized.

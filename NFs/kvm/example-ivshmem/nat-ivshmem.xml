@@ -1,5 +1,5 @@
 <domain type="kvm" xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
-	<name>example</name>
+	<name>NAT</name>
 	<memory>4194304</memory>
 	<vcpu placement="static">4</vcpu>
 	<cpu mode='host-passthrough'>
@@ -24,7 +24,7 @@
 
 	<devices>
 		<disk type="file" device="disk">
-			<source file="/home/nf_repository/kvm/usvhost_vnf.raw"/>
+			<source file="/home/sdn/VEE/ubuntu2.img"/>
 			<driver name="qemu" type="raw"/>
 			<target dev="vda" bus="virtio"/>
 		</disk>

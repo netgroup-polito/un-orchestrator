@@ -154,7 +154,7 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
 	
 		struct connection_info_struct *con_info;
 		con_info = (struct connection_info_struct*)malloc (sizeof (struct connection_info_struct));
-		
+
 		if (NULL == con_info)
 			return MHD_NO;
 		
@@ -245,7 +245,7 @@ int RestServer::doGet(struct MHD_Connection *connection, const char *url)
 	try
 	{
 		Object json ;
-		
+
 		//Create the json according to the request
 		if(i == 1)
 		{

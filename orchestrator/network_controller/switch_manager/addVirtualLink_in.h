@@ -24,25 +24,24 @@ private:
 	*	@brief: identifier of the first lsi connected through the virtual link
 	*/
 	uint64_t dpid_a;
-	
+
 	/**
 	*	@brief: identifier of the second lsi connected through the virtual link
 	*/
 	uint64_t dpid_b;
 
-protected:
+public:
+
 	AddVirtualLinkIn(uint64_t dpid_a, uint64_t dpid_b)
 		: dpid_a(dpid_a), dpid_b(dpid_b)
 	{
 	}
-	
-public:
-	
+
 	uint64_t getDpidA()
 	{
 		return dpid_a;
 	}
-	
+
 	uint64_t getDpidB()
 	{
 		return dpid_b;
