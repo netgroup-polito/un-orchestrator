@@ -27,8 +27,12 @@ when the proper messages are received.
 As evident in the picture below, which provides an overall view of the UN, the
 un-orchestrator includes several modules; the most important ones are the *network
 controller* and the *compute controller*, which are exploited to interact
-respectively with the vSwitch and the hypervisor(s). These two modules are detailed in
-the following.
+respectively with the vSwitch and the hypervisor(s).
+
+The \textit{VNF-selector} selects instead the best implementation for the required VNFs, according to some parameters such as the amount of CPU and RAM available on the Universal Node, or the efficiency of the network ports supported by the VNF itself (e.g., standard virtio vs. optimized ports). 
+Moreover, the \textit{VNF scheduler} optimizes the binding VNF/CPU core(s) by taking into account information such as how a VNF interacts with the rest of the NF-FG.
+
+While the network and compute controllers are detailed in the following sections, the VNF-optimizer and the placement-optimizer have not been implemented yet, as their implementation is let as a future work.
 
 ![universal-node](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/universal-node.png)
 

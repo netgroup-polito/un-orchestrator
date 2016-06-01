@@ -1,0 +1,291 @@
+<?xml version="1.0" ?>
+<virtualizer>
+    <id>001</id>
+    <name>Port examples: SAPs, Cf-Or interface, capabilities, encapsulation, metadata...</name>
+    <nodes>
+        <node>
+            <id>node1</id>
+            <name>single node</name>
+            <type>BisBis</type>
+            <ports>
+
+                <port>
+                    <id>00</id>
+                    <name>Abstract Unify</name>
+                    <port_type>port-abstract</port_type>
+                </port>
+
+                <port>
+                    <id>01</id>
+                    <name>Simple inter-domain SAP</name>
+                    <port_type>port-sap</port_type>
+                    <!-- Interdomain connection identifier (if SAPs in different domains report the same ID, they are assumed to be directly interconnected): -->
+                    <sap>SAP14</sap>
+                </port>
+
+                <port>
+                    <id>02</id>
+                    <name>Iner-domain SAP with resources</name>
+                    <port_type>port-sap</port_type>
+                    <sap>SAP15</sap>
+                    <sap_data>
+                        <resources>
+                            <!-- Upper layer orchestrator (stitching the two domains together) will convert the two SAP port resources to a link with resources between these ports -->
+                            <delay>3 ms</delay>
+                            <bandwidth>100 MB/s</bandwidth>
+                            <cost>10</cost>
+                        </resources>
+                    </sap_data>
+                </port>
+
+                <port>
+                    <id>03a</id>
+                    <name>Public IP port to be pushed to NF via DHCP (Step 1: request)</name>
+                    <port_type>port-sap</port_type>
+                    <sap>INTERNET</sap>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <!-- address is to be pushed to NF: -->
+                            <configure>True</configure>
+                            <!-- client uses DHCP to receive address: -->
+                            <client>dhcp-client</client>
+                            <requested>public</requested>
+                        </l3>
+                    </addresses>
+                </port>
+
+                <port>
+                    <id>03b</id>
+                    <name>Public IP port to be pushed to NF via DHCP (Step 2: response)</name>
+                    <port_type>port-sap</port_type>
+                    <sap>INTERNET</sap>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>True</configure>
+                            <client>dhcp-client</client>
+                            <requested>public</requested>
+                            <provided>8.8.8.8</provided>
+                        </l3>
+                    </addresses>
+                </port>
+
+                <port>
+                    <id>04a</id>
+                    <name>Private IP (Step 1: resquest)</name>
+                    <port_type>port-sap</port_type>
+                    <sap>SAP22</sap>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>False</configure>
+                            <requested>192.168.0.1/24</requested>
+                        </l3>
+                    </addresses>
+                </port>
+
+                <port>
+                    <id>04b</id>
+                    <name>Private IP (Step 2: response)</name>
+                    <port_type>port-sap</port_type>
+                    <sap>SAP22</sap>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>False</configure>
+                            <requested>192.168.0.1/24</requested>
+                            <provided>192.168.0.1/24</provided>
+                        </l3>
+                    </addresses>
+                </port>
+
+                <port>
+                    <id>05a</id>
+                    <name>L4 port (Step 1: resquest)</name>
+                    <port_type>port-sap</port_type>
+                    <sap>INTERNET</sap>
+                    <addresses>
+                        <!-- note: the format below is a Python set: -->
+                        <l4>{'tcp/22', 'tcp/80'}</l4>
+                    </addresses>
+                </port>
+
+                <port>
+                    <id>05b</id>
+                    <name>L4 port (Step 2: response)</name>
+                    <port_type>port-sap</port_type>
+                    <sap>INTERNET</sap>
+                    <addresses>
+                        <!-- note: the format below is a Python dict, where the values are tuples: -->
+                        <l4>{'tcp/22': ('192.168.1.100', '1001'), 'tcp/80': ('192.168.1.150', '2001')}</l4>
+                    </addresses>
+                </port>
+
+                <port>
+                    <id>06a</id>
+                    <name>Private and public IP port (Step 1: resquest)</name>
+                    <port_type>port-sap</port_type>
+                    <sap>INTERNET</sap>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>True</configure>
+                            <requested>private</requested>
+                        </l3>
+                        <l3>
+                            <id>addr2</id>
+                            <configure>False</configure>
+                            <requested>public</requested>
+                        </l3>
+                    </addresses>
+                </port>
+
+                <port>
+                    <id>06b</id>
+                    <name>Private and public IP port (Step 2: response)</name>
+                    <port_type>port-sap</port_type>
+                    <sap>INTERNET</sap>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>True</configure>
+                            <requested>private</requested>
+                            <provided>192.168.1.5/24</provided>
+                        </l3>
+                        <l3>
+                            <id>addr2</id>
+                            <configure>False</configure>
+                            <requested>public</requested>
+                            <provided>8.8.8.10</provided>
+                        </l3>
+                    </addresses>
+                </port>
+
+                <port>
+                    <id>07</id>
+                    <name>Abstract Unify port with capabilities</name>
+                    <port_type>port-abstract</port_type>
+                    <!-- To describe match and action capabilities associated with the port, e.g., match=port,tag,ip,tcp,udp,mpls,of1.0, where port: based forwarding; tag: unify abstract tagging; ip: ip address matching etc. -->
+                    <!-- OpenFlow 1.0 match and action capable port: -->
+                    <capability>of1.0</capability>
+                </port>
+
+                <port>
+                    <id>08</id>
+                    <name>Abstract Unify port with capabilities</name>
+                    <port_type>port-abstract</port_type>
+                    <!-- Only port match/action : -->
+                    <capability>port</capability>
+                </port>
+
+                <port>
+                    <id>09</id>
+                    <name>Abstract Unify port with capabilities</name>
+                    <port_type>port-abstract</port_type>
+                    <!-- Unify abstract tag capable port: -->
+                    <capability>tag</capability>
+                </port>
+
+                <port>
+                    <id>10</id>
+                    <name>Abstract Unify port with capabilities</name>
+                    <port_type>port-abstract</port_type>
+                    <!-- Capabilitites listed: -->
+                    <capability>port,tag,ip,tcp,udp,mpls</capability>
+                </port>
+
+                <port>
+                    <id>11</id>
+                    <name>Port with Cf-Or interface</name>
+                    <port_type>port-abstract</port_type>
+                    <!-- Used to connect this port to a UNIFY orchestrator's Cf-Or reference point. Support controller - orchestrator or orchestrator - controller connection establishment -->
+                    <control>
+                        <!-- Which fields are filled in at the request depend on the handshake direction between the controller and the orchestrator. In the end both will be filled in -->
+                        <!-- This is the connection point at the NF (IP address is not filled in, it can be obtained from the public port): -->
+                        <controller>http://*:8080/cf-or/</controller>
+                        <!-- This is the connection point at the orchestrator: -->
+                        <orchestrator>http://192.168.1.100:8080/cf-or/</orchestrator>
+                    </control>
+                </port>
+
+                <port>
+                    <id>12</id>
+                    <name>Public port with Cf-Or interface</name>
+                    <port_type>port-sap</port_type>
+					<sap>INTERNET</sap>
+                    <control>
+                        <controller>http://*:8080/cf-or/</controller>
+                        <orchestrator>http://192.168.1.100:8080/cf-or/</orchestrator>
+                    </control>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <configure>True</configure>
+                            <client>dhcp-client</client>
+                            <requested>public</requested>
+                            <provided>8.8.8.8</provided>
+                        </l3>
+                    </addresses>
+                </port>
+
+                <port>
+                    <id>13</id>
+                    <name>Inter-domain SAP port with Unify-tag technology specified</name>
+                    <port_type>port-sap</port_type>
+                    <sap>SAP100</sap>
+                    <sap_data>
+                        <!-- note: the format below is a Python list: -->
+                        <technology>['IEEE802.1q']</technology>
+                    </sap_data>
+                </port>
+
+                <port>
+                    <id>14</id>
+                    <name>Inter-domain SAP port with full protocol stack</name>
+                    <port_type>port-sap</port_type>
+                    <sap>SAP101</sap>
+                    <sap_data>
+                        <!-- note: the format below is a Python list, where the elements are tuples: -->
+                        <technology>[('IEEE802.1q', '0x00c'), ('MPLS', 70), ('IEEE802.1q')]</technology>
+                    </sap_data>
+                </port>
+
+                <port>
+                    <id>15</id>
+                    <name>experimental: SAP port with VXLAN behind NAT</name>
+                    <port_type>port-sap</port_type>
+                    <sap>INTERNET</sap>
+                    <sap_data>
+                        <technology>('vxlan')</technology>
+                    </sap_data>
+                    <addresses>
+                        <l3>
+                            <id>addr1</id>
+                            <requested>private</requested>
+                            <provided>192.168.1.5/24</provided>
+                        </l3>
+                        <l3>
+                            <id>addr2</id>
+                            <requested>public</requested>
+                            <provided>8.8.8.10</provided>
+                        </l3>
+                    </addresses>
+                    <metadata>
+                        <key>vxlan_key</key>
+                        <value>11</value>
+                    </metadata>
+                    <metadata>
+                        <key>vxlan_localip</key>
+                        <value>10.1.2.10</value>
+                    </metadata>
+                    <metadata>
+                        <key>vxlan_remoteip</key>
+                        <value>10.0.2.108</value>
+                    </metadata>
+                </port>
+
+            </ports>
+        </node>
+    </nodes>
+</virtualizer>

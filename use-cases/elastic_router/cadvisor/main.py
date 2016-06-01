@@ -65,11 +65,6 @@ if __name__ == '__main__':
                         help='Send copies of measurement messages to console',
                         action='store_true')
 
-    parser.add_argument('-p',
-                        '--port',
-                        help='Port where cAdvisor exposes web UI/REST API',
-                        default='8080')
-
     args = parser.parse_args()
 
     numeric_log_level = getattr(logging, args.loglevel.upper(), None)
@@ -84,7 +79,6 @@ if __name__ == '__main__':
         customer=args.customer,
         key_file=args.keyfile,
         verbose=args.verbose,
-        cadvisor_port=args.port,
     )
     try:
         if args.container is not None:

@@ -18,9 +18,9 @@ NF-FG can be used ([../orchestrator/README_NF-FG.md](../orchestrator/README_NF-F
 ## Required libraries
 
 In addition to the libraries already listed in the main [../README_COMPILE.md](../README_COMPILE.md),
-some more components are required to compile the un-orchestrator.
+some more components are required to run the virtualizer.
 
-	; Retrieve the virtualizer library and the library used 
+	; Retrieve the library used 
 	; to handle the NF-FG in the format natively supported by the un-orchestrator.
 	$ cd [un-orchestrator]
 	$ git submodule update --init --recursive
@@ -28,6 +28,8 @@ some more components are required to compile the un-orchestrator.
 	; Install other required libraries 
 	$ sudo apt-get install python-pip
 	$ sudo pip install gunicorn falcon cython enum
+
+The virtualizer module relies on the virtualizer library (v5) that is not included in this repository but it can be found on the UNIFY repository. The virtualizer library's pythone files must then be put in the [virtualizer_library](virtualizer_library) directory.
 
 ## How to configure the Virtualizer
 

@@ -1,0 +1,188 @@
+module: virtualizer
+   +--rw virtualizer
+      +--rw id          string
+      +--rw name?       string
+      +--rw nodes
+      |  +--rw node* [id]
+      |     +--rw id              string
+      |     +--rw name?           string
+      |     +--rw type            string
+      |     +--rw ports
+      |     |  +--rw port* [id]
+      |     |     +--rw id            string
+      |     |     +--rw name?         string
+      |     |     +--rw port_type?    string
+      |     |     +--rw capability?   string
+      |     |     +--rw sap?          string
+      |     |     +--rw sap_data
+      |     |     |  +--rw technology?   string
+      |     |     |  +--rw resources
+      |     |     |     +--rw delay?       string
+      |     |     |     +--rw bandwidth?   string
+      |     |     |     +--rw cost?        string
+      |     |     +--rw control
+      |     |     |  +--rw controller?     string
+      |     |     |  +--rw orchestrator?   string
+      |     |     +--rw addresses
+      |     |     |  +--rw l2?   string
+      |     |     |  +--rw l3* [id]
+      |     |     |  |  +--rw id           string
+      |     |     |  |  +--rw name?        string
+      |     |     |  |  +--rw configure?   string
+      |     |     |  |  +--rw client?      string
+      |     |     |  |  +--rw requested?   string
+      |     |     |  |  +--rw provided?    string
+      |     |     |  +--rw l4?   string
+      |     |     +--rw metadata* [key]
+      |     |        +--rw key      string
+      |     |        +--rw value?   string
+      |     +--rw links
+      |     |  +--rw link* [id]
+      |     |     +--rw id           string
+      |     |     +--rw name?        string
+      |     |     +--rw src?         -> 
+      |     |     +--rw dst?         -> 
+      |     |     +--rw resources
+      |     |        +--rw delay?       string
+      |     |        +--rw bandwidth?   string
+      |     |        +--rw cost?        string
+      |     +--rw resources
+      |     |  +--rw cpu        string
+      |     |  +--rw mem        string
+      |     |  +--rw storage    string
+      |     |  +--rw cost?      string
+      |     +--rw metadata* [key]
+      |     |  +--rw key      string
+      |     |  +--rw value?   string
+      |     +--rw NF_instances
+      |     |  +--rw node* [id]
+      |     |     +--rw id           string
+      |     |     +--rw name?        string
+      |     |     +--rw type?        string
+      |     |     +--rw ports
+      |     |     |  +--rw port* [id]
+      |     |     |     +--rw id            string
+      |     |     |     +--rw name?         string
+      |     |     |     +--rw port_type?    string
+      |     |     |     +--rw capability?   string
+      |     |     |     +--rw sap?          string
+      |     |     |     +--rw sap_data
+      |     |     |     |  +--rw technology?   string
+      |     |     |     |  +--rw resources
+      |     |     |     |     +--rw delay?       string
+      |     |     |     |     +--rw bandwidth?   string
+      |     |     |     |     +--rw cost?        string
+      |     |     |     +--rw control
+      |     |     |     |  +--rw controller?     string
+      |     |     |     |  +--rw orchestrator?   string
+      |     |     |     +--rw addresses
+      |     |     |     |  +--rw l2?   string
+      |     |     |     |  +--rw l3* [id]
+      |     |     |     |  |  +--rw id           string
+      |     |     |     |  |  +--rw name?        string
+      |     |     |     |  |  +--rw configure?   string
+      |     |     |     |  |  +--rw client?      string
+      |     |     |     |  |  +--rw requested?   string
+      |     |     |     |  |  +--rw provided?    string
+      |     |     |     |  +--rw l4?   string
+      |     |     |     +--rw metadata* [key]
+      |     |     |        +--rw key      string
+      |     |     |        +--rw value?   string
+      |     |     +--rw links
+      |     |     |  +--rw link* [id]
+      |     |     |     +--rw id           string
+      |     |     |     +--rw name?        string
+      |     |     |     +--rw src?         -> 
+      |     |     |     +--rw dst?         -> 
+      |     |     |     +--rw resources
+      |     |     |        +--rw delay?       string
+      |     |     |        +--rw bandwidth?   string
+      |     |     |        +--rw cost?        string
+      |     |     +--rw resources
+      |     |     |  +--rw cpu        string
+      |     |     |  +--rw mem        string
+      |     |     |  +--rw storage    string
+      |     |     |  +--rw cost?      string
+      |     |     +--rw metadata* [key]
+      |     |        +--rw key      string
+      |     |        +--rw value?   string
+      |     +--rw capabilities
+      |     |  +--rw supported_NFs
+      |     |     +--rw node* [id]
+      |     |        +--rw id           string
+      |     |        +--rw name?        string
+      |     |        +--rw type?        string
+      |     |        +--rw ports
+      |     |        |  +--rw port* [id]
+      |     |        |     +--rw id            string
+      |     |        |     +--rw name?         string
+      |     |        |     +--rw port_type?    string
+      |     |        |     +--rw capability?   string
+      |     |        |     +--rw sap?          string
+      |     |        |     +--rw sap_data
+      |     |        |     |  +--rw technology?   string
+      |     |        |     |  +--rw resources
+      |     |        |     |     +--rw delay?       string
+      |     |        |     |     +--rw bandwidth?   string
+      |     |        |     |     +--rw cost?        string
+      |     |        |     +--rw control
+      |     |        |     |  +--rw controller?     string
+      |     |        |     |  +--rw orchestrator?   string
+      |     |        |     +--rw addresses
+      |     |        |     |  +--rw l2?   string
+      |     |        |     |  +--rw l3* [id]
+      |     |        |     |  |  +--rw id           string
+      |     |        |     |  |  +--rw name?        string
+      |     |        |     |  |  +--rw configure?   string
+      |     |        |     |  |  +--rw client?      string
+      |     |        |     |  |  +--rw requested?   string
+      |     |        |     |  |  +--rw provided?    string
+      |     |        |     |  +--rw l4?   string
+      |     |        |     +--rw metadata* [key]
+      |     |        |        +--rw key      string
+      |     |        |        +--rw value?   string
+      |     |        +--rw links
+      |     |        |  +--rw link* [id]
+      |     |        |     +--rw id           string
+      |     |        |     +--rw name?        string
+      |     |        |     +--rw src?         -> 
+      |     |        |     +--rw dst?         -> 
+      |     |        |     +--rw resources
+      |     |        |        +--rw delay?       string
+      |     |        |        +--rw bandwidth?   string
+      |     |        |        +--rw cost?        string
+      |     |        +--rw resources
+      |     |        |  +--rw cpu        string
+      |     |        |  +--rw mem        string
+      |     |        |  +--rw storage    string
+      |     |        |  +--rw cost?      string
+      |     |        +--rw metadata* [key]
+      |     |           +--rw key      string
+      |     |           +--rw value?   string
+      |     +--rw flowtable
+      |        +--rw flowentry* [id]
+      |           +--rw id           string
+      |           +--rw name?        string
+      |           +--rw priority?    string
+      |           +--rw port         -> 
+      |           +--rw match        string
+      |           +--rw action       string
+      |           +--rw out?         -> 
+      |           +--rw resources
+      |              +--rw delay?       string
+      |              +--rw bandwidth?   string
+      |              +--rw cost?        string
+      +--rw links
+      |  +--rw link* [id]
+      |     +--rw id           string
+      |     +--rw name?        string
+      |     +--rw src?         -> 
+      |     +--rw dst?         -> 
+      |     +--rw resources
+      |        +--rw delay?       string
+      |        +--rw bandwidth?   string
+      |        +--rw cost?        string
+      +--rw metadata* [key]
+      |  +--rw key      string
+      |  +--rw value?   string
+      +--rw version?    string

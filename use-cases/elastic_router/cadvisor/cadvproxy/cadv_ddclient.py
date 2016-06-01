@@ -23,14 +23,13 @@ class DDClient(ClientSafe):
     cAdvisor DoubleDecker client
     """
 
-    def __init__(self, name, dealer_url, customer, key_file, verbose, cadvisor_port):
+    def __init__(self, name, dealer_url, customer, key_file, verbose):
         super().__init__(name, dealer_url, customer, key_file)
 
         self.to_monitor = dict()
         self.STATE = CLIENT_STATUS_DISCONNECTED
         self.verbose = verbose
         self.logger = logging.getLogger("DDClient")
-        self.cadvisor_port = cadvisor_port
 
         self.methods = Methods()
         self.methods.add_method(self.start_monitoring)
@@ -63,7 +62,7 @@ class DDClient(ClientSafe):
         tail = params["tail"] if "tail" in params.keys() else 30
 
         new_thread = CAdvisorMonitorThread(container_id=container_id, interval=interval, ddClient=self, tail=tail,
-                                           spec_json=spec_json, port=self.cadvisor_port)
+                                           spec_json=spec_json)
 
         if container_id in self.to_monitor.keys():
             self.logger.debug("ERROR start_monitoring: Already monitoring: "+str(container_id))

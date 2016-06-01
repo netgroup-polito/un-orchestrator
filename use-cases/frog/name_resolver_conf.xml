@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<network-functions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                 xsi:noNamespaceSchemaLocation="network-functions.xsd">
+
+	<network-function name="fw-c"  num-ports="2" summary="iptables based firewall">
+		<docker uri="firewall-client"/>
+	</network-function>
+   
+	<network-function name="sw-c"  num-ports="3" summary="ovs switch">
+		<docker uri="switch-client"/>
+	</network-function>
+
+	<network-function name="dhcp-c"  num-ports="1" summary="dhcp server">
+		<docker uri="dhcp-client"/>
+	</network-function>
+
+	<network-function name="mnt-c"  num-ports="2" summary="ntop based monitor">
+		<docker uri="monitor-client"/>
+	</network-function>
+
+	<network-function name="nat-c"  num-ports="2" summary="iptables based nat">
+		<docker uri="nat-client"/>
+	</network-function>
+
+	<network-function name="sw-i"  num-ports="3" summary="ovs switch">
+		<docker uri="switch-isp"/>
+	</network-function>
+
+	<network-function name="dhcp-i"  num-ports="1" summary="dhcp server">
+		<docker uri="dhcp-isp"/>
+	</network-function>
+
+	<network-function name="mnt-i"  num-ports="2" summary="ntop based monitor">
+		<docker uri="monitor-isp"/>
+	</network-function>
+
+	<network-function name="nat-i"  num-ports="2" summary="iptables based nat">
+		<docker uri="nat-isp"/>
+	</network-function>
+
+	<network-function name="sw-a"  num-ports="5" summary="ovs switch">
+		<docker uri="switch-auth"/>
+	</network-function>
+
+	<network-function name="dhcp-a"  num-ports="1" summary="dhcp server">
+		<docker uri="dhcp-auth"/>
+	</network-function>
+
+	<network-function name="c_prt-a"  num-ports="1" summary="dhcp server">
+		<docker uri="captive-portal-auth"/>
+	</network-function>
+
+	<network-function name="ip_f-a"  num-ports="1" summary="dhcp server">
+		<docker uri="ip-forger-auth"/>
+	</network-function>
+
+	<network-function name="nat-a"  num-ports="2" summary="dhcp server">
+		<docker uri="nat-auth"/>
+	</network-function>
+
+</network-functions>

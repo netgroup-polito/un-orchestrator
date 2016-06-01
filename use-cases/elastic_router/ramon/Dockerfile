@@ -13,10 +13,10 @@ ADD ./run.sh /bus/
 ADD ./ratemon_client.py /bus/
 ADD ./ratemon/ /bus/
 WORKDIR /
-RUN wget https://github.com/Acreo/DoubleDecker-py/archive/master.tar.gz -O dd.tar.gz
+RUN wget https://github.com/Acreo/DoubleDecker/archive/master.tar.gz -O dd.tar.gz
 RUN tar xzf dd.tar.gz
 RUN rm dd.tar.gz
-WORKDIR /DoubleDecker-master-py
+WORKDIR /DoubleDecker-master/python
 RUN python3 setup.py build
 RUN python3 setup.py install
 RUN pip install sh

@@ -243,6 +243,11 @@ SET(SOURCES1
 	node_resource_manager/graph/vlan_action.h
 	node_resource_manager/graph/vlan_action.cc
 
+	node_resource_manager/graph/graph-parser/graph_parser.h
+	node_resource_manager/graph/graph-parser/graph_parser.cc
+	node_resource_manager/graph/graph-parser/match_parser.h
+	node_resource_manager/graph/graph-parser/match_parser.cc
+
 	node_resource_manager/graph/low_level_graph/output_action.h
 	node_resource_manager/graph/low_level_graph/output_action.cc
 	node_resource_manager/graph/low_level_graph/graph.h
@@ -264,8 +269,6 @@ SET(SOURCES1
 	node_resource_manager/graph/high_level_graph/high_level_rule.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface.h
-	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface_out.cc
-	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface_out.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_gre.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_gre.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_vlan.cc
@@ -304,8 +307,6 @@ SET(SOURCES1
 
 	node_resource_manager/rest_server/rest_server.h
 	node_resource_manager/rest_server/rest_server.cc
-	node_resource_manager/rest_server/match_parser.h
-	node_resource_manager/rest_server/match_parser.cc
 
 	node_resource_manager/database_manager/SQLite/SQLiteManager.h
 	node_resource_manager/database_manager/SQLite/SQLiteManager.cc
@@ -353,7 +354,7 @@ ENDIF((VSWITCH_IMPLEMENTATION_INDEX EQUAL 2) OR (VSWITCH_IMPLEMENTATION_INDEX EQ
 
 IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 4)
     SET(SOURCES2
-    ${SOURCES}
+    ${SOURCES1}
 	network_controller/switch_manager/plugins/erfs/manager.h
 	network_controller/switch_manager/plugins/erfs/manager.cc
 	network_controller/switch_manager/plugins/erfs/constants.h

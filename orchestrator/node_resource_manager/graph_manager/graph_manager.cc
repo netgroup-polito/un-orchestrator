@@ -572,7 +572,7 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 
 		if(retVal == NFManager_NO_NF)
 		{
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "NF \"%s\" cannot be retrieved",nf->first.c_str());
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "NF \"%s\" cannot be retrieved",nf->first.c_str());
 			return false;
 		}
 		else if(retVal == NFManager_SERVER_ERROR)
@@ -861,8 +861,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tNF %s:",it->c_str());
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
 		if(network_functions_control_configuration.count(*it) != 0)
 		{
 			list<port_mapping_t > nfs_control_configuration = network_functions_control_configuration[*it];
@@ -885,8 +883,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\t\t\t%s",ev->c_str());
 			}
 		}
-
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 #endif
 
 		map<string,unsigned int> nfs_ports = lsi->getNetworkFunctionsPorts(*it);

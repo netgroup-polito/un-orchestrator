@@ -30,9 +30,6 @@ from er_monitor_zmq import *
 from er_zmq import *
 import er_rest_api
 
-elastic_router_instance_name = 'elastic_router_api_app'
-url = '/elastic_router/scale/{scale_arg}'
-
 class ElasticRouter(app_manager.RyuApp):
 
     _CONTEXTS = {
@@ -52,7 +49,7 @@ class ElasticRouter(app_manager.RyuApp):
     REST_Cf_Or =  'http://' + cfor_env
 
     # file name + location (execution dir) of the config file to load
-    config_file = 'elastic_router_config.json'
+    CONFIG_FILE = 'elastic_router_config.json'
 
     def __init__(self, *args, **kwargs):
         super(ElasticRouter, self).__init__(*args, **kwargs)
@@ -67,7 +64,7 @@ class ElasticRouter(app_manager.RyuApp):
 
 
         # get config file with routing table
-        self.config = import_json_file(self.config_file)
+        self.config = import_json_file(self.CONFIG_FILE)
 
 
         # get deployed nffg and check which ovs switches are in it
@@ -947,7 +944,7 @@ class ElasticRouter(app_manager.RyuApp):
                                   data=data)
         datapath.send_msg(out)
 
-    def get_nffg(self):
+    def get_nffg_xml(self):
         url = self.REST_Cf_Or + '/get-config'
         print url
         # by default a GET request is created:
@@ -963,7 +960,7 @@ class ElasticRouter(app_manager.RyuApp):
         nffg_json = urllib2.urlopen(req).read()
         return nffg_json
 
-    def send_nffg(self, xml_nffg):
+    def send_nffg_xml(self, xml_nffg):
         url = self.REST_Cf_Or + '/edit-config'
         req = urllib2.Request(url, xml_nffg)
         response = urllib2.urlopen(req)

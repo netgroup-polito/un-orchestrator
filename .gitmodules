@@ -19,9 +19,7 @@
 [submodule "use-cases/elastic_router/DoubleDecker"]
 	path = use-cases/elastic_router/DoubleDecker
 	url = https://github.com/Acreo/DoubleDecker
-[submodule "use-cases/elastic_router/MEASURE"]
-	path = use-cases/elastic_router/MEASURE
-	url = https://github.com/Acreo/MEASURE
-[submodule "use-cases/elastic_router/DoubleDecker-py"]
-	path = use-cases/elastic_router/DoubleDecker-py
-	url = https://github.com/Acreo/DoubleDecker-py.git
+[submodule "use-cases/frog/authentication_graph/Controller-Openflow/pox"]
+	path = use-cases/frog/authentication_graph/Controller-Openflow/pox
+	url = https://github.com/noxrepo/pox.git
+

@@ -1,0 +1,239 @@
+{
+  "forwarding-graph": {
+    "id": "auth-00000001",
+    "name": "Protected access to the internet",
+    "VNFs": [
+      {
+        "vnf_template": "switch.json",
+        "id": "00000001",
+        "name": "sw-a",
+        "ports": [
+          {
+            "id": "L2Port:0"
+          },
+          {
+            "id": "L2Port:1"
+          },
+          {
+            "id": "L2Port:2"
+          },
+          {
+            "id": "L2Port:3"
+          },
+          {
+            "id": "L2Port:4"
+          }
+        ]
+      },
+      {
+        "vnf_template": "dhcp.json",
+        "id": "00000002",
+        "name": "dhcp-a",
+        "ports": [
+          {
+            "id": "inout:0"
+          }
+        ]
+      },
+      {
+        "vnf_template": "captive_portal.json",
+        "id": "00000003",
+        "name": "c_prt-a",
+        "ports": [
+          {
+            "id": "inout:0"
+          }
+        ]
+      },
+      {
+        "vnf_template": "sdn.json",
+        "id": "00000004",
+        "name": "ip_f-a",
+        "ports": [
+          {
+            "id": "inout:0"
+          }
+        ]
+      },
+      {
+        "vnf_template": "nat.json",
+        "id": "00000005",
+        "name": "nat-a",
+        "ports": [
+          {
+            "id": "user:0"
+          },
+	  {
+            "id": "internet:1"
+          }
+        ]
+      }
+    ],
+    "end-points": [
+      {
+	"type": "interface",
+        "interface": {
+          "interface": "eth1"
+        },
+        "id": "00000001",
+        "name": "INGRESS"
+      },
+      {
+	"type": "interface",
+        "interface": {
+          "interface": "eth0"
+        },
+        "id": "00000002",
+        "name": "ISP_CONNECTION"
+      }
+    ],
+    "big-switch": {
+      "flow-rules": [
+        {
+          "id": "00000001",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:00000001:L2Port:0"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:00000002:inout:0"
+            }
+          ]
+        },
+	{
+          "id": "00000002",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:00000002:inout:0"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:00000001:L2Port:0"
+            }
+          ]
+        },
+	{
+          "id": "00000003",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:00000001:L2Port:1"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:00000003:inout:0"
+            }
+          ]
+        },
+	{
+          "id": "00000004",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:00000003:inout:0"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:00000001:L2Port:1"
+            }
+          ]
+        },
+	{
+          "id": "00000005",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:00000001:L2Port:2"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:00000004:inout:0"
+            }
+          ]
+        },
+	{
+          "id": "00000006",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:00000004:inout:0"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:00000001:L2Port:2"
+            }
+          ]
+        },
+	{
+          "id": "00000007",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:00000001:L2Port:3"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:00000005:user:0"
+            }
+          ]
+        },
+	{
+          "id": "00000008",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:00000005:user:0"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:00000001:L2Port:3"
+            }
+          ]
+        },
+	{
+          "id": "00000009",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:00000005:internet:1"
+          },
+          "actions": [
+            {
+              "output_to_port": "endpoint:00000002"
+            }
+          ]
+        },
+	{
+          "id": "00000010",
+          "priority": 1,
+          "match": {
+            "port_in": "endpoint:00000002"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:00000005:internet:1"
+            }
+          ]
+        },
+	{
+          "id": "00000011",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:00000001:L2Port:4"
+          },
+          "actions": [
+            {
+              "output_to_port": "endpoint:00000001"
+            }
+          ]
+        },
+	{
+          "id": "00000012",
+          "priority": 1,
+          "match": {
+            "port_in": "endpoint:00000001"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:00000001:L2Port:4"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

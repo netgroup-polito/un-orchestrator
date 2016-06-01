@@ -39,10 +39,13 @@ RUN python3 setup.py build
 RUN python3 setup.py install
 
 # generate key files
-WORKDIR /root/DoubleDecker-py-master/doubledecker
-RUN python3 -c 'from generateKeys import *; generate_keys("a")'
+#WORKDIR /root/DoubleDecker-py-master/doubledecker
+#RUN python3 -c 'from generateKeys import *; generate_keys("a")'
 
 WORKDIR /root/
+
+# copy key file
+COPY ./a-keys.json ./a-keys.json
 
 # setup ryu files
 COPY ./ryu_app ./ryu_app

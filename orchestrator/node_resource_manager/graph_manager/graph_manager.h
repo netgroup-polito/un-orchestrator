@@ -18,7 +18,7 @@
 #include "../graph/high_level_graph/high_level_output_action_nf.h"
 #include "../graph/high_level_graph/high_level_output_action_port.h"
 #include "../graph/high_level_graph/high_level_output_action_endpoint.h"
-#include "../rest_server/match_parser.h"
+//#include "../rest_server/match_parser.h"
 
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"

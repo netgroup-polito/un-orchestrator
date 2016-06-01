@@ -1,0 +1,47 @@
+This is a DHCP server run in a Docker container.
+
+To change the configuration of the server, edit the file default.conf.
+To change the network configuration to the container edit the file start_dhcp.sh
+
+###############################################################################
+
+Reqiured libraries:
+
+* Docker and LXC
+     http://docs.docker.com/installation/
+     apt-get install lxc -y
+     echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker.io
+     service docker restart
+     
+* Ubuntu docker image
+     sudo docker pull ubuntu:latest
+
+* Private registry (in the following, the document assumes that the registry is
+     running at localhost:5000)
+
+###############################################################################
+
+Create the Docker image which contains this NF, and push it to the repository
+
+* sudo docker build --tag="localhost:5000/dhcp-client" .
+* docker push localhost:5000/dhcp-client
+
+###############################################################################
+
+Run the container:
+
+* in interactive mode
+
+	docker run -i -t --lxc-conf="lxc.network.type=phys" --lxc-conf="lxc.network.link=vEth0" \
+		--lxc-conf="lxc.network.name=eth0" --lxc-conf="lxc.network.flags=up" \
+		--networking="false" --privileged="true" localhost:5000/dhcp_server /bin/bash 
+		
+	./start_dhcp.sh
+
+* in background mode
+
+	docker run -d --lxc-conf="lxc.network.type=phys" --lxc-conf="lxc.network.link=vEth0" \
+		--lxc-conf="lxc.network.name=eth0" --lxc-conf="lxc.network.flags=up" \
+		--networking="false" --privileged="true" localhost:5000/dhcp_server
+
+In both the cases, vEth0 is a vEth interface available in the host.

@@ -44,54 +44,6 @@ to configure/test the un-orchestrator.
 As stated above, the proper vSwitch must be started on the Universal Node before the boot of the
 un-orchestrator; in the following the instructions to run the supported vSwitches are provided.
 
-### How to start xDPd with DPDK support to work with the un-orchestrator
-
-Set up DPDK (after each reboot of the physical machine), in order to:
-
-  * Build the environment x86_64-native-linuxapp-gcc
-  * Insert IGB UIO module
-  * Insert KNI module
-  * Setup hugepage mappings for non-NUMA systems (1000 should be a reasonable
-    number)
-  * Bind Ethernet devices to IGB UIO module (bind all the ethernet interfaces
-    that you want to use)
- 
-    $ cd [xdpd]/libs/dpdk/tools  
-    $ sudo ./setup.sh  
-    ; Follow the instructions provided in the script
-
-
-Start xDPd:
-
-	$ cd [xdpd]/build/src/xdpd
-	$ sudo ./xdpd
-
-xDPd comes with a command line tool called `xcli`, that can be used to check
-the  flows installed in the LSIs, which are the LSIs deployed, see statistics
-on flows matched, and so on. The `xcli` can be run by just typing:
-
-    $ xcli
-
-### How to start OvS (managed through OFCONFIG) to work with the un-orchestrator [DEPRECATED]
-
-Start OvS:
-
-    $ sudo /usr/share/openvswitch/scripts/ovs-ctl start
-
-In addition, you have to start the OF-CONFIG server, which represents the
-daemon the implements the protocol used to configure the switch.
-
-OF-CONFIG server can be started by:
-
-    $ sudo ofc-server
-
-By default, `ofc-server` starts in daemon mode. To avoid daemon mode, use the
-`-f` parameter.
-For the full list of the supported parameters, type:
-
-    $ ofc-server -h
-
-
 ### How to start OvS (managed through OVSDB) to work with the un-orchestrator
 
 Start OVS:
@@ -144,12 +96,40 @@ Start the switching daemon:
     $ sudo ovs-vswitchd --dpdk -c 0x1 -n 4 --socket-mem 1024,0 \
         -- unix:$DB_SOCK --pidfile --detach
 
+### How to start xDPd with DPDK support to work with the un-orchestrator
+
+Set up DPDK (after each reboot of the physical machine), in order to:
+
+  * Build the environment x86_64-native-linuxapp-gcc
+  * Insert IGB UIO module
+  * Insert KNI module
+  * Setup hugepage mappings for non-NUMA systems (1000 should be a reasonable
+    number)
+  * Bind Ethernet devices to IGB UIO module (bind all the ethernet interfaces
+    that you want to use)
+ 
+    $ cd [xdpd]/libs/dpdk/tools  
+    $ sudo ./setup.sh  
+    ; Follow the instructions provided in the script
+
+Start xDPd:
+
+	$ cd [xdpd]/build/src/xdpd
+	$ sudo ./xdpd
+
+xDPd comes with a command line tool called `xcli`, that can be used to check
+the  flows installed in the LSIs, which are the LSIs deployed, see statistics
+on flows matched, and so on. The `xcli` can be run by just typing:
+
+    $ xcli
+
+
 ## How to start the proper virtual execution environment
 
 Only Libvirt needs to be explicitly started. If you do not intend 
 to use this execution environment, you can skip this section.
 
-### How to configure and start Libvirt
+### How to configure and start libvirt
 
 In case you are planning to use OvS with DPDK support as virtual switch, you have 
 to edit the file `/usr/local/etc/libvirt/qemu.conf` by adding the following line:

@@ -1,0 +1,184 @@
+<!doctype html>
+<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
+<!--[if lt IE 7 ]> <html class="no-js ie6" lang="en-US"> <![endif]-->
+<!--[if IE 7 ]>    <html class="no-js ie7" lang="en-US"> <![endif]-->
+<!--[if IE 8 ]>    <html class="no-js ie8" lang="en-US"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--> <html class="no-js" lang="en-US"> <!--<![endif]-->
+<head>
+
+<meta charset="UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+<title>Open vSwitch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="profile" href="http://gmpg.org/xfn/11" />
+<link rel="pingback" href="http://openvswitch.org/xmlrpc.php" />
+
+<link rel="alternate" type="application/rss+xml" title="Open vSwitch &raquo; Feed" href="http://openvswitch.org/feed/" />
+<link rel="alternate" type="application/rss+xml" title="Open vSwitch &raquo; Comments Feed" href="http://openvswitch.org/comments/feed/" />
+<link rel='stylesheet' id='style-css'  href='http://openvswitch.org/wp-content/themes/shell-lite/style.css?ver=3.9.2' type='text/css' media='all' />
+<script type='text/javascript' src='http://openvswitch.org/wp-includes/js/jquery/jquery.js?ver=1.11.0'></script>
+<script type='text/javascript' src='http://openvswitch.org/wp-includes/js/jquery/jquery-migrate.min.js?ver=1.2.1'></script>
+<script type='text/javascript' src='http://openvswitch.org/wp-content/themes/shell-lite/js/modernizr.js?ver=2.5.3'></script>
+<script type='text/javascript' src='http://openvswitch.org/wp-content/plugins/google-analyticator/external-tracking.min.js?ver=6.4.7.3'></script>
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="http://openvswitch.org/xmlrpc.php?rsd" />
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="http://openvswitch.org/wp-includes/wlwmanifest.xml" /> 
+<link rel='next' title='Download' href='http://openvswitch.org/download/' />
+<meta name="generator" content="WordPress 3.9.2" />
+<link rel='canonical' href='http://openvswitch.org/' />
+<link rel='shortlink' href='http://openvswitch.org/' />
+<!-- We need this for debugging -->
+<meta name="template" content="Shell Lite 1.7.0" />
+<!-- Google Analytics Tracking by Google Analyticator 6.4.7.3: http://www.videousermanuals.com/google-analyticator/ -->
+<script type="text/javascript">
+                var analyticsFileTypes = [''];
+                            var analyticsSnippet = 'enabled';
+                var analyticsEventTracking = 'enabled';
+            </script>
+<script type="text/javascript">
+	var _gaq = _gaq || [];
+  
+	_gaq.push(['_setAccount', 'UA-10000625-1']);
+    _gaq.push(['_addDevId', 'i9k95']); // Google Analyticator App ID with Google
+	_gaq.push(['_trackPageview']);
+
+	(function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	})();
+</script>
+</head>
+
+<body class="home page page-id-2 page-template-default">
+        
+<div id="container" class="hfeed">
+
+        <div id="header">
+       
+	               
+        <div id="logo">
+            <a href="http://openvswitch.org/"><img src="http://openvswitch.org/wp-content/uploads/2011/09/vswitch.png" width="300" height="100" alt="Open vSwitch" /></a>
+        </div><!-- end of #logo -->
+        
+    
+    
+        <div id="search-box">
+            	<form method="get" id="searchform" action="http://openvswitch.org/">
+        <input type="text" class="field" name="s" id="s" placeholder="search here &hellip;" />
+		<input type="submit" class="submit" name="submit" id="searchsubmit" value="Go" />
+	</form>        </div><!-- end of #search-box -->
+                
+        <ul class="social-icons"></ul><!-- end of .social-icons -->                
+            
+                <ul class="menu">
+                    <li><a href="http://openvswitch.org/">Home</a></li>
+                    <li class="page_item page-item-2 current_page_item"><a href="http://openvswitch.org/">About</a></li>
+<li class="page_item page-item-307"><a href="http://openvswitch.org/contributors/">Contributors</a></li>
+<li class="page_item page-item-35 page_item_has_children"><a href="http://openvswitch.org/development/">Development</a>
+<ul class='children'>
+	<li class="page_item page-item-812"><a href="http://openvswitch.org/development/committer-grant-revocation/">Committer Grant/Revocation</a></li>
+	<li class="page_item page-item-807"><a href="http://openvswitch.org/development/committer-responsibilities/">Committer Responsibilities</a></li>
+	<li class="page_item page-item-675"><a href="http://openvswitch.org/development/openflow-1-x-plan/">OpenFlow 1.x Plans</a></li>
+</ul>
+</li>
+<li class="page_item page-item-14 page_item_has_children"><a href="http://openvswitch.org/support/">Documentation</a>
+<ul class='children'>
+	<li class="page_item page-item-142 page_item_has_children"><a href="http://openvswitch.org/support/config-cookbooks/">Configuration Cookbook</a>
+	<ul class='children'>
+		<li class="page_item page-item-267"><a href="http://openvswitch.org/support/config-cookbooks/qos-rate-limiting/">QoS Rate-Limiting</a></li>
+		<li class="page_item page-item-215"><a href="http://openvswitch.org/support/config-cookbooks/sflow/">sFlow</a></li>
+		<li class="page_item page-item-146"><a href="http://openvswitch.org/support/config-cookbooks/vlan-configuration-cookbook/">VLANs</a></li>
+	</ul>
+</li>
+</ul>
+</li>
+<li class="page_item page-item-10"><a href="http://openvswitch.org/download/">Download</a></li>
+<li class="page_item page-item-229"><a href="http://openvswitch.org/faq/">FAQ</a></li>
+<li class="page_item page-item-569"><a href="http://openvswitch.org/features/">Features</a></li>
+<li class="page_item page-item-294"><a href="http://openvswitch.org/news/">In the News</a></li>
+<li class="page_item page-item-17"><a href="http://openvswitch.org/mlists/">Mailing Lists</a></li>
+                </ul><!-- end of .menu -->
+                
+				 
+    </div><!-- end of #header -->
+        
+	    <div id="wrapper" class="clearfix">
+    
+        <div id="content-full" class="grid col-940">
+        
+            <h1 class="featured-title">Production Quality, Multilayer Open Virtual Switch</h1>        <div class="grid col-460">
+        	
+        	    				<img src="http://openvswitch.org/wp-content/themes/shell-lite/images/featured-image.jpg" width="440" height="300" alt="" />   
+        	            
+        </div><!-- end of .col-460 -->
+
+        <div class="grid col-460 fit">
+        
+            <h2 class="featured-subtitle">What is Open vSwitch?</h2>            
+            <p>Open vSwitch is a production quality, multilayer virtual switch licensed under the open source <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache 2.0</a> license.  It is designed to enable massive network automation through programmatic extension, while still supporting standard management interfaces and protocols (e.g. NetFlow, sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag).  In addition, it is designed to support distribution across multiple physical servers similar to VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V. See the full feature list <a href="http://openvswitch.org/features/">here</a></p>                    
+            <div class="featured-button">
+
+            <p><a href="download/">Download</a></p>  
+            
+            </div><!-- end of .featured-button -->
+            
+        </div><!-- end of .col-460 fit --> 
+        
+        </div><!-- end of #content-full -->
+               
+
+
+    <div id="widgets">
+        <div class="grid col-300">
+                    
+            <div class="widget-title-home"><h3>Introducing Open vSwitch</h3></div>			<div class="textwidget">To understand why virtualized environments require a new approach to switching, read the <a href="http://openvswitch.org/cgi-bin/gitweb.cgi?p=openvswitch;a=blob_plain;f=WHY-OVS;hb=HEAD">WHY-OVS</a> document that is distributed with the source code.<br /><br />
+
+Open vSwitch is used in multiple products and runs in many large production environments (some very, very large). Each stable release is run through a regression suite of hundreds of system-level tests and over a thousand unit tests.</div>
+		
+                </div><!-- end of .col-300 -->
+
+        <div class="grid col-300">
+                    
+			<div class="widget-title-home"><h3>Join Open vSwitch Community</h3></div>			<div class="textwidget"><ul>
+<li><a href="http://openvswitch.org/pipermail/announce/">announce</a>
+<par style="font-size: x-small;">(<a href="http://mail.openvswitch.org/mailman/listinfo/announce">subscribe</a>)</par></li>
+<li><a href="http://openvswitch.org/pipermail/discuss/">discuss</a>
+<par style="font-size: x-small;">(<a href="http://mail.openvswitch.org/mailman/listinfo/discuss">subscribe</a>)</par></li>
+<li><a href="http://openvswitch.org/pipermail/dev/">dev</a>
+<par style="font-size: x-small;">(<a href="http://mail.openvswitch.org/mailman/listinfo/dev">subscribe</a>)</par></li>
+<li><a href="http://openvswitch.org/pipermail/git/">git</a>
+<par style="font-size: x-small;">(<a href="http://mail.openvswitch.org/mailman/listinfo/git">subscribe</a>)</par></li>
+</ul></div>
+		            
+                    </div><!-- end of .col-300 -->
+
+        <div class="grid col-300 fit">
+                    
+            <div class="widget-title-home"><h3>Supported Platforms</h3></div>			<div class="textwidget">Open vSwitch can operate both as a soft switch running within the hypervisor, and as the control stack for switching silicon. It has been ported to multiple virtualization platforms and switching chipsets. It is the default switch in <a href="http://support.citrix.com/article/CTX130418">XenServer 6.0</a>, the <a href="http://xen.org/products/cloudxen.html">Xen Cloud Platform</a> and also supports <a href="http://www.xen.org">Xen</a>, <a href="http://www.linux-kvm.org">KVM</a>, <a href="http://pve.proxmox.com/wiki/Main_Page"> Proxmox VE </a> and <a href="http://www.virtualbox.org/">VirtualBox</a>. It has also been integrated into many virtual management systems including <a href="http://www.openstack.org/">OpenStack</a>, <a href="http://www.openqrm.com/">openQRM</a>, <a href="http://opennebula.org/">OpenNebula</a> and <a href="http://ovirt.org/">oVirt</a>. The kernel datapath is distributed with <a href="http://kernel.org/">Linux</a>,  and packages are available for <a href="http://www.ubuntu.com/">Ubuntu</a>, <a href="http://www.debian.org/">Debian</a>, and <a href="http://fedoraproject.org//">Fedora</a>. Open vSwitch is also supported on <a href="http://freebsd.org">FreeBSD</a> and <a href="http://netbsd.org">NetBSD</a>.  The Open vSwitch release in development has been ported to <a href="http://dpdk.org">DPDK</a>.<br/><br/>
+
+The bulk of the code is written in platform-independent C and is easily ported to other environments.</div>
+		            
+                </div><!-- end of .col-300 fit -->
+    </div><!-- end of #widgets -->    </div><!-- end of #wrapper -->
+    </div><!-- end of #container -->
+
+<div id="footer">
+    <div id="footer-wrapper">
+        <div class="grid col-300 copyright">
+            &copy; 2014<a href="http://openvswitch.org/" title="Open vSwitch">
+                Open vSwitch            </a>
+        </div><!-- end of .copyright -->
+        
+        <div class="grid col-300 scroll-top"><a href="#scroll-top" title="scroll to top">&uarr;</a></div>
+        
+        <div class="grid col-300 fit powered">
+            <p><a href="http://wordpress.org/" title="WordPress" rel="generator" target="_blank">Powered by WordPress</a> <a href="http://devwp.eu/" title="DevWP" rel="designer" target="_blank">&amp; DevWP</a></p>
+        </div><!-- end .powered -->
+    </div><!-- end #footer-wrapper -->
+</div><!-- end #footer -->
+
+<script type='text/javascript' src='http://openvswitch.org/wp-content/themes/shell-lite/js/scripts.js?ver=1.0.5'></script>
+</body>
+</html>

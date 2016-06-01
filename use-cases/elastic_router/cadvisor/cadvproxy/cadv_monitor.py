@@ -31,7 +31,7 @@ class CAdvisorMonitorThread(threading.Thread):
     Periodically calls REST API method of locally running cadvisor
     """
 
-    def __init__(self, container_id, interval, ddClient, tail, spec_json, port):
+    def __init__(self, container_id, interval, ddClient, tail, spec_json):
         threading.Thread.__init__(self)
         self.container_id = container_id
         self.interval = interval
@@ -43,7 +43,7 @@ class CAdvisorMonitorThread(threading.Thread):
             count = 2
         if count > 64: # Maximum 64 steps (~92 sec) are supported by the method
             count = 64
-        self.url = ('http://localhost:'+str(port)+'/api/v2.0/stats/' +
+        self.url = ('http://localhost:8080/api/v2.0/stats/' +
                     container_id + '?type=docker&count='+str(round(count)))
         self.event = threading.Event()
         self.lock = threading.Lock()

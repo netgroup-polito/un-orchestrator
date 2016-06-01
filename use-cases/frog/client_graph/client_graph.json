@@ -1,0 +1,253 @@
+{
+  "forwarding-graph": {
+    "big-switch": {
+      "flow-rules": [
+        {
+          "priority": 1000,
+          "actions": [
+            {
+              "output_to_port": "vnf:00000001:L2Port:0"
+            }
+          ],
+          "id": "a804697102da4148990474038376e2a5",
+          "match": {
+            "source_mac": "2c:60:0c:f7:e0:93",
+            "port_in": "endpoint:00000001"
+          }
+        },
+        {
+          "priority": 1,
+          "actions": [
+            {
+              "output_to_port": "endpoint:00000001"
+            }
+          ],
+          "id": "000000002",
+          "match": {
+            "port_in": "vnf:00000001:L2Port:0"
+          }
+        },
+        {
+          "priority": 1,
+          "actions": [
+            {
+              "output_to_port": "vnf:00000001:L2Port:1"
+            }
+          ],
+          "id": "000000003",
+          "match": {
+            "port_in": "vnf:00000002:inout:0"
+          }
+        },
+        {
+          "priority": 1,
+          "actions": [
+            {
+              "output_to_port": "vnf:00000002:inout:0"
+            }
+          ],
+          "id": "000000004",
+          "match": {
+            "port_in": "vnf:00000001:L2Port:1"
+          }
+        },
+        {
+          "priority": 1,
+          "actions": [
+            {
+              "output_to_port": "vnf:00000005:inout:1"
+            }
+          ],
+          "id": "0000000011",
+          "match": {
+            "port_in": "vnf:00000003:User:1"
+          }
+        },
+        {
+          "priority": 1,
+          "actions": [
+            {
+              "output_to_port": "vnf:00000003:User:1"
+            }
+          ],
+          "id": "0000000012",
+          "match": {
+            "port_in": "vnf:00000005:inout:1"
+          }
+        },
+        {
+          "priority": 1,
+          "actions": [
+            {
+              "output_to_port": "vnf:00000001:L2Port:2"
+            }
+          ],
+          "id": "000000005",
+          "match": {
+            "port_in": "vnf:00000005:inout:0"
+          }
+        },
+        {
+          "priority": 1,
+          "actions": [
+            {
+              "output_to_port": "vnf:00000005:inout:0"
+            }
+          ],
+          "id": "000000006",
+          "match": {
+            "port_in": "vnf:00000001:L2Port:2"
+          }
+        },
+        {
+          "priority": 1,
+          "actions": [
+            {
+              "output_to_port": "vnf:00000004:User:1"
+            }
+          ],
+          "id": "000000007",
+          "match": {
+            "port_in": "vnf:00000003:WAN:0"
+          }
+        },
+        {
+          "priority": 1,
+          "actions": [
+            {
+              "output_to_port": "vnf:00000003:WAN:0"
+            }
+          ],
+          "id": "000000008",
+          "match": {
+            "port_in": "vnf:00000004:User:1"
+          }
+        },
+        {
+          "priority": 1,
+          "actions": [
+            {
+              "output_to_port": "vnf:00000004:WAN:0"
+            }
+          ],
+          "id": "000000009",
+          "match": {
+            "port_in": "endpoint:00000002"
+          }
+        },
+        {
+          "priority": 1,
+          "actions": [
+            {
+              "output_to_port": "endpoint:00000002"
+            }
+          ],
+          "id": "000000010",
+          "match": {
+            "port_in": "vnf:00000004:WAN:0"
+          }
+        }
+      ]
+    },
+    "VNFs": [
+      {
+        "groups": [
+          "isp-function"
+        ],
+        "vnf_template": "switch.json",
+        "ports": [
+          {
+            "id": "L2Port:0",
+            "name": "data-lan"
+          },
+          {
+            "id": "L2Port:1",
+            "name": "data-lan"
+          },
+          {
+            "id": "L2Port:2",
+            "name": "data-lan"
+          }
+        ],
+        "id": "00000001",
+        "name": "sw-c"
+      },
+      {
+        "groups": [
+          "isp-function"
+        ],
+        "vnf_template": "dhcp.json",
+        "ports": [
+          {
+            "id": "inout:0",
+            "name": "data-port"
+          }
+        ],
+        "id": "00000002",
+        "name": "dhcp-c"
+      },
+      {
+        "vnf_template": "cisco_monitor.json",
+        "ports": [
+          {
+            "id": "inout:0"
+          },
+          {
+            "id": "inout:1"
+          }
+        ],
+        "id": "00000005",
+        "name": "mnt-c"
+      },
+      {
+        "vnf_template": "cisco_firewall.json",
+        "ports": [
+          {
+            "id": "WAN:0"
+          },
+          {
+            "id": "User:1"
+          }
+        ],
+        "id": "00000003",
+        "name": "fw-c"
+      },
+      {
+        "groups": [
+          "isp-function"
+        ],
+        "vnf_template": "nat.json",
+        "ports": [
+          {
+            "id": "WAN:0"
+          },
+          {
+            "id": "User:1"
+          }
+        ],
+        "id": "00000004",
+        "name": "nat-c"
+      }
+    ],
+    "end-points": [
+      {
+        "type": "interface",
+        "interface": {
+          "interface": "eth1"
+        },
+        "id": "00000001",
+        "name": "INGRESS"
+      },
+      {
+        "type": "interface",
+        "interface": {
+          "interface": "eth0"
+        },
+        "id": "00000002",
+        "name": "EGRESS"
+      }
+    ],
+    "id": "0",
+    "name": "Protected access to the internet"
+  }
+}

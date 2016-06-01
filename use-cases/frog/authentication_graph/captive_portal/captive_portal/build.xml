@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="CaptivePortal" default="make-all" basedir=".">
+
+	<!-- define names -->
+	<!-- Please replace following line with the install folder of your Apache Tomcat -->
+	<property name="application.war.foldername" value="."/>
+	<property name="application.war.filename" value="ROOT.war"/>
+
+	<!-- define directories -->
+	<property name="src.dir" location="${basedir}/src"/>
+	<!-- <property name="conf.dir" location="${basedir}/conf"/> -->
+	<!-- Compile libs are needed only to compile the project -->
+	<!-- Tomcap will provide a local copy of this library to our code at run-time --> 
+
+	<property name="compilelib.dir" location="${basedir}/lib"/>
+	<property name="build.dir" location="${basedir}/build"/>
+	<property name="metainf.dir" location="${basedir}/WebContent/META-INF"/>
+	<property name="webcontent.dir" location="${basedir}/WebContent"/>
+	<property name="runtimelib.dir" location="${basedir}/WebContent/WEB-INF/lib"/>
+	<property name="webinf.dir" location="${basedir}/WebContent/WEB-INF"/>
+
+	<!-- define compile property-->
+	<property name="debug" value="true"/>
+	<property name="debuglevel" value="source,lines,vars"/>
+	<property name="target" value="1.7"/>
+	<property name="source" value="1.7"/>
+
+	<!-- define the classpath -->
+	<path id="application-classpath">
+		<pathelement path="${build.dir}" />
+		<pathelement location="${compilelib.dir}/servlet-api.jar"/>
+		<pathelement location="${runtimelib.dir}/json-20140107.jar"/>
+		<pathelement location="${runtimelib.dir}/httpcore-4.3.2.jar"/>
+		<pathelement location="${runtimelib.dir}/httpclient-4.3.4.jar"/>
+<!--
+		<pathelement location="${runtimelib.dir}/gson-2.2.1.jar"/>
+		<pathelement location="${runtimelib.dir}/mail.jar"/>
+		<pathelement location="${runtimelib.dir}/mailapi.jar"/>
+-->
+	</path>
+
+
+	<!-- define the "clean" target -->
+	<target name="clean">
+		<!-- Delete the 'ROOT' folder in the Tomcat document root -->
+		<delete dir="${application.war.foldername}/ROOT"/>
+		<!-- Delete the intermediate 'build' folder -->
+		<delete dir="${build.dir}"/>
+	</target>
+
+	<!-- define the "init" target -->
+	<target name="init" depends="clean">
+		<!-- make directories -->
+		<mkdir dir="${build.dir}"/>
+	</target> 
+
+	<!-- define the "build" target -->
+	<target name="build" depends="init">
+		<echo>Compiling sources...</echo>
+		<javac srcdir="${src.dir}" destdir="${build.dir}" debug="${debug}" debuglevel="${debuglevel}" source="${source}" target="${target}" includeantruntime="false">
+			<classpath>
+		 		<path refid="application-classpath"/>
+			</classpath>
+		</javac>
+	</target>
+
+	<!-- define the "create-war" target -->
+	<target name="create-war" depends="build">
+		<echo>Creating LocalServer WAR file ready for Tomcat...</echo>
+<!--
+		<copy file="${conf.dir}/FrogRelativePath.xml" todir="${build.dir}"/>
+-->
+		<war manifest="${metainf.dir}/MANIFEST.MF" destfile="${application.war.foldername}/${application.war.filename}" webxml="${webinf.dir}/web.xml">
+			<fileset dir="${webcontent.dir}"/>
+			<classes dir="${build.dir}"/>
+		</war>
+	</target>
+
+	<!-- define the "make-all" target -->
+	<target name="make-all" depends="create-war">
+		<echo>All set!</echo>
+	</target>
+
+</project>
+
