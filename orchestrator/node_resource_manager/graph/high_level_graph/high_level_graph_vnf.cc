@@ -4,17 +4,15 @@ namespace highlevel
 {
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-VNFs::VNFs(string id, string name, list<string> groups, string vnf_template, list<vector<string> > ports, list<pair<string, string> > control_ports, list<string> environment_variables) :
-	id(id), name(name), groups(groups), vnf_template(vnf_template)
+VNFs::VNFs(string id, string name, list<string> groups, string vnf_template, list<vnf_port_t> ports, list<port_mapping_t> control_ports, list<string> environment_variables) :
+	id(id), name(name), groups(groups), vnf_template(vnf_template), updated(false)
 #else
-VNFs::VNFs(string id, string name, list<string> groups, string vnf_template, list<vector<string> > ports) :
-	id(id), name(name), groups(groups), vnf_template(vnf_template)
+VNFs::VNFs(string id, string name, list<string> groups, string vnf_template, list<vnf_port_t> ports) :
+	id(id), name(name), groups(groups), vnf_template(vnf_template), updated(false)
 #endif
 {
-	for(list<vector<string> >::iterator p = ports.begin(); p != ports.end(); p++)
-	{
+	for(list<vnf_port_t>::iterator p = ports.begin(); p != ports.end(); p++)
 		this->ports.push_back((*p));
-	}
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	this->control_ports.insert(this->control_ports.end(),control_ports.begin(),control_ports.end());
@@ -33,6 +31,20 @@ bool VNFs::operator==(const VNFs &other) const
 		return true;
 
 	return false;
+}
+
+bool VNFs::addPort(vnf_port_t port)
+{
+	// the port is added if is not yet part of the VNF
+	for(list<vnf_port_t>::iterator p = ports.begin(); p != ports.end(); p++)
+	{
+		vnf_port_t current = *p;
+		if(current.id == port.id)
+			// the port is already part of the graph
+			return false;
+	}
+	ports.push_back(port);
+	return true;
 }
 
 string VNFs::getId()
@@ -55,43 +67,37 @@ string VNFs::getVnfTemplate()
 	return vnf_template;
 }
 
-list <vector<string> > VNFs::getPorts()
+list <vnf_port_t> VNFs::getPorts()
 {
 	return ports;
 }
 
-void VNFs::print()
+list<unsigned int> VNFs::getPortsId()
 {
-	if(LOGGING_LEVEL <= ORCH_DEBUG_INFO)
+	list<unsigned int> ids;
+	for(list<vnf_port_t>::iterator p = ports.begin(); p != ports.end(); p++)
 	{
-		cout << "\t\tid:" << id << endl;
-		cout << "\t\t\tname: " << name << endl;
-		cout << "\t\t\tvnf_template: " << vnf_template << endl;
-		cout << "\t\t\tgroups: " << endl << "\t\t{" << endl;
-		for(list<string>::iterator it = groups.begin(); it != groups.end(); it++)
-			cout << "\t\t\t" << *it << endl;
-		cout << "\t\t}" << endl;
-		cout << "\t\t\tports: " << endl << "\t\t{" << endl;
-		for(list<vector<string> >::iterator p = ports.begin(); p != ports.end(); p++)
-		{
-			cout << "\t\t\tid: " << (*p)[0] << endl;
-			cout << "\t\t\tname: " << (*p)[1] << endl;
-			if(!(*p)[2].empty())
-				cout << "\t\t\tmac: " << (*p)[2] << endl;
-			if(!(*p)[3].empty())
-				cout << "\t\t\tip: " << (*p)[3] << endl;
-		}
-		cout << "\t\t}" << endl;
-#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-		cout << "\t\t\tunify-control: " << endl << "\t\t{" << endl;
-		for(list<pair<string, string> >::iterator c = control_ports.begin(); c != control_ports.end(); c++)
-		{
-			cout << "\t\t\thost-tcp-port: " << (*c).first << endl;
-			cout << "\t\t\tvnf-tcp-port: " << (*c).second << endl;
-		}
-		cout << "\t\t}" << endl;
-#endif
+		string the_id = p->id;
+		logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Extracting ID for port: %s",p->id.c_str());
+		unsigned int id = extract_number_from_id(the_id);
+		ids.push_back(id);
 	}
+	return ids;
+}
+
+map<unsigned int, port_network_config > VNFs::getPortsID_configuration()
+{
+	map<unsigned int, port_network_config > mapping;
+
+	for(list<vnf_port_t>::iterator p = ports.begin(); p != ports.end(); p++)
+	{
+		string the_id = p->id;
+		logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Extracting ID for port: %s",p->id.c_str());
+		unsigned int id = extract_number_from_id(the_id);
+		mapping[id] = p->configuration;
+	}
+
+	return mapping;
 }
 
 Object VNFs::toJSON()
@@ -110,26 +116,30 @@ Object VNFs::toJSON()
 		groups_Array.push_back((*it).c_str());
 	if(groups.size()!=0)
 		vnf[VNF_GROUPS] = groups_Array;
-	for(list<vector<string> >::iterator p = ports.begin(); p != ports.end(); p++)
+	for(list<vnf_port_t>::iterator p = ports.begin(); p != ports.end(); p++)
 	{
 		Object pp;
 
-		pp[_ID] = (*p)[0].c_str();
-		pp[_NAME] = (*p)[1].c_str();
-		pp[PORT_MAC] = (*p)[2].c_str();
-		pp[PORT_IP] = (*p)[3].c_str();
+		pp[_ID] = p->id.c_str();
+		pp[_NAME] = p->name.c_str();
+		if(strlen(p->configuration.mac_address.c_str()) != 0)
+			pp[PORT_MAC] = p->configuration.mac_address.c_str();
+#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
+		if(strlen(p->configuration.ip_address.c_str()) != 0)
+			pp[PORT_IP] = p->configuration.ip_address.c_str();
+#endif
 
 		portS.push_back(pp);
 	}
 	vnf[VNF_PORTS] = portS;
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-	for(list<pair<string, string> >::iterator c = control_ports.begin(); c != control_ports.end(); c++)
+	for(list<port_mapping_t>::iterator c = control_ports.begin(); c != control_ports.end(); c++)
 	{
 		Object cc;
 
-		cc[HOST_PORT] = atoi((*c).first.c_str());
-		cc[VNF_PORT] = atoi((*c).second.c_str());
+		cc[HOST_PORT] = atoi((*c).host_port.c_str());
+		cc[VNF_PORT] = atoi((*c).guest_port.c_str());
 
 		ctrl_ports.push_back(cc);
 	}
@@ -146,6 +156,46 @@ Object VNFs::toJSON()
 #endif
 
 	return vnf;
+}
+
+#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
+list<port_mapping_t> VNFs::getControlPorts()
+{
+	return control_ports;
+}
+
+list<string> VNFs::getEnvironmentVariables()
+{
+	return environment_variables;
+}
+#endif
+
+unsigned int VNFs::extract_number_from_id(string port_id)
+{
+	char delimiter[] = ":";
+	char tmp[BUFFER_SIZE];
+	strcpy(tmp,port_id.c_str());
+	char *pnt=strtok(/*(char*)port_id.c_str()*/tmp, delimiter);
+	unsigned int port = 0;
+
+	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Extracting ID for port: %s",port_id.c_str());
+
+	int i = 0;
+	while( pnt!= NULL )
+	{
+		switch(i)
+		{
+			case 1:
+				sscanf(pnt,"%u",&port);
+				return (port+1);
+			break;
+		}
+
+		pnt = strtok( NULL, delimiter );
+		i++;
+	}
+	assert(0); //If the code is here, it means the the port_id was not in the form "string:number"
+	return port;
 }
 
 }

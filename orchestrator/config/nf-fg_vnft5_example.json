@@ -39,7 +39,7 @@
 				"name": "port1",
 				"type": "interface",
 				"interface": {
-					"interface": "eth1"
+					"if-name": "eth1"
 				}
 			},
 			{
@@ -47,7 +47,7 @@
 				"name": "port2",
 				"type": "interface",
 				"interface": {
-					"interface": "eth2"
+					"if-name": "eth2"
 				}
 			}
 		],

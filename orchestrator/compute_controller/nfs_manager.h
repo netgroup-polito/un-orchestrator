@@ -4,6 +4,7 @@
 #pragma once
 
 #include "startNF_in.h"
+#include "updateNF_in.h"
 #include "stopNF_in.h"
 #include "description.h"
 //#include "plugins/dpdk/dpdk_description.h"
@@ -42,6 +43,13 @@ public:
 	*	@param: cli	Description of the network function to be started
 	*/
 	virtual bool startNF(StartNFIn sni) = 0;
+
+	/**
+	*	@brief:	Retrieve and update the network function
+	*
+	*	@param: cli	Description of the network function to be updated
+	*/
+	virtual bool updateNF(UpdateNFIn uni) = 0;
 
 	/**
 	*	@brief: stop the network function

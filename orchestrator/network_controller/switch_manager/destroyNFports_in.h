@@ -3,6 +3,7 @@
 
 #pragma once
 
+#define __STDC_FORMAT_MACROS
 #include <string>
 #include <inttypes.h>
 
@@ -27,9 +28,9 @@ private:
 	uint64_t dpid;
 
 	/**
-	*	@brief: name of the network functions whose ports must be destroyed
+	*	@brief: id of the network functions whose ports must be destroyed
 	*/
-	string nf_name;
+	string nf_id;
 
 	/**
 	*	@brief: network function ports to be destroyed
@@ -37,8 +38,8 @@ private:
 	set<string> nf_ports;
 
 protected:
-	DestroyNFportsIn(uint64_t dpid, string nf_name, set<string> nf_ports)
-		: dpid(dpid), nf_name(nf_name), nf_ports(nf_ports)
+	DestroyNFportsIn(uint64_t dpid, string nf_id, set<string> nf_ports)
+		: dpid(dpid), nf_id(nf_id), nf_ports(nf_ports)
 	{
 	}
 
@@ -49,9 +50,9 @@ public:
 		return dpid;
 	}
 
-	string getNFname()
+	string getNfId()
 	{
-		return nf_name;
+		return nf_id;
 	}
 
 	set<string> getNFports()

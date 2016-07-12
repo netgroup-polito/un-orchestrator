@@ -174,4 +174,15 @@ then
 	chmod +x $stop_command
 fi	
 
+#check if update file exists
+
+update="$temp_dir/update"
+
+if [ -f $update ]
+then
+
+	chmod +x $update
+	
+fi
+
 exit 1

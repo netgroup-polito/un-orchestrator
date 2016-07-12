@@ -23,7 +23,6 @@ class GenericAction
 public:
 	virtual ~GenericAction();
 
-	virtual void print() = 0;
 	virtual void toJSON(Object &json) = 0;
 
 	/**
@@ -33,6 +32,7 @@ public:
 	*/
 	virtual void fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigned int *position) = 0;
 
+	virtual void print() {}
 	virtual string prettyPrint() = 0;
 
 protected:

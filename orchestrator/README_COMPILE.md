@@ -3,7 +3,7 @@
 In order to execute the un-orchestrator, we need to setup different components, namely:
 
   * a set of libraries and tools needed to compile and execute the un-orchestrator code
-  * a virtual switch (either xDPd, ERFS or Open vSwitch) as a base switch for
+  * a virtual switch (either Open vSwitch, ERFS or xDPd) as a base switch for
     the platform
   * one or more execution environments for Virtual Network Functions, e.g., KVM for
     executing VM, Docker, or other.
@@ -112,13 +112,31 @@ Now create the ovsdb database:
 		/usr/local/share/openvswitch/vswitch.ovsschema
 
 
+### ERFS with DPDK support
+
+The Ericsson Research Flow Switch has not been released yet in the open source domain, hence its usage is restricted to people that have access to the source code (e.g., members of the [FP7 UNIFY](http://www.fp7-unify.eu) project).
+ 
+In order to install ERFS with DPDK support, you have to follow the steps below.
+
+    $ svn checkout <Unify SVN repo>  
+    $ cd <WP5 / Task 5.2 / code / erfs>
+
+    ; Make sure you have DPDK with ivshmem target installed
+    ; Also make sure you have a proper C++ build environment with boost
+    $ ./makeconf
+    $ ./configure --enable-debug=[yes/no]
+    $ make
+
+Please note that performance-wise there is some drop on Xeon between DPDK 1.7 and later versions due to the change in the `mbuf` structure.
+
+
 ### xDPd with DPDK support
 
 In order to install xDPd with DPDK support, you have to follow the steps below.
 
 	$ git clone https://github.com/bisdn/xdpd
-	$ git checkout stable
 	$ cd xdpd/
+	$ git checkout stable
 
 	;Install all the libraries required by the README provided in this folder
 	;Edit config/dpdk.m4 and

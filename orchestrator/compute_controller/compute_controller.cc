@@ -32,13 +32,13 @@ void ComputeController::setCoreMask(uint64_t core_mask)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Mask of an available core: \"%d\"",cores[i]);
 }
 
-nf_manager_ret_t ComputeController::retrieveDescription(string nf)
+nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_name)
 {
 	try
  	{
  		string translation;
 
- 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Considering the NF \"%s\"",nf.c_str());
+ 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Considering the NF with id \"%s\"",nf_id.c_str());
 
 		char ErrBuf[BUFFER_SIZE];
 		struct addrinfo Hints;
@@ -60,7 +60,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf)
 		}
 
 		stringstream tmp;
-		tmp << "GET " << NAME_RESOLVER_BASE_URL << nf << " HTTP/1.1\r\n";
+		tmp << "GET " << NAME_RESOLVER_BASE_URL << nf_name << " HTTP/1.1\r\n";
 		tmp << "Host: :" << NAME_RESOLVER_ADDRESS << ":" << NAME_RESOLVER_PORT << "\r\n";
 		tmp << "Connection: close\r\n";
 		tmp << "Accept: */*\r\n\r\n";
@@ -125,7 +125,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf)
 
 		translation.assign(&DataBuffer[i]);
 
-		if(!parseAnswer(translation,nf))
+		if(!parseAnswer(translation,nf_name,nf_id))
 		{
 			//ERROR IN THE SERVER
 			return NFManager_SERVER_ERROR;
@@ -140,7 +140,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf)
 	return NFManager_OK;
 }
 
-bool ComputeController::parseAnswer(string answer, string nf)
+bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 {
 	try
 	{
@@ -152,7 +152,7 @@ bool ComputeController::parseAnswer(string answer, string nf)
 		bool foundImplementations = false;
 
 		list<Description*> possibleDescriptions;
-		string nf_name;
+		string nf_received_name;
 
 		bool foundNports = false;
 		unsigned int numports = 0;
@@ -186,10 +186,10 @@ bool ComputeController::parseAnswer(string answer, string nf)
 		    if(name == "name")
 		    {
 		    	foundName = true;
-		    	nf_name = value.getString();
-		    	if(nf_name != nf)
+		    	nf_received_name = value.getString();
+		    	if(nf_received_name != nf_name)
 		    	{
-			    	logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Required NF \"%s\", received info for NF \"%s\"",nf.c_str(),nf_name.c_str());
+			    	logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Required NF \"%s\", received info for NF \"%s\"",nf_name.c_str(),nf_received_name.c_str());
 					return false;
 		    	}
 		    }
@@ -434,14 +434,14 @@ bool ComputeController::parseAnswer(string answer, string nf)
 
 		if(possibleDescriptions.size() == 0)
 		{
-			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Cannot find a supported implementation for the network function \"%s\"",nf.c_str());
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Cannot find a supported implementation for the network function \"%s\"",nf_name.c_str());
 			return false;
 		}
 
 		for(list<Description*>::iterator impl = possibleDescriptions.begin(); impl != possibleDescriptions.end(); impl++)
 			new_nf->addDescription(*impl);
 
-		nfs[nf_name] = new_nf;
+		nfs[nf_id] = new_nf;
 
 	}
 	catch (std::runtime_error& e) {
@@ -465,7 +465,7 @@ void ComputeController::checkSupportedDescriptions() {
 
 		list<Description*> descriptions = current->getAvailableDescriptions();
 
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%d descriptions available for NF \"%s\".", descriptions.size(), nf->first.c_str());
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%d descriptions available for NF \"%s\".", descriptions.size(), (current->getName()).c_str());
 
 		list<Description*>::iterator descr;
 		for(descr = descriptions.begin(); descr != descriptions.end(); descr++){
@@ -478,9 +478,9 @@ void ComputeController::checkSupportedDescriptions() {
 					NFsManager *dockerManager = new Docker();
 					if(dockerManager->isSupported(**descr)){
 						(*descr)->setSupported(true);
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Docker description of NF \"%s\" is supported.",nf->first.c_str());
+						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Docker description of NF \"%s\" is supported.",(current->getName()).c_str());
 					} else {
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Docker description of NF \"%s\" is not supported.",nf->first.c_str());
+						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Docker description of NF \"%s\" is not supported.",(current->getName()).c_str());
 					}
 					delete dockerManager;
 				}
@@ -493,9 +493,9 @@ void ComputeController::checkSupportedDescriptions() {
 					NFsManager *dpdkManager = new Dpdk();
 					if(dpdkManager->isSupported(**descr)){
 						(*descr)->setSupported(true);
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "DPDK description of NF \"%s\" is supported.",nf->first.c_str());
+						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "DPDK description of NF \"%s\" is supported.",(current->getName()).c_str());
 					} else {
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "DPDK description of NF \"%s\" is not supported.",nf->first.c_str());
+						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "DPDK description of NF \"%s\" is not supported.",(current->getName()).c_str());
 					}
 					delete dpdkManager;
 				}
@@ -508,9 +508,9 @@ void ComputeController::checkSupportedDescriptions() {
 					NFsManager *libvirtManager = new Libvirt();
 					if(libvirtManager->isSupported(**descr)){
 						(*descr)->setSupported(true);
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "KVM description of NF \"%s\" is supported.",nf->first.c_str());
+						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "KVM description of NF \"%s\" is supported.",(current->getName()).c_str());
 					} else {
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "KVM description of NF \"%s\" is not supported.",nf->first.c_str());
+						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "KVM description of NF \"%s\" is not supported.",(current->getName()).c_str());
 					}
 					delete libvirtManager;
 				}
@@ -525,9 +525,9 @@ void ComputeController::checkSupportedDescriptions() {
 						nativeManager = new Native();
 						if(nativeManager->isSupported(**descr)){
 							(*descr)->setSupported(true);
-							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Native description of NF \"%s\" is supported.",nf->first.c_str());
+							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Native description of NF \"%s\" is supported.",(current->getName()).c_str());
 						} else {
-							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Native description of NF \"%s\" is not supported.",nf->first.c_str());
+							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Native description of NF \"%s\" is not supported.",(current->getName()).c_str());
 						}
 						delete nativeManager;
 					} catch (exception& e) {
@@ -651,7 +651,6 @@ bool ComputeController::selectImplementation()
 	 */
 	checkSupportedDescriptions();
 
-
 	/**
 	 * Select an implementation of the NF
 	 */
@@ -668,13 +667,13 @@ bool ComputeController::selectImplementation()
 
 			if(selectedImplementation == NULL) {
 
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "No available description for NF \'%s\'", nf->first.c_str());
+				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "No available description for NF with id\'%s\'", nf->first.c_str());
 				return false;
 
 			}
 
 			current->setSelectedDescription(selectedImplementation);
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Implementation has been selected for NF \"%s\".",nf->first.c_str());
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Implementation has been selected for NF with id \"%s\".",nf->first.c_str());
 
 		}
 	}
@@ -698,19 +697,18 @@ bool ComputeController::allSelected()
 		NF *current = nf->second;
 		if(current->getSelectedDescription() == NULL)
 		{
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The NF \"%s\" has not been selected yet.",nf->first.c_str());
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The NF with id \"%s\" has not been selected yet.",nf->first.c_str());
 			retVal = false;
 		}
 	}
 	return retVal;
 }
 
-
-nf_t ComputeController::getNFType(string name)
+nf_t ComputeController::getNFType(string id)
 {
-	assert(nfs.count(name) != 0);
+	assert(nfs.count(id) != 0);
 
-	NF *nf = nfs[name];
+	NF *nf = nfs[id];
 	NFsManager *impl = nf->getSelectedDescription();
 
 	assert(impl != NULL);
@@ -718,9 +716,9 @@ nf_t ComputeController::getNFType(string name)
 	return impl->getNFType();
 }
 
-const Description* ComputeController::getNFSelectedImplementation(string name)
+const Description* ComputeController::getNFSelectedImplementation(string id)
 {
-	map<string, NF*>::iterator nf_it = nfs.find(name);
+	map<string, NF*>::iterator nf_it = nfs.find(id);
 	if (nf_it == nfs.end()) { // Not found
 		return NULL;
 	}
@@ -737,13 +735,32 @@ void ComputeController::setLsiID(uint64_t lsiID)
 	this->lsiID = lsiID;
 }
 
-bool ComputeController::startNF(string nf_name, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration
+bool ComputeController::updateNF(string nf_id, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration, list<unsigned int> newPortsToAdd)
+{
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Updating the NF with id \"%s\"", nf_id.c_str());
+	
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Number of ports for updating %d", newPortsToAdd.size());
+
+	NF *nf = nfs[nf_id];
+	NFsManager *nfsManager = nf->getSelectedDescription();
+	UpdateNFIn uni(lsiID, nf_id, namesOfPortsOnTheSwitch, portsConfiguration, newPortsToAdd);
+
+	if(!nfsManager->updateNF(uni))
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while updating the NF with id \"%s\"",nf_id.c_str());
+		return false;
+	}
+	
+	return true;
+}
+
+bool ComputeController::startNF(string nf_id, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	, list<port_mapping_t > controlConfiguration, list<string> environmentVariables
 #endif
 	)
 {
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Starting the NF \"%s\"", nf_name.c_str());
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Starting the NF with id \"%s\"", nf_id.c_str());
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	if(!controlConfiguration.empty())
 	{
@@ -780,17 +797,17 @@ bool ComputeController::startNF(string nf_name, map<unsigned int, string> namesO
 		//it1++;
 	}
 
-	if(nfs.count(nf_name) == 0)
+	if(nfs.count(nf_id) == 0)
 	{
 		assert(0);
-		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Unknown NF with name \"%s\"",nf_name.c_str());
+		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Unknown NF with id \"%s\"",nf_id.c_str());
 		return false;
 	}
 
-	NF *nf = nfs[nf_name];
+	NF *nf = nfs[nf_id];
 	NFsManager *nfsManager = nf->getSelectedDescription();
 
-	StartNFIn sni(lsiID, nf_name, namesOfPortsOnTheSwitch, portsConfiguration,
+	StartNFIn sni(lsiID, nf_id, namesOfPortsOnTheSwitch, portsConfiguration,
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		controlConfiguration, environmentVariables,
 #endif
@@ -798,7 +815,7 @@ bool ComputeController::startNF(string nf_name, map<unsigned int, string> namesO
 
 	if(!nfsManager->startNF(sni))
 	{
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while starting the NF \"%s\"",nf_name.c_str());
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while starting the NF with id \"%s\"",nf_id.c_str());
 		return false;
 	}
 
@@ -813,31 +830,31 @@ void ComputeController::stopAll()
 		stopNF(nf->first);
 }
 
-bool ComputeController::stopNF(string nf_name)
+bool ComputeController::stopNF(string nf_id)
 {
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Stopping the NF \"%s\"",nf_name.c_str());
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Stopping the NF with id \"%s\"",nf_id.c_str());
 
-	if(nfs.count(nf_name) == 0)
+	if(nfs.count(nf_id) == 0)
 	{
-		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Unknown NF with name \"%s\"",nf_name.c_str());
+		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Unknown NF with id \"%s\"",nf_id.c_str());
 		return false;
 	}
 
-	NF *nf = nfs[nf_name];
+	NF *nf = nfs[nf_id];
 	NFsManager *nfsManager = nf->getSelectedDescription();
 
-	StopNFIn sni(lsiID,nf_name);
+	StopNFIn sni(lsiID,nf_id);
 
 	if(!nfsManager->stopNF(sni))
 	{
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while stopping the NF \"%s\"",nf_name.c_str());
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while stopping the NF with id \"%s\"",nf_id.c_str());
 		return false;
 	}
 
 	map<string, NF*>::iterator it = nfs.begin();
 	for(;it != nfs.end(); it++)
 	{
-		if(it->first == nf_name)
+		if(it->first == nf_id)
 		{
 			nfs.erase(it);
 			break;
@@ -879,11 +896,11 @@ void ComputeController::printInfo(int graph_id)
 		nf_t type = nf->second->getSelectedDescription()->getNFType();
 		string str = NFType::toString(type);
 		if(graph_id == 2)
-			coloredLogger(ANSI_COLOR_BLUE,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tType: %s\t-\tStatus: %s",nf->first.c_str(),(nf->first.length()<=7)? "\t" : "", str.c_str(),(nf->second->getRunning())?"running":"stopped");
+			coloredLogger(ANSI_COLOR_BLUE,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tID: '%s'\t-\tType: %s\t-\tStatus: %s",nf->second->getName().c_str(),(nf->first.length()<=7)? "\t" : "",nf->first.c_str(), str.c_str(),(nf->second->getRunning())?"running":"stopped");
 		else if(graph_id == 3)
-			coloredLogger(ANSI_COLOR_RED,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tType: %s\t-\tStatus: %s",nf->first.c_str(),(nf->first.length()<=7)? "\t" : "", str.c_str(),(nf->second->getRunning())?"running":"stopped");
+			coloredLogger(ANSI_COLOR_RED,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tID: '%s'\t-\tType: %s\t-\tStatus: %s",nf->second->getName().c_str(),(nf->first.length()<=7)? "\t" : "",nf->first.c_str(), str.c_str(),(nf->second->getRunning())?"running":"stopped");
 		else
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tType: %s\t-\tStatus: %s",nf->first.c_str(),(nf->first.length()<=7)? "\t" : "", str.c_str(),(nf->second->getRunning())?"running":"stopped");
+			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tID: '%s'\t-\tType: %s\t-\tStatus: %s",nf->second->getName().c_str(),(nf->first.length()<=7)? "\t" : "",nf->first.c_str(), str.c_str(),(nf->second->getRunning())?"running":"stopped");
 	}
 }
 

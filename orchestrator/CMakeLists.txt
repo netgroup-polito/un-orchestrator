@@ -35,9 +35,19 @@ IF(${LOGGING_LEVEL_INDEX} EQUAL 4)
 ENDIF()
 # End of the rather complicated CMake code for setting the logging level
 
+OPTION(
+	DETAILED_LOGS
+	"Turn on to have a detailed logs"
+	OFF
+)
+
+IF(DETAILED_LOGS)
+	ADD_DEFINITIONS(-DDETAILED_LOGS)
+ENDIF(DETAILED_LOGS)
+
 # Rather complicated CMake code for selecting the virtual switch implementation
-SET(VSWITCH_IMPLEMENTATION "OVS-OVSDB" CACHE STRING "vSwitch implementation: XDPD, OVS-OFCONFIG, OVS-DPDK, OVS-OVSDB, ERFS")
-SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD" "OVS-OFCONFIG" "OVS-DPDK" "OVS-OVSDB" "ERFS") #Add here other implementations
+SET(VSWITCH_IMPLEMENTATION "OVS-OVSDB" CACHE STRING "vSwitch implementation: XDPD, OVS-DPDK, OVS-OVSDB, ERFS")
+SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD" "OVS-DPDK" "OVS-OVSDB" "ERFS") #Add here other implementations
 SET_PROPERTY(CACHE VSWITCH_IMPLEMENTATION PROPERTY STRINGS ${VSWITCH_IMPLEMENTATION_VALUES})
 LIST(FIND VSWITCH_IMPLEMENTATION_VALUES ${VSWITCH_IMPLEMENTATION} VSWITCH_IMPLEMENTATION_INDEX)
 
@@ -48,17 +58,14 @@ IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 0)
 	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_XDPD)
 ENDIF()
 IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1)
-	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_OFCONFIG)
-ENDIF()
-IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2)
 	#OVS-DPDK uses the OVSDB plugin with some specific code needed by DPDK
 	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_OVSDB)
 	ADD_DEFINITIONS(-DENABLE_OVSDB_DPDK)
 ENDIF()
-IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 3)
+IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2)
 	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_OVSDB)
 ENDIF()
-IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 4)
+IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 3)
         ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_ERFS)
 ENDIF()
 
@@ -232,8 +239,6 @@ SET(SOURCES1
 	node_resource_manager/graph_manager/lsi.cc
 	node_resource_manager/graph_manager/virtual_link.h
 	node_resource_manager/graph_manager/virtual_link.cc
-	node_resource_manager/graph_manager/fileParser.h
-	node_resource_manager/graph_manager/fileParser.cc
 	node_resource_manager/graph_manager/switchPortsAssociation.h
 	node_resource_manager/graph_manager/switchPortsAssociation.cc
 
@@ -264,16 +269,18 @@ SET(SOURCES1
 	node_resource_manager/graph/high_level_graph/high_level_output_action_nf.cc
 	node_resource_manager/graph/high_level_graph/high_level_output_action_port.h
 	node_resource_manager/graph/high_level_graph/high_level_output_action_port.cc
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_gre.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_gre.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_internal.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_internal.cc
 	node_resource_manager/graph/high_level_graph/high_level_rule.h
 	node_resource_manager/graph/high_level_graph/high_level_rule.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface.h
-	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface_out.cc
-	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface_out.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_gre.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_gre.h
+	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_internal.cc
+	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_internal.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_vlan.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_vlan.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_vnf.cc
@@ -336,18 +343,7 @@ IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)
     )
 ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)
 
-IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
-    SET(SOURCES2
-    ${SOURCES1}
-	network_controller/switch_manager/plugins/ovs-ofconfig/commands.h
-	network_controller/switch_manager/plugins/ovs-ofconfig/commands.cc
-	network_controller/switch_manager/plugins/ovs-ofconfig/ofconfig_constants.h
-	network_controller/switch_manager/plugins/ovs-ofconfig/ofconfig_manager.h
-	network_controller/switch_manager/plugins/ovs-ofconfig/ofconfig_manager.cc
-    )
-ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
-
-IF((VSWITCH_IMPLEMENTATION_INDEX EQUAL 2) OR (VSWITCH_IMPLEMENTATION_INDEX EQUAL 3))
+IF((VSWITCH_IMPLEMENTATION_INDEX EQUAL 1) OR (VSWITCH_IMPLEMENTATION_INDEX EQUAL 2))
     SET(SOURCES2
     ${SOURCES1}
 	network_controller/switch_manager/plugins/ovs-ovsdb/commands.h
@@ -356,16 +352,16 @@ IF((VSWITCH_IMPLEMENTATION_INDEX EQUAL 2) OR (VSWITCH_IMPLEMENTATION_INDEX EQUAL
 	network_controller/switch_manager/plugins/ovs-ovsdb/ovsdb_manager.h
     network_controller/switch_manager/plugins/ovs-ovsdb/ovsdb_manager.cc
     )
-ENDIF((VSWITCH_IMPLEMENTATION_INDEX EQUAL 2) OR (VSWITCH_IMPLEMENTATION_INDEX EQUAL 3))
+ENDIF((VSWITCH_IMPLEMENTATION_INDEX EQUAL 1) OR (VSWITCH_IMPLEMENTATION_INDEX EQUAL 2))
 
-IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 4)
+IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 3)
     SET(SOURCES2
-    ${SOURCES}
+    ${SOURCES1}
 	network_controller/switch_manager/plugins/erfs/manager.h
 	network_controller/switch_manager/plugins/erfs/manager.cc
 	network_controller/switch_manager/plugins/erfs/constants.h
     )
-ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 4)
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 3)
 
 IF(ENABLE_KVM)
     SET(SOURCES3
@@ -472,7 +468,7 @@ LINK_DIRECTORIES(
 
 TARGET_LINK_LIBRARIES( node-orchestrator
 	libpthread.so
-	/usr/local/lib/librofl_common.so
+	librofl_common.so
 	libjson_spirit.so
 	libmicrohttpd.so
 	libboost_system.so
@@ -488,13 +484,6 @@ IF(ENABLE_DOUBLE_DECKER_CONNECTION)
 		libczmq.so
 	)
 ENDIF(ENABLE_DOUBLE_DECKER_CONNECTION)
-
-#Links specific for ovs
-IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
-	TARGET_LINK_LIBRARIES( node-orchestrator
-		libnetconf.so
-	)
-ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
 
 #Links specific for KVM
 IF(ENABLE_KVM)
@@ -538,15 +527,10 @@ IF(ENABLE_RESOURCE_MANAGER AND (NOT ENABLE_DOUBLE_DECKER_CONNECTION))
 	message(FATAL_ERROR "Resource manager requires to enable the double decker connection")
 ENDIF(ENABLE_RESOURCE_MANAGER AND (NOT ENABLE_DOUBLE_DECKER_CONNECTION))
 
-IF(ENABLE_DPDK_PROCESSES AND ( (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1) OR (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 3) ) )
-	#This configuration (ovs (ofconfig/ovsdb) + dpdk processes) is not supported
+IF(ENABLE_DPDK_PROCESSES AND ( ${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2) )
+	#This configuration (ovsdb + dpdk processes) is not supported
 	message(FATAL_ERROR "OvS not supported with Dpdk processes")
-ENDIF(ENABLE_DPDK_PROCESSES AND ( (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1) OR (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 3) ) )
-
-IF(ENABLE-DPDK-CMDLINE-GENERATOR AND (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1) )
-	#This configuration (ovs-ofconfig + kvm-ivshmem) is not supported
-	message(FATAL_ERROR "OVS-OFCONFIG not supported with KVM-IVSHMEM")
-ENDIF(ENABLE-DPDK-CMDLINE-GENERATOR AND (${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1) )
+ENDIF(ENABLE_DPDK_PROCESSES AND ( ${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2) )
 
 IF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) AND (NOT ENABLE_KVM) )
 	#No execution environment is selected

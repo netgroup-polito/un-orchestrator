@@ -141,10 +141,38 @@ bool SQLiteManager::resourceExists(const char *generic_resource, const char *res
 	return (count > 0);
 }
 
+bool SQLiteManager::usersExistForGroup(const char *group) {
+	assert(group != NULL);
+
+	sqlite3_stmt *stmt;
+	int rc = 0, res = 0, idx = 0, count = 0;
+	const char *sql = "select count(*) "	\
+						"from USERS "	\
+						"where MEMBERSHIP = @group;";
+
+	rc = sqlite3_prepare_v2(this->db, sql, -1, &stmt, 0);
+
+	if (rc == SQLITE_OK) {
+		idx = sqlite3_bind_parameter_index(stmt, "@group");
+		sqlite3_bind_text(stmt, idx, group, strlen(group), 0);
+
+		res = sqlite3_step(stmt);
+
+		if (res == SQLITE_ROW)
+			count = sqlite3_column_int(stmt, 0);
+	}
+
+	sqlite3_finalize(stmt);
+
+	return (count > 0);
+}
+
 bool SQLiteManager::cleanTables() {
 	int rc = 0;
-	char *zErrMsg = 0, *sql = "delete from LOGIN; "	\
-								"delete from CURRENT_RESOURCES_PERMISSIONS;";
+	char *zErrMsg = 0, *sql = "delete from LOGIN;" \
+								"delete from CURRENT_RESOURCES_PERMISSIONS where GENERIC_RESOURCE <> " \
+								"'groups' and GENERIC_RESOURCE <> 'users';";
+
 
 	rc = sqlite3_exec(this->db, sql, NULL, NULL, &zErrMsg);
 
@@ -157,6 +185,68 @@ bool SQLiteManager::cleanTables() {
 				"Tables (LOGIN, RESOURCES, PERMISSIONS) has been cleaned up.");
 
 	return true;
+}
+
+user_info_t *SQLiteManager::getLoggedUserByName(const char *username) {
+
+	int rc = 0, res = 0, idx = 0;
+	char *sql = "select u.USER, u.MEMBERSHIP, u.PWD, l.TOKEN  " \
+				"from USERS u, LOGIN l " \
+				"where u.USER = l.USER AND u.USER = @username;";
+
+	sqlite3_stmt *stmt;
+	user_info_t *usr = NULL;
+
+	rc = sqlite3_prepare_v2(this->db, sql, -1, &stmt, 0);
+
+	if (rc == SQLITE_OK) {
+		idx = sqlite3_bind_parameter_index(stmt, "@username");
+		sqlite3_bind_text(stmt, idx, username, strlen(username), 0);
+
+		res = sqlite3_step(stmt);
+
+		if (res == SQLITE_ROW) {
+			usr = (user_info_t *) malloc(sizeof(user_info_t));
+
+			usr->user = (char *) sqlite3_column_text(stmt, 0);
+			usr->group = (char *) sqlite3_column_text(stmt, 1);
+			usr->pwd = (char *) sqlite3_column_text(stmt, 2);
+			usr->token = (char *) sqlite3_column_text(stmt, 3);
+		}
+	}
+
+	return usr;
+}
+
+user_info_t *SQLiteManager::getUserByName(const char *username) {
+
+	int rc = 0, res = 0, idx = 0;
+	char *sql = "select USER, MEMBERSHIP, PWD " \
+				"from USERS " \
+				"where USER = @username;";
+
+	sqlite3_stmt *stmt;
+	user_info_t *usr = NULL;
+
+	rc = sqlite3_prepare_v2(this->db, sql, -1, &stmt, 0);
+
+	if (rc == SQLITE_OK) {
+		idx = sqlite3_bind_parameter_index(stmt, "@username");
+		sqlite3_bind_text(stmt, idx, username, strlen(username), 0);
+
+		res = sqlite3_step(stmt);
+
+		if (res == SQLITE_ROW) {
+			usr = (user_info_t *) malloc(sizeof(user_info_t));
+
+			usr->user = (char *) sqlite3_column_text(stmt, 0);
+			usr->group = (char *) sqlite3_column_text(stmt, 1);
+			usr->pwd = (char *) sqlite3_column_text(stmt, 2);
+			usr->token = (char *) sqlite3_column_text(stmt, 3);
+		}
+	}
+
+	return usr;
 }
 
 user_info_t *SQLiteManager::getUserByToken(const char *token) {
@@ -359,8 +449,6 @@ int SQLiteManager::insertUser(char *user, char *pwd, char *group) {
 
 	rc = sqlite3_prepare_v2(this->db, sql, -1, &stmt, 0);
 
-
-	std::cout<<"Insert user: "<<user<<" "<<pwd<<" "<<group<<std::endl;
 	if (rc == SQLITE_OK) {
 		idx = sqlite3_bind_parameter_index(stmt, "@user");
 		sqlite3_bind_text(stmt, idx, user, strlen(user), 0);
@@ -381,7 +469,8 @@ int SQLiteManager::insertUser(char *user, char *pwd, char *group) {
 
 int SQLiteManager::deleteUser(char *user) {
 	int rc = 0, res = 0, idx = 0;
-	char *sql = "delete from USERS where USER = @user;";
+	char *sql = "delete from USERS where USER = @user;" \
+			"delete from LOGIN where USER = @user2;";
 
 	sqlite3_stmt *stmt;
 
@@ -390,6 +479,36 @@ int SQLiteManager::deleteUser(char *user) {
 	if (rc == SQLITE_OK) {
 		idx = sqlite3_bind_parameter_index(stmt, "@user");
 		sqlite3_bind_text(stmt, idx, user, strlen(user), 0);
+
+		idx = sqlite3_bind_parameter_index(stmt, "@user2");
+		sqlite3_bind_text(stmt, idx, user, strlen(user), 0);
+
+		res = sqlite3_step(stmt);
+	}
+
+	sqlite3_finalize(stmt);
+
+	return res;
+}
+
+int SQLiteManager::deleteGroup(char *group) {
+	int rc = 0, res = 0, idx = 0;
+	char *sql =
+			// Now I can delete the entry related to the group
+			"delete from CURRENT_RESOURCES_PERMISSIONS " \
+			"where GENERIC_RESOURCE = @generic_resource " \
+			"and RESOURCE = @group;";
+
+	sqlite3_stmt *stmt;
+
+	rc = sqlite3_prepare_v2(this->db, sql, -1, &stmt, 0);
+
+	if (rc == SQLITE_OK) {
+		idx = sqlite3_bind_parameter_index(stmt, "@generic_resource");
+		sqlite3_bind_text(stmt, idx, BASE_URL_GROUP, strlen(BASE_URL_GROUP), 0);
+
+		idx = sqlite3_bind_parameter_index(stmt, "@group");
+		sqlite3_bind_text(stmt, idx, group, strlen(group), 0);
 
 		res = sqlite3_step(stmt);
 	}
@@ -589,4 +708,32 @@ void SQLiteManager::getAllowedResourcesNames(user_info_t *usr, opcode_t op, char
 		}
 	}
 }
+
+void SQLiteManager::getAllResourcesNames(char *generic_resource, std::list<std::string> *resources) {
+	sqlite3_stmt *stmt;
+	int res = 0, idx = 0, rc = 0;
+
+	char *query = "select RESOURCE " \
+			"from CURRENT_RESOURCES_PERMISSIONS " \
+	    	"where GENERIC_RESOURCE = @generic_resource;", *name = NULL;
+
+	rc = sqlite3_prepare_v2(this->db, query, -1, &stmt, 0);
+
+	if (rc == SQLITE_OK) {
+		idx = sqlite3_bind_parameter_index(stmt, "@generic_resource");
+		sqlite3_bind_text(stmt, idx, generic_resource, strlen(generic_resource), 0);
+
+		while (1) {
+			res = sqlite3_step(stmt);
+
+	        if (res == SQLITE_ROW) {
+	        	name = (char*) sqlite3_column_text(stmt, 0);
+	        	std::string str(name);
+	        	resources->push_back(str);
+	        } else if(res == SQLITE_DONE || res==SQLITE_ERROR)
+	        	break;
+		}
+	}
+}
+
 

@@ -76,6 +76,7 @@ p {
 .fl { float: left; }
 .fr { float: right; margin-right: 1.8em; clear: left;}
 .cb { clear: both; }
+.inline { display:inline-block;}
 
 h1, h2, h3, h4, h5, h6 { margin-bottom: 0.625em; }
 

@@ -16,14 +16,14 @@ class ActionNetworkFunction : public Action
 {
 private:
 	/**
-	*	@brief: the name of the NF (e.g., firewall)
+	*	@brief: the id of the NF (e.g., 0001)
 	*/
-	string nf;
+	string nfId;
 
 	/**
-	*	@brief: the name of the endpoint port (e.g., vnf:00000001:inout:0)
+	*	@brief: the name of the endpoint port (e.g., vnf:0001:inout:0)
 	*/
-	string nf_endpoint_port;
+	string endpointPortName;
 
 	/**
 	*	@brief: the port of the NF (e.g., 1)
@@ -32,14 +32,13 @@ private:
 
 public:
 
-	ActionNetworkFunction(string nf, string nf_endpoint_port, unsigned int port = 1);
+	ActionNetworkFunction(string nfId, string endpointPortName, unsigned int port = 1);
 	string getInfo();
 	unsigned int getPort();
 	string toString();
 
 	bool operator==(const ActionNetworkFunction &other) const;
 
-	void print();
 	Object toJSON();
 };
 

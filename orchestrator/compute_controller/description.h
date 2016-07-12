@@ -37,6 +37,7 @@ struct nf_port_info
 {
 	string port_name;
 	PortType port_type;
+	unsigned int port_id;
 };
 bool operator==(const nf_port_info& lhs, const nf_port_info& rhs);
 

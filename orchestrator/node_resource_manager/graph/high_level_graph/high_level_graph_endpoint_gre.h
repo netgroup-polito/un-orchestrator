@@ -43,11 +43,6 @@ private:
 	string remote_ip;
 
 	/**
-	*	@brief: the interface of the gre tunnel (e.g., 10.0.0.3)
-	*/
-	string interface;
-
-	/**
 	*	@brief: the key of the gre tunnel (e.g., 1)
 	*/
 	string gre_key;
@@ -64,21 +59,47 @@ private:
 
 public:
 
-	EndPointGre(string id, string name, string local_ip, string remote_ip, string interface, string gre_key, string ttl, bool is_safe);
+	EndPointGre(string id, string name, string local_ip, string remote_ip, string gre_key, string ttl, bool is_safe);
+
+	/**
+	*	@brief: return the ID of the endpoint
+	*/
 	string getId();
+
+	/**
+	*	@brief: return the name of the endpoint
+	*/
 	string getName();
+
+	/**
+	*	@brief: return the local IP of the endpoint
+	*/
 	string getLocalIp();
+
+	/**
+	*	@brief: return the remote IP of the endpoint
+	*/
 	string getRemoteIp();
-	string getInterface();
+
+	/**
+	*	@brief: return the key of the endpoint
+	*/
 	string getGreKey();
+
+	/**
+	*	@brief: return the TTL of the endpoint
+	*/
 	string getTtl();
+
+	/**
+	*	@brief: return true in case secure GRE is required for this endpoint
+	*/	
 	bool isSafe();
 
 	~EndPointGre();
 
 	bool operator==(const EndPointGre &other) const;
 
-	void print();
 	Object toJSON();
 };
 

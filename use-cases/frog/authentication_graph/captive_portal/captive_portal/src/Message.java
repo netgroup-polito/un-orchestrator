@@ -6,7 +6,9 @@ public class Message {
 	    Auth_OK,
 	    Auth_OK_Resp,
 	    Deploy_OK,
-	    Deploy_OK_Resp
+	    Deploy_OK_Resp,
+	    Delete_OK,
+	    Delete_OK_Resp
 	}
 	
 	public Message(MsgType msg_type, String msg_content) {
@@ -147,5 +149,43 @@ class AuthResponseMessage extends Message {
 	public void setUser_port(String user_port)
 	{
 		this.user_port=user_port;
+	}
+}
+
+class DeployResponseMessage extends Message {
+	public DeployResponseMessage(String msg_content) {
+		super(MsgType.Deploy_OK_Resp,msg_content);
+	}
+	
+	public DeployResponseMessage(JSONObject obj) {
+		
+		super(MsgType.Deploy_OK_Resp,(String) obj.get("Msg_Content"));
+	}
+	
+	public JSONObject getJSON()
+	{
+		JSONObject json = new JSONObject();
+		json.put("Msg_Type", this.getMsg_type());
+		json.put("Msg_Content", this.getMsg_content());
+		return json;
+	}
+}
+
+class DeleteResponseMessage extends Message {
+	public DeleteResponseMessage(String msg_content) {
+		super(MsgType.Delete_OK_Resp,msg_content);
+	}
+	
+	public DeleteResponseMessage(JSONObject obj) {
+		
+		super(MsgType.Delete_OK_Resp,(String) obj.get("Msg_Content"));
+	}
+	
+	public JSONObject getJSON()
+	{
+		JSONObject json = new JSONObject();
+		json.put("Msg_Type", this.getMsg_type());
+		json.put("Msg_Content", this.getMsg_content());
+		return json;
 	}
 }

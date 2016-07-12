@@ -3,23 +3,23 @@
 namespace highlevel
 {
 
-Rule::Rule(Match match, Action *action,string flowID, uint64_t priority) :
-	match(match), action(action), priority(priority), flowID(flowID)
+Rule::Rule(Match match, Action *action,string ruleID, uint64_t priority) :
+	match(match), action(action), priority(priority), ruleID(ruleID)
 {
 }
 
 bool Rule::operator==(const Rule &other) const
 {
-	if(flowID == other.flowID)
+	if(ruleID == other.ruleID)
 		//The two rules have the same ID
 		return true;
 
 	return false;
 }
 
-string Rule::getFlowID()
+string Rule::getRuleID()
 {
-	return flowID;
+	return ruleID;
 }
 
 uint64_t Rule::getPriority()
@@ -37,24 +37,12 @@ Action *Rule::getAction()
 	return action;
 }
 
-void Rule::print()
-{
-	if(LOGGING_LEVEL <= ORCH_DEBUG_INFO)
-	{
-		cout << "\trule " << flowID << ": " << endl << "\t{" << endl;
-		cout << "\t\tpriority : " << priority << endl;
-		match.print();
-		action->print();
-		cout << "\t}" << endl;
-	}
-}
-
 Object Rule::toJSON()
 {
 	Object rule;
 	Array actions;
 
-	rule[_ID] = flowID.c_str();
+	rule[_ID] = ruleID.c_str();
 	rule[PRIORITY] = priority;
 	rule[MATCH] = match.toJSON();
 	actions.push_back(action->toJSON());

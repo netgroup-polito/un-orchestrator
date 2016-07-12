@@ -61,7 +61,7 @@
 				<!--
 					The "type" must refer to the type of a "supported_NF"
 				-->
-				<node>
+				<node operation="create">
 					<id>NFa</id>
 					<name>The example</name>
 					<type>example</type>
@@ -70,19 +70,17 @@
 							<id>1</id>
 							<name>internal port</name>
 							<port-type>port-abstract</port-type>
-							<capability/>
 						</port>
 						<port>
 							<id>2</id>
 							<name>external port</name>
 							<port-type>port-abstract</port-type>
-							<capability/>
 						</port>
 					</ports>
 				</node>
 			</NF_instances>
 			<flowtable>
-				<flowentry>
+				<flowentry operation="create">
 					<id>1</id>
 					<priority>100</priority>
 					<port>../../../ports/port[id=1]</port>
@@ -90,7 +88,7 @@
 					<action/>
 					<out>../../../NF_instances/node[id=NFa]/ports/port[id=1]</out>
 				</flowentry>
-				<flowentry>
+				<flowentry operation="create">
 					<id>2</id>
 					<priority>100</priority>
 					<port>../../../NF_instances/node[id=NFa]/ports/port[id=2]</port>
@@ -98,7 +96,7 @@
 					<action/>
 					<out>../../../ports/port[id=2]</out>
 				</flowentry>
-				<flowentry>
+				<flowentry operation="create">
 					<id>3</id>
 					<priority>100</priority>
 					<port>../../../ports/port[id=2]</port>
@@ -106,7 +104,7 @@
 					<action/>
 					<out>../../../NF_instances/node[id=NFa]/ports/port[id=2]</out>
 				</flowentry>
-				<flowentry>
+				<flowentry operation="create">
 					<id>4</id>
 					<priority>100</priority>
 					<port>../../../NF_instances/node[id=NFa]/ports/port[id=1]</port>

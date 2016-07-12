@@ -9,6 +9,14 @@
     <url-pattern>/Login</url-pattern>
   </servlet-mapping>
   <servlet>
+    <servlet-name>Logout</servlet-name>
+    <servlet-class>Logout</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Logout</servlet-name>
+    <url-pattern>/Logout</url-pattern>
+  </servlet-mapping>
+  <servlet>
     <servlet-name>Index</servlet-name>
     <jsp-file>/index.jsp</jsp-file>
   </servlet>

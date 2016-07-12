@@ -38,35 +38,22 @@ private:
 	string vlan_id;
 
 	/**
-	*	@brief: the id of the port (e.g., 10.0.0.1)
-	*/
-	string node_id;
-
-	/**
-	*	@brief: the switch id of the port (e.g., 1)
-	*/
-	string sw_id;
-
-	/**
 	*	@brief: the interface of the port (e.g., eth0)
 	*/
 	string interface;
 
 public:
 
-	EndPointVlan(string id, string name, string vlan_id, string node_id, string sw_id, string interface);
+	EndPointVlan(string id, string name, string vlan_id, string interface);
 	string getId();
 	string getName();
 	string getVlanId();
-	string getNodeId();
-	string getSwId();
 	string getInterface();
 
 	~EndPointVlan();
 
 	bool operator==(const EndPointVlan &other) const;
 
-	void print();
 	Object toJSON();
 };
 

@@ -4,6 +4,8 @@
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
 
+#include "nf_port_configuration.h"
+
 #include <iostream>
 #include <sstream>
 
@@ -19,6 +21,24 @@ using namespace std;
 
 namespace highlevel
 {
+
+/**
+*	This structure represents a VNF port as described in the NF-FG
+*
+*	{
+*		"id": "inout:0",
+*		"name": "data-port"
+*		"mac": "aa:bb:cc:dd:ee:ff",
+*		"unify-ip": "192.168.0.1"
+*	}
+*
+**/
+typedef struct
+{
+	string id;
+	string name;
+	port_network_config_t configuration;
+}vnf_port_t;
 
 class VNFs
 {
@@ -44,15 +64,15 @@ private:
 	string vnf_template;
 
 	/**
-	*	@brief: the list of ports configuration of the VNF
+	*	@brief: the list of ports  of the VNF
 	*/
-	list<vector<string> > ports;
+	list<vnf_port_t> ports;
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	/**
 	*	@brief: the list of control ports configuration of the VNF
 	*/
-	list<pair<string, string> > control_ports;
+	list<port_mapping_t> control_ports;
 
 	/**
 	*	@brief: list of environment variables to be set to the VNF.
@@ -61,25 +81,74 @@ private:
 	list<string> environment_variables;
 #endif
 
+	/**
+	*	@brief: starting from the ID of a VNF port, return its index (i.e., the
+	*			number of at the end of the ID)
+	*/
+	unsigned int extract_number_from_id(string port_id);
+
+	/**
+	*	@brief: this variable is used during the graph update, and indicates if the VNF has been
+	*			changed as a consequence of the update
+	*/
+	bool updated;
+
 public:
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-	VNFs(string id, string name, list<string> groups, string vnf_template, list<vector<string> > ports, list<pair<string, string> > control_ports, list<string> environment_variables);
+	VNFs(string id, string name, list<string> groups, string vnf_template, list<vnf_port_t> ports, list<port_mapping_t> control_ports, list<string> environment_variables);
 #else
-	VNFs(string id, string name, list<string> groups, string vnf_template, list<vector<string> > ports);
+	VNFs(string id, string name, list<string> groups, string vnf_template, list<vnf_port_t> ports);
 #endif
+
+	/**
+	*	@brief: add a new port to the network function
+	*/
+	bool addPort(vnf_port_t port);
 
 	string getId();
 	string getName();
 	list<string> getGroups();
 	string getVnfTemplate();
-	list<vector<string> > getPorts();
+
+	/*
+	*	@brief: return the list of ports of the VNF
+	*/
+	list<vnf_port_t> getPorts();
+
+	/*
+	*	@brief: only return the list of port ID of the VNF
+	*/
+	list<unsigned int> getPortsId();
+
+	/*
+	*	@brief: return a mapping of port ID - port configuration, for all the
+	*			ports of the VNF
+	*/
+	map<unsigned int, port_network_config > getPortsID_configuration();
+
+#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
+	/*
+	*	@brief: return the list of control connections associated with the VNF
+	*/
+	list<port_mapping_t> getControlPorts();
+
+	/*
+	*	@brief: return the list of environment variables associated with the VNF
+	*/
+	list<string> getEnvironmentVariables();
+#endif
 
 	~VNFs();
 
+	/**
+	*	Check if two VNFs are the same. Note that they are the same if they have the same name.
+	**/
 	bool operator==(const VNFs &other) const;
 
-	void print();
+	/**
+	*	Create the json representing the VNF, according to the NF-FG formalism
+	**/
 	Object toJSON();
 };
 

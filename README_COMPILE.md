@@ -1,8 +1,18 @@
 # How to compile the Universal Node
 
+## Automatic set up
+
+It is possible to set up the Universal Node (UN) in two ways:
+
+  * by compiling each component by hand; this allows to have the complete control on the UN set up.
+    If you are interested in this way of setting up the UN, please continue to read this document;
+  * using an `ansible` script that automatically compiles and install all the components required
+    by the UN. This method allow less customization with respect to the manual set up. If you are
+    interested in this way of setting up the UN, please refer to [./utils/README_SET_UP.md](./utils/README_SET_UP.md).
+
 ## Required libraries
 
-Several libraries are required to compile the Universal Node (UN).
+Several libraries are required to compile the Universal Node.
 In the following we list the steps required on an **Ubuntu 14.04**.
 
 	; Install required libraries

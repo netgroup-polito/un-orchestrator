@@ -3,6 +3,8 @@
 
 #pragma once
 
+#define __STDC_FORMAT_MACROS
+
 #include <string>
 #include <map>
 #include <inttypes.h>
@@ -31,9 +33,9 @@ private:
 	uint64_t lsiID;
 
 	/**
-	*	@brief: name of the network function
+	*	@brief: id of the network function
 	*/
-	string nf_name;
+	string nf_id;
 
 	/**
 	*	@brief: mapping of port_id to name of port on the vSwitch for ports associated with the network function
@@ -64,12 +66,12 @@ private:
 	uint64_t coreMask;
 
 protected:
-	StartNFIn(uint64_t lsiID, string nf_name, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration,
+	StartNFIn(uint64_t lsiID, string nf_id, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration,
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	list<port_mapping_t > controlPorts, list<string> environmentVariables,
 #endif
 		uint64_t coreMask = 0x0)
-			: lsiID(lsiID), nf_name(nf_name), namesOfPortsOnTheSwitch(namesOfPortsOnTheSwitch), portsConfiguration(portsConfiguration),
+			: lsiID(lsiID), nf_id(nf_id), namesOfPortsOnTheSwitch(namesOfPortsOnTheSwitch), portsConfiguration(portsConfiguration),
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 			controlPorts(controlPorts), environmentVariables(environmentVariables),
 #endif
@@ -84,9 +86,9 @@ public:
 		return lsiID;
 	}
 
-	string getNfName() const
+	string getNfId() const
 	{
-		return nf_name;
+		return nf_id;
 	}
 
 	const map<unsigned int, string>& getNamesOfPortsOnTheSwitch() const

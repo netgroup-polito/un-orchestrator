@@ -2,14 +2,14 @@
 
 string MatchParser::graphID(string name_port)
 {
-	return nfName(name_port);
+	return nfId(name_port);
 }
 
-string MatchParser::nfName(string name_port)
+string MatchParser::nfId(string id_port)
 {
 	char delimiter[] = ":";
 	char tmp[BUFFER_SIZE];
-	strcpy(tmp,name_port.c_str());
+	strcpy(tmp,id_port.c_str());
 	char *pnt=strtok(tmp, delimiter);
 	while( pnt!= NULL )
 	{
@@ -24,7 +24,7 @@ unsigned int MatchParser::nfPort(string name_port)
 	char delimiter[] = ":";
 	char tmp[BUFFER_SIZE];
 	strcpy(tmp,name_port.c_str());
-	char *pnt=strtok((char*)name_port.c_str(), delimiter);
+	char *pnt=strtok((char*)/*name_port.c_str()*/tmp, delimiter);
 	unsigned int port = 0;
 
 	int i = 0;
@@ -50,7 +50,7 @@ bool MatchParser::nfIsPort(string name_port)
 	char delimiter[] = ":";
 	char tmp[BUFFER_SIZE];
 	strcpy(tmp,name_port.c_str());
-	char *pnt=strtok((char*)name_port.c_str(), delimiter);
+	char *pnt=strtok((char*)/*name_port.c_str()*/tmp, delimiter);
 	unsigned int port = 0;
 
 	int i = 0;
@@ -76,7 +76,7 @@ string MatchParser::epName(string name_port)
 	char delimiter[] = ":";
 	char tmp[BUFFER_SIZE];
 	strcpy(tmp,name_port.c_str());
-	char *pnt=strtok((char*)name_port.c_str(), delimiter);
+	char *pnt=strtok((char*)/*name_port.c_str()*/tmp, delimiter);
 
 	int i = 0;
 	while( pnt!= NULL )
@@ -170,12 +170,12 @@ bool MatchParser::validateIpv4Netmask(const string &netmask)
 	return true;
 }
 
-bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, map<string,set<unsigned int> > &nfs, map<string,string > &nfs_id, map<string,string > &iface_id, map<string,string > &iface_out_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, highlevel::Graph &graph)
+bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, highlevel::Graph &graph)
 {
 	bool foundOne = false;
 	bool foundEndPointID = false, foundProtocolField = false, definedInCurrentGraph = false;
 	bool is_tcp = false;
-	enum port_type { VNF_PORT_TYPE, EP_PORT_TYPE };
+	enum port_type { VNF_PORT_TYPE, EP_PORT_TYPE, EP_INTERNAL_TYPE };
 
 	for(Object::const_iterator i = object.begin(); i != object.end(); i++)
 	{
@@ -193,11 +193,13 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 
 			foundOne = true;
 
+			string internal_group;
 			string port_in_name = value.getString();
 			string realName;
 			string v_id;
+			string graph_id;
 			const char *port_in_name_tmp = port_in_name.c_str();
-			char vnf_name_tmp[BUFFER_SIZE];
+			char vnf_id_tmp[BUFFER_SIZE];
 
 			//Check the name of port
 			char delimiter[] = ":";
@@ -221,7 +223,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 							p_type = VNF_PORT_TYPE;
 							match.setNFEndpointPort(port_in_name_tmp);
 						}
-						//end-points port type
+						//end-point port type
 						else if(strcmp(pnt,ENDPOINT) == 0){
 							p_type = EP_PORT_TYPE;
 							match.setInputEndpoint(port_in_name_tmp);
@@ -230,14 +232,14 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 					case 1:
 						if(p_type == VNF_PORT_TYPE)
 						{
-							strcpy(vnf_name_tmp,nfs_id[pnt].c_str());
-							strcat(vnf_name_tmp,":");
+							strcpy(vnf_id_tmp,pnt);
+							strcat(vnf_id_tmp,":");
 						}
 						break;
 					case 3:
 						if(p_type == VNF_PORT_TYPE)
 						{
-							strcat(vnf_name_tmp,pnt);
+							strcat(vnf_id_tmp,pnt);
 						}
 				}
 
@@ -248,10 +250,10 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			//VNFs port type
 			if(p_type == VNF_PORT_TYPE)
 			{
-				//convert char *vnf_name_tmp to string vnf_name
-				string vnf_name(vnf_name_tmp, strlen(vnf_name_tmp));
+				//convert char *vnf_id_tmp to string vnf_name
+				string vnf_name(vnf_id_tmp, strlen(vnf_id_tmp));
 
-				string nf_name = nfName(vnf_name);
+				string nf_name = nfId(vnf_name);
 				char *tmp_vnf_name = new char[BUFFER_SIZE];
 				strcpy(tmp_vnf_name, (char *)vnf_name.c_str());
 				unsigned int port = nfPort(string(tmp_vnf_name));
@@ -259,30 +261,25 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 
 				if(nf_name == "" || !is_port)
 				{
-					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Network function \"%s\" is not valid. It must be in the form \"name:port\"",vnf_name_tmp);
+					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Network function \"%s\" is not valid. It must be in the form \"name:port\"",vnf_id_tmp);
 					return false;
 				}
-				/*nf port starts from 0*/
+				/*nf port starts from 0 - here we want that the ID starts from 1*/
 				port++;
 
 				match.setNFport(nf_name,port);
 
-				set<unsigned int> ports;
-				if(nfs.count(nf_name) != 0)
-					ports = nfs[nf_name];
-				ports.insert(port);
-				nfs[nf_name] = ports;
 			}
 			//end-points port type
 			else if(p_type == EP_PORT_TYPE)
 			{
-				bool iface_found = false, vlan_found = false, gre_found=false;
+				bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false;
 				char *s_value = new char[BUFFER_SIZE];
 				strcpy(s_value, (char *)value.getString().c_str());
 				string eP = epName(value.getString());
 				if(eP != ""){
 					map<string,string>::iterator it = iface_id.find(eP);
-					map<string,string>::iterator it1 = iface_out_id.find(eP);
+					map<string,string>::iterator it1 = internal_id.find(eP);
 					map<string,pair<string,string> >::iterator it2 = vlan_id.find(eP);
 					map<string,string>::iterator it3 = gre_id.find(eP);
 					if(it != iface_id.end())
@@ -291,11 +288,11 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 						realName.assign(iface_id[eP]);
 						iface_found = true;
 					}
-					else if(it1 != iface_out_id.end())
+					else if(it1 != internal_id.end())
 					{
-						//physical port
-						realName.assign(iface_out_id[eP]);
-						iface_found = true;
+						//internal
+						internal_group.assign(internal_id[eP]);
+						internal_found = true;
 					}
 					else if(it2 != vlan_id.end())
 					{
@@ -313,7 +310,17 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 				if(iface_found)
 				{
 					match.setInputPort(realName);
-					graph.addPort(realName);
+				}
+				else if(internal_found)
+				{
+					//unsigned int endPoint = epPort(string(endpoint_internal));
+					if(/*endPoint == 0*/internal_group == "")
+					{
+						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Internal endpoint \"%s\" is not valid. It must have the \"%s\" attribute",value.getString().c_str(), INTERNAL_GROUP);
+						return false;
+					}
+
+					match.setEndPointInternal(/*graph_id,endPoint*/internal_group);
 				}
 				/*vlan endpoint*/
 				else if(vlan_found)
@@ -326,12 +333,12 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",VLAN_ID,value.getString().c_str());
 						return false;
 					}
+
 					/*add match on "vlan_id"*/
 					match.setEndpointVlanID(vlanID & 0xFFFF);
 
 					/*add match on "port_in"*/
 					match.setInputPort(vlan_id[eP].second);
-					graph.addPort(vlan_id[eP].second);
 
 					/*add "pop_vlan" action*/
 					GenericAction *ga = new VlanAction(actionType,string(""),vlanID);
@@ -340,16 +347,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 				/*gre-tunnel endpoint*/
 				else if(gre_found)
 				{
-					unsigned int endPoint = epPort(string(s_value));
-					if(endPoint == 0)
-					{
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph end point \"%s\" is not valid. It must be in the form \"endpoint:id\"",value.getString().c_str());
-						return false;
-					}
-					match.setEndPoint(endPoint);
-
-					stringstream ss;
-					ss << match.getEndPoint();
+					match.setEndPointGre(eP);
 				}
 			}
 		}
@@ -774,7 +772,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,IPv6_FLABEL,value.getString().c_str());
 			uint64_t ipv6FLabel;
-			if((sscanf(value.getString().c_str(),"%"SCNd64,&ipv6FLabel) != 1) || (ipv6FLabel > 4294967295) )
+			if((sscanf(value.getString().c_str(),"%"SCNd64,&ipv6FLabel) != 1) || (ipv6FLabel > 4294967295UL) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",ARP_OPCODE,value.getString().c_str());
 				return false;

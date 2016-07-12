@@ -27,8 +27,13 @@ class Action
 
 private:
 	openflow::ofp_action_type type;
-	uint32_t port_id;
+	unsigned int port_id;
 	bool is_local_port;
+	
+	/**
+	*	@brief: it is true if the output port is defined by MAC learning
+	*/
+	bool is_normal;
 
 	/**
 	*	The outuput action contains a list of generic actions!
@@ -38,8 +43,9 @@ private:
 	list<GenericAction*> genericActions;
 
 public:
-	Action(uint32_t port_id);
+	Action(unsigned int port_id);
 	Action(bool is_local_port);
+	Action(bool is_local_port, bool is_normal);
 	openflow::ofp_action_type getActionType();
 
 	bool operator==(const Action &other) const;

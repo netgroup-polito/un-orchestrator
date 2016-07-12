@@ -3,6 +3,7 @@
 
 #pragma once
 
+#define __STDC_FORMAT_MACROS
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -72,6 +73,8 @@ public:
 #ifdef ENABLE_DIRECT_VM2VM
 	bool sendCommand(uint64_t lsiID, string name, string command, string & response);
 #endif
+
+	bool updateNF(UpdateNFIn uni);
 };
 
 #endif //LIBVIRT_H_

@@ -65,8 +65,8 @@ private:
 	*	@brief: the following methods are used to interact with xDPd
 	*/
 
-	string prepareCreateLSIrequest(CreateLsiIn cli);
-	CreateLsiOut *parseCreateLSIresponse(CreateLsiIn cli, Object message);
+	string prepareCreateLSIrequest(CreateLsiIn cli, map<string,unsigned int> &port_name_id_in_graph);
+	CreateLsiOut *parseCreateLSIresponse(CreateLsiIn cli, Object message, map<string,unsigned int> port_name_id_in_graph);
 
 	string prepareDestroyLSIrequest(uint64_t dpid);
 	void parseDestroyLSIresponse(Object message);
@@ -78,7 +78,7 @@ private:
 	void parseDestroyVirtualLinkResponse(Object message);
 
 	string prepareCreateNFPortsRequest(AddNFportsIn anpi);
-	AddNFportsOut *parseCreateNFPortsResponse(AddNFportsIn anpi, Object message);
+	AddNFportsOut *parseCreateNFPortsResponse(AddNFportsIn anpi, Object message, map<string, unsigned int> port_name_id_in_graph);
 
 	string prepareDestroyNFPortsRequest(DestroyNFportsIn dnpi);
 	void parseDestroyNFPortsResponse(Object message);

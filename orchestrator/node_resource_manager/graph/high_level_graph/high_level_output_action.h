@@ -21,7 +21,7 @@ using namespace std;
 namespace highlevel
 {
 
-enum action_t {INVALID,ACTION_ON_PORT,ACTION_ON_NETWORK_FUNCTION,ACTION_ON_ENDPOINT};
+enum action_t {INVALID,ACTION_ON_PORT,ACTION_ON_NETWORK_FUNCTION,ACTION_ON_ENDPOINT_GRE,ACTION_ON_ENDPOINT_INTERNAL};
 
 class Action
 {
@@ -33,7 +33,6 @@ public:
 	action_t getType();
 	virtual string getInfo() = 0;
 
-	virtual void print() = 0;
 	virtual Object toJSON() = 0;
 	virtual string toString() = 0;
 

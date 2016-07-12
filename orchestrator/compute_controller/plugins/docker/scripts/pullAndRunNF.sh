@@ -144,7 +144,7 @@ do
  		ip netns exec $PID ifconfig eth$c ${!current_ip}
  	fi
 	
-	ip netns exec $PID ifconfig eth$c
+#	ip netns exec $PID ifconfig eth$c
 	
 	current=`expr $current + 3`
 	current_mac=`expr $current_mac + 3`

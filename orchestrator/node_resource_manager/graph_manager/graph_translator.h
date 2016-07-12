@@ -7,6 +7,7 @@
 
 #include "graph_manager.h"
 #include "../graph/high_level_graph/high_level_graph.h"
+#include "../graph/high_level_graph/high_level_output_action_endpoint_internal.h"
 
 class GraphTranslator
 {
@@ -17,23 +18,17 @@ friend class GraphManager;
 	*	the graph into lowlevel descriptions to be provided (as flowmod messages) respectively to the
 	*	LSI-0 and to the tenant-LSI
 	*/
-
 protected:
 
 	/**
-	*	If the match is expressed on an endpoint, the action must be expressed on a NF
-	*	If the action is expressed on an endpoint, the match must be expressed on a NF
-	*/
-
-	/**
+	*	//TODO: update the documentation
 	*	@brief: translate an high level graph into a rules to be sent to
 	*		the LSI-0
 	*
 	*	@param: graph						High level graph to be translated
 	*	@param: tenantLSI					Information related to the LSI of the tenant
 	*	@param: lsi0						Information related to the LSI-0
-	*	@param: availableEndPoints			Indicates the number of time each available endpoint is used
-	*										by graphs not defining the endpoint itself
+	*										in the LSI-0 to be used to send packets on that endpoint
 	*	@param: creating					Indicates if the translation is needed to create or to detroy
 	*										a graph
 	*
@@ -55,12 +50,35 @@ protected:
 	*			phyPort is translated into it port ID on LSI-0.
 	*		NF -> NF:
 	*			This rule does not appear in LSI-0.
-	*		NF -> endpoint:
+	*		NF -> endpoint internal (the endpoint is in the action part of the rule):
+	*			* endpoint defined in the current graph: no rule inserted in LSI-0
+	*			* endpoint defined into another graph: the endpoint must be defined
+	*				into a match of the other graph.
+	*				The entire match is replated with a match on the LSI-0 side of the
+	*				virtual link that "represents the endpoint" in the LSI-0. The action
+	*				is replaced with the identifier of the port stored in endPointsDefinedInMatches
+	*				and associated with the endpoint itself.
+	*				Example: the current graph defines the rule:
+	*					match: NFa:2 - action: ep
+	*				while another graph defined the rule
+	*					match: ep - action NFa:1
+	*				The rule in the current graph will has, as a match, the LSI-0 part of
+	*				the virtual link corresponding to ep, while, as an action, the content
+	*				of endPointsDefinedInMatches[ep]
+	*		endpoint internal -> NF (the endpoint is the match part of the rule):
+	*			* endpoint defined in the current graph: no rule inserted in LSI-0
+	*			* endpoint defined into another graph: the endpoint must be defined into
+	*				an action of the other graph.
+	*				The endpoint is translated into the id saved in endPointsDefinedInActions
+	*				and associated with the endpoint itself, while he NF is translated into
+	*				the LSI-0 side virtual link that "represents the NF" in LSI-0.
+	*				The other parameters expressed into the match are not changed
+	*		NF -> endpoint gre:
 	*			This rule does not appear in LSI-0
-	*		endpoint -> NF:
+	*		endpoint gre -> NF:
 	*			This rule does not appear in LSI-0
 	*/
-	static lowlevel::Graph lowerGraphToLSI0(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0, map<string, unsigned int > &availableEndPoints, bool orchestrator_in_band = true, bool creating = true);
+	static lowlevel::Graph lowerGraphToLSI0(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0, map<string, map <string, unsigned int> > internalLSIsConnections, bool creating = true);
 
 	/**
 	*	@brief: translate an high level graph into a rules to be sent to
@@ -77,7 +95,11 @@ protected:
 	*			The entire match is replaced with a match on the tenant-LSI
 	*			side of the virtual link that represents the NF on LSI-0.
 	*			NF is translated into the port ID on tenant-LSI.
-	*		endpoint -> NF:
+	*		endpoint internal -> NF:
+	*			The entire match is replaced with a match on the tenant-LSI
+	*			side of the virtual link that represents the NF on LSI-0.
+	*			NF is translated into the port ID on tenant-LSI.
+	*		endpoint gre -> NF:
 	*			endpoint and NF is translated into the port ID on tenant-LSI.
 	*		NF -> phyPort:
 	*			NF is translated into the port ID on tenant-LSI, while phyPort
@@ -88,7 +110,11 @@ protected:
 	*			Each NF is translated into its port ID on tenant-LSI.
 	*			The other parameters expressed in the match are not
 	*			changed.
-	*		NF -> endpoint:
+	*		NF -> endpoint internal:
+	*			NF is translated into the port ID on tenant-LSI, while endpoint
+	*			is translated into the tenant side virtual link that "represents
+	*			the endpoint" in the tenant LSI.
+	*		NF -> endpoint gre:
 	*			endpoint and NF is translated into the port ID on tenant-LSI.
 	*/
 	static lowlevel::Graph lowerGraphToTenantLSI(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0);
@@ -103,9 +129,13 @@ protected:
 	*			The generic actions are inserted in the tenant LSI
 	*		NF -> phyPort:
 	*			The generic actions are inserted in the tenant LSI
-	*		NF -> endpoint:
+	*		NF -> endpoint internal:
 	*			The generic actions are inserted in the tenant LSI
-	*		endpoint -> NF:
+	*		endpoint internal -> NF:
+	*			The generic actions are inserted in the LSI-0
+	*		NF -> endpoint gre:
+	*			The generic actions are inserted in the tenant LSI
+	*		endpoint gre -> NF:
 	*			The generic actions are inserted in the tenant LSI
 	*/
 };

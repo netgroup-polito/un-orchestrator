@@ -9,7 +9,7 @@
 #include <sstream>
 
 #include "high_level_graph_endpoint_interface.h"
-#include "high_level_graph_endpoint_interface_out.h"
+#include "high_level_graph_endpoint_internal.h"
 #include "high_level_graph_endpoint_gre.h"
 #include "high_level_graph_endpoint_vlan.h"
 #include "high_level_graph_vnf.h"
@@ -38,56 +38,14 @@ namespace highlevel
 */
 class Graph
 {
-public:
-	typedef map<string, list<unsigned int> > t_nfs_ports_list;
-	typedef map<string, map<unsigned int, port_network_config_t > > t_nfs_configuration;
-
-#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-	typedef map<string, list<port_mapping_t > > t_nfs_control;
-	typedef map<string, list<string> > t_nfs_env_variables;
-#endif
-
 private:
-	//FIXME: this class contains a lot of information already specified in the class VNFs.
 
+	//FIXME: what is this?
 	/**
-	*	@brief: for each NF attached to the graph specifies a list of ports. For
-	*		instance, if in the graph there is NF:1 and NF:2,
-	*		an element of the map is <NF, <1,2> >
+	*	@brief: for each end point of the graph, the following structure specifies if that end
+	*		point is defined in this graph or not
 	*/
-	t_nfs_ports_list networkFunctions;
-
-	/**
-	*	@brief: for each NF attached to the graph specifies a list of pair elements
-	* 		(mac address, ip address), one for each port
-	*/
-	t_nfs_configuration networkFunctionsConfiguration;
-
-#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-	/**
-	*	@brief: for each VNF attached to the graph, specifies a list of pair elements
-	* 		(host TCP port, VNF TCP port), which are the control connections for the VNF
-	*/
-	t_nfs_control networkFunctionsControlPorts;
-
-	/**
-	*	@brief: for each VNF attached to the graph, specifies a list of environment variables
-	*		to be set to the VNF itself. Each element of the list is in the form "variable=value"
-	*
-	*/
-	t_nfs_env_variables networkFunctionsEnvironmentVariables;
-#endif
-
-	/**
-	*	@brief: for each endpoint attached to the graph specifies a list of params
-	* 		(gre key, local ip, remote ip)
-	*/
-	map<string, vector<string> > endpoints;
-
-	/**
-	*	@brief: physical ports to be attached to the graph
-	*/
-	set<string> ports;
+	map<string, bool > endpoints;
 
 	/**
 	*	@brief: List of rules describing the graph
@@ -95,22 +53,22 @@ private:
 	list<Rule> rules;
 
 	/**
-	*	@brief: List of endPointsInterface describing the graph
+	*	@brief: List of "interface" endpoints
 	*/
 	list<EndPointInterface> endPointsInterface;
 
 	/**
-	*	@brief: List of endPointsInterfaceOut describing the graph
+	*	@brief: List of "internal" endpoints
 	*/
-	list<EndPointInterfaceOut> endPointsInterfaceOut;
+	list<EndPointInternal> endPointsInternal;
 
 	/**
-	*	@brief: List of endPointsGRE describing the graph
+	*	@brief: List of "GRE" endpoints
 	*/
 	list<EndPointGre> endPointsGre;
 
 	/**
-	*	@brief: List of endPointsVlan describing the graph
+	*	@brief: List of "vlan" endpoints
 	*/
 	list<EndPointVlan> endPointsVlan;
 
@@ -128,6 +86,24 @@ private:
 	*	@brief: Name of the graph
 	*/
 	string name;
+	
+	/**
+	*	@brief: Given a graph, returns the rules present in such a graph with respect to the rules
+	*			of the graph on which the method is called
+	*
+	*	@param: other	Graph from which the new rules must be extracted
+	*/
+	list<Rule> calculateDiffRules(Graph *other);
+
+	/**
+	*	@brief: Check if an endpoint interface is still used in the graph.
+	*/
+	bool stillUsedEndpointInterface(EndPointInterface endpoint);
+	
+		/**
+	*	@brief: Check if a VNF is still used in the graph.
+	*/
+	bool stillUsedVNF(VNFs vnf);
 
 public:
 
@@ -137,100 +113,6 @@ public:
 	*	@param: ID	identifier of the graph
 	*/
 	Graph(string ID);
-
-	/**
-	*	@brief: Add a physical port to the graph
-	*
-	*	@param: port	Name of the physical port to be added
-	*/
-	bool addPort(string port);
-
-	/**
-	*	@brief: Return the physical ports of the graph
-	*/
-	set<string> getPorts();
-
-	/**
-	*	@brief: Add a NF to the graph
-	*
-	*	@param:	nf	Name of the network function to be added
-	*/
-	bool addNetworkFunction(string nf);
-
-	/**
-	*	@brief: Add a NF port description to the graph
-	*
-	*	@param:	nf	Name of the network function to be added
-	*	@param: description a pair of value <mac address, ip address>
-	*/
-	//FIXME: is the return value useful?
-	bool addNetworkFunctionPortConfiguration(string nf, map<unsigned int, port_network_config_t > description);
-
-#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-	/**
-	*	@brief: Add a VNF control port to the graph
-	*
-	*	@param:	nf	Name of the network function to be added
-	*	@param: control_port. It is a pair of value <vnf_tcp_port, host_tcp_port>
-	*/
-	void addNetworkFunctionControlPort(string nf, port_mapping_t control_port);
-
-	/**
-	*	@brief: Add an environment variable for a specific VNF
-	*
-	*	@param:	nf	Name of the network function to be added
-	*	@param: env_vairiable. Environment variable in the for "variable=value"
-	*/
-	void addNetworkFunctionEnvironmentVariable(string nf, string env_variable);
-#endif
-
-	/**
-	*	@brief: Update a NF by adding a port
-	*	//FIXME: is this useful?
-	*
-	*	@param: nf		Name of the network function to be updated
-	*	@param: port	Identifier of the port of the network function
-	*/
-	bool updateNetworkFunction(string nf, unsigned port);
-
-	/**
-	*	@brief: Return the NFs of the graph and the ports they require
-	*/
-	t_nfs_ports_list getNetworkFunctions();
-
-	/**
-	*	@brief: Return the VNFs of the graph and the description of the ports they require
-	*/
-	t_nfs_configuration getNetworkFunctionsConfiguration();
-
-#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-	/**
-	*	@brief: Return the VNFs of the graph and the control ports they require
-	*/
-	t_nfs_control getNetworkFunctionsControlPorts();
-
-	/**
-	*	@brief: Return the VNFs of the graph and the environment variables they require
-	*/
-	t_nfs_env_variables getNetworkFunctionsEnvironmentVariables();
-#endif
-
-	/**
-	*	@brief: Add an end point to the graph, to be used to connect the graph itself with
-	*		other graphs.
-	*
-	*	@param: ep			Name of the endpoint to de added
-	*	@param: p			List of five elements (key, local ip, remote ip, interface and safe)
-	*
-	*	@return: true
-	*/
-	bool addEndPoint(string ep, vector<string> p);
-
-	/**
-	*	@brief: Return the end points of the graph, i.e. the ports to be used to connect
-	*		multiple graphs together.
-	*/
-	map<string, vector<string> > getEndPoints();
 
 	/**
 	*	@brief: Return the ID of the graph
@@ -248,54 +130,124 @@ public:
 	string getName();
 
 	/**
-	*	@brief: Add a new endpointInterface to the graph
+	*	Function that does operations on graphs (diff, sum, subtraction)
+	*/
+
+	/**
+	*	@brief: Given a graph, calculate the things (e.g., NFs) that are in such a graph and not in the
+	*		graph on which the method is called. In practice, it returns "other - this"
+	*/
+	highlevel::Graph *calculateDiff(highlevel::Graph *other, string graphID);
+
+	/**
+	*	@brief: Given a graph, add its components to the called graph
+	*
+	*	@param: other	graph with the components to be added
+	*/
+	bool addGraphToGraph(highlevel::Graph *other);
+
+	/**
+	*	@brief: Given a graph, rome its components from the called graph
+	*
+	*	@param: other	graph with the components to be removed
+	*/
+	list<RuleRemovedInfo> removeGraphFromGraph(highlevel::Graph *other);
+
+	/**
+	*	Functions to manage the "interface" endpoints
+	*/
+
+	/**
+	*	@brief: Add a new "interface" endpoint to the graph
 	*/
 	bool addEndPointInterface(EndPointInterface endpoint);
 
 	/**
-	*	@brief: Return the endpointsInterface of the graph
+	*	@brief: Return the "interface" endpoints of the graph
 	*/
 	list<EndPointInterface> getEndPointsInterface();
 
 	/**
-	*	@brief: Add a new endpointInterfaceOut to the graph
+	*	@brief: Remove an endpoint "interface" from the graph
 	*/
-	bool addEndPointInterfaceOut(EndPointInterfaceOut endpoint);
+	void removeEndPointInterface(EndPointInterface endpoint);
 
 	/**
-	*	@brief: Return the endpointsInterfaceOut of the graph
+	*	Functions to manage the "internal" endpoints
 	*/
-	list<EndPointInterfaceOut> getEndPointsInterfaceOut();
 
 	/**
-	*	@brief: Add a new endpointGre to the graph
+	*	@brief: Add a new "internal" endpoint to the graph
+	*/
+	bool addEndPointInternal(EndPointInternal endpoint);
+
+	/**
+	*	@brief: Return the "internal" endpoints of the graph
+	*/
+	list<EndPointInternal> getEndPointsInternal();
+
+	/**
+	*	@brief: Remove an endpoint "internal" from the graph
+	*/
+	void removeEndPointInternal(EndPointInternal endpoint);
+
+	/**
+	*	Functions to manage the "gre-tunnel" endpoints
+	*/
+
+	/**
+	*	@brief: Add a new "gre-tunnel" endpoint to the graph
 	*/
 	bool addEndPointGre(EndPointGre endpoint);
 
 	/**
-	*	@brief: Return the endpointsGre of the graph
+	*	@brief: Return the "gre-tunnel" endpoints of the graph
 	*/
 	list<EndPointGre> getEndPointsGre();
 
 	/**
-	*	@brief: Add a new endpointVlan to the graph
+	*	@brief: Remove an endpoint "gre-tunnel" from the graph
+	*/
+	void removeEndPointGre(EndPointGre endpoint);
+
+	/**
+	*	Functions to manage the "vlan" endpoints
+	*/
+
+	/**
+	*	@brief: Add a new "vlan" endpoint to the graph
 	*/
 	bool addEndPointVlan(EndPointVlan endpoint);
 
 	/**
-	*	@brief: Return the endpointsVlan of the graph
+	*	@brief: Return the "vlan" endpoints of the graph
 	*/
 	list<EndPointVlan> getEndPointsVlan();
-
+	
 	/**
-	*	@brief: Add a new vnf to the graph
+	*	@brief: Remove an endpoint "internal" from the graph
 	*/
-	bool addVNF(VNFs vnf);
+	void removeEndPointVlan(EndPointVlan endpoint);
 
 	/**
-	*	@brief: Return the vnfs of the graph
+	*	Functions to manage the VNFs
+	*/
+
+	/**
+	*	@brief: Add a new vnf to the graph. In case the VNF is already part of the
+	*			graph but new ports have been specified, the new ports are added to
+	*			the graph.
+	*/
+	void addVNF(VNFs vnf);
+
+	/**
+	*	@brief: Return the VNFs of the graph
 	*/
 	list<VNFs> getVNFs();
+
+	/**
+	*	Functions to manage the rules
+	*/
 
 	/**
 	*	@brief: Return the rules of the graph
@@ -328,27 +280,27 @@ public:
 	*	@brief: Remove a rule starting from its ID, and return
 	*		information on the removed rule
 	*
-	*	@param:	ID	Identifier of the graph to be removed
+	*	@param:	ID	Identifier of the rule to be removed
 	*/
 	RuleRemovedInfo removeRuleFromID(string ID);
 
 	/**
-	*	@brief: Checks if a NF still exist in the graph. If it is no longer used
-	*		in any rule, but it is still part of the "networkFunctions" map,
-	*		it is removed from this map as well.
-	*
-	*	@param:	nf	Name of a network function
+	*	Functions to get the description of the graph
 	*/
-	bool stillExistNF(string nf);
 
 	/**
-	*	@brief: Checks if a physical port still exist in the graph. If it is no
-	*		longer used in any rule, but it is part of the "ports" set, it
-	*		is removed from this set as well.
-	*
-	*	@param:	port	Name of a physical port
+	*	@brief: Return the number of rules in the graph
 	*/
-	bool stillExistPort(string port);
+	int getNumberOfRules();
+
+	/**
+	*	@brief: Create a JSON representation of the graph
+	*/
+	Object toJSON();
+
+	void print();
+
+/********************************************************************************************************************/
 
 	/**
 	*	@brief: Checks if an endpoint port still exist in the graph. If it is no
@@ -360,6 +312,15 @@ public:
 	bool stillExistEndpoint(string endpoint);
 
 	/**
+	*	@brief: Checks if an endpoint GRE still exist in the graph. If it is no
+	*		longer used in any rule, but it is part of the "endpoints" set, it
+	*		is removed from this set as well.
+	*
+	*	@param: endpoint	Name of an endpoint
+	*/
+	bool stillExistEndpointGre(string endpoint);
+
+	/**
 	*	@brief: check if a specific flow uses an endpoint (it does not matter if the endpoint is defined in the
 	*		current graph or not); in this case, return that endpoint, otherwise return "".
 	*
@@ -368,16 +329,18 @@ public:
 	string getEndpointInvolved(string flowID);
 
 	/**
-	*	@brief: Return the number of flows in the graph
+	*	@brief: check if an endpoint is used in some action of the graph
+	*
+	*	@param: endpoint	Idenfier of the endpoint to be checked
 	*/
-	int getNumberOfRules();
+	bool endpointIsUsedInAction(string endpoint);
 
 	/**
-	*	@brief: Create a JSON representation of the graph
+	*	@brief: check if an endpoint is used in some match of the graph
+	*
+	*	@param: endpoint	Idenfier of the endpoint to be checked
 	*/
-	Object toJSON();
-
-	void print();
+	bool endpointIsUsedInMatch(string endpoint);
 };
 
 }

@@ -100,7 +100,7 @@ public class Login extends HttpServlet {
 		 * could be shorten if in the LoginFilter is performed a different
 		 * check.
 		 */
-		session.setMaxInactiveInterval(30 * 60);
+		//session.setMaxInactiveInterval(30 * 60);
 
 		ServletContext sc = session.getServletContext();
 		ConcurrentHashMap<String, Long> chm = (ConcurrentHashMap<String, Long>) sc.getAttribute("logged_users");
@@ -132,6 +132,9 @@ public class Login extends HttpServlet {
 			return;
 		}
 		
+		// save mac in the session
+		session.setAttribute("mac", r.getUser_MAC());
+		
 		try {
 			/*
 			 * Sends to the Orchestrator a Deploy Request for the user service graph.
@@ -155,7 +158,33 @@ public class Login extends HttpServlet {
 			throw new RuntimeException(
 					"We encounter an unhandable problem in the request processing. Contact the system administrator.");
 		}
-
+		
+		
+		
+		/*
+		 * Sends Deploy Ok to Controller
+		 */
+		DeployResponseMessage r2;
+		try {
+			/*
+			 * Sends to the OF controller a Deploy OK Message.
+			 */
+			r2 = sendDeployOKMsgToTheController(request.getRemoteAddr(), session);
+		} catch (IOException e) {
+			out.print("{\"status\":\"error\", \"accountable\": \"controller openflow\"}");
+			out.flush();
+			System.err.println("Socket or Input/Output stream closing error. "
+					+ e.getMessage());
+			return;
+		} catch (RuntimeException e) {
+			out.print("{\"status\":\"error\", \"accountable\": \"controller openflow\"}");
+			out.flush();
+			System.err.println("Socket or Input/Output stream closing error. "
+					+ e.getMessage());
+			return;
+		}
+		
+		
 		String requested_path = (String) session.getAttribute("requested_path");
 		System.out.println("Login " + requested_path);
 		out.print("{\"status\":\"success\",\"uri\":\"http://"+((HttpServletRequest) request).getServerName()+"/Index\"}");
@@ -184,16 +213,16 @@ public class Login extends HttpServlet {
 		
 		HttpPut putRequest = new HttpPut(temp.toString());
 
-		StringEntity input_entity = new StringEntity(
-				"{\"session\": {\"node_id\": \"" + mac
+		StringEntity input_entity = new StringEntity("{\"session\": {\"node_id\": \"" + mac
 						+ "\", \"SW_endpoint\": \"" + ip_address
-						+ "\", \"mac\": \"" + user_MAC
-						+ "\", \"port\": \"" + user_port + "\"}}");
+						+ "\", \"device\": {\"mac\": \"" + user_MAC
+						+ "\", \"port\": \"" + user_port + "\"}}}");
+
 		
 		System.out.println("{\"session\": {\"node_id\": \"" + mac
 						+ "\", \"SW_endpoint\": \"" + ip_address
-						+ "\", \"mac\": \"" + user_MAC
-						+ "\", \"port\": \"" + user_port + "\"}}");
+						+ "\", \"device\": {\"mac\": \"" + user_MAC
+						+ "\", \"port\": \"" + user_port + "\"}}}");
 		
 		input_entity.setContentType("application/json");
 		putRequest.setEntity(input_entity);
@@ -217,6 +246,7 @@ public class Login extends HttpServlet {
 		String pass = users.get(usr);
 		if (pass==null || !pass.equals(psw))
 			throw new AuthenticationException("The credentials were wrong");
+		session.setAttribute("username", usr);
 		return usr;
 		
 	}
@@ -288,20 +318,39 @@ public class Login extends HttpServlet {
 			HttpSession session) throws IOException, RuntimeException {
 		/*
 		 * Sends a message to the controller to tell him that the user is correctly
-		 * authenticated. The controller returns the mac address of the user device.
-		 * This mac address is used by the orchestrator to set a rule that bring the user traffic 
+		 * authenticated. The controller returns the mac address of the user device
+		 * and the port to which he is attached.
+		 * These informations are used by the orchestrator to set a rule that bring the user traffic 
 		 * on its service graph.
 		 * Detail on the message return by the controller is in the class AuthResponseMessage
 		 */
-		
+		System.out.println("Sending Auth_Ok to the Controller");
 		MessageWithIP msg = new MessageWithIP(IP_address, null,
 				Message.MsgType.Auth_OK);
 
 		String s = sendMessageToTheController(msg, session);
-		System.out.println("Stringa ricevuta: " + s);
+		System.out.println("String received: " + s);
 		JSONObject jsonObject = new JSONObject(s);
 
 		return new AuthResponseMessage(jsonObject);
+	}
+	
+	private DeployResponseMessage sendDeployOKMsgToTheController(String IP_address,
+			HttpSession session) throws IOException, RuntimeException {
+		/*
+		 * Sends a message to the controller to tell him that the user graph is correctly
+		 * deployed.
+		 * Detail on the message return by the controller is in the class DeployResponseMessage
+		 */
+		System.out.println("Sending Deploy_Ok to the Controller");
+		MessageWithIP msg = new MessageWithIP(IP_address, null,
+				Message.MsgType.Deploy_OK);
+
+		String s = sendMessageToTheController(msg, session);
+		System.out.println("String received: " + s);
+		JSONObject jsonObject = new JSONObject(s);
+
+		return new DeployResponseMessage(jsonObject);
 	}
 
 	private String sendMessageToTheController(MessageWithIP msg,

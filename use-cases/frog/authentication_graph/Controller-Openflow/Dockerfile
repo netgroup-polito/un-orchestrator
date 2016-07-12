@@ -15,7 +15,8 @@ RUN sed '/PermitRootLogin without-password/d' /etc/ssh/sshd_config > tmp_file &&
 	
 #prepare the ip forger openflow controller
 
-ADD noxrepo-pox-bab636b controller
+ADD pox controller
+ADD ext/* controller/ext/
 ADD controller.conf controller/controller.conf
 ADD client_mac.sh controller/client_mac.sh
 

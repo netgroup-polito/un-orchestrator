@@ -6,6 +6,7 @@
 #include "../../compute_controller/nf_type.h"
 #include "../../compute_controller/description.h"
 
+#define __STDC_FORMAT_MACROS
 #include <string>
 #include <list>
 #include <inttypes.h>
@@ -79,6 +80,8 @@ private:
 	string ipsec_certificate;
 
 protected:
+
+	//FIXME: endpoints mean "endpoint gre"
 
 	CreateLsiIn(string controllerAddress, string controllerPort, list<string> physicalPortsName, map<string,nf_t>  nf_types, map<string,list<struct nf_port_info> > netFunctionsPortsInfo, map<string,vector<string> > endpointsPortsName, list<uint64_t> vlinksRemoteLsi, string local_ip, string ipsec_certificate)
 		: controllerAddress(controllerAddress), controllerPort(controllerPort),

@@ -11,18 +11,6 @@ VlanAction::~VlanAction()
 
 }
 
-void VlanAction::print()
-{
-	stringstream ss;
-	if(type == ACTION_VLAN_PUSH || type == ACTION_ENDPOINT_VLAN)
-		ss << "push_vlan " << label;
-	else if(type == ACTION_VLAN_POP)
-		ss << "pop_vlan";
-	ss << endl;
-
-	cout << "\t\t\tvlan: " << ss.str();
-}
-
 void VlanAction::toJSON(Object &action)
 {
 	Object vlanAction;

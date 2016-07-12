@@ -1,3 +1,10 @@
+[submodule "use-cases/frog/authentication_graph/Controller-Openflow/pox"]
+	path = use-cases/frog/authentication_graph/Controller-Openflow/pox
+	url = https://github.com/noxrepo/pox.git
 [submodule "virtualizer/un_native_nffg_library"]
 	path = virtualizer/un_native_nffg_library
 	url = https://github.com/netgroup-polito/nffg-library.git
+[submodule "GUI"]
+	path = GUI
+	url = https://github.com/netgroup-polito/fg-gui
+	branch = valentin

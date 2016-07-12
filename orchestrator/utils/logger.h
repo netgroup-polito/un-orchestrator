@@ -14,21 +14,21 @@
 /*
  * The following are the logging levels we have.
  *
- * Depending on the value of the 'LOGGING_LEVEL', all the messages 
+ * Depending on the value of the 'LOGGING_LEVEL', all the messages
  * that are at level < LOGGING_LEVEL will be ignored and will not
  * be printed on screen.
- */ 
+ */
 enum
 {
   // Used to print DEBUG information.
   ORCH_DEBUG = 1,
-  
+
   // Used to print DEBUG information, with a priority that is higher than standard DEBUG messages.
   ORCH_DEBUG_INFO,
 
   // Used to print WARNING information, which may suggest that something is wrong.
   ORCH_WARNING,
-  
+
   // Used to print ERROR information. This level should always be turned on.
   ORCH_ERROR,
 
@@ -60,6 +60,10 @@ extern void logger(int LoggingLevel, const char *ModuleName, const char *File, i
 //IVANO: TODO: fare una sola funzione
 extern void coloredLogger(char *color, int LoggingLevel, const char *ModuleName, const char *File, int Line, const char *Format, ...);
 
+#define UN_LOG(LEVEL, FORMAT, ...) 					 						\
+	do {									 								\
+		logger(LEVEL, LOG_MODULE_NAME, __FILE__, __LINE__, FORMAT, ##__VA_ARGS__);\
+	} while(0)
 
 #ifdef __cplusplus
 }

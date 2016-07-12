@@ -11,7 +11,7 @@ GRAPH_XML_FILE = '.universalnode.xml'
 
 #TMP file used by the virtualizer and representing the deployed graph,
 #in the JSON syntax internally used by the virtualizer itself
-GRAPH_FILE = '.graph.json'
+#GRAPH_FILE = '.graph.json'
 
 '''
 	Information to be exported

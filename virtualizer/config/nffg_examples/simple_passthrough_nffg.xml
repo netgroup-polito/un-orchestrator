@@ -58,7 +58,7 @@
 				</supported_NFs>
 			</capabilities>
 			<flowtable>
-				<flowentry>
+				<flowentry operation="create">
 					<id>1</id>
 					<priority>100</priority>
 					<port>../../../ports/port[id=1]</port>
@@ -66,7 +66,7 @@
 					<action/>
 					<out>../../../ports/port[id=2]</out>
 				</flowentry>
-				<flowentry>
+				<flowentry operation="create">
 					<id>2</id>
 					<priority>100</priority>
 					<port>../../../ports/port[id=2]</port>

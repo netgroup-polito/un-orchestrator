@@ -8,6 +8,9 @@
 
 #include "commands.h"
 
+//TODO: remove this class. It is in fact quite useless, as it only contains wrappers to functions
+//in commands.h
+
 using namespace std;
 
 class LSI;

@@ -86,7 +86,7 @@
 
 		<!-- FOOTER -->
 		<div id="footer">
-			<p>&copy; Copyright 2013-2015 <a href="http://www.polito.it">Politecnico di Torino</a>. All rights reserved.</p>	
+			<p>&copy; Copyright 2013-2016 <a href="http://www.polito.it">Politecnico di Torino</a>. All rights reserved.</p>	
 		</div> <!-- end footer -->
 
 	</div> <!-- end PAGE -->

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#define __STDC_FORMAT_MACROS
 #include <list>
 
 #include <map>
@@ -74,7 +75,7 @@ private:
 	static int nextCore;
 
 	/**
-	* 	@brief: the pair is <network function name, network function>
+	* 	@brief: the pair is <network function id, network function>
 	**/
 	map<string, NF*> nfs;
 
@@ -89,7 +90,7 @@ private:
 	*	@param:	answer	Answer to be parsed
 	*	@param:	nf		Name of the network function whose description must be in the asnwer
 	*/
-	bool parseAnswer(string answer, string nf);
+	bool parseAnswer(string answer, string nf_name, string nf_id);
 
 	/**
 	*	@brief: calculate the core mask for a DPDK NF
@@ -129,7 +130,7 @@ public:
 	*
 	*	@param:	nf	Name of a network function
 	*/
-	nf_manager_ret_t retrieveDescription(string nf);
+	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name);
 
 	/**
 	*	@brief: For each NF, select an implementation. Currently, if a Docker implementation
@@ -149,14 +150,14 @@ public:
 	*
 	*	@param:	name	Name of a network function
 	*/
-	nf_t getNFType(string name);
+	nf_t getNFType(string id);
 
 	/**
 	 *	@brief: Returns the description of the selected NF implementation.
 	 *
 	 *	@param: name	Name of the network function
 	 */
-	const Description* getNFSelectedImplementation(string name);
+	const Description* getNFSelectedImplementation(string id);
 
 	/**
 	*	@brief: Set the identifier of the identifier of the LSI attached to the NFs
@@ -174,12 +175,22 @@ public:
 	*	@param: controlConfiguration	Control ports configuration (host TCP port, VNF TCP port)
 	*	@param: environmentVariables	Environment variables to be set to the VNF
 	*/
-	bool startNF(string nf_name, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration
+	bool startNF(string nf_id, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		, list<port_mapping_t > controlConfiguration, list<string> environmentVariables
 #endif
 		);
+	
+	/**
+	*	@brief: Update the NF with a specific name, doing the hotplug of the new ports.
+	*
+	*	@param:	nf_name					Name of the network function to be started
+	*	@param: namesOfPortsOnTheSwitch	Names of ports on the vSwitch that are related to the network function to be started
+	*	@param: portsConfiguration		Ports configuration (mac address, ip address)
+	*	@param: newPortsToAdd			Ports that needs to be added on the NF
 
+	*/
+	bool updateNF(string nf_name, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration, list<unsigned int> newPortsToAdd);
 	/**
 	*	@brief: Stop all the running NFs
 	*/
@@ -190,7 +201,7 @@ public:
 	*
 	*	@param:	nf_name	Name of the network function to be stopped
 	*/
-	bool stopNF(string nf_name);
+	bool stopNF(string nf_id);
 
 	/**
 	*	@brief: Set the core mask representing the cores to be used for DPDK processes. The available cores will

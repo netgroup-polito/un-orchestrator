@@ -38,7 +38,7 @@
         "name": "ingress",
         "type": "interface",
         "interface": {
-          "interface": "eth3"
+          "if-name": "eth3"
         }
       },
       {
@@ -46,7 +46,7 @@
         "name": "ingress",
         "type": "interface",
         "interface": {
-          "interface": "eth4"
+          "if-name": "eth4"
         }
       }
     ],

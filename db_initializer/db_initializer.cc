@@ -22,16 +22,17 @@ bool initDB(SQLiteManager *dbm, char *pass)
 	if(dbm->createTables()){
 		strcpy(pwd, pass);
 
-		SHA256((const unsigned char*)pwd, sizeof(pwd) - 1, hash_token);
+		SHA256((const unsigned char*)pwd, strlen(pwd), hash_token);
 
 		for (int i = 0; i < HASH_SIZE; i++) {
-			sprintf(tmp, "%x", hash_token[i]);
+			sprintf(tmp, "%.2x", hash_token[i]);
 			strcat(hash_pwd, tmp);
 	    }
 
 		// insert generic resources
 		dbm->insertResource(BASE_URL_GRAPH);
 		dbm->insertResource(BASE_URL_USER);
+		dbm->insertResource(BASE_URL_GROUP);
 
 		// default permissions for NF-FGs
 		dbm->insertDefaultUsagePermissions(BASE_URL_GRAPH,
@@ -47,13 +48,22 @@ bool initDB(SQLiteManager *dbm, char *pass)
 				DEFAULT_NFFG_ALL_PERMISSION,
 				DEFAULT_NFFG_ADMIN_PERMISSION);
 
+		// default permissions for GROUPs
+		dbm->insertDefaultUsagePermissions(BASE_URL_GROUP,
+				DEFAULT_NFFG_OWNER_PERMISSION,
+				DEFAULT_NFFG_GROUP_PERMISSION,
+				DEFAULT_NFFG_ALL_PERMISSION,
+				DEFAULT_NFFG_ADMIN_PERMISSION);
+
 		// default creation permissions for admin user
 		dbm->insertUserCreationPermission(ADMIN, BASE_URL_GRAPH, ALLOW);
 		dbm->insertUserCreationPermission(ADMIN, BASE_URL_USER, ALLOW);
+		dbm->insertUserCreationPermission(ADMIN, BASE_URL_GROUP, ALLOW);
 
 		// default users
-		dbm->insertUser(ADMIN, hash_pwd, ADMIN);
+		dbm->insertResource(BASE_URL_GROUP, ADMIN, ADMIN);
 		dbm->insertResource(BASE_URL_USER, ADMIN, ADMIN);
+		dbm->insertUser(ADMIN, hash_pwd, ADMIN);
 
 		return true;
 	}

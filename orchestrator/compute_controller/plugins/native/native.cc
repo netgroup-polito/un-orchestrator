@@ -112,11 +112,53 @@ bool Native::isSupported(Description& descr) {
 	}
 	return true;
 }
+bool Native::updateNF(UpdateNFIn uni)
+{
+	uint64_t lsiID = uni.getLsiID();
+	std::string nf_name = uni.getNfId();
+	map<unsigned int, string> namesOfPortsOnTheSwitch = uni.getNamesOfPortsOnTheSwitch();
+	list<unsigned int> newPorts = uni.getNewPortsToAdd();
+	unsigned int n_ports = newPorts.size();
+
+	std::stringstream uri;
+
+	try {
+		NativeDescription& nativeDescr = dynamic_cast<NativeDescription&>(*description);
+		if(nativeDescr.getLocation() == "local")
+			uri << "file://";
+	} catch (exception& e) {
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "exception %s", e.what());
+		return false;
+	}
+
+	std::string uri_script = description->getURI();
+	uri << uri_script;
+
+	std::stringstream command;
+	command << UPDATE_NATIVE_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << n_ports;
+
+	//create the names of the ports
+	for(list<unsigned int>::iterator pn = newPorts.begin(); pn != newPorts.end(); pn++)
+	{
+		assert(namesOfPortsOnTheSwitch.find(*pn)!=namesOfPortsOnTheSwitch.end());
+		command << " " << namesOfPortsOnTheSwitch[(*pn)];
+	}
+
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
+
+	int retVal = system(command.str().c_str());
+	retVal = retVal >> 8;
+
+	if(retVal == 0)
+		return false;
+
+	return true;
+}
 
 bool Native::startNF(StartNFIn sni) {
 
 	uint64_t lsiID = sni.getLsiID();
-	std::string nf_name = sni.getNfName();
+	std::string nf_name = sni.getNfId();
 	map<unsigned int, string> namesOfPortsOnTheSwitch = sni.getNamesOfPortsOnTheSwitch();
 	unsigned int n_ports = namesOfPortsOnTheSwitch.size();
 
@@ -155,7 +197,7 @@ bool Native::startNF(StartNFIn sni) {
 bool Native::stopNF(StopNFIn sni) {
 
 	uint64_t lsiID = sni.getLsiID();
-	std::string nf_name = sni.getNfName();
+	std::string nf_name = sni.getNfId();
 
 	std::stringstream command;
 	command << STOP_NATIVE_NF << " " << lsiID << " " << nf_name;

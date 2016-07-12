@@ -19,10 +19,51 @@ bool Docker::isSupported(Description&)
 	return false;
 }
 
+bool Docker::updateNF(UpdateNFIn uni)
+{
+	uint64_t lsiID = uni.getLsiID();
+	string nf_name = uni.getNfId();
+	
+	list<unsigned int> newPortsToAdd = uni.getNewPortsToAdd();
+	unsigned int n_ports = newPortsToAdd.size();
+	
+	map<unsigned int, string> namesOfPortsOnTheSwitch = uni.getNamesOfPortsOnTheSwitch();
+	map<unsigned int, port_network_config_t> portsConfiguration = uni.getPortsConfiguration();
+	
+	unsigned int num_old_port = namesOfPortsOnTheSwitch.size() - n_ports;
+	stringstream command;
+	command << HOTPLUG_DOCKER_NF << " " << lsiID << " " << nf_name << " " << num_old_port << " " << n_ports;
+	for(list<unsigned int>::iterator pn = newPortsToAdd.begin(); pn != newPortsToAdd.end(); pn++)
+	{
+		assert(portsConfiguration.find(*pn)!=portsConfiguration.end());
+		assert(namesOfPortsOnTheSwitch.find(*pn)!=namesOfPortsOnTheSwitch.end());
+		port_network_config_t configuration = portsConfiguration[(*pn)];
+
+		command << " "  << namesOfPortsOnTheSwitch[(*pn)];
+		command << " ";
+		//TODO: consider also the IP address, in case the proper flag is enabled
+		if(configuration.mac_address != "")
+			command <<  configuration.mac_address;
+		else
+			command << 0;
+
+		command << " ";
+		command << 0;
+	}
+
+	logger(ORCH_DEBUG_INFO, DOCKER_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
+
+	int retVal = system(command.str().c_str());
+	if(retVal == 0)
+		return false;
+
+	return true;
+}
+
 bool Docker::startNF(StartNFIn sni)
 {
 	uint64_t lsiID = sni.getLsiID();
-	string nf_name = sni.getNfName();
+	string nf_name = sni.getNfId();
 
 	string uri_image = description->getURI();
 
@@ -44,7 +85,6 @@ bool Docker::startNF(StartNFIn sni)
 
 	stringstream command;
 	command << PULL_AND_RUN_DOCKER_NF << " " << lsiID << " " << nf_name << " " << uri_image << " " << n_ports;
-
 	assert(portsConfiguration.size() == namesOfPortsOnTheSwitch.size());
 	//map<unsigned int, port_network_config_t >::iterator configuration = portsConfiguration.begin();
 	for(map<unsigned int, string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)
@@ -113,7 +153,7 @@ bool Docker::startNF(StartNFIn sni)
 bool Docker::stopNF(StopNFIn sni)
 {
 	uint64_t lsiID = sni.getLsiID();
-	string nf_name = sni.getNfName();
+	string nf_name = sni.getNfId();
 
 	stringstream command;
 	command << STOP_DOCKER_NF << " " << lsiID << " " << nf_name;

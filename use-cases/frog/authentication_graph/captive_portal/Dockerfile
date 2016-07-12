@@ -5,7 +5,7 @@ MAINTAINER Politecnico di Torino
 # 	http://pietervogelaar.nl/ubuntu-12-04-install-jetty-9 
 
 RUN apt-get update && apt-get install -y --no-install-recommends openjdk-7-jdk ssh build-essential python python-pip python-dev screen build-essential lsof tomcat7 authbind
-
+RUN pip install --upgrade cython falcon requests gunicorn jsonschema
 #Prepare the ssh server
 RUN mkdir -p /var/run/sshd && \
 	mkdir -p /root/.ssh && \
@@ -26,7 +26,6 @@ ADD ROOT.war /var/lib/tomcat7/webapps/ROOT.war
 #Add the takeMac server
 
 ADD TakeMac /opt/TakeMac/
-RUN pip install --upgrade cython falcon requests gunicorn jsonschema
 
 #Add the scripts to run the function
 ADD start_cp.sh start_cp.sh

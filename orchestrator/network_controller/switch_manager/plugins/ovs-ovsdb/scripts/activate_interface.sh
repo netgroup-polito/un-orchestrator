@@ -23,7 +23,9 @@ do
 	sleep 0.5
 done
 
-sudo ethtool --offload $1 rx off tx off
-sudo ethtool -K $1 gso off
+echo "[$0] Activatig interface $1"
+
+sudo ethtool --offload $1 rx off tx off &> /dev/null
+sudo ethtool -K $1 gso off &> /dev/null
 
 exit 0

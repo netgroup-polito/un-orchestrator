@@ -1,6 +1,7 @@
 #ifndef VLAN_ACTION_H_
 #define VLAN_ACTION_H_ 1
 
+#define __STDC_FORMAT_MACROS
 #include "generic_action.h"
 
 #include <inttypes.h>
@@ -23,7 +24,6 @@ public:
 	VlanAction(vlan_action_t type, string vlan_endpoint, uint16_t label = 0);
 	~VlanAction();
 
-	void print();
 	void toJSON(Object &json);
 
 	/**

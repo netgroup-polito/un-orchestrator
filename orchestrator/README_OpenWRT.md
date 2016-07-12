@@ -138,7 +138,8 @@ then execute the following commands:
 
 ## Network configuration of the device
 
-In this page there is a network configuration of the device.
+Due to hardware constraints, the OpenWRT platform cannot offer a 1:1 mapping of the physical interfaces with internal logical interfaces (e.g., eth0, etc.).
+The basic schema of the mapping, which may slightly vary according to the device used, is shown in this page:
 
 	https://wiki.openwrt.org/doc/uci/network/switch
 

@@ -18,7 +18,15 @@
 
 #include <assert.h>
 
+#include <json_spirit/json_spirit.h>
+#include <json_spirit/writer_template.h>
+#include <json_spirit/writer.h>
+#include <json_spirit/reader_template.h>
+#include <json_spirit/reader.h>
+#include <fstream>
+
 using namespace std;
+using namespace json_spirit;
 
 typedef enum {
 	_READ,
@@ -71,9 +79,18 @@ public:
 	int deleteUser(char *user);
 	user_info_t *getUserByToken(const char *token);
 
+	user_info_t *getUserByName(const char *username);
+	user_info_t *getLoggedUserByName(const char *username);
+	
 	char *getGroup(const char *user);
 
 	bool isLogged(char *username);
+
+	int deleteGroup(char *group);
+
+	bool usersExistForGroup(const char *group);
+
+	int deleteUser(struct MHD_Connection *connection, char *username);
 
 	int insertLogin(char *user, char *token, char *timestamp);
 
@@ -92,6 +109,7 @@ public:
 	int insertUserCreationPermission(char *user, char *generic_resource, char *permission);
 
 	void getAllowedResourcesNames(user_info_t *usr, opcode_t op, char *generic_resource, std::list<std::string> *resources);
+	void getAllResourcesNames(char *generic_resource, std::list<std::string> *resources);
 };
 
 class SQLiteManagerException : public exception

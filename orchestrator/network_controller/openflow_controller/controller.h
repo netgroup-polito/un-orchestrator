@@ -23,6 +23,7 @@ using namespace lowlevel;
 
 class Controller : public crofbase
 {
+friend class GraphManager;
 
 private:
 	/**
@@ -104,6 +105,12 @@ public:
 	bool removeRules(list<Rule> rules);
 
 	static void *loop(void *param);
+
+protected:
+	/**
+	*	@brief: return the TCP port that the dpath should use to contact the controller
+	*/
+	string getControllerPort();
 
 };
 

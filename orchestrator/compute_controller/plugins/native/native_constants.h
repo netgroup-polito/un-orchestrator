@@ -7,6 +7,7 @@
 #define CHECK_NATIVE				"./compute_controller/plugins/native/scripts/checkNativeFunctions.sh"
 #define PULL_AND_RUN_NATIVE_NF		"./compute_controller/plugins/native/scripts/pullAndRunNativeNF_ns.sh"
 #define STOP_NATIVE_NF				"./compute_controller/plugins/native/scripts/stopNativeNF_ns.sh"
+#define UPDATE_NATIVE_NF		"./compute_controller/plugins/native/scripts/updateNativeNF_ns.sh"
 
 /*
  * @brief: paths and names for capabilities xml specification

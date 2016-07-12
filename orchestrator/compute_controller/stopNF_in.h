@@ -26,13 +26,13 @@ private:
 	uint64_t lsiID;
 
 	/**
-	*	@brief: name of the network function
+	*	@brief: id of the network function
 	*/
-	string nf_name;
+	string nf_id;
 
 protected:
-	StopNFIn(uint64_t lsiID, string nf_name)
-		: lsiID(lsiID), nf_name(nf_name)
+	StopNFIn(uint64_t lsiID, string nf_id)
+		: lsiID(lsiID), nf_id(nf_id)
 	{
 	}
 
@@ -43,9 +43,9 @@ public:
 		return lsiID;
 	}
 
-	string getNfName()
+	string getNfId()
 	{
-		return nf_name;
+		return nf_id;
 	}
 };
 

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#define __STDC_FORMAT_MACROS
+
 #include <string>
 #include <list>
 #include <inttypes.h>
@@ -22,17 +24,10 @@ using namespace std;
 */
 enum physicalPortType_t {ETHERNET_PORT,WIFI_PORT};
 
-/**
-*	@brief: different virtual switches may handle differently physical ports according to
-*			the fact that they are connected to the edge or to the core of the network
-*/
-//FIXME: hide this information to the switch manager? How could be useful?
-enum physicalPortSide_t {NONE,EDGE,CORE};
-
 class CheckPhysicalPortsIn
 {
 
-friend class FileParser;
+friend class GraphManager;
 
 private:
 
@@ -46,14 +41,10 @@ private:
 	*/
 	physicalPortType_t type;
 
-	/**
-	*	@brief: side of the physical port, with respect to the node
-	*/
-	physicalPortSide_t side;
 
 protected:
-	CheckPhysicalPortsIn(string name, physicalPortType_t type, physicalPortSide_t side)
-		: name(name), type(type), side(side)
+	CheckPhysicalPortsIn(string name, physicalPortType_t type = ETHERNET_PORT)
+		: name(name), type(type)
 	{
 	}
 
@@ -69,11 +60,6 @@ public:
 		return type;
 	}
 
-	physicalPortSide_t getPortSide()
-	{
-		return side;
-	}
-
 	string getPortTypeToString()
 	{
 		switch(type)
@@ -83,25 +69,6 @@ public:
 				break;
 			case WIFI_PORT:
 				return string("wifi");
-				break;
-			default:
-				assert(0);
-				return "";
-		}
-	}
-
-	string getPortSideToString() const
-	{
-		switch(side)
-		{
-			case EDGE:
-				return string("edge");
-				break;
-			case CORE:
-				return string("core");
-				break;
-			case NONE:
-				return string("none");
 				break;
 			default:
 				assert(0);

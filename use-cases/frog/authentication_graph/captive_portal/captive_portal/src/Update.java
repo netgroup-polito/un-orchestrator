@@ -118,9 +118,9 @@ public class Update extends HttpServlet {
 						 * Orchestrator response confirm the successful instantiation
 						 * of the user profile.
 						 */
-						Boolean status = true;
-						instantiation_complete=status.toString();
-						session.setAttribute("instantiation_complete", instantiation_complete);
+						jsonObject.append("instantiation_complete", true);
+						instantiation_complete = "true";
+						session.setAttribute("instantiation_complete", "true");
 						response.setHeader("Connection","close");
 					}
 					if(instantiation_complete == null){

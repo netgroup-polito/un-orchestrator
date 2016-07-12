@@ -89,15 +89,15 @@ bool SecurityManager::isAuthorizedForCreation(char *user, const char *generic_re
 
 	int rc = 0, res = 0, idx = 0;
 	char *sql = NULL, *permissions = NULL;
-
 	sqlite3_stmt *stmt;
 
 	// The resource I want to create must not exist in the database at the moment
+	/* This check prevent the update of an existing graph!
 	if(dbmanager->resourceExists(generic_resource, resource)) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot create new resource /%s/%s: it does already exist!", generic_resource, resource);
 		return false;
 	}
-
+	*/
 	sql = "select PERMISSION from USER_CREATION_PERMISSIONS "	\
 			"where USER = @user and GENERIC_RESOURCE = @generic_resource;";
 
@@ -115,10 +115,10 @@ bool SecurityManager::isAuthorizedForCreation(char *user, const char *generic_re
 		if (res == SQLITE_ROW)
 			permissions = (char *) sqlite3_column_text(stmt, 0);
 	}
-
+	res = (permissions != NULL && strncmp(permissions, ALLOW, 1) == 0);
 	sqlite3_finalize(stmt);
 
-	return (permissions != NULL && strncmp(permissions, ALLOW, 1) == 0);
+	return res;
 }
 
 bool SecurityManager::isAuthorized(user_info_t *usr, opcode_t operation, const char *generic_resource, const char *resource) {

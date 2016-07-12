@@ -29,8 +29,8 @@ un-orchestrator includes several modules; the most important ones are the *netwo
 controller* and the *compute controller*, which are exploited to interact
 respectively with the vSwitch and the hypervisor(s).
 
-The \textit{VNF-selector} selects instead the best implementation for the required VNFs, according to some parameters such as the amount of CPU and RAM available on the Universal Node, or the efficiency of the network ports supported by the VNF itself (e.g., standard virtio vs. optimized ports). 
-Moreover, the \textit{VNF scheduler} optimizes the binding VNF/CPU core(s) by taking into account information such as how a VNF interacts with the rest of the NF-FG.
+The *VNF-selector* selects instead the best implementation for the required VNFs, according to some parameters such as the amount of CPU and RAM available on the Universal Node, or the efficiency of the network ports supported by the VNF itself (e.g., standard virtio vs. optimized ports). 
+Moreover, the *VNF scheduler* optimizes the binding VNF/CPU core(s) by taking into account information such as how a VNF interacts with the rest of the NF-FG.
 
 While the network and compute controllers are detailed in the following sections, the VNF-optimizer and the placement-optimizer have not been implemented yet, as their implementation is let as a future work.
 
@@ -117,3 +117,5 @@ Some additional files are provided to compile and use the un-orchestrator:
   * [README_NF-FG.md](README_NF-FG.md): description of the NF-FG formalism through examples
   * [README_RESTAPI.md](README_RESTAPI.md): some usage examples about the REST interface of
     the un-orchestrator
+  * [README_security.md](README_security.md): description of the security features of the un-orchestrator
+  * [README_orchestrator_mode.md](README_orchestrator_mode.md): description of the operation modes of the un-orchestrator

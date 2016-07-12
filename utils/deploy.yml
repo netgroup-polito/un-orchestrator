@@ -1,0 +1,231 @@
+---
+- hosts: localhost
+  remote_user: root
+
+#Requires to install ansible:
+# sudo apt-get install ansible
+#Run in with the command: 
+# sudo ansible-playbook --ask-sudo-pass -i "localhost," -c local  deploy.yml --extra-vars "cores=1 docker=OFF native=OFF kvm=ON double_decker=OFF"
+
+#TODO: install docker if needed
+
+  vars:
+    path: ../../
+    dd: '{{ double_decker }}'
+    enable_kvm: '{{ kvm }}'
+    enable_docker: '{{ docker }}'
+    enable_native: '{{ native }}'
+  
+  tasks:
+    - name: "updates apt"
+      apt: update_cache=yes
+      
+    - name: "install dependencies"
+      apt: pkg={{item}} state=installed
+      with_items:
+        - git
+        - build-essential
+        - cmake
+        - cmake-curses-gui
+        - libboost-all-dev
+        - libmicrohttpd-dev
+        - libxml2-dev
+        - ethtool
+        - sqlite3
+        - libsqlite3-dev
+        - libssl-dev
+        - unzip
+        - automake      
+        - autoconf
+        - libtool
+        - pkg-config
+        - linux-libc-dev
+        - libc6-dev
+        - libcppunit-dev
+        - libcunit1-dev
+        - libjson-c-dev
+        - libjson-c2
+        - libzmq3-dev
+        
+    - name: "install dependencies for KVM environment"
+      apt: pkg={{item}} state=installed
+      with_items:
+        - libxml-xpath-perl
+        - libyajl-dev
+        - libdevmapper-dev
+        - libpciaccess-dev
+        - libnl-dev
+        - python-dev
+        - xsltproc
+        - autopoint
+        - uuid-dev
+        - libxml2-utils
+        - libperl-dev
+        - libgtk2.0-dev
+        - bridge-utils
+      when: enable_kvm == "ON"
+      
+    - name: "install dependencies for docker environment"
+      apt: pkg={{item}} state=installed
+      with_items:
+        - apt-transport-https
+        - ca-certificates
+      when: enable_docker == "ON"
+
+    - name: "fetch rofl"
+      git: repo=https://github.com/bisdn/rofl-common
+           dest={{ path }}/rofl-common
+           version=stable-0.6
+    
+    - name: "config rofl"
+      command: "./autogen.sh chdir={{ path }}/rofl-common" 
+
+    - name: "build rofl (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/rofl-common/build" 
+      with_items: 
+      - ../configure
+      - make -j{{ cores }}
+      - make install
+      
+    - name: "fetch zeromq - A DoubleDecker prequisite"
+      get_url: url="http://github.com/zeromq/czmq/archive/v3.0.2.tar.gz" dest={{ path }}/v3.0.2.tar.gz
+      when: dd == "ON"
+      
+    - name: "untar zeromq"
+      unarchive: src={{ path }}/v3.0.2.tar.gz dest={{ path }} copy=no
+      when: dd == "ON"
+
+    - name: "build zeromq (with {{ cores }} cores)"
+      shell: "{{ item }} chdir={{ path }}/czmq-3.0.2"
+      with_items:
+      - ./autogen.sh
+      - ./configure --prefix=/usr
+      - make -j{{ cores }}
+      - make install
+      when: dd == "ON"
+
+    - name: "fetch urcu - A DoubleDecker prequisite"
+      get_url: url="http://www.lttng.org/files/urcu/userspace-rcu-0.9.1.tar.bz2" dest={{ path }}/userspace-rcu-0.9.1.tar.bz2
+      when: dd == "ON"
+      
+    - name: "untar urcu"
+      unarchive: src={{ path }}/userspace-rcu-0.9.1.tar.bz2 dest={{ path }} copy=no
+      when: dd == "ON"
+
+    - name: "build urcu (with {{ cores }} cores)"
+      shell: "{{ item }} chdir={{ path }}/userspace-rcu-0.9.1"
+      with_items:
+      - ./configure --prefix=/usr
+      - make -j{{ cores }}
+      - make install
+      when: dd == "ON"
+
+    - name: "fetch libsodium - A DoubleDecker prequisite"
+      get_url: url="http://download.libsodium.org/libsodium/releases/libsodium-1.0.7.tar.gz" dest={{ path }}/libsodium-1.0.7.tar.gz
+      when: dd == "ON"
+      
+    - name: "untar libsodium"
+      unarchive: src={{ path }}/libsodium-1.0.7.tar.gz dest={{ path }} copy=no
+      when: dd == "ON"
+
+    - name: "build libsodium (with {{ cores }} cores)"
+      shell: "{{ item }} chdir={{ path }}/libsodium-1.0.7"
+      with_items:
+      - ./configure
+      - make -j{{ cores }}
+      - make install
+      when: dd == "ON"
+
+    - name: "fetch DoubleDecker"
+      git: repo=https://github.com/Acreo/DoubleDecker
+           dest={{ path }}/DoubleDecker
+      when: dd == "ON"
+
+    - name: "build DoubleDecker (with {{ cores }} cores)"
+      shell: "{{ item }} chdir={{ path }}/DoubleDecker"
+      with_items:
+      - ./boot.sh
+      - ./configure
+      - make -j{{ cores }}
+      - make install
+      when: dd == "ON"
+       
+    - name: "unzip json-spirit"
+      unarchive: src={{ path }}/un-orchestrator/contrib/json-spirit.zip dest={{ path }} copy=no
+
+    - name: "build json-spirit (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/json-spirit/build" 
+      with_items:
+      - cmake .
+      - make -j{{ cores }}
+      - make install
+
+    - name: "unzip inih"
+      unarchive: src={{ path }}/un-orchestrator/contrib/inih.zip dest={{ path }} copy=no
+      
+    - name: "build inih"
+      shell: "{{ item }} chdir={{ path }}/inih"
+      with_items:
+      - cp -r * ../un-orchestrator/orchestrator/node_resource_manager/database_manager/SQLite
+
+    - name: "fetch OVS"
+      get_url: url="http://openvswitch.org/releases/openvswitch-2.4.0.tar.gz" dest={{ path }}
+      
+    - name: "untar OVS"
+      unarchive: src={{ path }}/openvswitch-2.4.0.tar.gz dest=~/ copy=no
+    
+    - name: "build OVS (with {{ cores }} cores)"
+      shell: "{{ item }} chdir=~/openvswitch-2.4.0"
+      with_items:
+      - ./configure --prefix=/ --datarootdir=/usr/share --with-linux=/lib/modules/$(uname -r)/build
+      - make -j{{ cores }}
+      - make install
+      
+    - name: "fetch libvirt"
+      git: repo=git://libvirt.org/libvirt.git
+           dest={{ path }}/libvirt
+           version=f57842ecfda1ece8c59718e62464e17f75a27062
+      when: enable_kvm == "ON"
+
+    - name: "config libvirt"
+      command: "./autogen.sh chdir={{ path }}/libvirt" 
+      when: enable_kvm == "ON"
+
+    - name: "build libvirt (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/libvirt" 
+      with_items: 
+      - make -j{{ cores }}
+      - make install
+      when: enable_kvm == "ON"
+
+    - name: "fetch qemu"
+      git: repo=https://github.com/qemu/qemu.git
+           dest={{ path }}/qemu
+           version=v2.2.1
+      when: enable_kvm == "ON"
+      
+    - name: "build qemu (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/qemu" 
+      with_items:
+      - ./configure --target-list=x86_64-softmmu
+      - make -j{{ cores }}
+      - make install
+      when: enable_kvm == "ON"
+
+    - name: "build database initializer (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/un-orchestrator/db_initializer"
+      with_items:
+      - cmake .
+      - make -j{{ cores }}
+
+    - name: "build name-resolver (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/un-orchestrator/name-resolver"
+      with_items:
+      - cmake .
+      - make -j{{ cores }}
+
+    - name: "build orchestrator (with {{ cores }} cores)"
+      command: "{{ item }} chdir={{ path }}/un-orchestrator/orchestrator"
+      with_items:
+      - cmake  -D'ENABLE_KVM={{ enable_kvm }}' -D'ENABLE_DOCKER={{ enable_docker}}' -D'ENABLE_DOUBLE_DECKER_CONNECTION={{ dd }}' -D'ENABLE_NATIVE={{ enable_native }}' .
+      - make -j{{ cores }}

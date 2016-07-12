@@ -21,7 +21,7 @@ VNF.
 		    	"name": "ingress",
 		    	"type": "interface",
 		    	"interface": {
-		      		"interface": "eth1"
+		      		"if-name": "eth1"
 		    	}
 		  	},
 		  	{
@@ -29,7 +29,7 @@ VNF.
 		    	"name": "egress",
 		    	"type": "interface",
 		    	"interface": {
-		      		"interface": "eth2"
+		      		"if-name": "eth2"
 		    	}
 		  	}
 			],
@@ -86,7 +86,7 @@ function (`firewall:inout:1`) are sent on the network interface `eth2`.
 		    	"name": "ingress",
 		    	"type": "interface",
 		    	"interface": {
-		      		"interface": "eth1"
+		      		"if-name": "eth1"
 		    	}
 		  	},
 		  	{
@@ -94,7 +94,7 @@ function (`firewall:inout:1`) are sent on the network interface `eth2`.
 		    	"name": "egress",
 		    	"type": "interface",
 		    	"interface": {
-		      		"interface": "eth2"
+		      		"if-name": "eth2"
 		    	}
 		  	}
 			],
@@ -199,7 +199,7 @@ Json description of the graph:
 		    	"name": "ingress",
 		    	"type": "interface",
 		    	"interface": {
-		      		"interface": "eth1"
+		      		"if-name": "eth1"
 		    	}
 		  	},
 		  	{
@@ -207,7 +207,7 @@ Json description of the graph:
 		    	"name": "egress",
 		    	"type": "interface",
 		    	"interface": {
-		      		"interface": "eth2"
+		      		"if-name": "eth2"
 		    	}
 		  	}
 			],
@@ -386,7 +386,7 @@ on the network through the physical port `eth1`, without any VLAN tag.
 		    	"name": "ingress",
 		    	"type": "interface",
 		    	"interface": {
-		      		"interface": "eth1"
+		      		"if-name": "eth1"
 		    	}
 		  	}
 			],
@@ -455,6 +455,7 @@ The NF-FG specification supports several types of endpoints:
 	`interface`
 	`vlan`
 	`gre-tunnel`
+	`internal`
 
 ### Endpoint type: `interface`
 
@@ -477,7 +478,7 @@ The `vlan` endpoint is defined as follows:
 		"type": "vlan",
 		"vlan": {
   			"vlan-id": "25",
-  			"interface": "eth1"
+  			"if-name": "eth1"
 		}
 	}
 
@@ -520,7 +521,7 @@ UN through the physical interface `eth1` and then again tagged with the VLAN ID 
 		    	"type": "vlan",
 		    	"vlan": {
 		      		"vlan-id": "25",
-		      		"interface": "eth1"
+		      		"if-name": "eth1"
 		    	}
 		  	}
 			],
@@ -599,13 +600,14 @@ This way, the un-orchestrator is able to implement the behavior required by the
 
 ### Endpoint type: `gre-tunnel`
  
-It represents again an endpoint associated with a physical interface; however, the UN guarantees
-that only the traffic encapsulated in a specific GRE tunnel enters from this endpoint, and that 
-all the traffic  exiting from such an endpoint will be encapsulated in such a GRE tunnel. 
+It represents an endpoint that is actually a GRE tunnel; hence, the UN guarantees 
+that only the traffic encapsulated in a specific GRE tunnel enters from this 
+endpoint, and that all the traffic  exiting from such an endpoint will be encapsulated 
+in such a GRE tunnel. 
 For instance, the `gre-tunnel` endpoint can be used to connect together pieces of the same service 
 deployed  on different Universal Nodes.
 
-Is `gre-tunnel` endpoint is defined as follows:
+The `gre-tunnel` endpoint is defined as follows:
 	
 	{
 		"id": "00000002",
@@ -614,23 +616,22 @@ Is `gre-tunnel` endpoint is defined as follows:
 		"gre-tunnel": {
 			"local-ip": "10.0.0.1",
 			"remote-ip": "10.0.0.2",
-			"interface" : "eth1",
 			"gre-key" : "1"
 		}
 	}
 	
-In this example, only the traffic coming from the physical interface `eth1` and belonging to the following GRE 
-tunnel is enable to enter through such an end point: `10.0.0.1` as a source IP address, `10.0.0.2` as a 
-destination IP address, `1` as `gre-key`. Similarly, all the traffic that will exit from such an end point,
-will be sent through the physical interface `eth1` encapsulated into the GRE tunnel defined with the parameters 
-listed before. Note that all the operations needed to reproduce this behavior (e.g., create the GRE tunnel, encpusulta
-the traffic in the GRE tunnel) are transparently implemented by the un-orchestrator.	
+In this example, only the traffic belonging to the following GRE tunnel is enabled 
+to enter through such an end point: `10.0.0.1` as a source IP address, `10.0.0.2` as a 
+destination IP address, `1` as `gre-key`. Similarly, all the traffic that will exit from 
+such an end point will be encapsulated into the GRE tunnel defined with the parameters 
+listed before. Note that all the operations needed to reproduce this behavior (e.g., create 
+the GRE tunnel, encpusulate the traffic in the GRE tunnel) are transparently implemented 
+by the un-orchestrator.	
 
-A complete example that shows the usage of the `gre-tunnel` endpoint is the following, in which the endpoint is associated 
-with the physical port `eth1` and with the following GRE tunnel: source IP `10.0.0.1`, destination IP `10.0.0.2"`, 
-GRE key `1`. 
-The traffic coming from this endpoint is then provided to the `firewall` VNF, and then leaves the UN again through 
-the `gre-tunnel` endpoint. 
+A complete example that shows the usage of the `gre-tunnel` endpoint is the following, in which 
+the endpoint is associated with the following GRE tunnel: source IP `10.0.0.1`, destination IP `10.0.0.2"`, 
+GRE key `1`. The traffic coming from this endpoint is provided to the `firewall` VNF, and then 
+leaves the UN again through the `gre-tunnel` endpoint. 
  
  	{
 		"forwarding-graph": 
@@ -661,7 +662,6 @@ the `gre-tunnel` endpoint.
 		    	"gre-tunnel": {
 		      		"local-ip": "10.0.0.1",
 		      		"remote-ip": "10.0.0.2",
-		      		"interface" : "eth1",
 		      		"gre-key" : "1"
 		    	}
 		  	}
@@ -697,6 +697,143 @@ the `gre-tunnel` endpoint.
 	  	}
 	}
 	
+### Endpoint type: `internal`
+ 
+It is possible to connect multiple graphs together through the `internal` endpoint; particularly, 
+the `internal-group` is used to identify all those graphs that must be connected inside the universal node.
+
+The `internal` endpoint is defined as follows:
+	
+	{
+		"id": "00000002",
+		"name": "egress",
+		"type": "internal",
+		"internal":
+		{
+			"internal-group": "25"
+		}
+	}
+
+As an example, the two following graphs define an `internal` endpoint belonging to
+the `internal-group` `25`, and then they will be connected together. In particular,
+the first graph provides all the traffic coming from the `internal` endpoint to a VNF;
+then, packets coming from the VNF is sent again through the `internal` endpoint. 
+Similarly, in the second graph traffic coming from a `gre-tunnel` endpoint is 
+provided to the `internal` endpoint and vice versa.
+
+	{
+	  "forwarding-graph": {
+	    "id": "myGraph",
+	    "name": "Forwarding graph",
+	    "end-points": [
+	      {
+		"id": "00000004",
+		"name": "ingress",
+		"type": "internal",
+		"internal":
+		{
+			"internal-group" : "25"
+		}
+	      }
+	    ],
+	    "VNFs": [
+	      {
+		"vnf_template": "client.json",
+		"id": "00000001",
+		"name": "example",
+		"ports": [
+		  {
+		    "id": "inout:0",
+		    "name": "data-port"
+		  }        
+		]
+	      }
+	    ],
+	    "big-switch": {
+	      "flow-rules": [
+		{
+		  "id": "000000001",
+		  "priority": 1,
+		  "match": {
+		    "port_in": "endpoint:00000004"
+		  },
+		  "actions": [
+		    {
+		      "output_to_port": "vnf:00000001:inout:0"
+		    }
+		  ]
+		},
+		{
+		  "id": "000000002",
+		  "priority": 1,
+		  "match": {
+		    "port_in": "vnf:00000001:inout:0"
+		  },
+		  "actions": [
+		    {
+		      "output_to_port": "endpoint:00000004"
+		    }
+		  ]
+		}
+	      ]
+	    }
+	  }
+	}
+
+	{
+	  "forwarding-graph": {
+	    "id": "00000002",
+	    "name": "Forwarding graph",
+	    "end-points": [
+	      {
+		"id": "00000005",
+		"name": "egress",
+		"type": "gre-tunnel",
+		"gre-tunnel": {
+		  "local-ip": "10.0.0.1",
+		  "remote-ip": "10.0.0.2",
+		  "gre-key" : "1"
+		}
+	      }
+	    ],
+	    "big-switch": {
+	      "flow-rules": [
+		{
+		  "id": "000000001",
+		  "priority": 1,
+		  "match": {
+		    "port_in": "endpoint:00000004"
+		  },
+		  "actions": [
+		    {
+		      "output_to_port": "endpoint:00000005"
+		    }
+		  ]
+		},
+		{
+		  "id": "000000002",
+		  "priority": 1,
+		  "match": {
+		    "port_in": "endpoint:00000005"
+		  },
+		  "actions": [
+		    {
+		      "output_to_port": "endpoint:00000004"
+		    }
+		  ]
+		}
+	      ]
+	    }
+	  }
+	}
+	
+#### How this endpoint is implemented by the un-orchestrator
+
+In the UN, each different `internal-group` is implemented with a graph (and then an LSI) that is connected to
+the `LSI-0` with a number of links that is equal to twice the number of times the `internal` endpoint is used
+by graphs. This graph is not connected to any VNF; moreover, unlike standardard graphs defined through the NF-FG, 
+it implements the traditional L2 forwarding, hence it forwards packets based on the destianation MAC address.
+
 ## Configuration
 
 A simple configuration mechanism is supported by the NF-FG formalism. In particular, it is possibile to:

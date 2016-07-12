@@ -10,7 +10,7 @@ bool Dpdk::isSupported(Description&)
 bool Dpdk::startNF(StartNFIn sni)
 {
 	uint64_t lsiID = sni.getLsiID();
-	string nf_name = sni.getNfName();
+	string nf_name = sni.getNfId();
 	uint64_t coreMask = sni.getCoreMask();
 
 	map<unsigned int, string> namesOfPortsOnTheSwitch = sni.getNamesOfPortsOnTheSwitch();
@@ -68,7 +68,7 @@ bool Dpdk::startNF(StartNFIn sni)
 bool Dpdk::stopNF(StopNFIn sni)
 {
 	uint64_t lsiID = sni.getLsiID();
-	string nf_name = sni.getNfName();
+	string nf_name = sni.getNfId();
 
 	stringstream command;
 
@@ -84,6 +84,12 @@ bool Dpdk::stopNF(StopNFIn sni)
 
 	return true;
 
+}
+
+bool Dpdk::updateNF(UpdateNFIn uni)
+{
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Update not supported by this type of functions");
+	return false;
 }
 
 string Dpdk::getCores() {

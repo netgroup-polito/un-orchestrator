@@ -45,6 +45,7 @@ public:
 	bool isSupported(Description& descr);
 	bool startNF(StartNFIn sni);
 	bool stopNF(StopNFIn sni);
+	bool updateNF(UpdateNFIn uni);
 };
 
 class NativeException : public exception {

@@ -163,7 +163,8 @@ void Match::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 	{
 		unsigned int key = 0;
 
-		sscanf(gre_key, "%u", &key);
+		if(sscanf(gre_key, "%x", &key)!=1)
+			sscanf(gre_key, "%u", &key);
 		message.set_match().set_tunnel_id(key);
 	}
 }
@@ -188,7 +189,146 @@ void Match::print()
 			cout << "\t\t\tport: "<< "LOCAL" << endl;
 		else
 			cout << "\t\t\tport: "<< input_port << endl;
-		graph::Match::print();
+
+		/*
+		*	Ethernet
+		*/
+		if(eth_src != NULL)
+			cout << "\t\t\tethernet src: " << eth_src << endl;
+		if(eth_src_mask)
+			cout << "\t\t\tethernet src mask: " << eth_src_mask << endl;
+		if(eth_dst != NULL)
+			cout << "\t\t\tethernet dst: " << eth_dst << endl;
+		if(eth_dst_mask)
+			cout << "\t\t\tethernet dst mask: " << eth_dst_mask << endl;
+		if(isEthType)
+			cout << "\t\t\tethertype: " <<  "0x" << hex << ethType << endl;
+
+		/*
+		*	VLAN
+		*/
+		if(isVlanID || isEndpointVlanID)
+			cout << "\t\t\tVLAN ID: " << hex << "0x" << vlanID << endl;
+		else if(isAnyVlan)
+			cout << "\t\t\tVLAN ID: ANY" << endl;
+		else if(isNoVlan)
+			cout << "\t\t\tNO VLAN" << endl;
+
+		if(isVlanPCP)
+		{
+			cout << "\t\t\tVLAN PCP: " << int(vlanPCP) << endl;
+		}
+
+		/*
+		*	IPv4
+		*/
+		if(isIpDSCP)
+			cout << "\t\t\tIPv4 dscp: " << int(ipDSCP) << endl;
+		if(isIpECN)
+			cout << "\t\t\tIPv4 ecn: " << int(ipECN) << endl;
+		if(isIpProto)
+			cout << "\t\t\tIPv4 proto: " << (ipProto & 0xF) << endl;
+		if(ipv4_src)
+			cout << "\t\t\tIPv4 src: " << ipv4_src << endl;
+		if(ipv4_src_mask)
+			cout << "\t\t\tIPv4 src mask: " << ipv4_src_mask << endl;
+		if(ipv4_dst)
+			cout << "\t\t\tIPv4 dst: " << ipv4_dst << endl;
+		if(ipv4_dst_mask)
+			cout << "\t\t\tIPv4 dst mask: " << ipv4_dst_mask << endl;
+
+		/*
+		*	TCP
+		*/
+		if(isTcpSrc)
+			cout << "\t\t\tTCP src port: " << tcp_src << endl;
+		if(isTcpDst)
+			cout << "\t\t\tTCP dst port: " << tcp_dst << endl;
+
+		/*
+		*	UDP
+		*/
+		if(isUdpSrc)
+			cout << "\t\t\tUDP src port: " << udp_src << endl;
+		if(isUdpDst)
+			cout << "\t\t\tUDP dst port: " << udp_dst << endl;
+
+		/*
+		*	SCTP
+		*/
+		if(isSctpSrc)
+			cout << "\t\t\tSCTP src port: " << sctp_src << endl;
+		if(isSctpDst)
+			cout << "\t\t\tSCTP dst port: " << sctp_dst << endl;
+
+		/*
+		*	ICMPv4
+		*/
+		if(isIcmpv4Type)
+			cout << "\t\t\tICMPv4 type: " << int(icmpv4Type) << endl;
+		if(isIcmpv4Code)
+			cout << "\t\t\tICMPv4 code: " << int(icmpv4Code) << endl;
+
+		/*
+		*	ARP
+		*/
+		if(isArpOpcode)
+			cout << "\t\t\tARP opcode: " << arpOpcode << endl;
+		if(arp_spa)
+			cout << "\t\t\tARP spa: " << arp_spa << endl;
+		if(arp_spa_mask)
+		 	cout << "\t\t\tARP spa mask: " << arp_spa_mask << endl;
+		if(arp_tpa)
+			cout << "\t\t\tARP tpa: " << arp_tpa << endl;
+		if(arp_tpa_mask)
+			cout << "\t\t\tARP tpa mask: " << arp_tpa_mask << endl;
+		if(arp_sha)
+			cout << "\t\t\tARP sha: " << arp_sha << endl;
+		if(arp_tha)
+			cout << "\t\t\tARP tha: " << arp_tha << endl;
+
+		/*
+		*	IPv6
+		*/
+		if(ipv6_src)
+			cout << "\t\t\tIPv6 src: " << ipv6_src << endl;
+		if(ipv6_src_mask)
+			cout << "\t\t\tIPv6 src mask: " << ipv6_src_mask << endl;
+		if(ipv6_dst)
+			cout << "\t\t\tIPv6 dst: " << ipv6_dst << endl;
+		if(ipv6_dst_mask)
+			cout << "\t\t\tIPv6 dst mask: " << ipv6_dst_mask << endl;
+		if(isIpv6Flabel)
+			cout << "\t\t\tIPv6 flabel: " << ipv6_flabel << endl;
+		if(ipv6_nd_target)
+			 cout << "\t\t\tIPv6 nd target: " << ipv6_nd_target << endl;
+		if(ipv6_nd_sll)
+			 cout << "\t\t\tIPv6 nd sll: " << ipv6_nd_sll << endl;
+		if(ipv6_nd_tll)
+			cout << "\t\t\tIPv6 nd tll: " << ipv6_nd_tll << endl;
+
+		/*
+		*	ICMPv6
+		*/
+		if(isIcmpv6Type)
+			cout << "\t\t\tICMPv6 type: "<<  int(icmpv6Type) << endl;
+		if(isIcmpv6Code)
+			cout << "\t\t\tICMPv6 code: " << int(icmpv6Code) << endl;
+
+		/*
+		*	MPLS
+		*/
+		if(isMplsLabel)
+			cout << "\t\t\tMPLS label: " << mplsLabel << endl;
+		if(isMplsTC)
+			cout << "\t\t\tMPLS tc: " << int(mplsTC) << endl;
+
+		/*
+		*	GRE
+		*/
+		if(gre_key)
+			cout << "\t\t\tGRE key: " << gre_key << endl;
+
 		cout << "\t\t}" << endl;
 	}
 }

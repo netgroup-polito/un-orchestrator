@@ -45,5 +45,8 @@ Instead, it is not needed when the un-orchestrator is controller through its nat
 ## NFs
 This folder contains some examples of virtual network functions that are known to work on the UN.
 
+## GUI
+This folder contains a nice web-based GUI that allows to draw an NF-FG and deploy it on the UN, as well as to visualize NF-FGs already deployed.
+
 ## Use-cases
 This folder contains some running use-cases for the UN, including configuration files and VNFs.

@@ -8,7 +8,7 @@
         "name": "ingress",
         "type": "interface",
         "interface": {
-          "interface": "eth0"
+          "if-name": "eth0"
         }
       },
       {
@@ -16,7 +16,7 @@
         "name": "egress",
         "type": "interface",
         "interface": {
-          "interface": "eth1"
+          "if-name": "eth1"
         }
       }
     ],

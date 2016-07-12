@@ -34,34 +34,32 @@ private:
 	string name;
 
 	/**
-	*	@brief: the id of the port (e.g., 10.0.0.1)
-	*/
-	string node_id;
-
-	/**
-	*	@brief: the switch id of the port (e.g., 1)
-	*/
-	string sw_id;
-
-	/**
 	*	@brief: the interface of the port (e.g., eth0)
 	*/
 	string interface;
 
 public:
-
-	EndPointInterface(string id, string name, string node_id, string sw_id, string interface);
+	EndPointInterface(string id, string name, string interface);
+	
+	/**
+	*	@brief: return the ID of the endpoint
+	*/
 	string getId();
+	
+	/**
+	*	@brief: return the name of the endpoint
+	*/
 	string getName();
-	string getNodeId();
-	string getSwId();
+	
+	/**
+	*	@brief: return the physical interface corresponding to the endpoint
+	*/
 	string getInterface();
 
 	~EndPointInterface();
 
 	bool operator==(const EndPointInterface &other) const;
 
-	void print();
 	Object toJSON();
 };
 
