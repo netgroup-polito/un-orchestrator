@@ -4,7 +4,7 @@
 
 	<!-- define names -->
 	<!-- Please replace following line with the install folder of your Apache Tomcat -->
-	<property name="application.war.foldername" value="/var/local/apache-tomcat-7.0.62/webapps"/>
+	<property name="application.war.foldername" value="."/>
 	<property name="application.war.filename" value="ROOT.war"/>
 
 	<!-- define directories -->

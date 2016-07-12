@@ -28,7 +28,12 @@ NODE_TYPE = 'BisBis'
 	by the node virtualizer.
 '''
 supported_matches = {
-	"dl_vlan" : "vlan_id"
+	"dl_vlan" : "vlan_id",
+	"ether_type": "ether_type",
+	"source_ip": "source_ip",
+	"dest_ip": "dest_ip",
+	"source_mac": "source_mac",
+	"dest_mac": "dest_mac"
 }
 
 '''

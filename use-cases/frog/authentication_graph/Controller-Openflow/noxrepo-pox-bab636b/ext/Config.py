@@ -24,7 +24,7 @@ class Configuration(object):
         self._my_infos.ip = config.get('my_infos', 'ip')
         self._my_infos.tcp_port = int(config.get('my_infos', 'tcp_port'))
         #self._my_infos.my_default_GRE_tunnel = int(config.get('my_infos', 'my_default_GRE_tunnel'))
-        self._my_infos.user_ports = list(config.get('my_infos', 'user_ports'))
+        self._my_infos.not_user_ports = list(config.get('my_infos', 'not_user_ports'))
         self._cp = lambda: None
         self._cp.ip = config.get('captive_portal_infos', 'ip')
         self._cp.tcp_port = int(config.get('captive_portal_infos', 'tcp_port'))

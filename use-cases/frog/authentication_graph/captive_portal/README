@@ -26,7 +26,8 @@ Reqiured libraries:
 
 Configure the network function:
 
-* to change the configuration of the captive portal, edit the file jetty.conf
+* to change the configuration of the captive portal, edit the files tomcat7.conf
+  and server.xml
 * to change the network configuration of the container edit the file start_cp.sh
 
 ###############################################################################

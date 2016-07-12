@@ -14,7 +14,7 @@ cd /opt/TakeMac
 gunicorn -b 192.168.4.3:81 main:app -t 100 &
 
 #Start the captive portal
-service jetty start
+service tomcat7 start
 echo "Captive portal started"
 
 

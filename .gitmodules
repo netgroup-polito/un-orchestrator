@@ -1,6 +1,3 @@
-[submodule "virtualizer/virtualizer_library"]
-	path = virtualizer/virtualizer_library
-	url = https://github.com/Ericsson/unify-virtualizer
 [submodule "virtualizer/un_native_nffg_library"]
 	path = virtualizer/un_native_nffg_library
 	url = https://github.com/netgroup-polito/nffg-library.git

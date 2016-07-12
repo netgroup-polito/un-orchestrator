@@ -4,7 +4,7 @@ MAINTAINER Politecnico di Torino
 # This file is based on the guide provided at:
 # 	http://pietervogelaar.nl/ubuntu-12-04-install-jetty-9 
 
-RUN apt-get update && apt-get install -y --no-install-recommends openjdk-7-jdk wget ssh iptraf python python-pip python-dev screen build-essential lsof
+RUN apt-get update && apt-get install -y --no-install-recommends openjdk-7-jdk ssh build-essential python python-pip python-dev screen build-essential lsof tomcat7 authbind
 
 #Prepare the ssh server
 RUN mkdir -p /var/run/sshd && \
@@ -17,19 +17,11 @@ RUN sed '/PermitRootLogin without-password/d' /etc/ssh/sshd_config > tmp_file &&
 	mv tmp_file /etc/ssh/sshd_config
 
 #Prepare the captive portal
-RUN mkdir /usr/java
-RUN ln -s /usr/lib/jvm/java-7-openjdk-amd64 /usr/java/default
-
-RUN wget http://repo1.maven.org/maven2/org/mortbay/jetty/jetty-hightide/8.0.0.v20110901/jetty-hightide-8.0.0.v20110901.tar.gz
-RUN tar xf jetty*.tar.gz && rm -rf jetty*.tar.gz
-RUN mkdir /opt/jetty && cd jetty* && ls | while read r; do cp -R $r /opt/jetty; done && cd .. && rm -rf jetty*
-
-RUN cp /opt/jetty/bin/jetty.sh /etc/init.d/jetty
-
-RUN cd /opt/jetty/webapps/ && rm -rf * && rm -rf ../contexts
-
-ADD jetty.conf /etc/default/jetty
-ADD root.war /opt/jetty/webapps/root.war
+ADD server.xml /var/lib/tomcat7/conf/server.xml
+ADD tomcat7.conf /etc/default/tomcat7
+RUN sudo touch /etc/authbind/byport/80 && chmod 500 /etc/authbind/byport/80 && chown tomcat7 /etc/authbind/byport/80
+RUN rm -rf /var/lib/tomcat7/webapps/*
+ADD ROOT.war /var/lib/tomcat7/webapps/ROOT.war
 
 #Add the takeMac server
 

@@ -119,13 +119,11 @@ public class Update extends HttpServlet {
 						 * of the user profile.
 						 */
 						Boolean status = true;
-						session.setAttribute("instantiation_complete", status.toString());
+						instantiation_complete=status.toString();
+						session.setAttribute("instantiation_complete", instantiation_complete);
 						response.setHeader("Connection","close");
 					}
-					if(instantiation_complete != null){
-			   			jsonObject.append("instantiation_complete", instantiation_complete);
-			   			System.out.println("instantiation_complete setted");
-			   		} else {
+					if(instantiation_complete == null){
 			   			jsonObject.append("instantiation_complete", false);
 			   		}
 					String res = jsonObject.toString();

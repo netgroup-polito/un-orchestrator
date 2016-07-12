@@ -12,6 +12,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
@@ -136,7 +137,7 @@ public class Login extends HttpServlet {
 			 * Sends to the Orchestrator a Deploy Request for the user service graph.
 			 */
 			if (sendDeployRequestToTheOrchestrator(keystone_token,
-					r.getIP_address(), r.getMAC(), r.getUser_MAC(), session) == false) {
+					r.getIP_address(), r.getMAC(), r.getUser_MAC(), r.getUser_port(), session) == false) {
 				out.print("{\"status\":\"error\", \"accountable\": \"orchestrator\"}");
 				out.flush();
 				System.out.println("Login is not done. An error is occured");
@@ -157,14 +158,14 @@ public class Login extends HttpServlet {
 
 		String requested_path = (String) session.getAttribute("requested_path");
 		System.out.println("Login " + requested_path);
-		out.print("{\"status\":\"success\",\"uri\":\"http://"+((HttpServletRequest) request).getServerName()+session.getServletContext().getContextPath()+"/Index\"}");
+		out.print("{\"status\":\"success\",\"uri\":\"http://"+((HttpServletRequest) request).getServerName()+"/Index\"}");
 		out.flush();
 		System.out.println("Login done.");
 
 	}
 
 	private boolean sendDeployRequestToTheOrchestrator(String user,
-			String ip_address, String mac, String user_MAC, HttpSession session)
+			String ip_address, String mac, String user_MAC, String user_port, HttpSession session)
 			throws ClientProtocolException, IOException {
 		
 		/*
@@ -186,11 +187,13 @@ public class Login extends HttpServlet {
 		StringEntity input_entity = new StringEntity(
 				"{\"session\": {\"node_id\": \"" + mac
 						+ "\", \"SW_endpoint\": \"" + ip_address
-						+ "\", \"mac\": \"" + user_MAC + "\"}}");
+						+ "\", \"mac\": \"" + user_MAC
+						+ "\", \"port\": \"" + user_port + "\"}}");
 		
 		System.out.println("{\"session\": {\"node_id\": \"" + mac
-				+ "\", \"SW_endpoint\": \"" + ip_address
-				+ "\", \"mac\": \"" + user_MAC + "\"}}");
+						+ "\", \"SW_endpoint\": \"" + ip_address
+						+ "\", \"mac\": \"" + user_MAC
+						+ "\", \"port\": \"" + user_port + "\"}}");
 		
 		input_entity.setContentType("application/json");
 		putRequest.setEntity(input_entity);
@@ -199,7 +202,6 @@ public class Login extends HttpServlet {
 		putRequest.setHeader("X-Auth-User", user);
 		putRequest.setHeader("X-Auth-Pass", ((Map<String,String>) session.getServletContext().getAttribute("users")).get(user));
 		putRequest.setHeader("X-Auth-Tenant", "public");
-		
 		HttpResponse response = httpClient.execute(putRequest);
 		System.out.println("Orchestrator response to the instantiation requests: "+response.getStatusLine().toString());
 		if (response.getStatusLine().getStatusCode() == 202)

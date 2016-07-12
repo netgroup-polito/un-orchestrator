@@ -84,11 +84,12 @@ class MessageWithIP extends Message {
 
 
 class AuthResponseMessage extends Message {
-	public AuthResponseMessage(String iP_address, String mAC, String user_MAC, String msg_content) {
+	public AuthResponseMessage(String iP_address, String mAC, String user_MAC, String user_port, String msg_content) {
 		super(MsgType.Auth_OK_Resp,msg_content);
 		IP_address = iP_address;
 		MAC = mAC;
 		this.user_MAC = user_MAC;
+		this.user_port = user_port;
 	}
 	
 	public AuthResponseMessage(JSONObject obj) {
@@ -97,6 +98,7 @@ class AuthResponseMessage extends Message {
 		IP_address = (String) obj.get("IP_address");
 		MAC = (String) obj.get("MAC");
 		this.user_MAC = (String) obj.get("user_MAC");
+		this.user_port = (String) obj.get("user_port");
 	}
 
 	public String getMAC() {
@@ -107,7 +109,7 @@ class AuthResponseMessage extends Message {
 		MAC = mAC;
 	}
 
-	private String IP_address,MAC,user_MAC;
+	private String IP_address,MAC,user_MAC,user_port;
 
 	public String getIP_address() {
 		return IP_address;
@@ -125,6 +127,7 @@ class AuthResponseMessage extends Message {
 		json.put("IP_address", this.IP_address);
 		json.put("MAC", this.MAC);
 		json.put("user_MAC", this.user_MAC);
+		json.put("user_port", this.user_port);
 		return json;
 	}
 
@@ -134,5 +137,15 @@ class AuthResponseMessage extends Message {
 
 	public void setUser_MAC(String user_MAC) {
 		this.user_MAC = user_MAC;
+	}
+
+	public String getUser_port()
+	{
+		return user_port;
+	}
+
+	public void setUser_port(String user_port)
+	{
+		this.user_port=user_port;
 	}
 }

@@ -1,5 +1,3 @@
-
-
 from pox.core import core
 from threading import Lock
 import thread
@@ -43,15 +41,17 @@ def make_tcp_connection(IP_src, IP_dst, port_src, port_dst):
 class host_infos(object):
     IP = ""
     MAC = ""
+    switch_port = 0 #ingress user port
     flag_auth = 0
 
     # The class "constructor" - It's actually an initializer
-    def __init__(self, IP, MAC, flag_auth):
+    def __init__(self, IP, MAC, switch_port, flag_auth):
         self.IP = IP
         self.MAC = MAC
+        self.switch_port = switch_port
         self.flag_auth = flag_auth
-def make_host_infos(IP, MAC, flag_auth):
-    h = host_infos(IP, MAC, flag_auth)
+def make_host_infos(IP, MAC, switch_port, flag_auth):
+    h = host_infos(IP, MAC, switch_port, flag_auth)
     return h
 
 class port_infos(object):
@@ -127,7 +127,7 @@ def my_socket(connection,*args):
         handle = Handle()
         handle.setHandle(s)
         print ('Socket created')
-    
+
         #Bind socket to local host and port
         try:
             log.info("Trying to do bind [host: " + HOST + ":" + str(PORT) + "]")
@@ -137,7 +137,7 @@ def my_socket(connection,*args):
             sys.exit()
     
         print ('Socket bind complete')
-    
+
         #Start listening on socket
         s.listen(10)
         print ('Socket now listening')
@@ -197,7 +197,7 @@ def my_socket(connection,*args):
         self.connection.send(msg)
         """
         sys.exit(0)
-    
+
     #now keep talking with the client
     while 1:
         #wait to accept a connection - blocking call
@@ -215,7 +215,7 @@ def my_socket(connection,*args):
             # Authentication phase
             log.info("returned Auth_OK from Captive Portal")
             IP_address = data['IP_address']
-            log.info("IP address is --> " + str(IP_address)+" !") 
+            log.info("IP address is --> " + str(IP_address)+" !")
             for swich_id, switch in switchs_info.iteritems():
                 log.info("For the switch " + str(swich_id)+ " ...")
                 for port_id, port in switch.ports_info.iteritems():
@@ -227,10 +227,10 @@ def my_socket(connection,*args):
                         log.info("client.IP = "+str(client.IP)+" - IP_address = "+str(IP_address))
                         if client.IP == IP_address:
                             #clients_info[port] = client
-        		    log.info("For the MAC " + str(port_id)+ " sending data to CP...")
+                            log.info("For the MAC " + str(port_id)+ " sending data to CP...")
                             #time.sleep(0.5)
                             #Send some data to remote server
-                            data = {'Msg_Type':'Auth_OK_Resp', 'Msg_Content':'','IP_address':switch.infos.sock.getpeername()[0],'MAC':my_dpid_to_str(switch.infos.dpid),'user_MAC':MAC.toStr() }
+                            data = {'Msg_Type':'Auth_OK_Resp', 'Msg_Content':'','IP_address':switch.infos.sock.getpeername()[0],'MAC':my_dpid_to_str(switch.infos.dpid),'user_MAC':MAC.toStr(),'user_port':str(client.switch_port)}
                             print(json.dumps(data))
                             try :
                                 #Set the whole string
@@ -242,7 +242,7 @@ def my_socket(connection,*args):
                             print ('Message 1 send successfully')
         elif data['Msg_Type'] == 'Deploy_OK':
                 log.warning("returned Deploy_OK from Captive Portal")
-                IP_address = data['IP_address']         
+                IP_address = data['IP_address']
                 for swich_id, switch in switchs_info.iteritems():
                     for port_id, port in switch.ports_info.iteritems():
                         for MAC, client in port.clients_info.iteritems():
@@ -271,7 +271,7 @@ def my_socket(connection,*args):
                                 print ('Message 2 send successfully')
         else:
             log.warning("unknown message returned from Captive Portal")
-            
+
 
     s.close()
 
@@ -325,8 +325,8 @@ class IPForger (object):
             switchs_info[self.connection.dpid] = switch_infos(self.connection)
         finally:
             lock.release() # release lock, no matter what
-    
-    switch =  switchs_info[self.connection.dpid]   
+
+    switch =  switchs_info[self.connection.dpid]
     if event.port not in switch.ports_info:
         lock.acquire()
         try:
@@ -336,10 +336,15 @@ class IPForger (object):
         finally:
             lock.release() # release lock, no matter what
 
-
         #if event.port == conf.my_infos.my_default_GRE_tunnel:
-	    log.info("Comparing the ports speaking " + str(event.port) + " and first user port " + str(conf.my_infos.user_ports[0]))
-        if str(event.port) != str(conf.my_infos.user_ports[0]):
+        is_user_port = True
+        log.info("Comparing the ports speaking " + str(event.port))
+        for not_user_port in conf.my_infos.not_user_ports:
+            if str(event.port) == str(not_user_port):
+                is_user_port = False
+                break
+
+        if not is_user_port:
             log.info("Event port is " + str(event.port))
             log.info("First for the ethernet interface")
             # First rule: allow all traffic
@@ -403,7 +408,7 @@ class IPForger (object):
     if not packet.parsed:
       log.info("ignoring unparsed packet")
       return
-  
+
     client_list = switch.ports_info[event.port].clients_info
     log.info("LOOP Thread id: "+str(thread.get_ident() ))
     log.debug("packet.type: "+ str(packet.type) +" || pkt.ethernet.IP_TYPE: "+ str(pkt.ethernet.IP_TYPE))
@@ -415,15 +420,15 @@ class IPForger (object):
             log.info("tcp_hdr.dstport: "+ str(tcp_hdr.dstport) +" || DestPort: || 80")
             if tcp_hdr.dstport == 80:
                 log.debug("packet.src: "+ str(packet.src))
-                
+
                 if packet.src not in client_list:
                     log.info("packet.src is not in client_list")
                     lock.acquire()
                     try:
-                        log.info("save host info")
-                        client_list[packet.src] = host_infos(ipv4_hdr.srcip,packet.src,0)
+                        log.info("save host info: IP=" + str(ipv4_hdr.srcip) + ", MAC=" + str(packet.src) + ", INGRESS_SWITCH_PORT=" + str(event.port))
+                        client_list[packet.src] = host_infos(ipv4_hdr.srcip,packet.src,event.port,0)
                     finally:
-                        lock.release() # release lock, no matter what                    
+                        lock.release() # release lock, no matter what
                 else:
                     log.debug("PACKET_IN INFOs: user MAC: "+ str(packet.src)+", user IP: "+ str(ipv4_hdr.srcip))
                     user_infos = client_list[packet.src]
@@ -432,7 +437,7 @@ class IPForger (object):
                     if user_ip != ipv4_hdr.srcip:
                         log.debug("Updating client IP informations")
                         user_infos.IP = ipv4_hdr.srcip
-                           
+
                 client = client_list[packet.src]
                 if (client.flag_auth == 0):
 
@@ -500,10 +505,10 @@ class Started( object):
     __metaclass__ = Singleton
     def __init__(self):
         self.started = 0
-        
+
     def getStatus(self):
         return self.started
-    
+
     def setStarted(self):
         self.started = 1
 
@@ -511,10 +516,10 @@ class Handle( object):
     __metaclass__ = Singleton
     def __init__(self):
         self.handle = None
-        
+
     def getHandle(self):
         return self.handle
-    
+
     def setHandle(self, handle):
         self.handle = handle
 
@@ -522,10 +527,10 @@ class DPI( object):
     __metaclass__ = Singleton
     def __init__(self):
         self.dpi = None
-        
+
     def getDPI(self):
         return self.dpi
-    
+
     def setDPI(self, dpi):
         self.dpi = dpi
 
@@ -545,16 +550,16 @@ class IP_forger (object):
             t_id = thread.start_new_thread( my_socket, (event.connection,1) )
             log.info("Thread started")
             log.info("Thread id :"+str(t_id))
-            
+
         except:
            print ("Error: unable to start socket thread")
-           
+
     def _handle_ConnectionDown(self, event):
         dpi = DPI()
         down_dpi = dpi.getDPI()
         del switchs_info[down_dpi]
         #switchs_info.remove(down_dpi)
-        #switchs_info[down_dpi]  = dict([]) 
+        #switchs_info[down_dpi]  = dict([])
         log.warning("Lost openflow connection")
 
 def launch (transparent=False, hold_down=_flood_delay):
