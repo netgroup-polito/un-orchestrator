@@ -22,6 +22,7 @@ public:
 
 	bool startNF(StartNFIn sni);
 	bool stopNF(StopNFIn sni);
+	bool updateNF(UpdateNFIn uni);
 
 	string getCores();
 };

@@ -29,8 +29,7 @@ some more components are required to run the virtualizer.
 	$ sudo apt-get install python-pip
 	$ sudo pip install gunicorn falcon cython requests
 
-The virtualizer module relies on the virtualizer library (v5) that is not included in this repository but it can be found on the UNIFY repository.
-
+The virtualizer module relies on the virtualizer library (v5) that is not included in this repository but it can be found on the UNIFY repository. The virtualizer library's python files must then be put in the [virtualizer_library](virtualizer_library) directory
 ## How to configure the Virtualizer
 
 The Virtualizer reads its configuration from the file [./config/configuration.ini](config/configuration.ini), 

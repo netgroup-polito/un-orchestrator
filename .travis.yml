@@ -1,0 +1,53 @@
+language: cpp
+
+compiler:
+ - gcc
+
+os:
+ - linux
+
+sudo: required
+dist: trusty
+
+before_script: ./utils/travis-ci/prepare.sh
+
+script: ./utils/travis-ci/build.sh
+
+addons:
+ apt:
+  packages:
+  - build-essential
+  - cmake
+  - libboost-all-dev
+  - libxml2-dev
+  - libmicrohttpd-dev
+  - sqlite3
+  - libsqlite3-dev
+  - libssl-dev
+  - libvirt-dev
+  - libzmq3-dev
+  - libjson-c-dev
+  - libjson-c2
+
+cache:
+ directories:
+ - $HOME/rofl-common
+ - $HOME/json-spirit
+ - $HOME/double_decker
+
+env:
+ - KVM=ON DOCKER=ON NATIVE=ON DPDK=ON VSWITCH=XDPD DD=OFF
+ - KVM=ON DOCKER=ON NATIVE=ON DPDK=ON VSWITCH=OVS-DPDK DD=OFF
+ - KVM=ON DOCKER=ON NATIVE=ON DPDK=OFF VSWITCH=OVS-OVSDB DD=OFF
+ - KVM=ON DOCKER=ON NATIVE=ON DPDK=ON VSWITCH=ERFS DD=OFF
+ - KVM=ON DOCKER=ON NATIVE=ON DPDK=OFF VSWITCH=OVS-OVSDB DD=ON
+
+notifications:
+ email:
+  recipients:
+   - universal_node@googlegroups.com
+
+branches:
+ only:
+  - master
+  - test

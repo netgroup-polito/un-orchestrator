@@ -1,5 +1,5 @@
 Ivano
-The examples in orchestrator/config must be updated to the new nf-fg.
+Some examples in orchestrator/config must be updated to the new nf-fg.
 
 Mauricio (26-Jan-2016)
 When there is a missing semicolon in the rules list on a NF-FG file, it
@@ -13,11 +13,3 @@ example:
 {"id":"00000300",	"match":{"VNF_id":"500_forwarder:1"},	"action":{"port":"dpdk0"}				}
 
 In this case all the rules from 200 are ignored.
-
-*******************************************************************************
-VLAN Endpoint does not work properly.
-Traffic coming from an endpoint of this type (tagged) is not correctly matched and the vlan tag is not popped. 
-On the other hand, traffic directed to an endpoint of this type is not tagged (the problem should be on the actions order)
-
-Not all flows are deleted when a graph is deleted.
-

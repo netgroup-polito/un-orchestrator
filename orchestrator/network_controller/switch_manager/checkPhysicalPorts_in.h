@@ -3,6 +3,8 @@
 
 #pragma once
 
+#define __STDC_FORMAT_MACROS
+
 #include <string>
 #include <list>
 #include <inttypes.h>

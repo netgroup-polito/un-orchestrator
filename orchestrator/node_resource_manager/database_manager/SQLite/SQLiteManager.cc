@@ -207,6 +207,7 @@ user_info_t *SQLiteManager::getLoggedUserByName(const char *username) {
 
 		if (res == SQLITE_ROW) {
 			usr = (user_info_t *) malloc(sizeof(user_info_t));
+			assert(usr);
 
 			usr->user = (char *) sqlite3_column_text(stmt, 0);
 			usr->group = (char *) sqlite3_column_text(stmt, 1);
@@ -238,13 +239,17 @@ user_info_t *SQLiteManager::getUserByName(const char *username) {
 
 		if (res == SQLITE_ROW) {
 			usr = (user_info_t *) malloc(sizeof(user_info_t));
+			assert(usr);
 
+			// FIXME, this should make copies
 			usr->user = (char *) sqlite3_column_text(stmt, 0);
 			usr->group = (char *) sqlite3_column_text(stmt, 1);
 			usr->pwd = (char *) sqlite3_column_text(stmt, 2);
 			usr->token = (char *) sqlite3_column_text(stmt, 3);
 		}
 	}
+
+	// FIXME, *stmt leaks... sqlite3_finalize() missing
 
 	return usr;
 }
@@ -327,7 +332,7 @@ bool SQLiteManager::isGenericResource(const char *generic_resource) {
 	return (count > 0);
 }
 
-int SQLiteManager::insertResource(char *generic_resource, char *resource, char *owner) {
+int SQLiteManager::insertResource(char *generic_resource, const char *resource, char *owner) {
 	int rc = 0, res = 0, idx = 0;
 	char *owner_p = NULL, *group_p = NULL, *all_p = NULL, *admin_p = NULL, *sql = NULL;
 

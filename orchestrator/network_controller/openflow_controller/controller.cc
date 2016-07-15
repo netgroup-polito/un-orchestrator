@@ -14,13 +14,17 @@ void Controller::start()
 {
 	pthread_t thread[1];
 	pthread_create(&thread[0],NULL,loop,this);
+#ifdef __x86_64__
+	//the following function is not available on all platforms
+	pthread_setname_np(thread[0],"Openflow-Controller");
+#endif
 }
 
 void Controller::handle_dpt_open(crofdpt& dpt)
 {
 	pthread_mutex_lock(&controller_mutex);
 
-	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is open!");
+	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is open (using the TCP port %s)!",controllerPort.c_str());
 
 	dpt.flow_mod_reset();
 	switch(OFP_VERSION)
@@ -49,7 +53,7 @@ void Controller::handle_dpt_close(crofdpt& dpt)
 {
 	isOpen = false;
 	this->dpt = NULL;
-	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is closed");
+	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is closed (the connection was on the TCP port %s)",controllerPort.c_str());
 }
 
 /*void Controller::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid,rofl::openflow::cofmsg_packet_in& msg)
@@ -133,6 +137,12 @@ bool Controller::removeRuleFromID(string ID)
 
 bool Controller::installNewRulesIntoLSI(list<Rule> rules)
 {
+	if(rules.size() == 0)
+	{
+		logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "No rule to be installed.");
+		return true;
+	}
+
 	if(isOpen)
 	{
 		logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Installing (%d) new rules!",rules.size());
@@ -152,7 +162,7 @@ bool Controller::installNewRulesIntoLSI(list<Rule> rules)
 		return true;
 	}
 
-	logger(ORCH_WARNING, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "No datapath connected! Cannot install rules!");
+	logger(ORCH_WARNING, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "No datapath connected at the TCP port %s! Cannot install rules!",controllerPort.c_str());
 
 	return false;
 }
@@ -193,7 +203,7 @@ void *Controller::loop(void *param)
 	if(LOGGING_LEVEL <= ORCH_DEBUG)
 		rofl::logging::set_debug_level(7);
 
-	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Openflow controller is going to start...");
+	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Openflow controller is going to start on the TCP port %s...",controller->controllerPort.c_str());
 
 	rofl::cioloop::get_loop().run();
 

@@ -1,6 +1,7 @@
 #ifndef OVS_COMMANDS_H_
 #define OVS_COMMANDS_H_ 1
 
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <arpa/inet.h>
 #include <unistd.h>

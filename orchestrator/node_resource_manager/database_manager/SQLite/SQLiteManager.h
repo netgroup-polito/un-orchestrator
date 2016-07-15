@@ -98,7 +98,7 @@ public:
 	bool resourceExists(const char *generic_resource, const char *resource);
 
 	int insertResource(char *generic_resource);
-	int insertResource(char *generic_resource, char *resource, char *owner);
+	int insertResource(char *generic_resource, const char *resource, char *owner);
 	int updateResource(char *generic_resource, char *resource);
 	int deleteResource(char *generic_resource, char *resource);
 

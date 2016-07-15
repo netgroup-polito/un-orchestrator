@@ -8,30 +8,15 @@ SecurityManager *secmanager = NULL;
 
 bool client_auth = false;
 
-bool RestServer::init(SQLiteManager *dbm, bool cli_auth, char *nffg_filename,int core_mask,set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *un_netmask, char *ipsec_certificate)
+bool RestServer::init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs,int core_mask,set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string name_resolver_ip, int name_resolver_port)
 {
-	char *nffg_file_name = new char[BUFFER_SIZE];
-	if (nffg_filename != NULL && strcmp(nffg_filename, "") != 0)
-		strcpy(nffg_file_name, nffg_filename);
-	else
-		nffg_file_name = NULL;
 
 	try
 	{
-		gm = new GraphManager(core_mask,physical_ports,un_address,string(un_netmask),orchestrator_in_band,string(un_interface),string(ipsec_certificate));
+		gm = new GraphManager(core_mask,physical_ports,un_address,orchestrator_in_band,string(un_interface),string(ipsec_certificate), name_resolver_ip, name_resolver_port);
 
 	} catch (...) {
 		return false;
-	}
-
-	//Handle the file containing the first graph to be deployed
-	if (nffg_file_name != NULL) {
-		sleep(2); //XXX This give time to the controller to be initialized
-
-		if (!readGraphFromFile(nffg_file_name)) {
-			delete gm;
-			return false;
-		}
 	}
 
 	client_auth = cli_auth;
@@ -42,18 +27,29 @@ bool RestServer::init(SQLiteManager *dbm, bool cli_auth, char *nffg_filename,int
 		secmanager = new SecurityManager(dbmanager);
 	}
 
+	sleep(2); //XXX This give time to the controller to be initialized
+
+	//Handle the file containing the graphs to be deployed
+	for(map<string,string>::iterator iter = boot_graphs.begin(); iter!=boot_graphs.end(); iter++)
+	{
+		if (!readGraphFromFile(iter->first,iter->second)) {
+			delete gm;
+			return false;
+		}
+	}
+
 	return true;
 }
 
-bool RestServer::readGraphFromFile(char *nffg_filename) {
+bool RestServer::readGraphFromFile(const string &nffgResourceName, string &nffgFileName) {
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__,
-			"Considering the graph described in file '%s'", nffg_filename);
+			"Considering the graph described in file '%s'", nffgFileName.c_str());
 
 	std::ifstream file;
-	file.open(nffg_filename);
+	file.open(nffgFileName.c_str());
 	if (file.fail()) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__,
-				"Cannot open the file %s", nffg_filename);
+				"Cannot open the file %s", nffgFileName.c_str());
 		return false;
 	}
 
@@ -62,7 +58,7 @@ bool RestServer::readGraphFromFile(char *nffg_filename) {
 	while (std::getline(file, str))
 		stream << str << endl;
 
-	if (createGraphFromFile(stream.str()) == 0)
+	if (createGraphFromFile(nffgResourceName,stream.str()) == 0)
 		return false;
 
 	return true;
@@ -190,7 +186,7 @@ int RestServer::login(struct MHD_Connection *connection, void **con_cls) {
 
 	int ret = 0, rc = 0;
 	struct MHD_Response *response;
-	char *username, *password;
+	char username[BUFFER_SIZE], password[BUFFER_SIZE];
 	unsigned char hash_token[HASH_SIZE], temp[BUFFER_SIZE];
 	char hash_pwd[BUFFER_SIZE], nonce[BUFFER_SIZE], timestamp[BUFFER_SIZE], tmp[BUFFER_SIZE], user_tmp[BUFFER_SIZE];
 
@@ -212,17 +208,12 @@ int RestServer::login(struct MHD_Connection *connection, void **con_cls) {
 		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 	}
 
-	if (!parsePostBody(*con_info, &username, &password)) {
+	if (!parsePostBody(*con_info, username, password)) {
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Login error: Malformed content");
 		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 	}
 
 	try {
-
-		if (username == NULL || password == NULL) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Client unathorized!");
-			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
-		}
 
 		SHA256((const unsigned char*) password, strlen(password), hash_token);
 
@@ -379,7 +370,7 @@ int RestServer::createUser(char *username, struct MHD_Connection *connection, co
 
 
 bool RestServer::parsePostBody(struct connection_info_struct &con_info,
-		char **user, char **pwd) {
+		char *user, char *pwd) {
 	Value value;
 	read(con_info.message, value);
 	return parseLoginForm(value, user, pwd);
@@ -392,7 +383,7 @@ bool RestServer::parsePostBody(struct connection_info_struct &con_info,
 	return parseUserCreationForm(value, pwd, group);
 }
 
-bool RestServer::parseLoginForm(Value value, char **user, char **pwd) {
+bool RestServer::parseLoginForm(Value value, char *user, char *pwd) {
 	try {
 		Object obj = value.getObject();
 
@@ -405,10 +396,10 @@ bool RestServer::parseLoginForm(Value value, char **user, char **pwd) {
 
 			if (name == USER) {
 				foundUser = true;
-				(*user) = (char *) value.getString().c_str();
+				strcpy(user,value.getString().c_str());
 			} else if (name == PASS) {
 				foundPwd = true;
-				(*pwd) = (char *) value.getString().c_str();
+				strcpy(pwd, value.getString().c_str());
 			} else {
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
 						"Invalid key: %s", name.c_str());
@@ -478,17 +469,14 @@ bool RestServer::parseUserCreationForm(Value value, char **pwd, char **group) {
 }
 
 
-int RestServer::createGraphFromFile(string toBeCreated) {
-	char graphID[BUFFER_SIZE];
-	strcpy(graphID, GRAPH_ID);
+int RestServer::createGraphFromFile(const string &graphID, string toBeCreated) {
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph ID: %s", graphID);
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph ID: %s", graphID.c_str());
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph content:");
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "%s",
 			toBeCreated.c_str());
 
-	string gID(graphID);
-	highlevel::Graph *graph = new highlevel::Graph(gID);
+	highlevel::Graph *graph = new highlevel::Graph(graphID);
 
 	if (!parseGraphFromFile(toBeCreated, *graph, true)) {
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Malformed content");
@@ -502,6 +490,9 @@ int RestServer::createGraphFromFile(string toBeCreated) {
 					"The graph description is not valid!");
 			return 0;
 		}
+		// If security is required, update database
+		if(dbmanager != NULL)
+			dbmanager->insertResource(BASE_URL_GRAPH, graphID.c_str(), ADMIN);
 	} catch (...) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__,
 				"An error occurred during the creation of the graph!");
@@ -669,8 +660,6 @@ int RestServer::httpResponse(struct MHD_Connection *connection, int code) {
 }
 
 int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, const char *method, const char *url) {
-	char delimiter[] = "/";
-	char *generic_resource = NULL, *resource = NULL, *extra = NULL;
 	int ret = 0;
 
 	user_info_t *usr = NULL;
@@ -696,7 +685,7 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 	// PUT and POST requests must contain JSON data in their body
 	} else if(strcmp(method, PUT) == 0 || strcmp(method, POST) == 0) {
 		const char *c_type = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Content-Type");
-		if (strcmp(c_type, JSON_C_TYPE) != 0) {
+		if ((c_type == NULL) || (strcmp(c_type, JSON_C_TYPE) != 0)) {
 			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Content-Type must be: "JSON_C_TYPE);
 			return httpResponse(connection, MHD_HTTP_UNSUPPORTED_MEDIA_TYPE);
 		}
@@ -728,30 +717,47 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 		}
 	}
 
+	// check for invalid URL
+	assert(url && url[0]=='/'); // neither NULL nor empty
+
 	// Fetch from URL the generic resource name, resource name and extra info
-	generic_resource = strtok((char *) url, delimiter);
-	resource = strtok(NULL, delimiter);
-	extra = strtok(NULL, delimiter);
+	std::string generic_resource, resource, extra;
+	std::stringstream urlstream(url+1); // +1 to skip first "/"
+	if (getline(urlstream, generic_resource, '/'))
+		if (getline(urlstream, resource, '/'))
+			if (getline(urlstream, extra, '/')) {}
 
 	// Fetch user information
 	if(dbmanager != NULL)
 		usr = dbmanager->getUserByToken(token);
 
 	// If operation on a generic resource (e.g. /NF-FG)
-	if(generic_resource != NULL && resource == NULL && extra == NULL)
-		ret = doOperationOnResource(connection, con_info, usr, method, generic_resource);
+	if(!generic_resource.empty() && resource.empty() && extra.empty())
+		ret = doOperationOnResource(connection, con_info, usr, method,
+				generic_resource.c_str());
 
 	// If operation on a single resource (e.g. /NF-FG/myGraph) 
-	else if(generic_resource != NULL && resource != NULL && extra == NULL)
-		ret = doOperationOnResource(connection, con_info, usr, method, generic_resource, resource);
+	else if(!generic_resource.empty() && !resource.empty() && extra.empty())
+		ret = doOperationOnResource(connection, con_info, usr, method,
+				generic_resource.c_str(), resource.c_str());
 
 	// If operation on a specific feature of a single resource (e.g. /NF-FG/myGraph/flowID)
-	else
-		ret = doOperationOnResource(connection, con_info, usr, method, generic_resource, resource, extra);
+	else if(!generic_resource.empty() && !resource.empty() && !extra.empty())
+		ret = doOperationOnResource(connection, con_info, usr, method,
+				generic_resource.c_str(), resource.c_str(), extra.c_str());
+
+	// all other requests (e.g. a request to "/") --> 404
+	else {
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Returning 404 for %s request on %s", method, url);
+		return httpResponse(connection, MHD_HTTP_NOT_FOUND);
+	}
 
 	/*
-	 * The usr variable points to a memory space that is allocated inside the isAuthenticated() method,
+	 * The usr variable points to a memory space that is allocated inside the getUserByToken() method,
 	 * by using malloc(), so I have to free that memory.
+	 * FIXME, this needs to be changed, as the struct
+	 * members of usr are only valid because we leak that
+	 * sqlite statment there...
 	 */
 	if(usr != NULL)
 		free(usr);
@@ -1059,8 +1065,8 @@ int RestServer::deployNewGraph(struct MHD_Connection *connection, struct connect
 	struct MHD_Response *response;
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Received request for deploying %s/%s", BASE_URL_GRAPH, resource);
-
 	// If security is required, check whether the graph already exists in the database
+
 	/* this check prevent updates!
 	if(dbmanager != NULL && dbmanager->resourceExists(BASE_URL_GRAPH, resource)) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: cannot deploy an already existing graph in the database!");

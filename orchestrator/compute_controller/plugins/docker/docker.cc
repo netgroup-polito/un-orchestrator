@@ -3,8 +3,9 @@
 bool Docker::isSupported(Description&)
 {
 	int retVal;
-
-	retVal = system(CHECK_DOCKER);
+	std::stringstream ss;
+	ss << getenv("un_script_path") << CHECK_DOCKER;
+	retVal = system(ss.str().c_str());
 	retVal = retVal >> 8;
 
 	logger(ORCH_DEBUG, DOCKER_MODULE_NAME, __FILE__, __LINE__, "Script returned: %d\n",retVal);
@@ -32,7 +33,7 @@ bool Docker::updateNF(UpdateNFIn uni)
 	
 	unsigned int num_old_port = namesOfPortsOnTheSwitch.size() - n_ports;
 	stringstream command;
-	command << HOTPLUG_DOCKER_NF << " " << lsiID << " " << nf_name << " " << num_old_port << " " << n_ports;
+	command << getenv("un_script_path") << HOTPLUG_DOCKER_NF << " " << lsiID << " " << nf_name << " " << num_old_port << " " << n_ports;
 	for(list<unsigned int>::iterator pn = newPortsToAdd.begin(); pn != newPortsToAdd.end(); pn++)
 	{
 		assert(portsConfiguration.find(*pn)!=portsConfiguration.end());
@@ -84,7 +85,7 @@ bool Docker::startNF(StartNFIn sni)
 	}
 
 	stringstream command;
-	command << PULL_AND_RUN_DOCKER_NF << " " << lsiID << " " << nf_name << " " << uri_image << " " << n_ports;
+	command << getenv("un_script_path") << PULL_AND_RUN_DOCKER_NF << " " << lsiID << " " << nf_name << " " << uri_image << " " << n_ports;
 	assert(portsConfiguration.size() == namesOfPortsOnTheSwitch.size());
 	//map<unsigned int, port_network_config_t >::iterator configuration = portsConfiguration.begin();
 	for(map<unsigned int, string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)
@@ -156,7 +157,7 @@ bool Docker::stopNF(StopNFIn sni)
 	string nf_name = sni.getNfId();
 
 	stringstream command;
-	command << STOP_DOCKER_NF << " " << lsiID << " " << nf_name;
+	command << getenv("un_script_path") << STOP_DOCKER_NF << " " << lsiID << " " << nf_name;
 
 	logger(ORCH_DEBUG_INFO, DOCKER_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 	int retVal = system(command.str().c_str());

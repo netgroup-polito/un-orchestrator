@@ -3,6 +3,7 @@
 
 #pragma once
 
+#define __STDC_FORMAT_MACROS
 #include <list>
 
 #include <map>
@@ -129,7 +130,7 @@ public:
 	*
 	*	@param:	nf	Name of a network function
 	*/
-	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name);
+	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name, string name_resolver_ip, int name_resolver_port);
 
 	/**
 	*	@brief: For each NF, select an implementation. Currently, if a Docker implementation

@@ -211,7 +211,7 @@ extern ofp_version_t OFP_VERSION;
 /*
 *	Misc
 */
-#define DEFAULT_GRAPH 		"DEFAULT-GRAPH"
-#define GRAPH_ID					"NF-FG"
+//graph with rules for control in band
+#define IN_BAND_GRAPH 		"IN-BAND-GRAPH"
 
 #endif //CONSTANTS_H_

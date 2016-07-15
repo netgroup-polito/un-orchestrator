@@ -1,6 +1,7 @@
 #ifndef VLAN_ACTION_H_
 #define VLAN_ACTION_H_ 1
 
+#define __STDC_FORMAT_MACROS
 #include "generic_action.h"
 
 #include <inttypes.h>

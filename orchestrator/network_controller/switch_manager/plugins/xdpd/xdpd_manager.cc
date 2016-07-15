@@ -103,27 +103,27 @@ void XDPDManager::checkPhysicalInterfaces(set<CheckPhysicalPortsIn> cppi)
 	//Parse the answer
 	bool foundPorts = false;
 	Value value;
-    read( answer, value );
-    Object obj = value.getObject();
+	read( answer, value );
+	Object obj = value.getObject();
 
-    if(!findCommand(obj,string(DISCOVER_PHY_PORTS)))
+	if(!findCommand(obj,string(DISCOVER_PHY_PORTS)))
 		throw XDPDManagerException();
 	if(!findStatus(obj))
 		throw XDPDManagerException();
 
 	for( Object::const_iterator i = obj.begin(); i != obj.end(); ++i )
-    {
-        const string& name  = i->first;
-        const Value&  value = i->second;
-        if( (name == "command") ||  (name == "status"))
-        {
+	{
+		const string& name  = i->first;
+		const Value&  value = i->second;
+		if( (name == "command") ||  (name == "status"))
+		{
 			continue;
-        }
+		}
 		else if(name == "ports")
 		{
 			const Array& ports_array = value.getArray();
 			if(ports_array.size() == 0)
-			    logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with an empty port list.",DISCOVER_PHY_PORTS);
+				logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with an empty port list.",DISCOVER_PHY_PORTS);
 
 			for( unsigned int i = 0; i < ports_array.size(); ++i )
 			{
@@ -195,9 +195,11 @@ CreateLsiOut *XDPDManager::createLsi(CreateLsiIn cli)
 	Value value;
 
 	string answer;
+	//This is a mapping between port name in the graph and the port id in the graph
+	map<string,unsigned int> port_name_id_in_graph;
 	try
 	{
-		answer = sendMessage(prepareCreateLSIrequest(cli));
+		answer = sendMessage(prepareCreateLSIrequest(cli,port_name_id_in_graph));
 	} catch(...) {
 		throw;
 	}
@@ -211,7 +213,7 @@ CreateLsiOut *XDPDManager::createLsi(CreateLsiIn cli)
 	CreateLsiOut *clo = 0;
 	try
 	{
-		clo = parseCreateLSIresponse(cli, obj);
+		clo = parseCreateLSIresponse(cli, obj,port_name_id_in_graph);
 	} catch(...) {
 		throw;
 	}
@@ -219,7 +221,7 @@ CreateLsiOut *XDPDManager::createLsi(CreateLsiIn cli)
 	return clo;
 }
 
-string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli)
+string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli, map<string,unsigned int> &port_name_id_in_graph)
 {
 	Object json;
 	json["command"] = CREATE_LSI;
@@ -280,6 +282,8 @@ string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli)
 		{
 			nf_ports_array.push_back(nfp->port_name);
 			port_type = nfp->port_type;
+
+			port_name_id_in_graph[nfp->port_name] = nfp->port_id;
 
 			switch (port_type) {
 				case VETH_PORT:
@@ -350,7 +354,7 @@ string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli)
  	return ss.str();
 }
 
-CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object message)
+CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object message, map<string,unsigned int> port_name_id_in_graph)
 {
 	uint64_t dpid = 0;
 	map<string,unsigned int> physical_ports;
@@ -359,6 +363,7 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 	list<pair<unsigned int, unsigned int> > virtual_links;
 
 	map<string,list<string> > out_nf_ports_name_on_switch;
+	map<string, map<string, unsigned int> > out_nf_ports_name_and_id;
 	map<string,unsigned int >  endpoints_ports;
 
 	list<string> ports = cli.getPhysicalPortsName();
@@ -378,20 +383,20 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 	bool foundWireless = false;
 
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
-    {
-        const string& name  = i->first;
-        const Value&  value = i->second;
-        if( (name == "command") ||  (name == "status"))
-        {
+	{
+		const string& name  = i->first;
+		const Value&  value = i->second;
+		if( (name == "command") ||  (name == "status"))
+		{
 			continue;
-        }
-        else if(name == "lsi-id")
-        {
-        	foundLSIid = true;
-        	dpid = value.getInt(); //FIXME: it is not an int
-        }
-        else if(name == "ports")
-        {
+		}
+		else if(name == "lsi-id")
+		{
+			foundLSIid = true;
+			dpid = value.getInt(); //FIXME: it is not an int
+		}
+		else if(name == "ports")
+		{
 			const Array& ports_array = value.getArray();
 
 			if(ports_array.size() != (cli.getPhysicalPortsName().size() - ((hasWireless)?1:0)))
@@ -410,54 +415,54 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 				for( Object::const_iterator p = port.begin(); p != port.end(); ++p )
 				{
 					const string& p_name  = p->first;
-		    		const Value&  p_value = p->second;
+					const Value&  p_value = p->second;
 
-		    		if(p_name == "name")
-		    		{
-		    			name = p_value.getString();
-		    			foundName = true;
-		    		}
-		    		else if(p_name == "id")
-		    		{
-		    			id = p_value.getInt(); //FIXME: it isn't an int!
-		    			foundID = true;
-		    		}
-		    	}
-		    	if(foundName && foundID)
-		    	{
-		    		physical_ports[name] = id;
-		    		list<string> ep = cli.getPhysicalPortsName();
-		    		set<string> tmp_ep(ep.begin(),ep.end());
-		    		if(tmp_ep.count(name) == 0)
-		    		{
-		    			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required port \"%d\"",CREATE_LSI,name.c_str());
+					if(p_name == "name")
+					{
+						name = p_value.getString();
+						foundName = true;
+					}
+					else if(p_name == "id")
+					{
+						id = p_value.getInt(); //FIXME: it isn't an int!
+						foundID = true;
+					}
+				}
+				if(foundName && foundID)
+				{
+					physical_ports[name] = id;
+					list<string> ep = cli.getPhysicalPortsName();
+					set<string> tmp_ep(ep.begin(),ep.end());
+					if(tmp_ep.count(name) == 0)
+					{
+						logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required port \"%d\"",CREATE_LSI,name.c_str());
 						throw XDPDManagerException();
-		    		}
-		    	}
-		    	else
-	    		{
-	    			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a port without the name, the ID, or both",CREATE_LSI);
+					}
+				}
+				else
+				{
+					logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a port without the name, the ID, or both",CREATE_LSI);
 					throw XDPDManagerException();
-	    		}
+				}
 			} //end iteration on the array
-        } //end name=="ports"
-        else if(name == "wireless")
-        {
-        	foundWireless = true;
-        	unsigned int wirelessID = value.getInt();
+		} //end name=="ports"
+		else if(name == "wireless")
+		{
+			foundWireless = true;
+			unsigned int wirelessID = value.getInt();
 
-        	physical_ports[wirelessName] = wirelessID;
+			physical_ports[wirelessName] = wirelessID;
 
-        	list<string> ep = cli.getPhysicalPortsName();
-    		set<string> tmp_ep(ep.begin(),ep.end());
-    		if(tmp_ep.count(wirelessName) == 0)
-    		{
-    			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required port \"%d\"",CREATE_LSI,wirelessName.c_str());
+			list<string> ep = cli.getPhysicalPortsName();
+			set<string> tmp_ep(ep.begin(),ep.end());
+			if(tmp_ep.count(wirelessName) == 0)
+			{
+				logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required port \"%d\"",CREATE_LSI,wirelessName.c_str());
 				throw XDPDManagerException();
-    		}
-        } //end name=="wireless"
-        else if(name == "network-functions")
-        {
+			}
+		} //end name=="wireless"
+		else if(name == "network-functions")
+		{
 			const Array& nfs_array = value.getArray();
 
 			if(nfs_array.size() != cli.getNetworkFunctionsName().size())
@@ -474,6 +479,7 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 				string name;
 				map<string,unsigned int> ports;
 				list<string> port_name_on_switch;
+				map<string, unsigned int> port_names_and_id;
 
 				bool foundName = false;
 				bool foundPorts = false;
@@ -481,15 +487,15 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 				for( Object::const_iterator n = nf.begin(); n != nf.end(); ++n )
 				{
 					const string& n_name  = n->first;
-		    		const Value&  n_value = n->second;
+					const Value&  n_value = n->second;
 
-		    		if(n_name == "name")
-		    		{
-		    			name = n_value.getString();
-		    			foundName = true;
-		    		}
-		    		else if(n_name == "ports")
-		    		{
+					if(n_name == "name")
+					{
+						name = n_value.getString();
+						foundName = true;
+					}
+					else if(n_name == "ports")
+					{
 						const Array &ports_array = n_value.getArray();
 						for( unsigned int p = 0; p < ports_array.size(); ++p )
 						{
@@ -498,30 +504,30 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 							bool foundPortName = false;
 							bool foundPortID = false;
 							string port_name;
-	    					unsigned int port_id = 0;
+							unsigned int port_id_on_switch = 0;
 
 							for( Object::const_iterator a_port = port.begin(); a_port != port.end(); ++a_port )
 							{
 								const string& ap_name  = a_port->first;
-		    					const Value&  ap_value = a_port->second;
+								const Value&  ap_value = a_port->second;
 
-		    					if(ap_name == "name")
-		    					{
-		    						foundPortName = true;
-		    						port_name = ap_value.getString();
-		    					}
-		    					else if(ap_name == "id")
-		    					{
-		    						port_id = ap_value.getInt(); //FIXME: this is not an Int!
-		    						foundPortID = true;
-		    					}
+								if(ap_name == "name")
+								{
+									foundPortName = true;
+									port_name = ap_value.getString();
+								}
+								else if(ap_name == "id")
+								{
+									port_id_on_switch = ap_value.getInt(); //FIXME: this is not an Int!
+									foundPortID = true;
+								}
 							}
 							if(!foundPortName || !foundPortID)
-	    					{
-	    						logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a network function without the name, the ports, or both",CREATE_LSI);
+							{
+								logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a network function without the name, the ports, or both",CREATE_LSI);
 								throw XDPDManagerException();
-	    					}
-							ports[port_name] = port_id;
+							}
+							ports[port_name] = port_id_on_switch;
 
 							//XXX The name of the port created on xDPd is in the form "lsiid_portname". Note that, if the plugin on xDPd is changed, this part of code must be
 							//changed accordingly
@@ -529,32 +535,36 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 							stringstream pnos;
 							pnos << dpid << "_" << port_name;
 							port_name_on_switch.push_back(pnos.str());
+							
+							unsigned int port_id_on_graph = port_name_id_in_graph[port_name];
+							port_names_and_id[pnos.str()] = port_id_on_graph;
 						}
 						if(ports_array.size() > 0)
-			    			foundPorts = true;
-		    		} //end if(n_name == "ports")
-		    	}
-		    	if(foundName && foundPorts)
-		    	{
-		    		network_functions_ports[name] = ports;
-		    		out_nf_ports_name_on_switch[name] = port_name_on_switch;
+							foundPorts = true;
+					} //end if(n_name == "ports")
+				}
+				if(foundName && foundPorts)
+				{
+					network_functions_ports[name] = ports;
+					out_nf_ports_name_on_switch[name] = port_name_on_switch;
+					out_nf_ports_name_and_id[name] = port_names_and_id;
 
 					set<string> names = cli.getNetworkFunctionsName();
-		    		if(names.count(name) == 0)
-		    		{
-		    			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required network function",CREATE_LSI,name.c_str());
+					if(names.count(name) == 0)
+					{
+						logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required network function",CREATE_LSI,name.c_str());
 						throw XDPDManagerException();
-		    		}
-		    	}
-		    	else
-	    		{
-	    			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a network function without the name, the ports, or both",CREATE_LSI);
-	    			throw XDPDManagerException();
-	    		}
+					}
+				}
+				else
+				{
+					logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a network function without the name, the ports, or both",CREATE_LSI);
+					throw XDPDManagerException();
+				}
 			} //end iteration on the array
-        }//end name==network-functions
-        else if(name == "virtual-links")
-        {
+		}//end name==network-functions
+		else if(name == "virtual-links")
+		{
 			const Array& vls_array = value.getArray();
 
 			if(vls_array.size() != cli.getVirtualLinksRemoteLSI().size())
@@ -574,36 +584,36 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 				for( Object::const_iterator v = vl.begin(); v != vl.end(); ++v )
 				{
 					const string& v_name  = v->first;
-		    		const Value&  v_value = v->second;
+					const Value&  v_value = v->second;
 
-		    		if(v_name == "local-id")
-		    		{
-		    			localID = v_value.getInt();
-		    			foundLocalID = true;
-		    		}
-		    		else if(v_name == "remote-id")
-		    		{
-		    			remoteID = v_value.getInt(); //FIXME: it isn't an int!
-		    			foundRemoteID = true;
-		    		}
-		    	}
-		    	if(foundLocalID && foundRemoteID)
-		    	{
-		    		virtual_links.push_back(make_pair(localID,remoteID));
-		    	}
-		    	else
-	    		{
-	    			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a virtual link without the local ID, the remote ID, or both",CREATE_LSI);
+					if(v_name == "local-id")
+					{
+						localID = v_value.getInt();
+						foundLocalID = true;
+					}
+					else if(v_name == "remote-id")
+					{
+						remoteID = v_value.getInt(); //FIXME: it isn't an int!
+						foundRemoteID = true;
+					}
+				}
+				if(foundLocalID && foundRemoteID)
+				{
+					virtual_links.push_back(make_pair(localID,remoteID));
+				}
+				else
+				{
+					logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a virtual link without the local ID, the remote ID, or both",CREATE_LSI);
 					throw XDPDManagerException();
-	    		}
+				}
 			} //end iteration on the array
-        }//end name=="virtual-links"
-        else
-        {
-        	//error
-		    logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",CREATE_LSI,name.c_str());
+		}//end name=="virtual-links"
+		else
+		{
+			//error
+			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",CREATE_LSI,name.c_str());
 			throw XDPDManagerException();
-        }
+		}
 	} //end parsing the message
 
 	if(!foundLSIid)
@@ -634,17 +644,17 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 
 	dpdiWirelessInterfaces[dpid] = wirelessList;
 
-	CreateLsiOut *clo = new CreateLsiOut(dpid,physical_ports,network_functions_ports, endpoints_ports, out_nf_ports_name_on_switch, virtual_links);
+	CreateLsiOut *clo = new CreateLsiOut(dpid,physical_ports,network_functions_ports, endpoints_ports, out_nf_ports_name_on_switch, virtual_links, out_nf_ports_name_and_id);
 	return clo;
 }
 bool XDPDManager::findCommand(Object message, string expected)
 {
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
-    {
-        const string& name  = i->first;
-        const Value&  value = i->second;
-        if( name == "command" )
-        {
+	{
+		const string& name  = i->first;
+		const Value&  value = i->second;
+		if( name == "command" )
+		{
 			if(value.getString() != expected)
 			{
 				logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Expected command \"%s\" - received \"%s\"",expected.c_str(),value.getString().c_str());
@@ -662,11 +672,11 @@ bool XDPDManager::findCommand(Object message, string expected)
 bool XDPDManager::findStatus(Object message)
 {
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
-    {
-        const string& name  = i->first;
-        const Value&  value = i->second;
-        if( name == "status" )
-        {
+	{
+		const string& name  = i->first;
+		const Value&  value = i->second;
+		if( name == "status" )
+		{
 			if(value.getString() != OK)
 			{
 				logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Expected status \"%s\" - received \"%s\"",OK,value.getString().c_str());
@@ -686,6 +696,7 @@ AddNFportsOut *XDPDManager::addNFPorts(AddNFportsIn anpi)
 //	lsi.addNF(nf.first, nf.second);
 
 	string answer = sendMessage(prepareCreateNFPortsRequest(anpi));
+	map<string, unsigned int> port_name_id_in_graph;
 
 	Value value;
 	read( answer, value );
@@ -696,9 +707,14 @@ AddNFportsOut *XDPDManager::addNFPorts(AddNFportsIn anpi)
 		throw XDPDManagerException();
 
 	AddNFportsOut *anpo = 0;
+	list<struct nf_port_info> port_list = anpi.getNetworkFunctionsPorts();
+	for(list<struct nf_port_info>::iterator port = port_list.begin(); port != port_list.end(); port++)
+	{
+		port_name_id_in_graph[port->port_name] = port->port_id;
+	}
 	try
 	{
-		anpo = parseCreateNFPortsResponse(anpi,obj);
+		anpo = parseCreateNFPortsResponse(anpi,obj, port_name_id_in_graph);
 	} catch(...) {
 	//	lsi.removeNF(nf.first); lo dovro' fare fuori (posso evitarlo, se faccio la add dopo a sta chiamata)
 		throw;
@@ -775,23 +791,24 @@ string XDPDManager::prepareCreateNFPortsRequest(AddNFportsIn anpi)
  	return ss.str();
 }
 
-AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object message)
+AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object message, map<string, unsigned int> port_name_id_in_graph)
 {
 	bool foundNFs = false;
 	map<string, unsigned int> ports;
 	list<string> ports_name_on_switch;
+	map<string, unsigned int> port_names_and_id;
 
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
-    {
-        const string& name  = i->first;
-        const Value&  value = i->second;
-        if( (name == "command") ||  (name == "status"))
-        {
+	{
+		const string& name  = i->first;
+		const Value&  value = i->second;
+		if( (name == "command") ||  (name == "status"))
+		{
 			continue;
-        }
-        else if(name == "network-functions")
-        {
-        	foundNFs = true;
+		}
+		else if(name == "network-functions")
+		{
+			foundNFs = true;
 
 			const Array& nfs_array = value.getArray();
 
@@ -814,21 +831,21 @@ AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object
 				for( Object::const_iterator n = nf.begin(); n != nf.end(); ++n )
 				{
 					const string& n_name  = n->first;
-		    		const Value&  n_value = n->second;
+					const Value&  n_value = n->second;
 
-		    		if(n_name == "name")
-		    		{
-		    			name = n_value.getString();
-		    			if(name != anpi.getNfId())
-		    			{
+					if(n_name == "name")
+					{
+						name = n_value.getString();
+						if(name != anpi.getNfId())
+						{
 							logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required network function",CREATE_LSI,name.c_str());
 							throw XDPDManagerException();
 						}
 
-		    			foundName = true;
-		    		}
-		    		else if(n_name == "ports")
-		    		{
+						foundName = true;
+					}
+					else if(n_name == "ports")
+					{
 						const Array &ports_array = n_value.getArray();
 						for( unsigned int p = 0; p < ports_array.size(); ++p )
 						{
@@ -837,32 +854,32 @@ AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object
 							bool foundPortName = false;
 							bool foundPortID = false;
 							string port_name;
-	    					unsigned int port_id = 0;
+							unsigned int port_id = 0;
 
 							for( Object::const_iterator a_port = port.begin(); a_port != port.end(); ++a_port )
 							{
 								const string& ap_name  = a_port->first;
-		    					const Value&  ap_value = a_port->second;
+								const Value&  ap_value = a_port->second;
 
-		    					if(ap_name == "name")
-		    					{
-		    						foundPortName = true;
-		    						port_name = ap_value.getString();
-		    					}
-		    					else if(ap_name == "id")
-		    					{
-		    						port_id = ap_value.getInt(); //FIXME: this is not an Int!
-		    						foundPortID = true;
-		    					}
+								if(ap_name == "name")
+								{
+									foundPortName = true;
+									port_name = ap_value.getString();
+								}
+								else if(ap_name == "id")
+								{
+									port_id = ap_value.getInt(); //FIXME: this is not an Int!
+									foundPortID = true;
+								}
 							}
 							if(!foundPortName || !foundPortID)
-	    					{
-	    						logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a network function without the name, the ports, or both",CREATE_LSI);
+							{
+								logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a network function without the name, the ports, or both",CREATE_LSI);
 								throw XDPDManagerException();
-	    					}
+							}
 
-	    					list<struct nf_port_info> ports_to_be_translated = anpi.getNetworkFunctionsPorts();
-	    					if (count_if(ports_to_be_translated.begin(), ports_to_be_translated.end(), comparePortInfoName(port_name)) == 0)
+							list<struct nf_port_info> ports_to_be_translated = anpi.getNetworkFunctionsPorts();
+							if (count_if(ports_to_be_translated.begin(), ports_to_be_translated.end(), comparePortInfoName(port_name)) == 0)
 							{
 								logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required network function port",CREATE_LSI,port_name.c_str());
 								throw XDPDManagerException();
@@ -873,24 +890,26 @@ AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object
 							stringstream pnos;
 							pnos << anpi.getDpid() << "_" << port_name;
 							ports_name_on_switch.push_back(pnos.str());
+							unsigned int port_id_on_graph = port_name_id_in_graph[port_name];
+							port_names_and_id[pnos.str()] = port_id_on_graph;
 						}
 						if(ports_array.size() > 0)
-			    			foundPorts = true;
-		    		} //end if(n_name == "ports")
-		    	}
-		    	if(!foundName || !foundPorts)
-		    	{
-	    			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a network function without the name, the ports, or both",CREATE_NF_PORTS);
-	    			throw XDPDManagerException();
-	    		}
+							foundPorts = true;
+					} //end if(n_name == "ports")
+				}
+				if(!foundName || !foundPorts)
+				{
+					logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a network function without the name, the ports, or both",CREATE_NF_PORTS);
+					throw XDPDManagerException();
+				}
 			} //end iteration on the array
-        }//end name==network-functions
-        else
-        {
-        	//error
-		    logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",CREATE_NF_PORTS,name.c_str());
+		}//end name==network-functions
+		else
+		{
+			//error
+			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",CREATE_NF_PORTS,name.c_str());
 			throw XDPDManagerException();
-        }
+		}
 	} //end parsing the message
 
 	if(!foundNFs)
@@ -899,7 +918,7 @@ AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object
 		throw XDPDManagerException();
 	}
 
-	AddNFportsOut *anpo = new AddNFportsOut(anpi.getNfId(),ports,ports_name_on_switch);
+	AddNFportsOut *anpo = new AddNFportsOut(anpi.getNfId(),ports,ports_name_on_switch, port_names_and_id);
 
 	return anpo;
 }
@@ -909,9 +928,9 @@ AddVirtualLinkOut *XDPDManager::addVirtualLink(AddVirtualLinkIn avli)
 	string answer = sendMessage(prepareCreateVirtualLinkRequest(avli));
 
 	Value value;
-    read( answer, value );
-    Object obj = value.getObject();
-    if(!findCommand(obj,string(CREATE_VLINKS)))
+	read( answer, value );
+	Object obj = value.getObject();
+	if(!findCommand(obj,string(CREATE_VLINKS)))
 		throw XDPDManagerException();
 	if(!findStatus(obj))
 		throw XDPDManagerException();
@@ -959,16 +978,16 @@ AddVirtualLinkOut *XDPDManager::parseCreateVirtualLinkResponse(AddVirtualLinkIn 
 	uint64_t idA = 0, idB = 0;
 
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
-    {
-        const string& name  = i->first;
-        const Value&  value = i->second;
-        if( (name == "command") ||  (name == "status"))
-        {
+	{
+		const string& name  = i->first;
+		const Value&  value = i->second;
+		if( (name == "command") ||  (name == "status"))
+		{
 			continue;
-        }
-        else if(name == "virtual-links")
-        {
-        	foundVlinks = true;
+		}
+		else if(name == "virtual-links")
+		{
+			foundVlinks = true;
 			const Array& vls_array = value.getArray();
 
 			if(vls_array.size() != 1)//XXX: we create a vlink at a time, althugh xDPd allows the creation of many vlinks together
@@ -985,32 +1004,32 @@ AddVirtualLinkOut *XDPDManager::parseCreateVirtualLinkResponse(AddVirtualLinkIn 
 				for( Object::const_iterator v = vl.begin(); v != vl.end(); ++v )
 				{
 					const string& v_name  = v->first;
-		    		const Value&  v_value = v->second;
+					const Value&  v_value = v->second;
 
-		    		if(v_name == "id-a")
-		    		{
-		    			idA = v_value.getInt(); //FIXME: it isn't an int!
-		    			foundA = true;
-		    		}
-		    		else if(v_name == "id-b")
-		    		{
-		    			idB = v_value.getInt(); //FIXME: it isn't an int!
-		    			foundB = true;
-		    		}
-		    	}
-		    	if(!foundA || !foundB)
-	    		{
-	    			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a virtual link without the id-a, the id-b, or both",CREATE_VLINKS);
+					if(v_name == "id-a")
+					{
+						idA = v_value.getInt(); //FIXME: it isn't an int!
+						foundA = true;
+					}
+					else if(v_name == "id-b")
+					{
+						idB = v_value.getInt(); //FIXME: it isn't an int!
+						foundB = true;
+					}
+				}
+				if(!foundA || !foundB)
+				{
+					logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a virtual link without the id-a, the id-b, or both",CREATE_VLINKS);
 					throw XDPDManagerException();
-	    		}
+				}
 			} //end iteration on the array
-        }//end name=="virtual-links"
-        else
-        {
-        	//error
-		    logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",CREATE_VLINKS,name.c_str());
+		}//end name=="virtual-links"
+		else
+		{
+			//error
+			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",CREATE_VLINKS,name.c_str());
 			throw XDPDManagerException();
-        }
+		}
 	} //end parsing the message
 
 	if(!foundVlinks)
@@ -1028,9 +1047,9 @@ void XDPDManager::destroyLsi(uint64_t dpid)
 	string answer = sendMessage(prepareDestroyLSIrequest(dpid));
 
 	Value value;
-    read( answer, value );
-    Object obj = value.getObject();
-    if(!findCommand(obj,string(DESTROY_LSI)))
+	read( answer, value );
+	Object obj = value.getObject();
+	if(!findCommand(obj,string(DESTROY_LSI)))
 		throw XDPDManagerException();
 	if(!findStatus(obj))
 		throw XDPDManagerException();
@@ -1051,9 +1070,9 @@ void XDPDManager::destroyVirtualLink(DestroyVirtualLinkIn dvli)
 	string answer = sendMessage(prepareDestroyVirtualLinkRequest(dvli));
 
 	Value value;
-    read(answer, value);
-    Object obj = value.getObject();
-    if(!findCommand(obj,string(DESTROY_VLINKS)))
+	read(answer, value);
+	Object obj = value.getObject();
+	if(!findCommand(obj,string(DESTROY_VLINKS)))
 		throw XDPDManagerException();
 	if(!findStatus(obj))
 		throw XDPDManagerException();
@@ -1071,9 +1090,9 @@ void XDPDManager::destroyNFPorts(DestroyNFportsIn dnpi)
 	string answer = sendMessage(prepareDestroyNFPortsRequest(dnpi));
 
 	Value value;
-    read( answer, value );
-    Object obj = value.getObject();
-    if(!findCommand(obj,string(DESTROY_NF_PORTS)))
+	read( answer, value );
+	Object obj = value.getObject();
+	if(!findCommand(obj,string(DESTROY_NF_PORTS)))
 		throw XDPDManagerException();
 	if(!findStatus(obj))
 		throw XDPDManagerException();
@@ -1106,18 +1125,18 @@ string XDPDManager::prepareDestroyLSIrequest(uint64_t dpid)
 void XDPDManager::parseDestroyLSIresponse(Object message)
 {
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
-    {
-        const string& name  = i->first;
-        if( (name == "command") ||  (name == "status"))
-        {
+	{
+		const string& name  = i->first;
+		if( (name == "command") ||  (name == "status"))
+		{
 			continue;
-        }
-        else
-        {
-        	//error
-		    logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",DESTROY_LSI,name.c_str());
+		}
+		else
+		{
+			//error
+			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",DESTROY_LSI,name.c_str());
 			throw XDPDManagerException();
-        }
+		}
 	} //end parsing the message
 }
 
@@ -1147,18 +1166,18 @@ string XDPDManager::prepareDestroyVirtualLinkRequest(DestroyVirtualLinkIn dvli)
 void XDPDManager::parseDestroyVirtualLinkResponse(Object message)
 {
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
-    {
-        const string& name  = i->first;
-        if( (name == "command") ||  (name == "status"))
-        {
+	{
+		const string& name  = i->first;
+		if( (name == "command") ||  (name == "status"))
+		{
 			continue;
-        }
-        else
-        {
-        	//error
-		    logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",DESTROY_VLINKS,name.c_str());
+		}
+		else
+		{
+			//error
+			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",DESTROY_VLINKS,name.c_str());
 			throw XDPDManagerException();
-        }
+		}
 	} //end parsing the message
 }
 
@@ -1182,8 +1201,8 @@ string XDPDManager::prepareDestroyNFPortsRequest(DestroyNFportsIn dnpi)
 
 	if( ports_array.size() == 0)
 	{
-       	//error
-	    logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "It seems that NF '%s' does not have any port!",dnpi.getNfId().c_str());
+	   	//error
+		logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "It seems that NF '%s' does not have any port!",dnpi.getNfId().c_str());
 		assert(0);
 		throw XDPDManagerException();
 	}
@@ -1201,18 +1220,18 @@ string XDPDManager::prepareDestroyNFPortsRequest(DestroyNFportsIn dnpi)
 void XDPDManager::parseDestroyNFPortsResponse(Object message)
 {
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
-    {
-        const string& name  = i->first;
-        if( (name == "command") ||  (name == "status"))
-        {
+	{
+		const string& name  = i->first;
+		if( (name == "command") ||  (name == "status"))
+		{
 			continue;
-        }
-        else
-        {
-        	//error
-		    logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",DESTROY_NF_PORTS,name.c_str());
+		}
+		else
+		{
+			//error
+			logger(ORCH_WARNING, XDPD_MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" with the unespected parameter \"%s\"",DESTROY_NF_PORTS,name.c_str());
 			throw XDPDManagerException();
-        }
+		}
 	} //end parsing the message
 }
 
@@ -1224,7 +1243,7 @@ bool XDPDManager::attachWirelessPort(uint64_t dpid, string wirelessInterfaceName
 	logger(ORCH_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Attaching the wireless interface '%s'...",wirelessInterfaceName.c_str());
 
 	stringstream command;
-	command << ATTACH_WIRELESS_INTERFACE << " " << dpid << " " << wirelessInterfaceName;
+	command << getenv("un_script_path") << ATTACH_WIRELESS_INTERFACE << " " << dpid << " " << wirelessInterfaceName;
 	logger(ORCH_DEBUG_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 
 	int retVal = system(command.str().c_str());
@@ -1240,7 +1259,7 @@ void XDPDManager::detachWirelessPort(uint64_t dpid, string wirelessInterfaceName
 {
 	logger(ORCH_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Detaching the wireless interface '%s'...",wirelessInterfaceName.c_str());
 	stringstream command;
-	command << DETACH_WIRELESS_INTERFACE << " " << dpid << " " << wirelessInterfaceName;
+	command << getenv("un_script_path") << DETACH_WIRELESS_INTERFACE << " " << dpid << " " << wirelessInterfaceName;
 	logger(ORCH_DEBUG_INFO, XDPD_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 	int retVal = system(command.str().c_str());
 	retVal += 1; //XXX: just to remove a warning

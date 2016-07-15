@@ -27,7 +27,7 @@ CreateLsiOut *ERFSManager::createLsi(CreateLsiIn cli)
     logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "createLsi() creating ERFS LSI %d", dpid);
 
     stringstream cmd;
-    cmd << CMD_CREATE_LSI << " " << dpid << " " << cli.getControllerAddress() << " " << cli.getControllerPort() << " ";
+    cmd << getenv("un_script_path") << CMD_CREATE_LSI << " " << dpid << " " << cli.getControllerAddress() << " " << cli.getControllerPort() << " ";
     logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd.str().c_str());
     int retVal = system(cmd.str().c_str());
     if(retVal != 0) {
@@ -45,7 +45,7 @@ CreateLsiOut *ERFSManager::createLsi(CreateLsiIn cli)
         unsigned int port_id = nextPort[dpid]++;
         logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, " phy port \"%s\" = %d", pit->c_str(), port_id);
         stringstream cmd_add;
-        cmd_add << CMD_ADD_PORT << " " << dpid << " " << *pit << " " << "dpdk" << " " << port_id << " " << core_id;
+        cmd_add << getenv("un_script_path") << CMD_ADD_PORT << " " << dpid << " " << *pit << " " << "dpdk" << " " << port_id << " " << core_id;
         logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_add.str().c_str());
         int retVal = system(cmd_add.str().c_str());
         if(retVal != 0) {
@@ -57,6 +57,7 @@ CreateLsiOut *ERFSManager::createLsi(CreateLsiIn cli)
     }
 
     // Add NF ports
+    map<string,map<string, unsigned int> > out_nf_ports_name_and_id;
     typedef map<string,PortsNameIdMap> NfPortsMapMap;
     NfPortsMapMap out_nf_ports;
     map<string,nf_t> nf_types = cli.getNetworkFunctionsType();
@@ -66,10 +67,13 @@ CreateLsiOut *ERFSManager::createLsi(CreateLsiIn cli)
 //        list<string> port_name_on_switch;
         AddNFportsIn anfpi(dpid, *nf, nf_types[*nf], cli.getNetworkFunctionsPortsInfo(*nf));
         AddNFportsOut *anfpo = addNFPorts(anfpi);
-        if (anfpo == NULL) logger(ORCH_WARNING, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "error in nfport add");
+        if (anfpo == NULL) 
+            logger(ORCH_WARNING, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "error in nfport add");
         out_nf_ports.insert(NfPortsMapMap::value_type(*nf, anfpo->getPorts()));
         out_nf_ports_name_on_switch[*nf] = anfpo->getPortsNameOnSwitch();
+        out_nf_ports_name_and_id[*nf] = anfpo->getPortNamesAndId();
         delete anfpo;
+
     }
 
     // Add Ports for Virtual Links (patch ports)
@@ -84,7 +88,7 @@ CreateLsiOut *ERFSManager::createLsi(CreateLsiIn cli)
         vlink_n++;
     }
 
-    CreateLsiOut *clo = new CreateLsiOut(dpid, out_physical_ports, out_nf_ports, endpoints_ports, out_nf_ports_name_on_switch, out_virtual_links);
+    CreateLsiOut *clo = new CreateLsiOut(dpid, out_physical_ports, out_nf_ports, endpoints_ports, out_nf_ports_name_on_switch, out_virtual_links,out_nf_ports_name_and_id);
     return clo;
 }
 
@@ -92,6 +96,7 @@ AddNFportsOut *ERFSManager::addNFPorts(AddNFportsIn anpi)
 { // SwitchManager implementation
     uint32_t numa_node = 0; // FIXME: assign ring to the correct NUMA node
     typedef map<string,unsigned int> PortsNameIdMap;
+    map<string, unsigned int> port_names_and_id;
     AddNFportsOut *anpo = NULL;
     uint64_t dpid = anpi.getDpid();
     string nf = anpi.getNfId();
@@ -107,7 +112,7 @@ AddNFportsOut *ERFSManager::addNFPorts(AddNFportsIn anpi)
         const char* port_type = "ivshmem"; // TODO: Use nfp->port_type and act accordingly
         logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, " NF port \"%s.%s\" = %d (type=%d)", nf.c_str(), nfp->port_name.c_str(), port_id, nf_type);
         stringstream cmd_add;
-        cmd_add << CMD_ADD_PORT << " " << dpid << " " << numa_node << " " << port_type << " " << port_id << " auto";
+        cmd_add << getenv("un_script_path") << CMD_ADD_PORT << " " << dpid << " " << numa_node << " " << port_type << " " << port_id << " auto";
         logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_add.str().c_str());
         int retVal = system(cmd_add.str().c_str());
         if(retVal != 0) {
@@ -119,8 +124,9 @@ AddNFportsOut *ERFSManager::addNFPorts(AddNFportsIn anpi)
         stringstream pid;
         pid << port_id;
         port_name_on_switch.push_back(pid.str());
+	port_names_and_id[pid.str()] = port_id;
     }
-    anpo = new AddNFportsOut(anpi.getNfId(), nf_ports_ids, port_name_on_switch);
+    anpo = new AddNFportsOut(anpi.getNfId(), nf_ports_ids, port_name_on_switch, port_names_and_id);
     return anpo;
 }
 
@@ -137,7 +143,7 @@ AddVirtualLinkOut *ERFSManager::addVirtualLink(AddVirtualLinkIn avli)
 
     // XSWITCH port A
     logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, " XSWITCH port %u.%u (type=%s)", avli.getDpidA(), a_port_id, port_type);
-    cmd_add << CMD_ADD_PORT << " " << avli.getDpidA() << " " << port_name << " " << port_type << " " << a_port_id;
+    cmd_add << getenv("un_script_path") << CMD_ADD_PORT << " " << avli.getDpidA() << " " << port_name << " " << port_type << " " << a_port_id;
     logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_add.str().c_str());
     retVal = system(cmd_add.str().c_str());
     if(retVal != 0) {
@@ -149,7 +155,7 @@ AddVirtualLinkOut *ERFSManager::addVirtualLink(AddVirtualLinkIn avli)
 
     // XSWITCH port B
     logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, " XSWITCH port %u.%u (type=%s)", avli.getDpidB(), b_port_id, port_type);
-    cmd_add << CMD_ADD_PORT << " " << avli.getDpidB() << " " << port_name << " " << port_type << " " << b_port_id;
+    cmd_add << getenv("un_script_path") << CMD_ADD_PORT << " " << avli.getDpidB() << " " << port_name << " " << port_type << " " << b_port_id;
     logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_add.str().c_str());
     retVal = system(cmd_add.str().c_str());
     if(retVal != 0) {
@@ -161,7 +167,7 @@ AddVirtualLinkOut *ERFSManager::addVirtualLink(AddVirtualLinkIn avli)
 
     // Link between them
     logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, " Virtual link between LSIs %u:%u <-> %u:%u", avli.getDpidA(), a_port_id, avli.getDpidB(), b_port_id);
-    cmd_add << CMD_VIRTUAL_LINK << " " << avli.getDpidA() << " " << avli.getDpidB() << " " << a_port_id << " " << b_port_id;
+    cmd_add << getenv("un_script_path") << CMD_VIRTUAL_LINK << " " << avli.getDpidA() << " " << avli.getDpidB() << " " << a_port_id << " " << b_port_id;
     logger(ORCH_DEBUG_INFO, ERFS_MAN_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_add.str().c_str());
     retVal = system(cmd_add.str().c_str());
     if(retVal != 0) {

@@ -32,7 +32,7 @@ void ComputeController::setCoreMask(uint64_t core_mask)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Mask of an available core: \"%d\"",cores[i]);
 }
 
-nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_name)
+nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_name, string name_resolver_ip, int name_resolver_port)
 {
 	try
  	{
@@ -52,16 +52,19 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 
 		Hints.ai_family= AF_INET;
 		Hints.ai_socktype= SOCK_STREAM;
+		
+		ostringstream oss;
+		oss << name_resolver_port;
 
-		if (sock_initaddress (NAME_RESOLVER_ADDRESS, NAME_RESOLVER_PORT, &Hints, &AddrInfo, ErrBuf, sizeof(ErrBuf)) == sockFAILURE)
+		if (sock_initaddress (name_resolver_ip.c_str(), oss.str().c_str(), &Hints, &AddrInfo, ErrBuf, sizeof(ErrBuf)) == sockFAILURE)
 		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error resolving given address/port (%s/%s): %s",  NAME_RESOLVER_ADDRESS, NAME_RESOLVER_PORT, ErrBuf);
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error resolving given address/port (%s/%d): %s",  name_resolver_ip.c_str(), name_resolver_port, ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
 
 		stringstream tmp;
 		tmp << "GET " << NAME_RESOLVER_BASE_URL << nf_name << " HTTP/1.1\r\n";
-		tmp << "Host: :" << NAME_RESOLVER_ADDRESS << ":" << NAME_RESOLVER_PORT << "\r\n";
+		tmp << "Host: :" << name_resolver_ip << ":" << name_resolver_port << "\r\n";
 		tmp << "Connection: close\r\n";
 		tmp << "Accept: */*\r\n\r\n";
 		string message = tmp.str();
@@ -73,7 +76,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 		if ( (socket= sock_open(AddrInfo, 0, 0,  ErrBuf, sizeof(ErrBuf))) == sockFAILURE)
 		{
 			// AddrInfo is no longer required
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot contact the name resolver at \"%s:%s\"", NAME_RESOLVER_ADDRESS, NAME_RESOLVER_PORT);
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot contact the name resolver at \"%s:%d\"", name_resolver_ip.c_str(), name_resolver_port);
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s", ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
@@ -520,7 +523,8 @@ void ComputeController::checkSupportedDescriptions() {
 #ifdef ENABLE_NATIVE
 					//Manage NATIVE execution environment
 				case NATIVE:
-					NFsManager *nativeManager;
+				{
+					NFsManager *nativeManager = NULL;
 					try{
 						nativeManager = new Native();
 						if(nativeManager->isSupported(**descr)){
@@ -534,6 +538,7 @@ void ComputeController::checkSupportedDescriptions() {
 						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "exception %s has been thrown", e.what());
 						delete nativeManager;
 					}
+				}
 					break;
 #endif
 					//[+] Add here other implementations for the execution environment
@@ -615,8 +620,8 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 #ifdef ENABLE_NATIVE
 				//Manage NATIVE execution environment
 			case NATIVE:
-
-				NFsManager *nativeManager;
+			{
+				NFsManager *nativeManager = NULL;
 				try{
 
 					nativeManager = new Native();
@@ -631,6 +636,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "exception %s has been thrown", e.what());
 					delete nativeManager;
 				}
+			}
 				break;
 #endif
 				//[+] Add here other implementations for the execution environment

@@ -8,8 +8,8 @@ void GraphManager::mutexInit()
 	pthread_mutex_init(&graph_manager_mutex, NULL);
 }
 
-GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_address,string un_netmask,bool orchestrator_in_band,string un_interface,string ipsec_certificate) :
-	un_address(un_address), un_netmask(un_netmask), orchestrator_in_band(orchestrator_in_band), un_interface(un_interface), ipsec_certificate(ipsec_certificate), switchManager()
+GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_address,bool orchestrator_in_band,string un_interface,string ipsec_certificate, string name_resolver_ip, int name_resolver_port) :
+	un_address(un_address), orchestrator_in_band(orchestrator_in_band), un_interface(un_interface), ipsec_certificate(ipsec_certificate), nameResolverIP(name_resolver_ip), switchManager()
 {
 	//TODO: this code can be simplified. Why don't providing the set<string> to the switch manager?
 	set<CheckPhysicalPortsIn> phyPortsRequired;
@@ -29,6 +29,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 	uint32_t controllerPort = nextControllerPort;
 	nextControllerPort++;
 	pthread_mutex_unlock(&graph_manager_mutex);
+	nameResolverPort = name_resolver_port;
 
 	ostringstream strControllerPort;
 	strControllerPort << controllerPort;
@@ -178,22 +179,6 @@ void GraphManager::handleInBandController(LSI *lsi, Controller *controller)
 
 	map<string,unsigned int>::iterator translation = lsi_ports.find((char *)un_interface.c_str());
 
-	/* It is necessary to intercept incoming arp requests with IP source equal to un_interface?
-
-	lsi0Match.setArpSpa((char *)un_address.c_str());
-	lsi0Match.setEthType(2054 & 0xFFFF);
-	lsi0Match.setInputPort(translation->second);
-
-
-	//Create the rule and add it to the graph
-	//The rule ID is created as follows DEFAULT-GRAPH_ID
-	newRuleID << DEFAULT_GRAPH << "_" << i;
-	lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),HIGH_PRIORITY);
-	graphLSI0lowLevel.addRule(lsi0Rule);
-
-	i++;
-	*/
-
 	lsi0Match0.setArpTpa((char *)un_address.c_str());
 	lsi0Match0.setEthType(2054 & 0xFFFF);
 	lsi0Match0.setInputPort(translation->second);
@@ -207,7 +192,7 @@ void GraphManager::handleInBandController(LSI *lsi, Controller *controller)
 	//Create the rule and add it to the graph
 	//The rule ID is created as follows DEFAULT-GRAPH_ID
 	stringstream newRuleID;
-	newRuleID << DEFAULT_GRAPH << "_" << i;
+	newRuleID << IN_BAND_GRAPH << "_" << i;
 	lowlevel::Rule lsi0Rule0(lsi0Match0,lsi0Action,newRuleID.str(),HIGH_PRIORITY);
 	graphLSI0lowLevel.addRule(lsi0Rule0);
 
@@ -216,7 +201,7 @@ void GraphManager::handleInBandController(LSI *lsi, Controller *controller)
 	//Create the rule and add it to the graph
 	//The rule ID is created as follows DEFAULT-GRAPH_ID
 	newRuleID.str("");
-	newRuleID << DEFAULT_GRAPH << "_" << i;
+	newRuleID << IN_BAND_GRAPH << "_" << i;
 	lowlevel::Rule lsi0Rule1(lsi0Match1,lsi0Action,newRuleID.str(),HIGH_PRIORITY);
 	graphLSI0lowLevel.addRule(lsi0Rule1);
 
@@ -229,7 +214,7 @@ void GraphManager::handleInBandController(LSI *lsi, Controller *controller)
 	//Create the rule and add it to the graph
 	//The rule ID is created as follows DEFAULT-GRAPH_ID
 	newRuleID.str("");
-	newRuleID << DEFAULT_GRAPH << "_" << i;
+	newRuleID << IN_BAND_GRAPH << "_" << i;
 	lowlevel::Rule lsi0Rule3(lsi0Match3,lsi0Action1,newRuleID.str(),HIGH_PRIORITY);
 	graphLSI0lowLevel.addRule(lsi0Rule3);
 
@@ -551,10 +536,11 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t* NF with id \"%s\" is already part of the graph; it is not retrieved again",nf->getId().c_str());
 			continue;
 		}
-		nf_manager_ret_t retVal = computeController->retrieveDescription(nf->getId(),nf->getName());
+		nf_manager_ret_t retVal = computeController->retrieveDescription(nf->getId(),nf->getName(), nameResolverIP, nameResolverPort);
 		if(retVal == NFManager_NO_NF)
 		{
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "NF \"%s\" cannot be retrieved",nf->getName().c_str());
+
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "NF \"%s\" cannot be retrieved",nf->getName().c_str());
 			return false;
 		}
 		else if(retVal == NFManager_SERVER_ERROR)
@@ -592,7 +578,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	assert(tenantLSIs.count(graph->getID()) == 0);
 
 	/**
-	*	@outline:
+*	@outline:
 	*
 	*		0) check the validity of the graph
 	*		1) create the Openflow controller for the tenant LSI
@@ -1783,26 +1769,23 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "3-b) considering the new virtual network functions (%d)",network_functions.size());
 
 	//Itarate on all the new network functions
-	//TODO: when the hotplug will be introduced, here we will also iterate on the network functions to be updated
 	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 	{
 		AddNFportsOut *anpo = NULL;
 		try
 		{
-			//TODO: for the hotplug, modify lsi->addNF as suggested into the function itself.
 			list<highlevel::vnf_port_t> nf_ports = nf->getPorts(); // nf_it->second;
 			list<unsigned int> nf_ports_id_list = nf->getPortsId();
 			
 			//before
 			map<string, list<struct nf_port_info> >pi_map_before = lsi->getNetworkFunctionsPortsInfo();
-                        map<string, list<struct nf_port_info> >::iterator pi_it_before = pi_map_before.find(nf->getId()); //pi_it_before==pi_map.end() in case of a new NF
+			map<string, list<struct nf_port_info> >::iterator pi_it_before = pi_map_before.find(nf->getId()); //pi_it_before==pi_map.end() in case of a new NF
 
 			lsi->addNF(nf->getId()/*first*/, /*nf->second*/ nf_ports_id_list, computeController->getNFSelectedImplementation(nf->getId()/*first*/)->getPortTypes());
 
 			//after
 			map<string, list<struct nf_port_info> >pi_map = lsi->getNetworkFunctionsPortsInfo();//for each network function, retrieve a list of "port name, port type"
 			map<string, list<struct nf_port_info> >::iterator pi_it = pi_map.find(nf->getId()/*first*/); //select the info related to the network function currently considered
-			//TODO: when the hotplug will be introduced, pi_it->second will also contain the old ports of the VNF. Then a further skimming will be required
 			assert(pi_it != pi_map.end());
 			list<struct nf_port_info> newPortList;
 			if(pi_it->second.size() == nf_ports.size())
@@ -1844,7 +1827,6 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 			}
 
 			//FIXME: useful? Probably no!
-			//TODO: not sure that this works in case of hotplug. In fact anpo->getPortsNameOnSwitch() returns a list of ports name on the switch, but it does not 
 			//map such names with ports names calculated before (or with the port id). 
 			//I think that it should be done something similar to anpo->getPorts(), which maps the identifier on the switch to the port name.
 			uint64_t lsiID = lsi->getDpid();
@@ -1852,7 +1834,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 			for(list<struct nf_port_info>::iterator port_it = newPortList.begin(); port_it != newPortList.end(); port_it++)
 			{
 				stringstream ss;
-        			ss << lsiID << "_" << port_it->port_name;
+				ss << lsiID << "_" << port_it->port_name;
 				newPortsNamesAndID[ss.str()] = port_it->port_id;
 			}
 			lsi->setNetworkFunctionsPortsNameOnSwitch(anpo->getNfId(), newPortsNamesAndID);
@@ -1955,7 +1937,6 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	/**
 	*	4) Start or update the new NFs
 	*/
-	//TODO: in case of hotplug, the function is already running then a different function on the compute controller should be called.
 #ifdef RUN_NFS
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "4) start the new NFs");
 
@@ -1970,7 +1951,6 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 		list<port_mapping_t > nfs_control_configuration = nf->getControlPorts();
 		list<string> environment_variables_tmp = nf->getEnvironmentVariables();
 #endif
-		//TODO: for the hotplug, we may extend the computeController with a call that says if a VNF is already running or not.
 		//If not, startNF should then be called; if yes, o new function must be called
 		if(nfPortIdToNameOnSwitch.size() != nf->getPortsId().size())
 		{

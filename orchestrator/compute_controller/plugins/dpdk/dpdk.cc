@@ -49,7 +49,7 @@ bool Dpdk::startNF(StartNFIn sni)
 	uri << uri_image;
 
 	stringstream command;
-	command << PULL_AND_RUN_DPDK_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << coreMask <<  " " << NUM_MEMORY_CHANNELS << " " << n_ports;
+	command << getenv("un_script_path") << PULL_AND_RUN_DPDK_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << coreMask <<  " " << NUM_MEMORY_CHANNELS << " " << n_ports;
 
 	for(map<unsigned int, string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)
 		command << " "  << pn->second;
@@ -72,7 +72,7 @@ bool Dpdk::stopNF(StopNFIn sni)
 
 	stringstream command;
 
-	command << STOP_DPDK_NF << " " << lsiID << " " << nf_name;
+	command  << getenv("un_script_path") << STOP_DPDK_NF << " " << lsiID << " " << nf_name;
 
 	logger(ORCH_DEBUG_INFO, DPDK_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 
@@ -84,6 +84,12 @@ bool Dpdk::stopNF(StopNFIn sni)
 
 	return true;
 
+}
+
+bool Dpdk::updateNF(UpdateNFIn uni)
+{
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Update not supported by this type of functions");
+	return false;
 }
 
 string Dpdk::getCores() {

@@ -6,6 +6,7 @@
 #include "../../compute_controller/nf_type.h"
 #include "../../compute_controller/description.h"
 
+#define __STDC_FORMAT_MACROS
 #include <string>
 #include <list>
 #include <inttypes.h>

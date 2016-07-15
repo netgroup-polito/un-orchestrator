@@ -11,7 +11,7 @@ understand how to use the different options.
 The un-orchestrator requires a virtual switch up and running in the server,
 which is completely independent from this software.
 Therefore you need to start your preferred vSwitch first, before running
-the un-orchestrator. Proper instructions for xDPd, ERFS and Open vSwich are provided
+the un-orchestrator. Proper instructions for Open vSwich, ERFS and xDPd are provided
 below.
 
 Similarly, the un-orchestrator requires that the Name Resolver is already running; 
@@ -92,17 +92,102 @@ Start the switching daemon:
     $ sudo ovs-vswitchd --dpdk -c 0x1 -n 4 --socket-mem 1024,0 \
         -- unix:$DB_SOCK --pidfile --detach
 
+
+### How to start ERFS with DPDK support to work with the un-orchestrator
+
+Set up DPDK (after each reboot of the physical machine), in order to:
+
+  * Insert `IGB UIO` kernel module;
+  * Set up huge page filesystem;
+  * Bind Ethernet devices to IGB UIO module (bind all the Ethernet interfaces that you want to use).
+
+Start ERFS with the following commands:
+
+    $ cd [erfs]
+    $ sudo ./dof [dpdk parameters] -- [erfs parameters]
+    ; example: ./dof -c 0xe -n 2 -- -p 6633 -c example.cfg -C 1
+
+DPDK parameters are the usual ones: core mask or list, memory channels, socket memories, etc.
+ERFS parameters can be seen in the README file available in the ERFS repository.
+There are no mandatory parameters.
+
+ERFS comes with a run-time configuration interface and also with configuration file support. 
+Configuration commands can be sent to the switch either on this TCP port
+(default control port number - 1 = 16632), or by using a file, and adding
+the `-c <filename>` to the command line.
+
+    add-switch dpid=<dpid>
+
+        Create a new switch with the specified data path id. A new control
+        port is also opened for it, starting from port number specified on
+        the command line (or 16633).
+
+    add-port dpid=<dpid> port-num=<OF pnum> PCI:x:y.z [rx-queues=<q>]
+
+        Add a physical port with the specified PCI id to a switch.
+        Specifying the number of RX queues is optional (default = 1).
+
+    add-port dpid=<dpid> port-num=<OF pnum> XSWITCH
+
+        Add an "inter-switch" port to a switch. Using this port
+        packets can  be sent between two switches. See the "connect" command.
+        The name of the port will be: XSWITCH:<dpid>-<OF pnum>
+
+    add-port dpid=<dpid> port-num=<OF pnum> KNI:<iface_id> socket=<s>
+
+        Add a KNI port to a switch. <iface_id> should be a unique number,
+        as the interface name the kernel will see is: "kni<iface_id>"
+        <s> is the NUMA socket number to be used for the queues of the port.
+
+    add-port dpid=<dpid> port-num=<OF pnum> IVSHMEM socket=<s>
+
+        Add an IVSHMEM port to a switch. The port name will be:
+        IVSHMEM:<dpid>-<OF pnum>. IVSHMEM groups should be grouped, see
+        "group-ivshmems".
+        <s> is the NUMA socket number to be used for the queues of the port.
+
+    add-port dpid=<dpid> port-num=<OF pnum> DEFRAG buckets=<b>
+
+        Add an IP defragmenter virtual port to the switch.
+        The port name will be: DEFRAG:<dpid>-<OF pnum>
+        Packets sent to the port will reappear in table 0 with their
+        original inport, and metadata set to 1.
+
+    connect XSWITCH:<dpid1>-<num1> XSWITCH:<dpid2>-<num2>
+
+        Connect two inter switch ports. Packets sent to XSWITCH:<dpid1>-<num1>
+        will appear as input on XSWITCH:<dpid2>-<num2>. The lcore which
+        processed the packet in the dpid1 switch continues processing in the
+        dpid2 switch too.
+
+    group-ivshmems <metadata_name> IVSHMEM:<dpid>-<num1> IVSHMEM:<dpid>-<num2> ...
+
+        Group a set of IVSHMEM ports to be used by a single VM. This command
+        generates the necessary command line for Qemu in a file:
+        /tmp/ivshmem_qemu_cmdline_<metadata_name>
+
+    lcore <lcore> PCI:x:y.z[/queue] | IVSHMEM:<dpid>-<num> | KNI:<num>
+
+        Specify which ports/queues an lcore should read.
+
+    defrag-stat dpid=<dpid> port-num=<OF pnum>
+
+        Returns detailed statistics from the specified defragmenter port.
+
+    plugin <path_of_shared_library>
+
+        Loads a shared library implementing experimental actions/instructions.
+
+
 ### How to start xDPd with DPDK support to work with the un-orchestrator
 
 Set up DPDK (after each reboot of the physical machine), in order to:
 
-  * Build the environment x86_64-native-linuxapp-gcc
-  * Insert IGB UIO module
-  * Insert KNI module
-  * Setup hugepage mappings for non-NUMA systems (1000 should be a reasonable
-    number)
-  * Bind Ethernet devices to IGB UIO module (bind all the ethernet interfaces
-    that you want to use)
+  * Build the environment `x86_64-native-linuxapp-gcc`
+  * Insert `IGB UIO` module
+  * Insert `KNI` module
+  * Setup hugepage mappings for non-NUMA systems (1000 should be a reasonable number)
+  * Bind Ethernet devices to `IGB UIO` module (bind all the ethernet interfaces that you want to use)
  
     $ cd [xdpd]/libs/dpdk/tools  
     $ sudo ./setup.sh  

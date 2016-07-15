@@ -1,5 +1,8 @@
 #include "match_parser.h"
 
+#include <stdio.h>
+#include <inttypes.h>
+
 string MatchParser::graphID(string name_port)
 {
 	return nfId(name_port);
@@ -782,7 +785,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,IPv6_FLABEL,value.getString().c_str());
 			uint64_t ipv6FLabel;
-			if((sscanf(value.getString().c_str(),"%"SCNd64,&ipv6FLabel) != 1) || (ipv6FLabel > 4294967295) )
+			if((sscanf(value.getString().c_str(),"%"SCNd64,&ipv6FLabel) != 1) || (ipv6FLabel > 4294967295UL) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",ARP_OPCODE,value.getString().c_str());
 				return false;
