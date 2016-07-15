@@ -173,7 +173,7 @@ bool MatchParser::validateIpv4Netmask(const string &netmask)
 	return true;
 }
 
-bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, highlevel::Graph &graph)
+bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, string &management_id, highlevel::Graph &graph)
 {
 	bool foundOne = false;
 	bool foundEndPointID = false, foundProtocolField = false, definedInCurrentGraph = false;
@@ -276,7 +276,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			//end-points port type
 			else if(p_type == EP_PORT_TYPE)
 			{
-				bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false;
+				bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false, management_found=false;
 				char *s_value = new char[BUFFER_SIZE];
 				strcpy(s_value, (char *)value.getString().c_str());
 				string eP = epName(value.getString());
@@ -307,6 +307,11 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 					{
 						//gre
 						gre_found = true;
+					}
+					else if(eP == management_id)
+					{
+						//management endpoint
+						management_found = true;
 					}
 				}
 				/*physical endpoint*/
@@ -351,6 +356,11 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 				else if(gre_found)
 				{
 					match.setEndPointGre(eP);
+				}
+				/*management endpoint*/
+				else if(management_found)
+				{
+					match.setEndPointManagement(eP);
 				}
 			}
 		}

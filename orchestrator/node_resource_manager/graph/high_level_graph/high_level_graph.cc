@@ -149,6 +149,30 @@ void Graph::removeEndPointVlan(EndPointVlan endpoint)
 	assert(0);
 }
 
+bool Graph::addEndPointManagement(EndPointManagement *endpoint)
+{
+	if(endPointManagement != NULL)
+		return false;
+	endPointManagement = endpoint;
+	return true;
+}
+
+EndPointManagement *Graph::getEndPointManagement()
+{
+	return endPointManagement;
+}
+
+void Graph::removeEndPointManagement(EndPointManagement *endpoint)
+{
+	if(*endPointManagement == *endpoint)
+	{
+		delete endPointManagement;
+		endPointManagement=NULL;
+		return;
+	}
+	assert(0);
+}
+
 void Graph::addVNF(VNFs vnf)
 {
 	for(list<VNFs>::iterator v = vnfs.begin(); v != vnfs.end(); v++)

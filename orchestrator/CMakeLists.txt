@@ -262,6 +262,8 @@ SET(SOURCES1
 	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_gre.cc
 	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_internal.h
 	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_internal.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_management.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_management.cc
 	node_resource_manager/graph/high_level_graph/high_level_rule.h
 	node_resource_manager/graph/high_level_graph/high_level_rule.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface.cc
@@ -272,6 +274,8 @@ SET(SOURCES1
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_internal.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_vlan.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_vlan.h
+	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_management.cc
+	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_management.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_vnf.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_vnf.h
 	node_resource_manager/graph/high_level_graph/high_level_graph.h

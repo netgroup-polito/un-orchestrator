@@ -298,6 +298,11 @@ map<string, uint64_t> LSI::getEndPointsGreVlinks()
 	return endpoints_gre_vlinks;
 }
 
+map<string, uint64_t> LSI::getEndPointsManagementVlinks()
+{
+	return endpoints_management_vlinks;
+}
+
 void LSI::setNFsVLinks(map<string, uint64_t> nfs_vlinks)
 {
 	for(map<string, uint64_t>::iterator it = nfs_vlinks.begin(); it != nfs_vlinks.end(); it++)
@@ -314,6 +319,12 @@ void LSI::setEndPointsVLinks(map<string, uint64_t> endpoints_vlinks)
 {
 	for(map<string, uint64_t>::iterator it = endpoints_vlinks.begin(); it != endpoints_vlinks.end(); it++)
 		this->endpoints_vlinks.insert(*it);
+}
+
+void LSI::setEndPointsManagementVLinks(map<string, uint64_t> management_endpoints_vlinks)
+{
+	for(map<string, uint64_t>::iterator it = management_endpoints_vlinks.begin(); it != management_endpoints_vlinks.end(); it++)
+		this->endpoints_management_vlinks.insert(*it);
 }
 
 void LSI::setEndPointsGreVLinks(map<string, uint64_t> gre_endpoints_vlinks)

@@ -38,7 +38,7 @@ private:
 	*								a network function (but potentially on other
 	*								parameters)
 	*/
-	typedef enum{MATCH_GENERIC,MATCH_PORT,MATCH_NF,MATCH_ENDPOINT_INTERNAL,MATCH_ENDPOINT_GRE}match_t;
+	typedef enum{MATCH_GENERIC,MATCH_PORT,MATCH_NF,MATCH_ENDPOINT_INTERNAL,MATCH_ENDPOINT_GRE,MATCH_ENDPOINT_MANAGEMENT}match_t;
 
 	/**
 	*	@brief: this attribute can either represent
@@ -66,6 +66,11 @@ private:
 	*	@brief: this variable represents the ID of the gre endpoint.
 	*/
 	string endpointGreID;
+
+	/**
+	*	@brief: this variable represents the ID of the management endpoint.
+	*/
+	string endpointManagementID;
 
 	/**
 	*	@brief: this attribute can either represent
@@ -112,9 +117,16 @@ public:
 	/**
 	*	@brief: set a graph endpoint gre
 	*
-	*	@param: endpoint	identifier of the endpoint within the graph
+	*	@param: endpointID	identifier of the endpoint within the graph
 	*/
 	bool setEndPointGre(string endpointID);
+
+	/**
+	*	@brief: set a graph endpoint management
+	*
+	*	@param: endpointID	identifier of the endpoint within the graph
+	*/
+	bool setEndPointManagement(string endpointID);
 
 	/**
 	*	@brief: set a input endpoint
@@ -158,6 +170,10 @@ public:
 	bool matchOnEndPointGre();
 
 	/**
+	*	@brief: return true if the match is on a management endpoint
+	*/
+	bool matchOnEndPointManagement();
+	/**
 	*	@brief: return the physical port (the match must be on a physical port)
 	*/
 	string getPhysicalPort();
@@ -186,7 +202,11 @@ public:
 	*	@brief: get the identifier of the endpoint within the graph defining it (the match must be on gre endpoint)
 	*/
 	string getEndPointGre();
-	
+
+	/**
+	*	@brief: get the identifier of the endpoint within the graph defining it (the match must be on management endpoint)
+	*/
+	string getEndPointManagement();
 	/**
 	*	@brief: get the full identifier of the endpoint within the graph defining it (the match must be on a graph endpoint)
 	*/

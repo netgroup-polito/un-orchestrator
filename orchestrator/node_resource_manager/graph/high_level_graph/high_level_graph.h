@@ -12,6 +12,7 @@
 #include "high_level_graph_endpoint_internal.h"
 #include "high_level_graph_endpoint_gre.h"
 #include "high_level_graph_endpoint_vlan.h"
+#include "high_level_graph_endpoint_management.h"
 #include "high_level_graph_vnf.h"
 #include "high_level_rule.h"
 #include "high_level_output_action_nf.h"
@@ -71,6 +72,11 @@ private:
 	*	@brief: List of "vlan" endpoints
 	*/
 	list<EndPointVlan> endPointsVlan;
+
+	/**
+	*	@brief: "management" endpoint
+	*/
+	EndPointManagement *endPointManagement = NULL;
 
 	/**
 	*	@brief: List of VNFs describing the graph
@@ -228,6 +234,21 @@ public:
 	*	@brief: Remove an endpoint "internal" from the graph
 	*/
 	void removeEndPointVlan(EndPointVlan endpoint);
+
+	/**
+	*	@brief: Add a new "management" endpoint to the graph
+	*/
+	bool addEndPointManagement(EndPointManagement *endpoint);
+
+	/**
+	*	@brief: Return the "management" endpoints of the graph
+	*/
+	EndPointManagement *getEndPointManagement();
+
+	/**
+	*	@brief: Remove an endpoint "management" from the graph
+	*/
+	void removeEndPointManagement(EndPointManagement *endpoint);
 
 	/**
 	*	Functions to manage the VNFs

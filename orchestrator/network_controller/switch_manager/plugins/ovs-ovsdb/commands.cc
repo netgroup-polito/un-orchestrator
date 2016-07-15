@@ -216,6 +216,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 	row["target"] = tcp_s;
 
 	row["local_ip"] = cli.getLocalIP();
+	row["local_netmask"]  = cli.getLocalNetmask();
 	row["connection_mode"] = "out-of-band";
 	row["is_connected"] = true;
 

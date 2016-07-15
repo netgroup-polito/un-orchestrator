@@ -60,6 +60,17 @@ bool Match::setEndPointGre(string endpointGreID)
 	return true;
 }
 
+bool Match::setEndPointManagement(string endpointManagementID)
+{
+	if(type != MATCH_GENERIC)
+		return false;
+
+	this->endpointManagementID = endpointManagementID;
+	type = MATCH_ENDPOINT_MANAGEMENT;
+
+	return true;
+}
+
 bool Match::setInputEndpoint(string input_endpoint)
 {
 	this->input_endpoint = (char*)malloc(sizeof(char)*(input_endpoint.length()+1));
@@ -107,6 +118,13 @@ bool Match::matchOnEndPointGre()
 	return false;
 }
 
+bool Match::matchOnEndPointManagement()
+{
+	if(type == MATCH_ENDPOINT_MANAGEMENT)
+		return true;
+	return false;
+}
+
 string Match::getPhysicalPort()
 {
 	assert(type == MATCH_PORT);
@@ -136,6 +154,13 @@ string Match::getEndPointGre()
 	assert(type == MATCH_ENDPOINT_GRE);
 
 	return endpointGreID;
+}
+
+string Match::getEndPointManagement()
+{
+	assert(type == MATCH_ENDPOINT_MANAGEMENT);
+
+	return endpointManagementID;
 }
 
 unsigned int Match::getEndPointInternal()
@@ -179,7 +204,7 @@ Object Match::toJSON()
 {
 	Object match;
 
-	if(type == MATCH_PORT || type == MATCH_ENDPOINT_GRE || type == MATCH_ENDPOINT_INTERNAL)
+	if(type == MATCH_PORT || type == MATCH_ENDPOINT_GRE || type == MATCH_ENDPOINT_INTERNAL || type == MATCH_ENDPOINT_INTERNAL)
 		match[PORT_IN]  = input_endpoint;
 	else if(type == MATCH_NF)
 	{

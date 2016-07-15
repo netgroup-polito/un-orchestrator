@@ -131,6 +131,12 @@ private:
 	*/
 	map<string, uint64_t> endpoints_gre_vlinks;
 
+	/**
+	*	@brief: the map is <endpoint name, vlink id>
+	*		An endpoint generates a vlink if it is defined in the action part of a rule
+	*/
+	map<string, uint64_t> endpoints_management_vlinks;
+
 public:
 
 	LSI(string controllerAddress, string controllerPort, set<string> physical_ports, list<highlevel::VNFs> network_functions,
@@ -162,6 +168,7 @@ public:
 	map<string, uint64_t> getPortsVlinks();
 	map<string, uint64_t> getEndPointsVlinks(); //TODO: rename in getEndPointsInternalVlinks
 	map<string, uint64_t> getEndPointsGreVlinks();
+	map<string, uint64_t> getEndPointsManagementVlinks();
 
 	//FIXME: public is not a good choice
 	void setNFsVLinks(map<string, uint64_t> nfs_vlinks);
@@ -177,6 +184,7 @@ public:
 	void removeEndPointvlink(string endpoint);
 	void setEndPointsGreVLinks(map<string, uint64_t> gre_endpoints_vlinks);
 	void addEndpointGrevlink(string endpoint, uint64_t vlinkID);
+	void setEndPointsManagementVLinks(map<string, uint64_t> management_endpoints_vlinks);
 	void removeEndPointGrevlink(string endpoint);
 
 protected:

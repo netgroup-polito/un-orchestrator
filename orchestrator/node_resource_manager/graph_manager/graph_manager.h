@@ -15,6 +15,7 @@
 #include "../graph/high_level_graph/high_level_graph_endpoint_interface.h"
 
 #include "../graph/high_level_graph/high_level_output_action_endpoint_gre.h"
+#include "../graph/high_level_graph/high_level_output_action_endpoint_management.h"
 #include "../graph/graph-parser/match_parser.h"
 #include "../graph/high_level_graph/high_level_graph_vnf.h"
 
@@ -106,6 +107,11 @@ private:
 	*	Local IP of the LSI0
 	*/
 	string un_address;
+
+	/**
+	*	Netmask of the local IP of the LSI0
+	*/
+	string un_netmask;
 
 	/**
 	*	Orchestrator can be in band (true) or out of band (false)
@@ -218,7 +224,7 @@ private:
 	*	@brief: remove pieces from an existing graph with a
 	*		specific ID.
 	*/
-	bool updateGraph_remove(string graphID, highlevel::Graph *newGraph);
+	highlevel::Graph *updateGraph_remove(string graphID, highlevel::Graph *newGraph);
 
 public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF

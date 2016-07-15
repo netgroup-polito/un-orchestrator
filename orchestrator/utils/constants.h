@@ -7,6 +7,7 @@
 *	Connections
 */
 #define OF_CONTROLLER_ADDRESS 		"127.0.0.1"
+#define OF_CONTROLLER_NETMASK		"255.0.0.0"
 #define FIRTS_OF_CONTROLLER_PORT	6653
 
 #define REST_PORT 				8080
@@ -71,7 +72,10 @@
 			#define SAFE			"secure"
 		#define VLAN			"vlan"
 			#define V_ID			"vlan-id"
-
+		#define EP_MANAGEMENT	"management"
+			#define STATIC_ADDRESS	"static-address"
+			#define IP_ADDRESS		"ip-address"
+			#define NETMASK			"netmask"
 	#define BIG_SWITCH		"big-switch"
 		#define FLOW_RULES		"flow-rules"
 			#define _ID				"id"
@@ -171,7 +175,7 @@ extern ofp_version_t OFP_VERSION;
  #define MEMORY_SIZE 				"4194304"
  #define NUMBER_OF_CORES			 "4"
 
-/*
+ /*
  *	Misc
  */
  #define GRAPH_ID					"NF-FG"
