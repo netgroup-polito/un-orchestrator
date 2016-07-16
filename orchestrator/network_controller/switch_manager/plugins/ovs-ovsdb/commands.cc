@@ -179,8 +179,18 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 	//save IPsec certificate
 	this->ipsec_certificate = cli.getIPsecCertificate();
 
-	/*force to use OpenFlow12*/
-	strcpy(of_version, "OpenFlow12");
+	switch(OFP_VERSION)
+	{
+		case OFP_10:
+			strcpy(of_version, "OpenFlow10");
+			break;
+		case OFP_12:
+			strcpy(of_version, "OpenFlow12");
+			break;
+		case OFP_13:
+			strcpy(of_version, "OpenFlow13");
+			break;
+	}
 
 	//connect socket
 	s = cmd_connect();

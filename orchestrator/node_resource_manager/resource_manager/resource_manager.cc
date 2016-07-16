@@ -7,6 +7,7 @@ void ResourceManager::publishDescriptionFromFile(char *descr_file)
 	FILE *fp = fopen(descr_file, "rb");
 	if(fp == NULL) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Something wrong while opening file '%s'.",descr_file);
+		fclose(fp);
 		return;
 	}
 	fseek(fp, 0, SEEK_END);
@@ -14,8 +15,10 @@ void ResourceManager::publishDescriptionFromFile(char *descr_file)
 	fseek(fp, 0, SEEK_SET);  //same as rewind(f);
 
 	char *mesg = (char *) malloc(fsize + 1);
-	if(fread(mesg, fsize, 1, fp) != (size_t) fsize) {
+	if(fread(mesg, fsize, 1, fp) != 1) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Something wrong while reading file '%s'.",descr_file);
+		free(mesg);
+		fclose(fp);
 		return;
 	}
 	fclose(fp);
