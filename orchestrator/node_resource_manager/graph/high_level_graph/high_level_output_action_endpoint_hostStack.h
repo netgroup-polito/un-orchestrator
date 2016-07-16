@@ -1,5 +1,5 @@
-#ifndef HIGH_LEVEL_ACTION_ENDPOINT_MANAGEMENT_H_
-#define HIGH_LEVEL_ACTION_ENDPOINT_MANAGEMENT_H_ 1
+#ifndef HIGH_LEVEL_ACTION_ENDPOINT_HOSTSTACK_H_
+#define HIGH_LEVEL_ACTION_ENDPOINT_HOSTSTACK_H_ 1
 
 #include "high_level_output_action.h"
 #include "../../../utils/logger.h"
@@ -12,7 +12,7 @@ using namespace std;
 namespace highlevel
 {
 
-	class ActionEndPointManagement : public Action
+	class ActionEndPointHostStack : public Action
 	{
 	private:
 
@@ -28,16 +28,16 @@ namespace highlevel
 
 	public:
 
-		ActionEndPointManagement(string endpointID, string endpointName);
+		ActionEndPointHostStack(string endpointID, string endpointName);
 		string getInfo();
 		string getOutputEndpointID();
 		string toString();
 
-		bool operator==(const ActionEndPointManagement &other) const;
+		bool operator==(const ActionEndPointHostStack &other) const;
 
 		Object toJSON();
 	};
 
 }
 
-#endif //HIGH_LEVEL_ACTION_ENDPOINT_MANAGEMENT_H_
+#endif //HIGH_LEVEL_ACTION_ENDPOINT_HOSTSTACK_H_

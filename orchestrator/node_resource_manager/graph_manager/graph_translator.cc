@@ -37,7 +37,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 			continue;
 		}
 
-		if( (match.matchOnNF()) && (action->getType() == highlevel::ACTION_ON_ENDPOINT_MANAGEMENT) )
+		if( (match.matchOnNF()) && (action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK) )
 		{
 			//NF -> managementPort : rule not included in LSI-0
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tIt matches a NF, and the action is a MANAGEMENT port. Not inserted in LSI-0");
@@ -58,7 +58,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 			continue;
 		}
 
-		if( (match.matchOnEndPointGre()) && (action->getType() == highlevel::ACTION_ON_ENDPOINT_MANAGEMENT) )
+		if( (match.matchOnEndPointGre()) && (action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK) )
 		{
 			//gre -> managementPort : rule not included in LSI-0
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tIt matches a GRE tunnel, and the action is a MANAGEMENT port. Not inserted in LSI-0");
@@ -220,9 +220,9 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 				lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
 				lsi0Graph.addRule(lsi0Rule);
 			}
-			else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_MANAGEMENT)
+			else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK)
 			{
-				highlevel::ActionEndPointManagement *action_ep = (highlevel::ActionEndPointManagement*)action; //[francesco] continua da qui
+				highlevel::ActionEndPointHostStack *action_ep = (highlevel::ActionEndPointHostStack*)action;
 
 				logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tIt matches the port \"%s\", and the action is \"%s:%s\"",port.c_str(),action_info.c_str(),(action_ep->getOutputEndpointID()).c_str());
 
@@ -370,7 +370,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 		 } //end of match.matchOnEndPointGre()
 		 else if (match.matchOnEndPointInternal())
 		 {
-			 assert(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION || action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE || action->getType() == highlevel::ACTION_ON_ENDPOINT_MANAGEMENT);
+			 assert(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION || action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE || action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK);
 
 			 stringstream ss;
 			 ss << match.getEndPointInternal();
@@ -429,9 +429,9 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 				 lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
 				 lsi0Graph.addRule(lsi0Rule);
 			 }
-			 else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_MANAGEMENT)
+			 else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK)
 			 {
-				 highlevel::ActionEndPointManagement *action_ep = (highlevel::ActionEndPointManagement*)action;
+				 highlevel::ActionEndPointHostStack *action_ep = (highlevel::ActionEndPointHostStack*)action;
 
 				 string action_info = action->getInfo();
 
@@ -692,7 +692,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 
 		if(match.matchOnPort() || match.matchOnEndPointInternal())
 		{
-		 	assert(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION || action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE || action->getType() == highlevel::ACTION_ON_ENDPOINT_MANAGEMENT);
+		 	assert(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION || action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE || action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK);
 
 		 	/**
 			*	The entire match must be replaced with the virtual link associated with the action.
@@ -745,10 +745,10 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 				lowlevel::Rule tenantRule(tenantMatch,tenantAction,hlr->getRuleID(),priority);
 				tenantGraph.addRule(tenantRule);
 			}
-			else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_MANAGEMENT)
+			else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK)
 			{
 
-				highlevel::ActionEndPointManagement *action_ep = (highlevel::ActionEndPointManagement*)action;
+				highlevel::ActionEndPointHostStack *action_ep = (highlevel::ActionEndPointHostStack*)action;
 				string ep_port = action_ep->getOutputEndpointID();
 
 				if(match.matchOnPort())
@@ -890,9 +890,9 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 				lowlevel::Rule tenantRule(tenantMatch,tenantAction,hlr->getRuleID(),priority);
 				tenantGraph.addRule(tenantRule);
 			}
-			else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_MANAGEMENT)
+			else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK)
 			{
-				highlevel::ActionEndPointManagement *action_me = (highlevel::ActionEndPointManagement*)action;
+				highlevel::ActionEndPointHostStack *action_me = (highlevel::ActionEndPointHostStack*)action;
 				string ep_port = action_me->getOutputEndpointID();
 
 				logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tIt matches the gre endpoint \"%s\", and the action is an output on endpoint \"%s\"",input_endpoint,ep_port.c_str());
@@ -1208,9 +1208,9 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 				lowlevel::Rule tenantRule(tenantMatch,tenantAction,hlr->getRuleID(),priority);
 				tenantGraph.addRule(tenantRule);
 			}
-			else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_MANAGEMENT)
+			else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK)
 			{
-				highlevel::ActionEndPointManagement *action_me = (highlevel::ActionEndPointManagement*)action;
+				highlevel::ActionEndPointHostStack *action_me = (highlevel::ActionEndPointHostStack*)action;
 				string ep_port = action_me->getOutputEndpointID();
 
 				logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tIt matches the \"%s:%d\", and the action is an output on endpoint \"%s\"",nf.c_str(),nfPort,ep_port.c_str());

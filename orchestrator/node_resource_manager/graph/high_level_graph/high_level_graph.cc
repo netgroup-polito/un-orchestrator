@@ -149,7 +149,7 @@ void Graph::removeEndPointVlan(EndPointVlan endpoint)
 	assert(0);
 }
 
-bool Graph::addEndPointManagement(EndPointManagement *endpoint)
+bool Graph::addEndPointHostStack(EndPointHostStack *endpoint)
 {
 	if(endPointManagement != NULL)
 		return false;
@@ -157,12 +157,12 @@ bool Graph::addEndPointManagement(EndPointManagement *endpoint)
 	return true;
 }
 
-EndPointManagement *Graph::getEndPointManagement()
+EndPointHostStack *Graph::getEndPointsHostStack()
 {
 	return endPointManagement;
 }
 
-void Graph::removeEndPointManagement(EndPointManagement *endpoint)
+void Graph::removeEndPointManagement(EndPointHostStack *endpoint)
 {
 	if(*endPointManagement == *endpoint)
 	{

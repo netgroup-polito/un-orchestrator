@@ -44,6 +44,12 @@ private:
 	list<string> physicalPortsName;
 
 	/**
+	*	@brief: list of internal ports to be connected to the lsi,
+	*			used to implement hostStack endpoint
+	*/
+	list<string> internalPortsName;
+
+	/**
 	*	@brief: map of network functions name, network functions type
 	*/
 	map<string,nf_t>  nf_types;
@@ -55,7 +61,7 @@ private:
 	set<string> networkFunctionsName;
 
 	/**
-	*	@brief: list of endpoints ports to be connected to the lsi
+	*	@brief: list of gre endpoints ports to be connected to the lsi
 	*/
 	map<string,vector<string> > endpointsPortsName;
 
@@ -88,9 +94,10 @@ protected:
 
 	//FIXME: endpoints mean "endpoint gre"
 
-	CreateLsiIn(string controllerAddress, string controllerPort, list<string> physicalPortsName, map<string,nf_t>  nf_types, map<string,list<struct nf_port_info> > netFunctionsPortsInfo, map<string,vector<string> > endpointsPortsName, list<uint64_t> vlinksRemoteLsi, string local_ip, string local_netmask, string ipsec_certificate)
+	CreateLsiIn(string controllerAddress, string controllerPort, list<string> physicalPortsName, /*list<string> internalPortsName,*/ map<string,nf_t>  nf_types, map<string,list<struct nf_port_info> > netFunctionsPortsInfo, map<string,vector<string> > endpointsPortsName, list<uint64_t> vlinksRemoteLsi, string local_ip, string local_netmask, string ipsec_certificate)
 		: controllerAddress(controllerAddress), controllerPort(controllerPort),
 		physicalPortsName(physicalPortsName.begin(),physicalPortsName.end()),
+		/*internalPortsName(internalPortsName.begin(),internalPortsName.end()),*/
 		nf_types(nf_types.begin(),nf_types.end()),
 		endpointsPortsName(endpointsPortsName.begin(),endpointsPortsName.end()),
 		netFunctionsPortsInfo(netFunctionsPortsInfo.begin(),netFunctionsPortsInfo.end()),
@@ -118,6 +125,11 @@ public:
 	list<string> getPhysicalPortsName()
 	{
 		return physicalPortsName;
+	}
+
+	list<string> getInternalPortsName()
+	{
+		return internalPortsName;
 	}
 
 	map<string,nf_t> getNetworkFunctionsType()

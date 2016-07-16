@@ -475,7 +475,7 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 	list<highlevel::EndPointInternal> endPointsInternal = graph->getEndPointsInternal();
 	list<highlevel::EndPointGre> endPointsGre = graph->getEndPointsGre();
 	list<highlevel::EndPointVlan> endPointsVlan = graph->getEndPointsVlan();
-	int requiredEpManagement = graph->getEndPointManagement()==NULL? 0:1;
+	int requiredEpManagement = graph->getEndPointsHostStack()==NULL? 0:1;
 
 	string graphID = graph->getID();
 
@@ -669,13 +669,8 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	list<highlevel::VNFs> network_functions = graph->getVNFs();
 	list<highlevel::EndPointInternal> endpointsInternal = graph->getEndPointsInternal();
 	list<highlevel::EndPointGre> endpointsGre = graph->getEndPointsGre();
-	highlevel::EndPointManagement *endpointManagement = graph->getEndPointManagement();
+	//highlevel::EndPointHostStack *endpointManagement = graph->getEndPointsHostStack();
 
-	if(endpointManagement!=NULL)
-	{
-		tenantAddress=endpointManagement->getIpAddress();
-		tenantNetmask=endpointManagement->getIpNetmask();
-	}
 
 	vector<set<string> > vlVector = identifyVirtualLinksRequired(graph);
 	set<string> vlNFs = vlVector[0];
@@ -1909,7 +1904,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	/**
 	*	3-e) condider the management endpoints
 	*/
-	highlevel::EndPointManagement *tmp_management_endpoint = diff->getEndPointManagement();
+	highlevel::EndPointHostStack *tmp_management_endpoint = diff->getEndPointsHostStack();
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "3-d) considering the new management endpoint (%d)",tmp_management_endpoint==NULL? 0:1);
 
 	if(tmp_management_endpoint!=NULL)
@@ -2520,7 +2515,7 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 			// internal endpoint -> internal endpoint does not require any virtual link
 			// interface -> internal endpoint does not require any virtual link
 		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_MANAGEMENT)
+		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK)
 		{
 			//we are considering rules as
 			//	- match: internal-25 - action: output to management port
@@ -2528,7 +2523,7 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 
 			if(match.matchOnPort() || match.matchOnEndPointInternal())
 			{
-				highlevel::ActionEndPointManagement *action_ep = (highlevel::ActionEndPointManagement*)action;
+				highlevel::ActionEndPointHostStack *action_ep = (highlevel::ActionEndPointHostStack*)action;
 				endPointsManagement.insert(action_ep->toString());
 			}
 

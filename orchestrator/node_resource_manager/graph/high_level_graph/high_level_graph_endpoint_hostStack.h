@@ -20,9 +20,11 @@ using namespace std;
 namespace highlevel
 {
 
-class EndPointManagement
+class EndPointHostStack
 {
 private:
+	typedef enum { DHCP, STATIC, PPPOE} configurationType;
+
 	/**
 	*	@brief: the id of the endpoint port (e.g., 00000003)
 	*/
@@ -34,23 +36,19 @@ private:
 	string name;
 
 	/**
-	*	@brief: true (static ip address), false (dynamic ip address)
+	*	@brief: configuration type of the endpoint (e.g., 00000003)
 	*/
-	bool is_static;
+	configurationType configuration;
 	
 	/**
-	*	@brief: the ip address of the port (e.g., 192.168.1.1)
+	*	@brief: the ip address of the port (e.g., 192.168.1.1/24)
 	*/
 	string ipAddress;
 
-	/**
-	*	@brief: the netmask of the ip address of the port (e.g., 255.255.255.0)
-	*/
-	string netmask;
-
 public:
-	EndPointManagement(string id, string name, bool isStatic, string ipAddress, string netmask);
-	
+
+	EndPointHostStack(string id, string name, string configuration, string ipAddress);
+
 	/**
 	*	@brief: return the ID of the endpoint
 	*/
@@ -62,23 +60,13 @@ public:
 	string getName();
 	
 	/**
-	*	@brief: return if the ip address of the endpoint is static or not
-	*/
-	bool isStatic();
-	
-	/**
-	*	@brief: return the ip address of the endpoint
+	*	@brief: return the ip address (with netmask) of the endpoint
 	*/
 	string getIpAddress();
 
-	/**
-*	@brief: return the netmask of the ip address of the endpoint
-*/
-	string getIpNetmask();
+	~EndPointHostStack();
 
-	~EndPointManagement();
-
-	bool operator==(const EndPointManagement &other) const;
+	bool operator==(const EndPointHostStack &other) const;
 
 	Object toJSON();
 

@@ -11,7 +11,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 	//for each endpoint (vlan), contains the pair vlan id, interface
 	map<string, pair<string, string> > vlan_id; //XXX: currently, this information is ignored
 	//contains the id of managment endpoint (if exist)
-	string management_id;
+	string hostStack_id;
 
 	/**
 	*	The graph is defined according to this schema:
@@ -682,53 +682,47 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											return false;
 										}
 									}
-									else if(ep_name == EP_MANAGEMENT)
+									else if(ep_name == EP_HOSTSTACK)
 									{
 										try
 										{
 											ep_value.getObject();
 										} catch(exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Object", EP_MANAGEMENT);
+											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Object", EP_HOSTSTACK);
 											return false;
 										}
 
-										Object ep_management = ep_value.getObject();
-										bool isStatic;
+										Object ep_hostStack = ep_value.getObject();
+										string configuration;
 										string ipAddress;
-										string netmask;
 
-										for(Object::const_iterator epm = ep_management.begin(); epm != ep_management.end(); epm++)
+										for(Object::const_iterator eph = ep_hostStack.begin(); eph != ep_hostStack.end(); eph++)
 										{
-											const string& epm_name  = epm->first;
-											const Value&  epm_value = epm->second;
+											const string& eph_name  = eph->first;
+											const Value&  eph_value = eph->second;
 
 
-											if(epm_name == STATIC_ADDRESS)
+											if(eph_name == CONFIGURATION)
 											{
-												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_MANAGEMENT,STATIC_ADDRESS,epm_value.getBool());
-												isStatic=epm_value.getBool();
+												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,CONFIGURATION,eph_value.getBool());
+												configuration=eph_value.getBool();
 											}
-											else if(epm_name == IP_ADDRESS)
+											else if(eph_name == IP_ADDRESS)
 											{
-												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_MANAGEMENT,IP_ADDRESS,epm_value.getString().c_str());
-												ipAddress=epm_value.getString();
-											}
-											else if(epm_name == NETMASK)
-											{
-												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_MANAGEMENT,NETMASK,epm_value.getString().c_str());
-												netmask=epm_value.getString();
+												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,IP_ADDRESS,eph_value.getString().c_str());
+												ipAddress=eph_value.getString();
 											}
 											else
 											{
-												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" inside \"%s\"",epm_name.c_str(),EP_MANAGEMENT);
+												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" inside \"%s\"",eph_name.c_str(),EP_HOSTSTACK);
 												return false;
 											}
 										}
 
-										highlevel::EndPointManagement *ep_mng = new highlevel::EndPointManagement(id, e_name, isStatic, ipAddress, netmask);
-										graph.addEndPointManagement(ep_mng);
-										management_id = id;
+										highlevel::EndPointHostStack *ep_hs = new highlevel::EndPointHostStack(id, e_name, configuration, ipAddress);
+										graph.addEndPointHostStack(ep_hs);
+										hostStack_id = id;
 									}
 									else
 										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,END_POINTS,ep_value.getString().c_str());
@@ -854,7 +848,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									{
 										try{
 											foundMatch = true;
-											if(!MatchParser::parseMatch(fr_value.getObject(),match,(*action)/*,nfs_ports_found*/,iface_id,internal_id,vlan_id,gre_id,management_id,graph))
+											if(!MatchParser::parseMatch(fr_value.getObject(),match,(*action)/*,nfs_ports_found*/,iface_id,internal_id,vlan_id,gre_id,hostStack_id,graph))
 											{
 												return false;
 											}
@@ -1007,7 +1001,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 														{
 															//This is an output action referred to an endpoint
 
-															bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false, management_found=false;
+															bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false, hostStack_found=false;
 
 															char *s_a_value = new char[BUFFER_SIZE];
 															strcpy(s_a_value, (char *)a_value.getString().c_str());
@@ -1040,9 +1034,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																	//gre
 																	gre_found = true;
 																}
-																else if(epID == management_id)
+																else if(epID == hostStack_id)
 																{
-																	management_found = true;
+																	hostStack_found = true;
 																}
 															}
 															//physical endpoint
@@ -1080,9 +1074,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															{
 																action = new highlevel::ActionEndPointGre(epID, string(s_a_value));
 															}
-															else if(management_found)
+															else if(hostStack_found)
 															{
-																action = new highlevel::ActionEndPointManagement(epID, string(s_a_value));
+																action = new highlevel::ActionEndPointHostStack(epID, string(s_a_value));
 															}
 														}
 													}//End action == output_to_port

@@ -12,7 +12,7 @@
 #include "high_level_graph_endpoint_internal.h"
 #include "high_level_graph_endpoint_gre.h"
 #include "high_level_graph_endpoint_vlan.h"
-#include "high_level_graph_endpoint_management.h"
+#include "high_level_graph_endpoint_hostStack.h"
 #include "high_level_graph_vnf.h"
 #include "high_level_rule.h"
 #include "high_level_output_action_nf.h"
@@ -76,7 +76,7 @@ private:
 	/**
 	*	@brief: "management" endpoint
 	*/
-	EndPointManagement *endPointManagement = NULL;
+	EndPointHostStack *endPointManagement = NULL;
 
 	/**
 	*	@brief: List of VNFs describing the graph
@@ -238,17 +238,17 @@ public:
 	/**
 	*	@brief: Add a new "management" endpoint to the graph
 	*/
-	bool addEndPointManagement(EndPointManagement *endpoint);
+	bool addEndPointHostStack(EndPointHostStack *endpoint);
 
 	/**
 	*	@brief: Return the "management" endpoints of the graph
 	*/
-	EndPointManagement *getEndPointManagement();
+	EndPointHostStack *getEndPointsHostStack();
 
 	/**
 	*	@brief: Remove an endpoint "management" from the graph
 	*/
-	void removeEndPointManagement(EndPointManagement *endpoint);
+	void removeEndPointManagement(EndPointHostStack *endpoint);
 
 	/**
 	*	Functions to manage the VNFs

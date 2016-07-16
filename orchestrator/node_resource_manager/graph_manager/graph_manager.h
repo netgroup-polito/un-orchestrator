@@ -15,7 +15,7 @@
 #include "../graph/high_level_graph/high_level_graph_endpoint_interface.h"
 
 #include "../graph/high_level_graph/high_level_output_action_endpoint_gre.h"
-#include "../graph/high_level_graph/high_level_output_action_endpoint_management.h"
+#include "../graph/high_level_graph/high_level_output_action_endpoint_hostStack.h"
 #include "../graph/graph-parser/match_parser.h"
 #include "../graph/high_level_graph/high_level_graph_vnf.h"
 

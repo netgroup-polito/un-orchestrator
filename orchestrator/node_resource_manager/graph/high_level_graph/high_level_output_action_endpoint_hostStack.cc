@@ -1,14 +1,14 @@
-#include "high_level_output_action_endpoint_management.h"
+#include "high_level_output_action_endpoint_hostStack.h"
 
 namespace highlevel
 {
 
-ActionEndPointManagement::ActionEndPointManagement(string endpointID, string endpointName) :
-	Action(ACTION_ON_ENDPOINT_MANAGEMENT), endpointID(endpointID), endpointName(endpointName)
+ActionEndPointHostStack::ActionEndPointHostStack(string endpointID, string endpointName) :
+	Action(ACTION_ON_ENDPOINT_HOSTSTACK), endpointID(endpointID), endpointName(endpointName)
 {
 }
 
-bool ActionEndPointManagement::operator==(const ActionEndPointManagement &other) const
+bool ActionEndPointHostStack::operator==(const ActionEndPointHostStack &other) const
 {
 	if((endpointID == other.endpointID))
 		return true;
@@ -16,7 +16,7 @@ bool ActionEndPointManagement::operator==(const ActionEndPointManagement &other)
 	return false;
 }
 
-string ActionEndPointManagement::getInfo()
+string ActionEndPointHostStack::getInfo()
 {
 	//Check the name of port
 	char delimiter[] = ":";
@@ -45,17 +45,17 @@ string ActionEndPointManagement::getInfo()
 	return str;
 }
 
-string ActionEndPointManagement::getOutputEndpointID()
+string ActionEndPointHostStack::getOutputEndpointID()
 {
 	return endpointID;
 }
 
-string ActionEndPointManagement::toString()
+string ActionEndPointHostStack::toString()
 {
 	return endpointID;
 }
 
-Object ActionEndPointManagement::toJSON()
+Object ActionEndPointHostStack::toJSON()
 {
 	Object action;
 	action[OUTPUT] = endpointName.c_str();

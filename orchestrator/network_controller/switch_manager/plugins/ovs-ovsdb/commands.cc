@@ -151,7 +151,10 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 
 	stringstream datapath_id;
 
+	//map [phisical port name - openflow ID]
 	map<string,unsigned int> physical_ports;
+	//map [type=internal port name - openflow ID]
+	map<string,unsigned int> internal_ports;
 	map<string,map<string, unsigned int> >  network_functions_ports;
 	map<string,unsigned int >  endpoints_ports;
 	list<pair<unsigned int, unsigned int> > virtual_links;
@@ -159,13 +162,15 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 	int dnumber_new = 0, nfnumber_old = 0;
 
 	//list of physical ports
-	list<string> ports = cli.getPhysicalPortsName();
+	list<string> physicalPortsName = cli.getPhysicalPortsName();
+	//list of internal ports
+	list<string> internalPortsName = cli.getInternalPortsName();
 	//list of nf
 	set<string> nfs = cli.getNetworkFunctionsName();
 	//list of nft
 	map<string,nf_t> nf_type = cli.getNetworkFunctionsType();
-	//list of endpoints
-	map<string,vector<string> > endpoints = cli.getEndpointsPortsName();
+	//list of gre endpoints
+	map<string,vector<string> > greEndpoints = cli.getEndpointsPortsName();
 	//list of remote LSI
 	list<uint64_t> vport = cli.getVirtualLinksRemoteLSI();
 
@@ -409,13 +414,24 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 	switch_uuid[dnumber] = strr[i-2];
 
 	/*create physical ports ports*/
-	if(ports.size() !=0){
-		for(list<string>::iterator p = ports.begin(); p != ports.end(); p++)
+	if(physicalPortsName.size() !=0){
+		for(list<string>::iterator p = physicalPortsName.begin(); p != physicalPortsName.end(); p++)
 		{
 			add_port((*p), dnumber, false, s);
 
 			port_l[dnumber].push_back((*p).c_str());
 			physical_ports[(*p)] = rnumber-1;
+		}
+	}
+
+	/*create internal ports*/
+	if(internalPortsName.size() !=0){
+		for(list<string>::iterator p = internalPortsName.begin(); p != internalPortsName.end(); p++)
+		{
+			add_port((*p), dnumber, false, s);
+
+			//port_l[dnumber].push_back((*p).c_str()); it should be superfluous
+			internal_ports[(*p)] = rnumber-1;
 		}
 	}
 
@@ -459,13 +475,13 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 		}
 	}
 
-	//if there are one or more endpoints
-	if(endpoints.size() != 0)
+	//if there are one or more greEndpoints
+	if(greEndpoints.size() != 0)
 	{
 		i = 0;
 
-		/*for each endpoint in the list of endpoints*/
-		for(map<string,vector<string> >::iterator ep = endpoints.begin(); ep != endpoints.end(); ep++)
+		/*for each endpoint in the list of greEndpoints*/
+		for(map<string,vector<string> >::iterator ep = greEndpoints.begin(); ep != greEndpoints.end(); ep++)
 		{
 			char local_ip[BUF_SIZE];
 			char remote_ip[BUF_SIZE];
@@ -774,6 +790,8 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 	else { // External ports
 		if (p.compare(0, 4, "dpdk") == 0)
 			row["type"] = "dpdk";
+		else if (p.compare(0, 6, "hsport") == 0)
+			row["type"] = "internal";
 	}
 
 	row["name"] = port_name.c_str();
