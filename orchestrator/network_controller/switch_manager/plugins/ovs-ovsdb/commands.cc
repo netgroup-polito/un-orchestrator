@@ -11,7 +11,9 @@ char ErrBuf[BUFFER_SIZE];
 int rnumber = 1;
 uint64_t dnumber = 1;
 
-int pnumber = 1, nfnumber = 0, gnumber = 0;
+//gnumber: progressive number assigned to gre ports
+//hsnumber: progressive number assigned to hoststack ports
+int pnumber = 1, nfnumber = 0, gnumber = 0, hsnumber=0;
 
 /* Transaction ID */
 static int tid = 0;
@@ -25,7 +27,9 @@ map<string, string> peer_n;
 /*switch id, list of ports name*/
 map<uint64_t, list<string> > port_l;
 /*switch id, list of gre-tunnel*/
-map<uint64_t, list<string> > endpoint_l;
+map<uint64_t, list<string> > gre_endpoint_l;
+/*switch id, list of hoststack endpoint (ID)*/
+map<uint64_t, list<string> > hoststack_endpoint_l;
 /*switch id, list of virtual link name*/
 map<uint64_t, list<string> > vport_l;
 /*switch id, list of ports uuid*/
@@ -153,23 +157,23 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 
 	//map [phisical port name - openflow ID]
 	map<string,unsigned int> physical_ports;
-	//map [type=internal port name - openflow ID]
-	map<string,unsigned int> internal_ports;
+	//map [hoststack EP ID - openflow ID]
+	map<string,unsigned int> hoststack_endpoints_ports;
 	map<string,map<string, unsigned int> >  network_functions_ports;
-	map<string,unsigned int >  endpoints_ports;
+	map<string,unsigned int >  gre_endpoints_ports;
 	list<pair<unsigned int, unsigned int> > virtual_links;
 
 	int dnumber_new = 0, nfnumber_old = 0;
 
 	//list of physical ports
 	list<string> physicalPortsName = cli.getPhysicalPortsName();
-	//list of internal ports
-	list<string> internalPortsName = cli.getInternalPortsName();
+	//list of hoststack endpoints ID
+	list<string> hoststackEndpoints = cli.getHoststackEndpointID();
 	//list of nf
 	set<string> nfs = cli.getNetworkFunctionsName();
 	//list of nft
 	map<string,nf_t> nf_type = cli.getNetworkFunctionsType();
-	//list of gre endpoints
+	//list of gre endpoints (ID - description)
 	map<string,vector<string> > greEndpoints = cli.getEndpointsPortsName();
 	//list of remote LSI
 	list<uint64_t> vport = cli.getVirtualLinksRemoteLSI();
@@ -435,13 +439,19 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 	}
 
 	/*create internal ports*/
-	if(internalPortsName.size() !=0){
-		for(list<string>::iterator p = internalPortsName.begin(); p != internalPortsName.end(); p++)
+	if(hoststackEndpoints.size() !=0){
+		for(list<string>::iterator p = hoststackEndpoints.begin(); p != hoststackEndpoints.end(); p++)
 		{
-			add_port((*p), dnumber, false, s);
+			char port_name[BUF_SIZE];
+			sprintf(port_name, "hsport%d", hsnumber++);
 
-			//port_l[dnumber].push_back((*p).c_str()); it should be superfluous
-			internal_ports[(*p)] = rnumber-1;
+			logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Hoststack Endpoint -> id: %s - nameOnSwitch: %s",(*p).c_str(), port_name);
+
+			add_port(port_name, dnumber, false, s);
+
+			hoststack_endpoints_ports[(*p)] = rnumber-1;
+
+			hoststack_endpoint_l[dnumber].push_back((*p));
 		}
 	}
 
@@ -508,7 +518,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 			strcpy(key, gre_param[0].c_str());
 			strcpy(local_ip, gre_param[1].c_str());
 			strcpy(remote_ip, gre_param[2].c_str());
-			strcpy(is_safe, gre_param[4].c_str());
+			strcpy(is_safe, gre_param[3].c_str());
 
 			sprintf(port_name, "gre%d", gnumber);
 			sprintf(ifac, "iface%d", rnumber);
@@ -519,9 +529,9 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 
 			add_endpoint(dnumber, local_ip, remote_ip, key, port_name, ifac, s, is_safe);
 
-			endpoints_ports[id] = rnumber-1;
+			gre_endpoints_ports[id] = rnumber-1;
 
-			endpoint_l[dnumber].push_back(id);
+			gre_endpoint_l[dnumber].push_back(id);
 		}
 	}
 
@@ -639,7 +649,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 		}
 	}
 
-    	clo = new CreateLsiOut(dnumber_new, physical_ports, network_functions_ports, endpoints_ports, out_nf_ports_name_on_switch, virtual_links, out_nf_ports_name_and_id);
+    	clo = new CreateLsiOut(dnumber_new, physical_ports, network_functions_ports, gre_endpoints_ports, out_nf_ports_name_on_switch, virtual_links, out_nf_ports_name_and_id, hoststack_endpoints_ports);
 
 	return clo;
 }
@@ -1562,7 +1572,7 @@ AddEndpointOut *commands::cmd_editconfig_endpoint(AddEndpointIn aepi, int s)
 	strcpy(key, l_param[1].c_str());
 	strcpy(local_ip, l_param[0].c_str());
 	strcpy(remote_ip, l_param[2].c_str());
-	strcpy(safe, l_param[4].c_str());
+	strcpy(safe, l_param[3].c_str());
 
 	sprintf(port_name, "gre%d", gnumber);
 
@@ -1573,7 +1583,7 @@ AddEndpointOut *commands::cmd_editconfig_endpoint(AddEndpointIn aepi, int s)
 	//create endpoint
 	add_endpoint(aepi.getDpid(), local_ip, remote_ip, key, port_name, ifac, s, safe);
 
-	endpoint_l[aepi.getDpid()].push_back(id);
+	gre_endpoint_l[aepi.getDpid()].push_back(id);
 
 	apf = new AddEndpointOut(aepi.getEPname(), rnumber-1);
 
@@ -1836,16 +1846,16 @@ void commands::cmd_editconfig_endpoint_delete(DestroyEndpointIn depi, int s){
 		assert(gport_uuid.count(depi.getDpid()) != 0);
 //		uu = gport_uuid[depi.getDpid()].begin();
 
-		//should be search in endpoint_l, p....if find it take the index and remove it from the set endpoint-uuid[pi]
-		list<string> ep_l = endpoint_l[depi.getDpid()];
-		assert(endpoint_l.count(depi.getDpid()) != 0);
+		//should be search in gre_endpoint_l, p....if find it take the index and remove it from the set endpoint-uuid[pi]
+		list<string> ep_l = gre_endpoint_l[depi.getDpid()];
+		assert(gre_endpoint_l.count(depi.getDpid()) != 0);
 		//iterate on all the gre tunnels that are part of this bridge
 		for(list<string>::iterator u = ep_l.begin(); u != ep_l.end(); u++){
 			string s = (*u);
 			if(s.compare(ep_name) == 0){
 				gport_uuid[depi.getDpid()].remove((*uu));
 				ep_l.erase(u);
-				endpoint_l[depi.getDpid()] = ep_l;
+				gre_endpoint_l[depi.getDpid()] = ep_l;
 				break;
 			}
 			uu++;

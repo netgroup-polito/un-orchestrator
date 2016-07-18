@@ -44,19 +44,19 @@ string EndPointHostStack::getIpAddress()
 
 Object EndPointHostStack::toJSON()
 {
-	Object EndPointManagement, hostStack;
+	Object EndPointHoststack, hostStack;
 
-	EndPointManagement[_ID] = id.c_str();
-	EndPointManagement[_NAME] = name.c_str();
-	EndPointManagement[EP_TYPE] = EP_HOSTSTACK;
+	EndPointHoststack[_ID] = id.c_str();
+	EndPointHoststack[_NAME] = name.c_str();
+	EndPointHoststack[EP_TYPE] = EP_HOSTSTACK;
 
 	hostStack[CONFIGURATION] = configuration;
 	if(configuration == STATIC)
 		hostStack[IP_ADDRESS] = ipAddress;
 
-	EndPointManagement[EP_HOSTSTACK] = hostStack;
+	EndPointHoststack[EP_HOSTSTACK] = hostStack;
 
-	return EndPointManagement;
+	return EndPointHoststack;
 }
 
 }

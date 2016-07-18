@@ -1,5 +1,5 @@
-#ifndef HIGH_LEVEL_GRAPH_ENPOINT_MANAGEMENT_H_
-#define HIGH_LEVEL_GRAPH_ENPOINT_MANAGEMENT_H_ 1
+#ifndef HIGH_LEVEL_GRAPH_ENPOINT_HOSTSTACK_H_
+#define HIGH_LEVEL_GRAPH_ENPOINT_HOSTSTACK_H_ 1
 
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
@@ -74,4 +74,4 @@ public:
 
 }
 
-#endif //HIGH_LEVEL_GRAPH_ENPOINT_MANAGEMENT_H_
+#endif //HIGH_LEVEL_GRAPH_ENPOINT_HOSTSTACK_H_

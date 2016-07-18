@@ -173,7 +173,7 @@ bool MatchParser::validateIpv4Netmask(const string &netmask)
 	return true;
 }
 
-bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, string &management_id, highlevel::Graph &graph)
+bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, list<string> &hostStack_id, highlevel::Graph &graph)
 {
 	bool foundOne = false;
 	bool foundEndPointID = false, foundProtocolField = false, definedInCurrentGraph = false;
@@ -276,7 +276,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			//end-points port type
 			else if(p_type == EP_PORT_TYPE)
 			{
-				bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false, management_found=false;
+				bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false, hoststack_found=false;
 				char *s_value = new char[BUFFER_SIZE];
 				strcpy(s_value, (char *)value.getString().c_str());
 				string eP = epName(value.getString());
@@ -285,6 +285,8 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 					map<string,string>::iterator it1 = internal_id.find(eP);
 					map<string,pair<string,string> >::iterator it2 = vlan_id.find(eP);
 					map<string,string>::iterator it3 = gre_id.find(eP);
+					list<string>::iterator it4 = hostStack_id.begin();
+					for(;*it4!=eP && it4!=hostStack_id.end();it4++);
 					if(it != iface_id.end())
 					{
 						//physical port
@@ -308,10 +310,10 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 						//gre
 						gre_found = true;
 					}
-					else if(eP == management_id)
+					else if(it4 != hostStack_id.end())
 					{
-						//management endpoint
-						management_found = true;
+						//hoststack endpoint
+						hoststack_found = true;
 					}
 				}
 				/*physical endpoint*/
@@ -357,10 +359,10 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 				{
 					match.setEndPointGre(eP);
 				}
-				/*management endpoint*/
-				else if(management_found)
+				/*hoststack endpoint*/
+				else if(hoststack_found)
 				{
-					match.setEndPointManagement(eP);
+					match.setEndPointHoststack(eP);
 				}
 			}
 		}

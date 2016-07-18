@@ -11,10 +11,13 @@ static string nf_port_name(const string& nf_id, unsigned int port_id)
 	return ss.str();
 }
 
-LSI::LSI(string controllerAddress, string controllerPort, set<string> physical_ports, list<highlevel::VNFs> network_functions,
-	list<highlevel::EndPointGre> gre_endpoints_ports, vector<VLink> virtual_links, map<string, map<unsigned int,PortType> > a_nfs_ports_type) :
+LSI::LSI(string controllerAddress, string controllerPort, set<string> physical_ports,
+		 list<highlevel::VNFs> network_functions, list<highlevel::EndPointGre> gre_endpoints_ports,
+		 vector<VLink> virtual_links, map<string, map<unsigned int, PortType> > a_nfs_ports_type,
+		 list<highlevel::EndPointHostStack> hoststack_endpoints_port) :
 		controllerAddress(controllerAddress), controllerPort(controllerPort),
-		virtual_links(virtual_links.begin(),virtual_links.end())
+		virtual_links(virtual_links.begin(),virtual_links.end()),
+		hoststack_endpoints_port(hoststack_endpoints_port.begin(),hoststack_endpoints_port.end())
 {
 	for(set<string>::iterator p = physical_ports.begin(); p != physical_ports.end(); p++)
 		this->physical_ports[*p] = 0;
@@ -57,6 +60,54 @@ list<string> LSI::getPhysicalPortsName()
 	return names;
 }
 
+list<string> LSI::getHostackEndpointID()
+{
+	list<string> hoststack_endpoints_id;
+	for(list<highlevel::EndPointHostStack>::iterator ehs = hoststack_endpoints_port.begin(); ehs != hoststack_endpoints_port.end(); ehs++)
+	{
+		hoststack_endpoints_id.push_back(ehs->getId());
+	}
+	return hoststack_endpoints_id;
+};
+
+bool LSI::setHoststackEndpointPortID(string hs, uint64_t id)
+{
+	for(list<highlevel::EndPointHostStack>::iterator hsep = hoststack_endpoints_port.begin(); hsep != hoststack_endpoints_port.end(); hsep++)
+		if(hsep->getId().compare(hs) == 0)
+		{
+			hoststack_endpoints_port_id[hs] = id;
+			return true;
+		}
+	return false;
+}
+
+map<string,unsigned int> LSI::getHoststackEndpointPortID()
+{
+	return hoststack_endpoints_port_id;
+}
+
+map<string, vector<string> > LSI::getGreEndpointsDescription()
+{
+	map<string, vector<string> > gre_endpointsdescription;
+	if(gre_endpoints_ports.size() != 0)
+	{
+		vector<string> v_ep(4);
+		string iface;
+		for(list<highlevel::EndPointGre>::iterator e = gre_endpoints_ports.begin(); e != gre_endpoints_ports.end(); e++)
+		{
+			iface.assign(e->getId());
+			v_ep[0].assign(e->getGreKey());
+			v_ep[1].assign(e->getLocalIp());
+			v_ep[2].assign(e->getRemoteIp());
+			if(e->isSafe())
+				v_ep[3].assign("true");
+			else
+				v_ep[3].assign("false");
+			gre_endpointsdescription[iface] = v_ep;
+		}
+	}
+	return gre_endpointsdescription;
+}
 set<string> LSI::getNetworkFunctionsId()
 {
 	set<string> names;
@@ -67,7 +118,7 @@ set<string> LSI::getNetworkFunctionsId()
 	return names;
 }
 
-list<highlevel::EndPointGre> LSI::getEndpointsPorts()
+list<highlevel::EndPointGre> LSI::getGreEndpointsPorts()
 {
 	return gre_endpoints_ports;
 }
@@ -193,7 +244,7 @@ bool LSI::setNfSwitchPortsID(string nf_id, map<string, unsigned int> translation
 	return true;
 }
 
-bool LSI::setEndpointPortID(string ep, uint64_t id)
+bool LSI::setGreEndpointPortID(string ep, uint64_t id)
 {
 	bool found = false;
 
@@ -298,9 +349,9 @@ map<string, uint64_t> LSI::getEndPointsGreVlinks()
 	return endpoints_gre_vlinks;
 }
 
-map<string, uint64_t> LSI::getEndPointsManagementVlinks()
+map<string, uint64_t> LSI::getEndPointsHoststackVlinks()
 {
-	return endpoints_management_vlinks;
+	return endpoints_hoststack_vlinks;
 }
 
 void LSI::setNFsVLinks(map<string, uint64_t> nfs_vlinks)
@@ -321,10 +372,10 @@ void LSI::setEndPointsVLinks(map<string, uint64_t> endpoints_vlinks)
 		this->endpoints_vlinks.insert(*it);
 }
 
-void LSI::setEndPointsManagementVLinks(map<string, uint64_t> management_endpoints_vlinks)
+void LSI::setEndPointsHoststackVLinks(map<string, uint64_t> hoststack_endpoints_vlinks)
 {
-	for(map<string, uint64_t>::iterator it = management_endpoints_vlinks.begin(); it != management_endpoints_vlinks.end(); it++)
-		this->endpoints_management_vlinks.insert(*it);
+	for(map<string, uint64_t>::iterator it = hoststack_endpoints_vlinks.begin(); it != hoststack_endpoints_vlinks.end(); it++)
+		this->endpoints_hoststack_vlinks.insert(*it);
 }
 
 void LSI::setEndPointsGreVLinks(map<string, uint64_t> gre_endpoints_vlinks)
@@ -436,7 +487,7 @@ bool LSI::addNF(string nf_id, list< unsigned int> ports, const map<unsigned int,
 	return true;
 }
 
-void LSI::addEndpoint(highlevel::EndPointGre ep)
+void LSI::addGreEndpoint(highlevel::EndPointGre ep)
 {
 	gre_endpoints_ports.push_back(ep);
 }

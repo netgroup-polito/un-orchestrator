@@ -60,13 +60,13 @@ bool Match::setEndPointGre(string endpointGreID)
 	return true;
 }
 
-bool Match::setEndPointManagement(string endpointManagementID)
+bool Match::setEndPointHoststack(string endpointHoststackID)
 {
 	if(type != MATCH_GENERIC)
 		return false;
 
-	this->endpointManagementID = endpointManagementID;
-	type = MATCH_ENDPOINT_MANAGEMENT;
+	this->endpointHoststackID = endpointHoststackID;
+	type = MATCH_ENDPOINT_HOSTSTACK;
 
 	return true;
 }
@@ -118,9 +118,9 @@ bool Match::matchOnEndPointGre()
 	return false;
 }
 
-bool Match::matchOnEndPointManagement()
+bool Match::matchOnEndPointHoststack()
 {
-	if(type == MATCH_ENDPOINT_MANAGEMENT)
+	if(type == MATCH_ENDPOINT_HOSTSTACK)
 		return true;
 	return false;
 }
@@ -156,11 +156,11 @@ string Match::getEndPointGre()
 	return endpointGreID;
 }
 
-string Match::getEndPointManagement()
+string Match::getEndPointHoststack()
 {
-	assert(type == MATCH_ENDPOINT_MANAGEMENT);
+	assert(type == MATCH_ENDPOINT_HOSTSTACK);
 
-	return endpointManagementID;
+	return endpointHoststackID;
 }
 
 unsigned int Match::getEndPointInternal()

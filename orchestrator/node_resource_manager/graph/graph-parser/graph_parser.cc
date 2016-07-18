@@ -10,8 +10,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 	map<string, string> gre_id;
 	//for each endpoint (vlan), contains the pair vlan id, interface
 	map<string, pair<string, string> > vlan_id; //XXX: currently, this information is ignored
-	//contains the id of managment endpoint (if exist)
-	string hostStack_id;
+	//contains the id of hoststack endpoints
+	list<string> hostStack_id;
 
 	/**
 	*	The graph is defined according to this schema:
@@ -597,7 +597,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											return false;
 										}
 
-										//In order to get e-d-point ID (it wil be parsed later)
+										//In order to get end-point ID (it wil be parsed later, but i need it now)
 										Object::const_iterator aep2 = aep;
 										aep2++;
 										for(; aep2 != end_points.end(); aep2++)
@@ -693,6 +693,21 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											return false;
 										}
 
+
+										//In order to get end-point ID (it wil be parsed later, but i need it now)
+										Object::const_iterator aep2 = aep;
+										aep2++;
+										for(; aep2 != end_points.end(); aep2++)
+										{
+											const string& ep2_name  = aep2->first;
+											const Value&  ep2_value = aep2->second;
+											if(ep2_name == _ID)
+											{
+												id = ep2_value.getString();
+												break;
+											}
+										}
+
 										Object ep_hostStack = ep_value.getObject();
 										string configuration;
 										string ipAddress;
@@ -705,8 +720,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 											if(eph_name == CONFIGURATION)
 											{
-												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,CONFIGURATION,eph_value.getBool());
-												configuration=eph_value.getBool();
+												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,CONFIGURATION,eph_value.getString().c_str());
+												configuration=eph_value.getString();
 											}
 											else if(eph_name == IP_ADDRESS)
 											{
@@ -720,9 +735,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 										}
 
-										highlevel::EndPointHostStack *ep_hs = new highlevel::EndPointHostStack(id, e_name, configuration, ipAddress);
+										highlevel::EndPointHostStack ep_hs(id, e_name, configuration, ipAddress);
 										graph.addEndPointHostStack(ep_hs);
-										hostStack_id = id;
+										hostStack_id.push_back(id);
 									}
 									else
 										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,END_POINTS,ep_value.getString().c_str());
@@ -1012,6 +1027,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																map<string,string>::iterator it1 = internal_id.find(epID);
 																map<string,pair<string,string> >::iterator it2 = vlan_id.find(epID);
 																map<string,string>::iterator it3 = gre_id.find(epID);
+																list<string>::iterator it4 = hostStack_id.begin();
+																for(;*it4!=epID && it4!=hostStack_id.end();it4++);
 																if(it != iface_id.end())
 																{
 																	//physical port
@@ -1034,7 +1051,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																	//gre
 																	gre_found = true;
 																}
-																else if(epID == hostStack_id)
+																else if(it4 != hostStack_id.end())
 																{
 																	hostStack_found = true;
 																}

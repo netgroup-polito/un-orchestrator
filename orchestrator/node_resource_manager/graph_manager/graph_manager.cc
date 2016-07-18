@@ -77,19 +77,19 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 	list<highlevel::VNFs> dummy_network_functions;
 	map<string, map<unsigned int, PortType> > dummy_nfs_ports_type;
 	list<highlevel::EndPointGre> dummy_gre_endpoints;
+	list<highlevel::EndPointHostStack> dummy_hoststack_endpoints;
 	vector<VLink> dummy_virtual_links;
 
-	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), phyPorts, dummy_network_functions,
-	dummy_gre_endpoints,dummy_virtual_links,dummy_nfs_ports_type);
+	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), phyPorts, dummy_network_functions, dummy_gre_endpoints, dummy_virtual_links, dummy_nfs_ports_type, dummy_hoststack_endpoints);
 
 	try
 	{
 		//Create a new LSI, which is the LSI-0 of the node
 		map<string, vector<string> > gre_endpoints;
-		assert(lsi->getEndpointsPorts().size() == 0);
+		assert(lsi->getGreEndpointsPorts().size() == 0);
 		map<string,nf_t>  nf_types;
 		map<string,list<nf_port_info> > netFunctionsPortsInfo;
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(),lsi->getPhysicalPortsName(),nf_types,netFunctionsPortsInfo,gre_endpoints,lsi->getVirtualLinksRemoteLSI(), this->un_address, this->un_netmask, this->ipsec_certificate);
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(),lsi->getPhysicalPortsName(),lsi->getHostackEndpointID(), nf_types,netFunctionsPortsInfo,lsi->getGreEndpointsDescription(),lsi->getVirtualLinksRemoteLSI(), this->un_address, this->un_netmask, this->ipsec_certificate);
 
 		CreateLsiOut *clo = switchManager.createLsi(cli);
 
@@ -114,7 +114,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 			throw GraphManagerException();
 		}
 
-		map<string, unsigned int> epsports = clo->getEndpointsPorts();
+		map<string, unsigned int> epsports = clo->getGreEndpointsPorts();
 		if(!epsports.empty())
 		{
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Non required endpoints ports have been attached to the lsi-0");
@@ -475,7 +475,7 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 	list<highlevel::EndPointInternal> endPointsInternal = graph->getEndPointsInternal();
 	list<highlevel::EndPointGre> endPointsGre = graph->getEndPointsGre();
 	list<highlevel::EndPointVlan> endPointsVlan = graph->getEndPointsVlan();
-	int requiredEpManagement = graph->getEndPointsHostStack()==NULL? 0:1;
+	list<highlevel::EndPointHostStack> endPointsHoststack = graph->getEndPointsHostStack();
 
 	string graphID = graph->getID();
 
@@ -496,9 +496,15 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 		}
 	}
 
-	/**
-	*	No check is required for an internal endpoint
-	*/
+	// TODO: check the validity of hoststack endpoints.
+	for(list<highlevel::EndPointHostStack>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end(); e++)
+	{
+
+	}
+
+		/**
+        *	No check is required for an internal endpoint
+        */
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The command requires %d 'internal' endpoints",endPointsInternal.size());
 	for(list<highlevel::EndPointInternal>::iterator i = endPointsInternal.begin(); i != endPointsInternal.end(); i++)
 	{
@@ -506,7 +512,7 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "* group: %s",group.c_str());
 	}
 
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The command requires %d 'management' endpoints",requiredEpManagement);
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The command requires %d 'hoststack' endpoints",endPointsHoststack.size());
 
 	/**
 	*	No check is required for a GRE endpoint
@@ -669,7 +675,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	list<highlevel::VNFs> network_functions = graph->getVNFs();
 	list<highlevel::EndPointInternal> endpointsInternal = graph->getEndPointsInternal();
 	list<highlevel::EndPointGre> endpointsGre = graph->getEndPointsGre();
-	//highlevel::EndPointHostStack *endpointManagement = graph->getEndPointsHostStack();
+	list<highlevel::EndPointHostStack> endpointsHoststack = graph->getEndPointsHostStack();
 
 
 	vector<set<string> > vlVector = identifyVirtualLinksRequired(graph);
@@ -677,15 +683,14 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	set<string> vlPhyPorts = vlVector[1];
 	set<string> vlEndPointsGre = vlVector[2];
 	set<string> vlEndPointsInternal = vlVector[3];
-	set<string> vlEndPointsManagement = vlVector[4];
+	set<string> vlEndPointsHoststack = vlVector[4];
 
-	assert(vlEndPointsManagement.size()<=1); //a graph can not contains more then one management endpoint!
 	/**
 	*	A virtual link can be used in two direction, hence it can be shared between a NF port and a physical port.
 	*	In principle a virtual link could also be shared between a NF port and an endpoint but, for simplicity, we
 	*	use separated virtual links in case of endpoint.
 	*/
-	unsigned int toUp = vlNFs.size() + vlEndPointsGre.size() + vlEndPointsManagement.size();
+	unsigned int toUp = vlNFs.size() + vlEndPointsGre.size() + vlEndPointsHoststack.size();
 	unsigned int toDown = vlPhyPorts.size() + vlEndPointsInternal.size();
 	unsigned int numberOfVLrequired = (toUp > toDown)? toUp : toDown;
 
@@ -696,7 +701,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		virtual_links.push_back(VLink(dpid0));
 
 	//The tenant-LSI is not connected to physical ports, but just the LSI-0
-	//through virtual links, to network functions through virtual ports, and to gre tunnels through proper ports
+	//through virtual links, to network functions through virtual ports, and to gre tunnels and hoststack endpoint through proper ports
 	set<string> dummyPhyPorts;
 
 	//Check the types of the VNFs ports
@@ -741,39 +746,14 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 	//Prepare the structure representing the new tenant-LSI
 	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), dummyPhyPorts, network_functions,
-		endpointsGre,virtual_links,nfs_ports_type);
+		endpointsGre,virtual_links,nfs_ports_type,endpointsHoststack);
 
 	CreateLsiOut *clo = NULL;
 	try
 	{
 		//Create a new tenant-LSI
-		map<string, vector<string> > description_gre_endpoints;
-		list<highlevel::EndPointGre> endpoints_gre = lsi->getEndpointsPorts();
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%d Gre endpoints must be created",endpoints_gre.size());
-		if(endpoints_gre.size() != 0)
-		{
-			vector<string> v_ep(5);
-			string iface;
-			for(list<highlevel::EndPointGre>::iterator e = endpoints_gre.begin(); e != endpoints_gre.end(); e++)
-			{
-				iface.assign(e->getId());
-				v_ep[0].assign(e->getGreKey());
-				v_ep[1].assign(e->getLocalIp());
-				v_ep[2].assign(e->getRemoteIp());
-				v_ep[3].assign(un_interface);
-				if(e->isSafe())
-					v_ep[4].assign("true");
-				else
-					v_ep[4].assign("false");
-				description_gre_endpoints[iface] = v_ep;
-				
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tkey: %s - local IP: %s - remote IP: %s - iface: %s",(e->getGreKey()).c_str(),(e->getLocalIp()).c_str(),(e->getRemoteIp()).c_str(),iface.c_str());
-			}
-		}
 
-		assert(description_gre_endpoints.size() == endpoints_gre.size());
-
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(), lsi->getPhysicalPortsName(), nf_types, lsi->getNetworkFunctionsPortsInfo(), description_gre_endpoints, lsi->getVirtualLinksRemoteLSI(), tenantAddress, tenantNetmask, this->ipsec_certificate);
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(), lsi->getPhysicalPortsName(),	lsi->getHostackEndpointID(), nf_types, lsi->getNetworkFunctionsPortsInfo(), lsi->getGreEndpointsDescription(), lsi->getVirtualLinksRemoteLSI(), tenantAddress, tenantNetmask, this->ipsec_certificate);
 
 		clo = switchManager.createLsi(cli);
 
@@ -799,12 +779,23 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 			}
 		}
 
-		map<string,unsigned int > epsports = clo->getEndpointsPorts();
+		map<string,unsigned int > epsports = clo->getGreEndpointsPorts();
 		for(map<string,unsigned int >::iterator ep = epsports.begin(); ep != epsports.end(); ep++)
 		{
-			if(!lsi->setEndpointPortID(ep->first,ep->second))
+			if(!lsi->setGreEndpointPortID(ep->first, ep->second))
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required gre end point port \"%s\" has been attached to the tenant-lsi",ep->first.c_str());
+				delete(clo);
+				throw GraphManagerException();
+			}
+		}
+
+		map<string,unsigned int > hoststackEPsports = clo->getHoststackEndpointPorts();
+		for(map<string,unsigned int >::iterator hs = hoststackEPsports.begin(); hs != hoststackEPsports.end(); hs++)
+		{
+			if(!lsi->setHoststackEndpointPortID(hs->first, hs->second))
+			{
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required hoststack end point port \"%s\" has been attached to the tenant-lsi",hs->first.c_str());
 				delete(clo);
 				throw GraphManagerException();
 			}
@@ -846,7 +837,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 	map<string,unsigned int> lsi_ports = lsi->getPhysicalPorts();
 	set<string> nfs = lsi->getNetworkFunctionsId();
-	list<highlevel::EndPointGre > eps = lsi->getEndpointsPorts();
+	list<highlevel::EndPointGre > eps = lsi->getGreEndpointsPorts();
 	vector<VLink> vls = lsi->getVirtualLinks();
 
 	//The following code just prints information on the VNFs that are part of the graph
@@ -938,16 +929,15 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 		//associate the vlinks to the gre end points
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Gre endpoint is virtual link ID (up):");
-		map<string, uint64_t> endpoints_vlinks;
+		map<string, uint64_t> gre_endpoints_vlinks;
 
 		for(set<string>::iterator ep = vlEndPointsGre.begin(); ep != vlEndPointsGre.end(); ep++, vlToUp++)
 		{
-			//TODO: rename to add the word "gre" :)
-			endpoints_vlinks[*ep] = vlToUp->getID();
+			gre_endpoints_vlinks[*ep] = vlToUp->getID();
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\t%s -> %x",(*ep).c_str(),vlToUp->getID());
 		}			
 
-		lsi->setEndPointsGreVLinks(endpoints_vlinks);
+		lsi->setEndPointsGreVLinks(gre_endpoints_vlinks);
 
 		//associate the vlinks to the internal end points
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Internal end point is virtual link ID (down):");
@@ -960,17 +950,17 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		}
 		lsi->setEndPointsVLinks(endpoints_internal_vlinks);
 
-		//associate the vlinks to the management end point
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Management endpoint is virtual link ID (up):");
-		map<string, uint64_t> endpoints_management_vlinks;
+		//associate the vlinks to the hoststack end points
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Hoststack endpoint is virtual link ID (up):");
+		map<string, uint64_t> endpoints_hoststack_vlinks;
 
-		for(set<string>::iterator ep = vlEndPointsManagement.begin(); ep != vlEndPointsManagement.end(); ep++, vlToUp++)
+		for(set<string>::iterator ep = vlEndPointsHoststack.begin(); ep != vlEndPointsHoststack.end(); ep++, vlToUp++)
 		{
-			endpoints_management_vlinks[*ep] = vlToUp->getID();
+			endpoints_hoststack_vlinks[*ep] = vlToUp->getID();
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\t%s -> %x",(*ep).c_str(),vlToUp->getID());
 		}
 
-		lsi->setEndPointsManagementVLinks(endpoints_management_vlinks);
+		lsi->setEndPointsHoststackVLinks(endpoints_hoststack_vlinks);
 	}
 
 	/**
@@ -1221,24 +1211,28 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 			vector<VLink> virtual_links;
 			virtual_links.push_back(VLink(dpid0));
 
-			//The internal-LSI is neither connected to physical ports, nor to VNFs. It is in fact just 
+			//The internal-LSI is neither connected to physical ports, nor to VNFs. It is in fact just
 			//connected to the LSI-0 through virtual links
 			set<string> dummyPhyPorts;
 			list<highlevel::VNFs> dummyNetworkFunctions;
 			list<highlevel::EndPointGre> dummyEndpointsGre;
-			map<string, vector<string> > endpoints;//[ivanofrancesco] unused? It's gre endpoints FIXME
+			list<highlevel::EndPointHostStack> dummyEndpointHoststack;
 			map<string, map<unsigned int, PortType> > dummyNfsPortsType;
 
 			//Prepare the structure representing the new internal-LSI
-			LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), controllerPort, dummyPhyPorts, dummyNetworkFunctions,
-				dummyEndpointsGre,virtual_links,dummyNfsPortsType);
+			LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS),
+							   controllerPort, dummyPhyPorts, dummyNetworkFunctions,
+							   dummyEndpointsGre, virtual_links,
+							   dummyNfsPortsType,
+							   dummyEndpointHoststack);
 
 			CreateLsiOut *clo = NULL;
 			try
 			{
 				map<string, nf_t> dummyNfsPortsTypeForCli;
 				//Create a new internal-LSI
-				CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(), dummyNfsPortsTypeForCli, lsi->getNetworkFunctionsPortsInfo(), endpoints, lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), string(OF_CONTROLLER_NETMASK), this->ipsec_certificate);
+				CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(),
+								lsi->getHostackEndpointID() , dummyNfsPortsTypeForCli, lsi->getNetworkFunctionsPortsInfo(), lsi->getGreEndpointsDescription(), lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), string(OF_CONTROLLER_NETMASK), this->ipsec_certificate);
 				
 				clo = switchManager.createLsi(cli);
 
@@ -1268,7 +1262,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 					throw GraphManagerException();
 				}
 
-				map<string,unsigned int > epsports = clo->getEndpointsPorts();//FIXME this is gre endpoint
+				map<string,unsigned int > epsports = clo->getGreEndpointsPorts();//FIXME this is gre endpoint
 				if(epsports.size() > 0)
 				{
 					logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required gre-tunnel endpoint has been attached to the internal-lsi");
@@ -1520,7 +1514,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	*		- environment variables
 	*		- control connections
 	*	- internal endpoints not supported
-	*	- management endpoints not supported
+	*	- hoststack endpoints not supported
 	**/
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Updating the graph '%s' with new 'pieces'...",graphID.c_str());
@@ -1843,27 +1837,26 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	{
 #ifdef VSWITCH_IMPLEMENTATION_OVSDB
 		//fill the vector related to the endpoint params [gre key, local-ip, remote-ip, interface, isSafe]
-		vector<string> ep_param(5);
+		vector<string> ep_param(4);
 		ep_param[0] = ep->getLocalIp();
 		ep_param[1] = ep->getGreKey();
 		ep_param[2] = ep->getRemoteIp();
-		ep_param[3] = un_interface;
 		if(ep->isSafe())
-			ep_param[4] = "true";
+			ep_param[3] = "true";
 		else
-			ep_param[4] = "false";
+			ep_param[3] = "false";
 
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t%s",(ep->getId()).c_str());
 
 		AddEndpointOut *aepo = NULL;
 		try
 		{
-			lsi->addEndpoint(*ep);
+			lsi->addGreEndpoint(*ep);
 			AddEndpointIn aepi(dpid,ep->getId(),ep_param);
 
 			aepo = switchManager.addEndpoint(aepi);
 
-			if(!lsi->setEndpointPortID(aepo->getEPname(), aepo->getEPid()))
+			if(!lsi->setGreEndpointPortID(aepo->getEPname(), aepo->getEPid()))
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required gre endpoint \"%s\" has been attached to the tenant-lsi",ep->getId().c_str());
 				lsi->removeEndpoint(ep->getId());
@@ -1902,15 +1895,15 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	}
 
 	/**
-	*	3-e) condider the management endpoints
+	*	3-e) condider the hoststack endpoints
 	*/
-	highlevel::EndPointHostStack *tmp_management_endpoint = diff->getEndPointsHostStack();
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "3-d) considering the new management endpoint (%d)",tmp_management_endpoint==NULL? 0:1);
+	list<highlevel::EndPointHostStack> tmp_hoststack_endpoint = diff->getEndPointsHostStack();
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "3-d) considering the new hoststack endpoints (%d)",tmp_hoststack_endpoint.size());
 
-	if(tmp_management_endpoint!=NULL)
+	for(list<highlevel::EndPointHostStack>::iterator ep = tmp_hoststack_endpoint.begin(); ep != tmp_hoststack_endpoint.end(); ep++)
 	{
-		//TODO: implement the creation of new management endpoint, keeping in mind that only one management endpoint per graph can exists!
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The creation of new management endpoint in the update is not supported yet!");
+		//TODO: implement the creation of new hoststack endpoint,
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The creation of new hoststack endpoint in the update is not supported yet!");
 		assert(0);
 	}
 
@@ -1995,7 +1988,7 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 	*		- environment variables
 	*		- control connections
 	*	- internal endpoints not supported
-	*	- management endpoints not supported
+	*	- hoststack endpoints not supported
 	**/
 
 
@@ -2447,7 +2440,7 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 	set<string> endPointsGre;
 	set<string> phyPorts;
 	set<string> endPointsInternal;
-	set<string> endPointsManagement;
+	set<string> endPointsHoststack;
 
 	//The number of virtual link depends on the rules, and not on the VNF ports / endpoints of the graph
 	list<highlevel::Rule> rules = graph->getRules();
@@ -2496,9 +2489,9 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 			//we are considering rules as
 			//	- match: gre tunnel with key 1 - action: output to interface eth0
 			//	- match: VNF firewall port 1 - action: output to interface eth0
-			//	- match: Management port - action: output to interface eth0
+			//	- match: Hoststack port - action: output to interface eth0
 			//Each different interface requires a different virtual link
-			if(match.matchOnNF() || match.matchOnEndPointGre() || match.matchOnEndPointManagement())
+			if(match.matchOnNF() || match.matchOnEndPointGre() || match.matchOnEndPointHoststack())
 				phyPorts.insert(action->getInfo());
 				
 			// interface -> interface does not require any virtual link
@@ -2518,17 +2511,17 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK)
 		{
 			//we are considering rules as
-			//	- match: internal-25 - action: output to management port
-			//	- match: interface eth0 - action: output to management port
+			//	- match: internal-25 - action: output to hoststack endpoint
+			//	- match: interface eth0 - action: output to hoststack endpoint
 
 			if(match.matchOnPort() || match.matchOnEndPointInternal())
 			{
 				highlevel::ActionEndPointHostStack *action_ep = (highlevel::ActionEndPointHostStack*)action;
-				endPointsManagement.insert(action_ep->toString());
+				endPointsHoststack.insert(action_ep->toString());
 			}
 
-			// VNF -> managementEP does not require any virtual link
-			// managementEP -> VNF does not require any virtual link
+			// VNF -> hoststackEP does not require any virtual link
+			// hoststackEP -> VNF does not require any virtual link
 		}
 	}
 
@@ -2556,10 +2549,10 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 		for(set<string>::iterator e = endPointsInternal.begin(); e != endPointsInternal.end(); e++)
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t%s",(*e).c_str());
 	}
-	if(endPointsManagement.size() != 0)
+	if(endPointsHoststack.size() != 0)
 	{
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Management endpoint requiring a virtual link:");
-		for(set<string>::iterator e = endPointsManagement.begin(); e != endPointsManagement.end(); e++)
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Hoststack endpoint requiring a virtual link:");
+		for(set<string>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end(); e++)
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t%s",(*e).c_str());
 	}
 	
@@ -2575,11 +2568,11 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 	rv = retval.end();
 	retval.insert(rv,endPointsInternal);
 	rv = retval.end();
-	retval.insert(rv,endPointsManagement);
+	retval.insert(rv,endPointsHoststack);
 	return retval;
 }
 
-// TODO: implement support for management endpoint
+// TODO: implement support for hoststack endpoint
 vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph *newPiece, LSI *lsi)
 {
 	set<string> NFs;

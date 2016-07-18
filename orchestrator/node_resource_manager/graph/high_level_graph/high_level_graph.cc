@@ -149,26 +149,33 @@ void Graph::removeEndPointVlan(EndPointVlan endpoint)
 	assert(0);
 }
 
-bool Graph::addEndPointHostStack(EndPointHostStack *endpoint)
+bool Graph::addEndPointHostStack(EndPointHostStack endpoint)
 {
-	if(endPointManagement != NULL)
-		return false;
-	endPointManagement = endpoint;
+	for(list<EndPointHostStack>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end(); e++)
+	{
+		if(*e == endpoint)
+			return false;
+	}
+
+	endPointsHoststack.push_back(endpoint);
+
 	return true;
 }
 
-EndPointHostStack *Graph::getEndPointsHostStack()
+list<EndPointHostStack> Graph::getEndPointsHostStack()
 {
-	return endPointManagement;
+	return endPointsHoststack;
 }
 
-void Graph::removeEndPointManagement(EndPointHostStack *endpoint)
+void Graph::removeEndPointHoststack(EndPointHostStack endpoint)
 {
-	if(*endPointManagement == *endpoint)
+	for(list<EndPointHostStack>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end(); e++)
 	{
-		delete endPointManagement;
-		endPointManagement=NULL;
-		return;
+		if(*e == endpoint)
+		{
+			endPointsHoststack.erase(e);
+			return;
+		}
 	}
 	assert(0);
 }

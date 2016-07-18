@@ -74,9 +74,9 @@ private:
 	list<EndPointVlan> endPointsVlan;
 
 	/**
-	*	@brief: "management" endpoint
+	*	@brief: List of "hoststack" endpoint
 	*/
-	EndPointHostStack *endPointManagement = NULL;
+	list<EndPointHostStack> endPointsHoststack;
 
 	/**
 	*	@brief: List of VNFs describing the graph
@@ -236,19 +236,19 @@ public:
 	void removeEndPointVlan(EndPointVlan endpoint);
 
 	/**
-	*	@brief: Add a new "management" endpoint to the graph
+	*	@brief: Add a new "hoststack" endpoint to the graph
 	*/
-	bool addEndPointHostStack(EndPointHostStack *endpoint);
+	bool addEndPointHostStack(EndPointHostStack endpoint);
 
 	/**
-	*	@brief: Return the "management" endpoints of the graph
+	*	@brief: Return a list of "hoststack" endpoints of the graph
 	*/
-	EndPointHostStack *getEndPointsHostStack();
+	list<EndPointHostStack> getEndPointsHostStack();
 
 	/**
-	*	@brief: Remove an endpoint "management" from the graph
+	*	@brief: Remove an endpoint "hoststack" from the graph
 	*/
-	void removeEndPointManagement(EndPointHostStack *endpoint);
+	void removeEndPointHoststack(EndPointHostStack endpoint);
 
 	/**
 	*	Functions to manage the VNFs
