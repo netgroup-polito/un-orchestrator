@@ -567,16 +567,16 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 				lowlevel::Rule tenantRule(tenantMatch,tenantAction,hlr->getRuleID(),priority);
 				tenantGraph.addRule(tenantRule);
 			}
-			else
+			else // assert(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION)
 			{
 				assert(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION);
 
 				highlevel::ActionNetworkFunction *action_nf = (highlevel::ActionNetworkFunction*)action;
 				unsigned int inputPort = action_nf->getPort();
 
-				//Can be also an Endpoint
 				if(tenantNetworkFunctions.count(action_info) == 0)
 				{
+					//FIXME: is it possible that we are here?
 					logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The tenant graph expresses an action \"%s\", which is not a NF attacched to the tenant LSI",action_info.c_str());
 					throw GraphManagerException();
 				}
