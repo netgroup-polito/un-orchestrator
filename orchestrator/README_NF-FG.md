@@ -885,10 +885,16 @@ A VNF interface associated with a MAC address can be specified as `trusted`, lik
        		"id": "inout:0",
        		"name": "data-port",
        		"mac": "aa:bb:cc:dd:ee:ff",
+       		"trusted": true
     	}
 		]
   	}
   	]
+
+In this case, the un-orchestrator forces all the packets arriving from such an interface to have the specified 
+MAC address, by rewriting the source ethernet address field. In fact, altough the NIC is associated with the 
+required address, it may happen that the VNF explicitly generates different MAC address, e.g., to implement some
+form of attack.
 
 ### Setting environment variables to the VNF
 

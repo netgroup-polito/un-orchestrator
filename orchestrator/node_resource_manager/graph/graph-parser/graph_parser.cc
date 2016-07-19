@@ -305,6 +305,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											Object port = ports_array[ports].getObject();
 
 											highlevel::vnf_port_t port_descr;
+											port_descr.configuration.trusted = false; //by default the port is not trusted
+											
 											//Parse the port
 											for(Object::const_iterator p = port.begin(); p != port.end(); p++)
 											{
@@ -342,11 +344,22 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													port_descr.configuration.ip_address = p_value.getString();
 #endif
 												}
+												else if(p_name == PORT_TRUSTED)
+												{
+													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNF_PORTS,PORT_MAC,(p_value.getBool())? "true" : "false");
+													port_descr.configuration.trusted = p_value.getBool();
+												}
 												else
 												{
 													logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" in a VNF of \"%s\"",p_name.c_str(),VNF_PORTS);
 													return false;
 												}
+											}
+
+											if(port_descr.configuration.trusted && port_descr.configuration.mac_address != "")
+											{
+												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "A 'trusted' VNF port must be associated with a MAC address");
+												return false;
 											}
 
 											//Each VNF port has its own configuration if provided
