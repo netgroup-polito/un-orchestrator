@@ -283,7 +283,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 				if(eP != ""){
 					map<string,string>::iterator it = iface_id.find(eP);
 					map<string,string>::iterator it1 = internal_id.find(eP);
-					map<string,pair<string,string> >::iterator it2 = vlan_id.find(eP);
+					map<string,pair<string,string> >::iterator it2 = vlan_id.find(eP); //check if the endpoint has a vlan ID associated (in this case, the endpoint is a vlan endpoint)
 					map<string,string>::iterator it3 = gre_id.find(eP);
 					if(it != iface_id.end())
 					{

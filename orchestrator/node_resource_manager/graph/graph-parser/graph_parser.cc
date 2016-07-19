@@ -595,7 +595,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 										}
 
-										vlan_id[id] = make_pair(v_id, interface);
+										vlan_id[id] = make_pair(v_id, interface); //it maps: endpoint id - (vlan id, physical interface)
 										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\":\"%s\"",id.c_str(),vlan_id[id].first.c_str(),vlan_id[id].second.c_str());
 									}
 									else if(ep_name == EP_GRE)
