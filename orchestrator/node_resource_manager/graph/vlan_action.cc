@@ -17,7 +17,7 @@ void VlanAction::toJSON(Object &action)
 	string vlan_op;
 
 	if(type == ACTION_ENDPOINT_VLAN)
-		action[OUTPUT] = vlan_endpoint.c_str();
+		action[OUTPUT] = vlan_endpoint.c_str(); //FIXME: is this correct? I would say no, because we are rewriting the output action
 	else if(type == ACTION_VLAN_PUSH)
 		vlan_op = "push_vlan";
 	else
@@ -27,7 +27,13 @@ void VlanAction::toJSON(Object &action)
 	{
 		stringstream s_label;
 		s_label << label;
-		action[vlan_op] = s_label.str();
+		if(type == ACTION_VLAN_PUSH)
+			action[vlan_op] = s_label.str();
+		else
+		{
+			assert(type == ACTION_VLAN_POP);
+			action[vlan_op] = true;
+		}
 	}
 }
 

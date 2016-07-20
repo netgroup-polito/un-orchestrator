@@ -765,16 +765,15 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 	return ret;
 }
 
-int RestServer::readGraph(struct MHD_Connection *connection, char *graphID) {
-	assert(dbmanager != NULL);
-
+int RestServer::readGraph(struct MHD_Connection *connection, char *graphID) 
+{
 	struct MHD_Response *response;
 	int ret;
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Required resource: %s", graphID);
 
 	// Check whether the graph exists in the local database and in the graph manager
-	if (!dbmanager->resourceExists(BASE_URL_GRAPH, graphID) || !gm->graphExists(graphID)) {
+	if ( (dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_GRAPH, graphID)) || (dbmanager == NULL && !gm->graphExists(graphID))) {
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Method GET is not supported for this resource (i.e. it does not exist)");
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
