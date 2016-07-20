@@ -44,6 +44,18 @@ void EthAction::fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigned
 	}
 }
 
+void EthAction::print()
+{
+	stringstream type_print;
+	switch(type)
+	{
+		case ACTION_TRUSTED_PORT:
+			cout << "\t\t\tSET SOURCE MAC ADDRESS " << mac_address << endl;
+			break;
+	}
+
+}
+
 string EthAction::prettyPrint()
 {
 	stringstream ss;
