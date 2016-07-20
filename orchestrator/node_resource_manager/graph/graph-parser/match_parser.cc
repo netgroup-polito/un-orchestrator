@@ -337,6 +337,11 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 						return false;
 					}
 
+					//The match on a vlan endpoint requires to
+					// - match the input port
+					// - match the vlan id
+					// - pop the vlan id
+
 					/*add match on "vlan_id"*/
 					match.setEndpointVlanID(vlanID & 0xFFFF);
 
