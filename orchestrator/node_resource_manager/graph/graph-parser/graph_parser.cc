@@ -9,7 +9,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 	//for each endpoint (gre), contains the id
 	map<string, string> gre_id;
 	//for each endpoint (vlan), contains the pair vlan id, interface
-	map<string, pair<string, string> > vlan_id; //XXX: currently, this information is ignored
+	map<string, pair<string, string> > vlan_id;
 
 
 	/**
@@ -1025,7 +1025,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																vlan_action_t actionType;
 																unsigned int vlanID = 0;
 
-																actionType = ACTION_ENDPOINT_VLAN;
+																actionType = ACTION_ENDPOINT_VLAN_PUSH;
 
 																sscanf(vlan_id[epID].first.c_str(),"%u",&vlanID);
 

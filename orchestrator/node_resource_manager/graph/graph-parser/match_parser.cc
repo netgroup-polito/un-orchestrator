@@ -329,7 +329,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 				else if(vlan_found)
 				{
 					uint32_t vlanID = 0;
-					vlan_action_t actionType = ACTION_VLAN_POP;
+					vlan_action_t actionType = ACTION_ENDPOINT_VLAN_POP;
 
 					if((sscanf(v_id.c_str(),"%"SCNd32,&vlanID) != 1) && (vlanID > 4094))
 					{
