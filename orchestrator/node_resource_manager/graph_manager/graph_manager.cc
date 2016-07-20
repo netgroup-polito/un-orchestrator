@@ -1096,6 +1096,8 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Adding the new rules to the LSI-0");
 		(graphInfoLSI0.getController())->installNewRules(graphLSI0.getRules());
 
+		printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
+
 	} catch (SwitchManagerException e)
 	{
 #ifdef RUN_NFS
@@ -1433,7 +1435,16 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newGraph)
 		return false;
 	}
 
-	return updateGraph_add_rules(graphID,diff_to_add);
+	if(!updateGraph_add_rules(graphID,diff_to_add))
+	{
+		delete(diff_to_add);
+		diff_to_add = NULL;
+		return false;
+	}
+
+	printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
+
+	return true;
 }
 
 bool GraphManager::updateGraph_add_rules(string graphID, highlevel::Graph *diff)
@@ -1466,8 +1477,6 @@ bool GraphManager::updateGraph_add_rules(string graphID, highlevel::Graph *diff)
 		//Insert new rules into the tenant-LSI
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Adding the new rules to the tenant-LSI");
 		tenantController->installNewRules(graphTenant.getRules());
-
-		printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
 
 	} catch (SwitchManagerException e)
 	{
@@ -2083,8 +2092,6 @@ bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph
 		Controller *tenantController = graphInfo.getController();
 		tenantController->removeRuleFromID(ruleID);
 	}
-
-	printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
 
 	/**
 	*	3)	Remove the virtual links that are no longer used.

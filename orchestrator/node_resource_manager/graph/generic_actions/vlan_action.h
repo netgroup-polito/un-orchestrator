@@ -41,6 +41,7 @@ public:
 	*/
 	void fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigned int *position);
 
+	void print();
 	string prettyPrint();
 };
 

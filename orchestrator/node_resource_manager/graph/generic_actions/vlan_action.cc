@@ -67,6 +67,31 @@ void VlanAction::fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigne
 	}
 }
 
+void VlanAction::print()
+{
+	stringstream type_print;
+	switch(type)
+	{
+		case ACTION_VLAN_PUSH:
+			type_print << "VLAN PUSH";
+			break;
+		case ACTION_ENDPOINT_VLAN_PUSH:
+			type_print << "VLAN PUSH (for vlan endpoint)";
+			break;
+		case ACTION_VLAN_POP:
+			type_print << "VLAN POP";
+			break;
+		case ACTION_ENDPOINT_VLAN_POP:
+			type_print << "VLAN POP (for vlan endpoint)";
+			break;
+	}
+
+	cout << "\t\t\t" << type_print.str();
+	if(type == ACTION_VLAN_PUSH || type == ACTION_ENDPOINT_VLAN_PUSH)
+		cout << " " << label;
+	cout << endl;
+}
+
 string VlanAction::prettyPrint()
 {
 	stringstream ss;
