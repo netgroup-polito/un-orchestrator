@@ -966,7 +966,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 															action = new highlevel::ActionNetworkFunction(id, string(port_in_name_tmp), port);
 														}
-														//end-points port type
+														//endpoints port type
 														else if(p_type == EP_PORT_TYPE)
 														{
 															//This is an output action referred to an endpoint

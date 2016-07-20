@@ -273,7 +273,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 				match.setNFport(nf_name,port);
 
 			}
-			//end-points port type
+			//endpoints port type
 			else if(p_type == EP_PORT_TYPE)
 			{
 				bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false;
