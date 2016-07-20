@@ -14,7 +14,7 @@
 #include "../../../utils/constants.h"
 
 #include "../../graph_manager/graph_manager.h"
-#include "../eth_action.h"
+#include "../generic_actions/eth_action.h"
 
 using namespace json_spirit;
 using namespace std;

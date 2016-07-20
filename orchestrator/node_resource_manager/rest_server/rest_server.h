@@ -10,22 +10,6 @@
 *
 *	Documentation on HTTP headers can be found at:
 *		http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
-*
-*	@messages:
-*		PUT /graph/graph_id
-*			Create a new graph with ID graph_id if it is does not exist yet;
-*			otherwise, the graph is updated.
-*			The graph is described into the body of the message.
-*		GET /graph/graph_id
-*			Retrieve the description of the graph with ID graph_id
-*		DELETE /graph/graph_id
-*			Delete the graph with ID graph_id
-*		DELETE /garph/graph_id/flow_id
-*			Remove the flow with ID flow_id from the graph with ID graph_id
-*
-*		GET /interfaces
-*			Retrieve information on the physical interfaces available on the
-*			node
 */
 
 
@@ -50,7 +34,7 @@
 
 #include "../graph/high_level_graph/high_level_output_action_port.h"
 #include "../graph/high_level_graph/high_level_output_action_endpoint_internal.h"
-#include "../graph/vlan_action.h"
+#include "../graph/generic_actions/vlan_action.h"
 
 #include "../graph/graph-parser/graph_parser.h"
 
