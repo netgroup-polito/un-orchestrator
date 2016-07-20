@@ -241,6 +241,8 @@ SET(SOURCES1
 	node_resource_manager/graph/generic_action.cc
 	node_resource_manager/graph/vlan_action.h
 	node_resource_manager/graph/vlan_action.cc
+	node_resource_manager/graph/eth_action.h
+	node_resource_manager/graph/eth_action.cc
 
 	node_resource_manager/graph/graph-parser/graph_parser.h
 	node_resource_manager/graph/graph-parser/graph_parser.cc

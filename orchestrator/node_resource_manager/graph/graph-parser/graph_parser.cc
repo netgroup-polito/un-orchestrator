@@ -11,6 +11,11 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 	//for each endpoint (vlan), contains the pair vlan id, interface
 	map<string, pair<string, string> > vlan_id;
 
+	//The following two data structures are used for managing trusted/untrusted VNF ports
+	//for each VNF id, contains the pair port id, trusted/untrusted
+	map<string, map<string, bool> > trusted_ports;
+	//for each VNF id, contains the pair port id, mac address
+	map<string, map<string, string> > trusted_ports_mac_addresses;
 
 	/**
 	*	The graph is defined according to this schema:
@@ -356,7 +361,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												}
 											}
 
-											if(port_descr.configuration.trusted && port_descr.configuration.mac_address != "")
+											if(port_descr.configuration.trusted && port_descr.configuration.mac_address == "")
 											{
 												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "A 'trusted' VNF port must be associated with a MAC address");
 												return false;
@@ -403,13 +408,27 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 #else
 								highlevel::VNFs vnfs(id, name, groups, vnf_template, portS);
 #endif
+								//update information on the trusted status of VNF ports
+								for(list<highlevel::vnf_port_t>::iterator port = portS.begin(); port != portS.end(); port++)
+								{
+									map<string, bool> trusted_port_vnf = trusted_ports[id];
+									trusted_port_vnf[port->id] = port->configuration.trusted;
+									trusted_ports[id] = trusted_port_vnf;
+									
+									map<string,string> trusted_ports_mac_addresses_vnf = trusted_ports_mac_addresses[id];
+									trusted_ports_mac_addresses_vnf[port->id] = port->configuration.mac_address;
+									trusted_ports_mac_addresses[id] = trusted_ports_mac_addresses_vnf;
+									
+									logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "VNF \"%s\" - port \"%s\" - \"%s\"",id.c_str(),port->id.c_str(),(port->configuration.trusted)? "trusted":"untrusted");
+								}
+
 								graph.addVNF(vnfs);
 								portS.clear();
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 								controlPorts.clear();
 								environmentVariables.clear();
 #endif
-							}
+							}// end iteration on VNFs
 						}
 						catch(exception& e)
 						{
@@ -818,7 +837,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									{
 										try{
 											foundMatch = true;
-											if(!MatchParser::parseMatch(fr_value.getObject(),match,(*action)/*,nfs_ports_found*/,iface_id,internal_id,vlan_id,gre_id,graph))
+											if(!MatchParser::parseMatch(fr_value.getObject(),match,(*action),iface_id,internal_id,vlan_id,gre_id,trusted_ports,trusted_ports_mac_addresses))
 											{
 												return false;
 											}
