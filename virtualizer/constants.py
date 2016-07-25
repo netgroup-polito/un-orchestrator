@@ -28,12 +28,14 @@ NODE_TYPE = 'BisBis'
 	by the node virtualizer.
 '''
 supported_matches = {
+	"dl_tag" : "vlan_id",
 	"dl_vlan" : "vlan_id",
 	"ether_type": "ether_type",
 	"source_ip": "source_ip",
 	"dest_ip": "dest_ip",
 	"source_mac": "source_mac",
-	"dest_mac": "dest_mac"
+	"dest_mac": "dest_mac",
+	"dl_type" : "ether_type"
 }
 
 '''
@@ -42,7 +44,9 @@ supported_matches = {
 '''
 supported_actions = {
 	"strip_vlan" : 0,
-	"push_vlan" : 1
+	"pop_tag" : 0,
+	"push_vlan" : 1,
+	"push_tag" : 1
 }
 
 '''
@@ -52,6 +56,7 @@ supported_actions = {
 '''
 equivalent_actions = {
 	"strip_vlan" : "pop_vlan",
-	"push_vlan" : "push_vlan"
+	"pop_tag" : "pop_vlan",
+	"push_vlan" : "push_vlan",
+	"push_tag" : "push_vlan"
 }
-

@@ -13,21 +13,26 @@ VlanAction::~VlanAction()
 
 void VlanAction::toJSON(Object &action)
 {
+	if(type == ACTION_ENDPOINT_VLAN_PUSH || type == ACTION_ENDPOINT_VLAN_POP)
+		//We don't add anything in case of the action implemnts a vlan endpoint
+		return;
+
 	Object vlanAction;
 	string vlan_op;
 
-	if(type == ACTION_ENDPOINT_VLAN)
-		action[OUTPUT] = vlan_endpoint.c_str();
-	else if(type == ACTION_VLAN_PUSH)
+	if(type == ACTION_VLAN_PUSH)
 		vlan_op = "push_vlan";
 	else
 		vlan_op = "pop_vlan";
 
-	if(type != ACTION_ENDPOINT_VLAN)
-	{
-		stringstream s_label;
-		s_label << label;
+	stringstream s_label;
+	s_label << label;
+	if(type == ACTION_VLAN_PUSH)
 		action[vlan_op] = s_label.str();
+	else
+	{
+		assert(type == ACTION_VLAN_POP);
+		action[vlan_op] = true;
 	}
 }
 
@@ -41,7 +46,7 @@ void VlanAction::fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigne
 			exit(0);
 			break;
 		case OFP_12:
-			if(type == ACTION_VLAN_PUSH || type == ACTION_ENDPOINT_VLAN)
+			if(type == ACTION_VLAN_PUSH || type == ACTION_ENDPOINT_VLAN_PUSH)
 			{
 				message.set_instructions().set_inst_apply_actions().set_actions().add_action_push_vlan(rofl::cindex(*position)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
 				(*position)++;
@@ -50,7 +55,6 @@ void VlanAction::fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigne
 			}
 			else
 			{
-				assert(type == ACTION_VLAN_POP);
 				message.set_instructions().set_inst_apply_actions().set_actions().add_action_pop_vlan(rofl::cindex(*position));
 				(*position)++;
 			}
@@ -61,6 +65,36 @@ void VlanAction::fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigne
 			exit(0);
 			break;
 	}
+}
+
+void VlanAction::print()
+{
+	stringstream type_print;
+	switch(type)
+	{
+		case ACTION_VLAN_PUSH:
+			type_print << "VLAN PUSH";
+			break;
+		case ACTION_ENDPOINT_VLAN_PUSH:
+			type_print << "VLAN PUSH (for vlan endpoint)";
+			break;
+		case ACTION_VLAN_POP:
+			type_print << "VLAN POP";
+			break;
+		case ACTION_ENDPOINT_VLAN_POP:
+			type_print << "VLAN POP (for vlan endpoint)";
+			break;
+	}
+
+	cout << "\t\t\t" << type_print.str();
+	if(type == ACTION_VLAN_PUSH || type == ACTION_ENDPOINT_VLAN_PUSH)
+		cout << " " << label;
+	cout << endl;
+}
+
+vlan_action_t VlanAction::getType()
+{
+	return type;
 }
 
 string VlanAction::prettyPrint()

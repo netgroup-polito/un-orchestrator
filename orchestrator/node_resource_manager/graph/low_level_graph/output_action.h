@@ -14,7 +14,7 @@
 #include "../../../utils/constants.h"
 #include "../../graph_manager/lsi.h"
 
-#include "../generic_action.h"
+#include "../generic_actions/generic_action.h"
 
 using namespace rofl;
 using namespace std;

@@ -336,13 +336,18 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 				else if(vlan_found)
 				{
 					uint32_t vlanID = 0;
-					vlan_action_t actionType = ACTION_VLAN_POP;
+					vlan_action_t actionType = ACTION_ENDPOINT_VLAN_POP;
 
 					if((sscanf(v_id.c_str(),"%"SCNd32,&vlanID) != 1) && (vlanID > 4094))
 					{
 						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",VLAN_ID,value.getString().c_str());
 						return false;
 					}
+
+					//The match on a vlan endpoint requires to
+					// - match the input port
+					// - match the vlan id
+					// - pop the vlan id
 
 					/*add match on "vlan_id"*/
 					match.setEndpointVlanID(vlanID & 0xFFFF);

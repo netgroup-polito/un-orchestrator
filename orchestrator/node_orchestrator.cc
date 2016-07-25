@@ -20,7 +20,7 @@
 #include <openssl/sha.h>
 #include "node_resource_manager/database_manager/SQLite/SQLiteManager.h"
 
-#include "node_resource_manager/database_manager/SQLite/INIReader.h"
+#include <INIReader.h>
 
 #include <signal.h>
 #include <execinfo.h>

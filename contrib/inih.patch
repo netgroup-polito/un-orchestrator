@@ -1,0 +1,25 @@
+diff -Naurw inih-r35-orig/extra/Makefile.static inih-r35/extra/Makefile.static
+--- inih-r35-orig/extra/Makefile.static	2016-01-02 19:00:30.000000000 +0100
++++ inih-r35/extra/Makefile.static	2016-07-13 10:12:56.851325990 +0200
+@@ -1,17 +1,14 @@
+ # Simple makefile to build inih as a static library using g++
+ 
+-SRC = ../ini.c
+-OBJ = $(SRC:.c=.o)
++SRC = ../ini.c ../cpp/INIReader.cpp
++OBJ := $(patsubst %.c,%.o,$(SRC))
++OBJ := $(patsubst %.cpp,%.o,$(OBJ))
+ OUT = libinih.a
+ INCLUDES = -I..
+-CCFLAGS = -g -O2
+-CC = g++
++CCFLAGS = -g -O2 -fPIC
+ 
+ default: $(OUT)
+ 
+-.c.o:
+-	$(CC) $(INCLUDES) $(CCFLAGS) $(EXTRACCFLAGS) -c $< -o $@
+-
+ $(OUT): $(OBJ)
+ 	ar rcs $(OUT) $(OBJ) $(EXTRAARFLAGS)
+ 

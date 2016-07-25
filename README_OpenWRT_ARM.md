@@ -1,11 +1,11 @@
 # Porting of the UN to the OpenWRT platform
 
-This document contains the instructions required to compile the UN for the OpenWRT platform.
+This document contains the instructions required to compile the UN for the OpenWrt platform.
 
 Warning: The current status of the porting is very preliminary; not all the components have been compiled so far, nor we are sure that the software behaves properly. Therefore this document should be intended as an initial proof-of-concept.
 
-In this page there is the list of all devices that are supported by OpenWrt, with the reference to a device page.
-https://wiki.openwrt.org/toh/start
+This [page](https://wiki.openwrt.org/toh/start) contains a list of devices supported by OpenWRT. In particular, we tested the above instructions on a [Netgear R6300v2](https://wiki.openwrt.org/toh/netgear/netgear_r6300_v2 "Netgear R6300v2").
+
 
 ## How to cross-compile the un-orchestrator for ARM architecture
 
@@ -64,8 +64,8 @@ $ cp * ../../orchestrator/node_resource_manager/database_manager/SQLite
 ```
 ### Set up a cross-compilation toolchain
 
-The version of the SDK used for our tests is: 
-OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64 for Netgear R6300
+The version of the SDK used for our tests, for the Netgear R6300v23 box, is the following: 
+OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.
 
 At first, download the OpenWrt SDK Barries Breaker source code from:
 https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
@@ -204,7 +204,7 @@ $ unzip rofl-common
 cp -r rofl-common ~/
 
 $ cd ~/rofl-common
-$ ./autogen.sh
+$ sudo ./autogen.sh
 $ cd build  
 
 $ sudo ../configure --target=arm-openwrt-linux --host=arm-openwrt-linux --build=x86_64-linux-gnu --includedir=$INCLUDE_DIR STAGING_DIR=${STAGING_DIR} PATH=${PATH} CC=${CROSS}gcc AR=${CROSS}ar AS=${CROSS}as STRIP=${CROSS}strip LD=${CROSS}ld RANLIB=${CROSS}ranlib CPP=${CROSS}cpp NM_PATH=${CROSS}nm NM=${CROSS}nm --program-prefix= --program-suffix= --prefix=/usr --exec-prefix=/usr --bindir=/usr/bin --sbindir=/usr/sbin --with-gnu-ld --libexecdir=/usr/lib --sysconfdir=/etc --datadir=/usr/share --localstatedir=/var --mandir=/usr/man --infodir=/usr/info --enable-shared --enable-static 
@@ -228,6 +228,8 @@ as well:
 ```sh
 #include </usr/local/include/execinfo.h>
 ```
+In different linux installation that file can be in /usr/include/
+
 Then copy rofl-common in the OpenWRT folder
 ```sh
 $ cp [rofl-common]/build/src/rofl/.libs/librofl_common.so [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/lib
@@ -254,6 +256,8 @@ $ make package/[package-name]/compile V=99 (if you want to compile in debug mode
 At first, download the Firmware OpenWrt source code for Netgear R6300 from:
 https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/openwrt-15.05-bcm53xx-netgear-r6300-v2-squashfs.chk
 then install it on the Netgear R6300.
+Link for an image with the UN already compiled and ready for using the native functions:
+https://owncloud.ipv6.polito.it:9090/index.php/s/VhQ5gvAlupeU0Hd
 
 At second, login to OpenWrt: https://wiki.openwrt.org/doc/howto/firstlogin
 
@@ -283,6 +287,11 @@ $ ln -s libsqlite3.so.0.8.6 libsqlite3.so
 
 $ cd /root
 $ opkg install node-orchestrator_0.0.1-1_bcm53xx.ipk
+```
+
+For native functions support it is needed to install sudo and bash
+```
+$ opkg install sudo bash
 ```
 
 ### Port configuration on Netgear R6300

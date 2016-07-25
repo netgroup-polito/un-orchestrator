@@ -12,7 +12,7 @@
 #include <json_spirit/value.h>
 #include <json_spirit/writer.h>
 
-#include "../../utils/constants.h"
+#include "../../../utils/constants.h"
 
 using namespace json_spirit;
 using namespace std;

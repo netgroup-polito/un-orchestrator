@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 PROJECT(node-orchestrator)
 
@@ -215,6 +215,10 @@ MARK_AS_ADVANCED(
 	DEBUG_KVM DEBUG_OPENFLOW LOG_1024X768 RUN_NFS STARTVNF_SINGLE_THREAD IVSHMEM_RING_ALIAS
 )
 
+# relax warning-level (unfortunately):
+# some json-spirit header files have unused typedefs
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
+
 # Set source files
 SET(SOURCES1
 	node_orchestrator.cc
@@ -233,10 +237,10 @@ SET(SOURCES1
 
 	node_resource_manager/graph/match.h
 	node_resource_manager/graph/match.cc
-	node_resource_manager/graph/generic_action.h
-	node_resource_manager/graph/generic_action.cc
-	node_resource_manager/graph/vlan_action.h
-	node_resource_manager/graph/vlan_action.cc
+	node_resource_manager/graph/generic_actions/generic_action.h
+	node_resource_manager/graph/generic_actions/generic_action.cc
+	node_resource_manager/graph/generic_actions/vlan_action.h
+	node_resource_manager/graph/generic_actions/vlan_action.cc
 
 	node_resource_manager/graph/graph-parser/graph_parser.h
 	node_resource_manager/graph/graph-parser/graph_parser.cc
@@ -314,8 +318,6 @@ SET(SOURCES1
 	node_resource_manager/database_manager/SQLite/SQLiteManager.h
 	node_resource_manager/database_manager/SQLite/SQLiteManager.cc
 	node_resource_manager/database_manager/SQLite/SQLiteManager_constants.h
-	node_resource_manager/database_manager/SQLite/INIReader.cpp
-	node_resource_manager/database_manager/SQLite/ini.c
 
 	node_resource_manager/security_manager/security_manager.cc
 	node_resource_manager/security_manager/security_manager.h
@@ -441,8 +443,15 @@ ELSE()
 ENDIF(ENABLE_RESOURCE_MANAGER)
 
 INCLUDE_DIRECTORIES (
+	${CMAKE_BINARY_DIR}/externals/include/
 	/usr/include/boost
 	/usr/include/libxml2
+)
+
+
+SET(CMAKE_SKIP_RPATH TRUE)
+LINK_DIRECTORIES(
+	${CMAKE_BINARY_DIR}/externals/lib/
 )
 
 # Create the executable
@@ -451,24 +460,22 @@ ADD_EXECUTABLE(
 	${SOURCES8}
 )
 
-LINK_DIRECTORIES(
-	/usr/lib/
-	/usr/local/lib/
-	/usr/x86_64-linux-gnu/
-	/usr/lib/x86_64-linux-gnu/
-	/usr/lib/python2.7/config-x86_64-linux-gnu/
-)
+ADD_DEPENDENCIES(node-orchestrator JSON_Spirit)
+ADD_DEPENDENCIES(node-orchestrator ROFL_Common)
+ADD_DEPENDENCIES(node-orchestrator Libvirt)
+ADD_DEPENDENCIES(node-orchestrator Inih)
 
 TARGET_LINK_LIBRARIES( node-orchestrator
-	libpthread.so
-	librofl_common.so
-	libjson_spirit.so
-	libmicrohttpd.so
-	libboost_system.so
-	libxml2.so
-	libsqlite3.so
-	libcrypto.so
-	-lrt
+	pthread
+	rofl_common
+	json_spirit
+	inih
+	microhttpd
+	boost_system
+	xml2
+	sqlite3
+	crypto
+	rt
 )
 
 IF(ENABLE_DOUBLE_DECKER_CONNECTION)
@@ -528,4 +535,56 @@ IF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) 
 	#No execution environment is selected
 	message(FATAL_ERROR "At least one execution environmnet must be enabled")
 ENDIF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) AND (NOT ENABLE_KVM) )
+
+
+include (ExternalProject)
+IF(BUILD_ExternalProjects)
+
+# rofl-common: extract, build, install (locally in build-dir):
+ExternalProject_Add(
+	ROFL_Common
+	URL ${CMAKE_SOURCE_DIR}/contrib/rofl-common.zip
+	URL_MD5 5127f286f96010ec9e85dcf4c712599d
+	BUILD_IN_SOURCE 1
+	CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_BINARY_DIR}/externals
+)
+
+# libvirt - specific revision
+ExternalProject_Add( Libvirt
+
+	## this refers to the specific revision from README_COMPILE.md
+	# GIT_REPOSITORY git://libvirt.org/libvirt.git
+	# GIT_TAG f57842ecfda1ece8c59718e62464e17f75a27062
+
+	# try a regular release instead:
+	URL http://libvirt.org/sources/libvirt-1.2.17.tar.gz
+	URL_MD5 a1f49050223be3cbd7678c32b1ee2756
+
+	BUILD_IN_SOURCE 1
+	CONFIGURE_COMMAND ./autogen.sh --prefix=${CMAKE_BINARY_DIR}/externals
+	UPDATE_COMMAND ""
+	ALWAYS 0
+)
+
+ENDIF(BUILD_ExternalProjects)
+
+# inih - https://github.com/benhoyt/inih
+ExternalProject_Add(
+	Inih
+	# GIT_REPOSITORY https://github.com/benhoyt/inih
+	# GIT_TAG r35
+	# URL https://github.com/benhoyt/inih/archive/r35.zip
+	URL ${CMAKE_SOURCE_DIR}/contrib/inih-r35.zip
+	URL_MD5 e131365d1ca20cfa687e3d9284e59d39
+	BUILD_IN_SOURCE 1
+	PATCH_COMMAND patch -p1 < ${CMAKE_SOURCE_DIR}/contrib/inih.patch
+	CONFIGURE_COMMAND ""
+	BUILD_COMMAND cd extra && make -f Makefile.static
+	INSTALL_COMMAND
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/externals/lib/
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/externals/include/
+	COMMAND ${CMAKE_COMMAND} -E copy extra/libinih.a ${CMAKE_BINARY_DIR}/externals/lib/
+	COMMAND ${CMAKE_COMMAND} -E copy ini.h ${CMAKE_BINARY_DIR}/externals/include/
+	COMMAND ${CMAKE_COMMAND} -E copy cpp/INIReader.h ${CMAKE_BINARY_DIR}/externals/include/
+)
 

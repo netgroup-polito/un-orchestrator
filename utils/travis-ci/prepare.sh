@@ -35,12 +35,6 @@ fi
 
 sudo make install
 
-# inih
-cd $BASE/contrib
-unzip -o inih.zip
-cd inih
-cp * ../../orchestrator/node_resource_manager/database_manager/SQLite
-
 # double decker prerequisites
 if [ "$DD" != "ON" ]; then
 	exit 0

@@ -9,7 +9,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 	//for each endpoint (gre), contains the id
 	map<string, string> gre_id;
 	//for each endpoint (vlan), contains the pair vlan id, interface
-	map<string, pair<string, string> > vlan_id; //XXX: currently, this information is ignored
+	map<string, pair<string, string> > vlan_id;
 	//contains the id of hoststack endpoints
 	list<string> hostStack_id;
 
@@ -1076,7 +1076,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																vlan_action_t actionType;
 																unsigned int vlanID = 0;
 
-																actionType = ACTION_ENDPOINT_VLAN;
+																actionType = ACTION_ENDPOINT_VLAN_PUSH;
 
 																sscanf(vlan_id[epID].first.c_str(),"%u",&vlanID);
 
@@ -1265,6 +1265,23 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								{
 									logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph has at least two rules with the same ID: %s",ruleID.c_str());
 									return false;
+								}
+
+								list<GenericAction*> gaList = action->getGenericActions();
+								for(list<GenericAction*>::iterator ga = gaList.begin(); ga != gaList.end() ; ga++)
+								{
+									VlanAction* va = dynamic_cast<VlanAction*>(*ga);
+									if(va!=NULL) {
+										if(va->getType()==ACTION_VLAN_POP)
+										{
+											if(!match.checkVlanPresence())
+											{
+												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "A POP_VLAN action without specific match on vlan ID has been specified...");
+												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The corresponding rule can not work as well as it should");
+												break;
+											}
+										}
+									}
 								}
 
 							}//for( unsigned int fr = 0; fr < flow_rules_array.size(); ++fr )

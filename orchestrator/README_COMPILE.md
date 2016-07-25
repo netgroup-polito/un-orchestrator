@@ -212,9 +212,9 @@ Here there are the required steps:
 In order to run VNFs implemented as DPDK processes, no further operations are required,
 since the DPDK library has already been installed together with the vSwitch.
 
-## Compile the un-orchestrator
+## Compile the un-orchestrator and name-resolver
 
-We are now ready to compile the un-orchestrator. If you intend to enable support for DPDK IVSHMEM-based ports, you'll need to define environment variables pointing to your build of DPDK.
+We are now ready to compile the un-orchestrator and name resolver. If you intend to enable support for DPDK IVSHMEM-based ports, you'll need to define environment variables pointing to your build of DPDK.
 If you are using xDPd (which includes its own DPDK tree and builds it), this would be:
 
 	$ export RTE_SDK=$XDPD_DIR/build/libs/dpdk
@@ -225,20 +225,22 @@ Otherwise use:
 	$ export RTE_SDK=$DPDK_DIR
 	$ export RTE_TARGET=x86_64-ivshmem-linuxapp-gcc
 
-You can then build the un-orchestrator:
+You can then build the un-orchestrator and/or name resolver:
 
-	$ cd orchestrator
-
+	$ cd un-orchestrator
+	
 	; Choose among possible compilation options
 	$ ccmake .
 
 The previous command allows you to select some configuration parameters for the
-un-orchestrator, such as the virtual switch used, which kind of execution environment(s)
-you want to enable, and more. When you're finished, exit from the `ccmake` interface by 
+un-orchestrator and name resolver, such as the virtual switch used, which kind of execution environment(s)
+you want to enable, and more. 
+Please be sure that the option BUILD_ExternalProjects is OFF to avoid reinstalling the dependencies. 
+When you're finished, exit from the `ccmake` interface by 
 *generating the configuration files* (press 'c' and 'g') and type the following commands:
-
+	
 	; Create makefile scripts based on the previously selected options
 	$ cmake .
 
-	; Compile and create the executable
+	; Compile and create the executables
 	$ make

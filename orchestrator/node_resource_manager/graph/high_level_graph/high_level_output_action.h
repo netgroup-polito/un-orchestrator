@@ -4,8 +4,8 @@
 #pragma once
 
 #include "../../../utils/constants.h"
-#include "../generic_action.h"
-#include "../vlan_action.h"
+#include "../generic_actions/generic_action.h"
+#include "../generic_actions/vlan_action.h"
 
 #include <string>
 #include <iostream>
