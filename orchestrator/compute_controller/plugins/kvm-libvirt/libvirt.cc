@@ -5,8 +5,6 @@
 
 static const char LOG_MODULE_NAME[] = "KVM-Manager";
 
-virConnectPtr Libvirt::connection = NULL;
-
 void Libvirt::customErrorFunc(void *userdata, virErrorPtr err)
 {
 	UN_LOG(ORCH_ERROR, "Failure of libvirt library call:");

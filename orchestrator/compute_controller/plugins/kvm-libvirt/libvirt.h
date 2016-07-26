@@ -43,7 +43,7 @@ private:
 	/**
 	*	@bfief: Connection towards Libvirt
 	*/
-	static virConnectPtr connection;
+	virConnectPtr connection;
 
 	/**
 	*	@brief:	Open a connection with QEMU/KVM
