@@ -17,13 +17,14 @@ using namespace json_spirit;
 
 using namespace std;
 
+enum hoststack_conf_t { DHCP, STATIC, PPPOE};
+
 namespace highlevel
 {
 
 class EndPointHostStack
 {
 private:
-	typedef enum { DHCP, STATIC, PPPOE} configurationType;
 
 	/**
 	*	@brief: the id of the endpoint port (e.g., 00000003)
@@ -38,7 +39,7 @@ private:
 	/**
 	*	@brief: configuration type of the endpoint (e.g., 00000003)
 	*/
-	configurationType configuration;
+	hoststack_conf_t configuration;
 	
 	/**
 	*	@brief: the ip address of the port (e.g., 192.168.1.1/24)
@@ -47,7 +48,7 @@ private:
 
 public:
 
-	EndPointHostStack(string id, string name, string configuration, string ipAddress);
+	EndPointHostStack(string id, string name, hoststack_conf_t configuration, string ipAddress);
 
 	/**
 	*	@brief: return the ID of the endpoint
@@ -63,6 +64,11 @@ public:
 	*	@brief: return the ip address (with netmask) of the endpoint
 	*/
 	string getIpAddress();
+
+	/**
+	*	@brief: return the configuration type
+	*/
+	hoststack_conf_t getConfiguration();
 
 	~EndPointHostStack();
 

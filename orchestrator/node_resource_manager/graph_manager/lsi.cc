@@ -81,9 +81,25 @@ bool LSI::setHoststackEndpointPortID(string hs, uint64_t id)
 	return false;
 }
 
+bool LSI::setHoststackEndpointPortName(string hs, string name)
+{
+	for(list<highlevel::EndPointHostStack>::iterator hsep = hoststack_endpoints_port.begin(); hsep != hoststack_endpoints_port.end(); hsep++)
+		if(hsep->getId().compare(hs) == 0)
+		{
+			hoststack_endpoints_port_name[hs] = name;
+			return true;
+		}
+	return false;
+}
+
 map<string,unsigned int> LSI::getHoststackEndpointPortID()
 {
 	return hoststack_endpoints_port_id;
+}
+
+map<string,string> LSI::getHoststackEndpointPortName()
+{
+	return hoststack_endpoints_port_name;
 }
 
 map<string, vector<string> > LSI::getGreEndpointsDescription()

@@ -709,9 +709,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										}
 
 										Object ep_hostStack = ep_value.getObject();
-										string configuration;
+										hoststack_conf_t configuration;
 										string ipAddress;
-
 										for(Object::const_iterator eph = ep_hostStack.begin(); eph != ep_hostStack.end(); eph++)
 										{
 											const string& eph_name  = eph->first;
@@ -721,7 +720,18 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											if(eph_name == CONFIGURATION)
 											{
 												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,CONFIGURATION,eph_value.getString().c_str());
-												configuration=eph_value.getString();
+												string confTemp = eph_value.getString();
+												if(strcmp(confTemp.c_str(),CONF_DHCP)==0)
+													configuration=DHCP;
+												else if(strcmp(confTemp.c_str(),CONF_STATIC)==0)
+													configuration=STATIC;
+												else if(strcmp(confTemp.c_str(),CONF_PPPOE)==0)
+													configuration=PPPOE;
+												else
+												{
+													logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid value \"%s\" for key \"%s\" inside \"%s\"",confTemp.c_str(),eph_name.c_str(),EP_HOSTSTACK);
+													return false;
+												}
 											}
 											else if(eph_name == IP_ADDRESS)
 											{

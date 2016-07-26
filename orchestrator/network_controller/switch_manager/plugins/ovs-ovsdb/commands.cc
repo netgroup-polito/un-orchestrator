@@ -159,6 +159,8 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 	map<string,unsigned int> physical_ports;
 	//map [hoststack EP ID - openflow ID]
 	map<string,unsigned int> hoststack_endpoints_ports;
+	//map [hoststack EP ID - name on switch]
+	map<string,string> hoststackPortsName;
 	map<string,map<string, unsigned int> >  network_functions_ports;
 	map<string,unsigned int >  gre_endpoints_ports;
 	list<pair<unsigned int, unsigned int> > virtual_links;
@@ -451,6 +453,8 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 
 			hoststack_endpoints_ports[(*p)] = rnumber-1;
 
+			hoststackPortsName[(*p)] = port_name;
+
 			hoststack_endpoint_l[dnumber].push_back((*p));
 		}
 	}
@@ -649,7 +653,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 		}
 	}
 
-    	clo = new CreateLsiOut(dnumber_new, physical_ports, network_functions_ports, gre_endpoints_ports, out_nf_ports_name_on_switch, virtual_links, out_nf_ports_name_and_id, hoststack_endpoints_ports);
+    	clo = new CreateLsiOut(dnumber_new, physical_ports, network_functions_ports, gre_endpoints_ports, out_nf_ports_name_on_switch, virtual_links, out_nf_ports_name_and_id, hoststack_endpoints_ports, hoststackPortsName);
 
 	return clo;
 }

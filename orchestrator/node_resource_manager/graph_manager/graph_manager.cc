@@ -589,6 +589,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*		5) create the OpenFlow controller for the internal LSIs (if it does not exist yet)
 	*		6) create the internal LSI (if it does not exist yet), with the proper vlinks and download the rules in internal-LSI
 	*		7) download the rules in LSI-0, tenant-LSI
+	*		8) assigne ip address to host-stack endpoint
 	*/
 
 	/**
@@ -793,6 +794,17 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		for(map<string,unsigned int >::iterator hs = hoststackEPsports.begin(); hs != hoststackEPsports.end(); hs++)
 		{
 			if(!lsi->setHoststackEndpointPortID(hs->first, hs->second))
+			{
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required hoststack end point port \"%s\" has been attached to the tenant-lsi",hs->first.c_str());
+				delete(clo);
+				throw GraphManagerException();
+			}
+		}
+
+		map<string,string> hoststackEPsPortName = clo->getHoststackPortsName();
+		for(map<string,string >::iterator hs = hoststackEPsPortName.begin(); hs != hoststackEPsPortName.end(); hs++)
+		{
+			if(!lsi->setHoststackEndpointPortName(hs->first, hs->second))
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required hoststack end point port \"%s\" has been attached to the tenant-lsi",hs->first.c_str());
 				delete(clo);
@@ -1131,6 +1143,27 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 		throw GraphManagerException();
+	}
+
+	// 8) assigne ip address to host-stack endpoint
+	map<string,string> hsPortsName = lsi->getHoststackEndpointPortName();
+	for(list<highlevel::EndPointHostStack>::iterator hs = endpointsHoststack.begin(); hs!=endpointsHoststack.end();hs++)
+	{
+		stringstream cmd_set_ip_address;
+		cmd_set_ip_address << "./node_resource_manager/scripts/set_ip_address.sh" << " " << hsPortsName[hs->getId()] << " ";
+		if (hs->getConfiguration()==DHCP)
+			cmd_set_ip_address << CONF_DHCP;
+		else if (hs->getConfiguration()==PPPOE)
+			cmd_set_ip_address << CONF_PPPOE;
+		else
+			cmd_set_ip_address << CONF_STATIC << " " << hs->getIpAddress();
+
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_set_ip_address.str().c_str());
+
+		int retVal = system(cmd_set_ip_address.str().c_str());
+		retVal = retVal >> 8;
+		if(retVal == 0)
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Failed to set the ip address to port %s", hsPortsName[hs->getId()].c_str() );
 	}
 
 	return true;

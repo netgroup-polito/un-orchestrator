@@ -145,9 +145,14 @@ private:
 
 
 	/**
-	*	@brief: map of hoststack endpoint id & port id on the switchI
+	*	@brief: map of hoststack endpoint id & port id on the switch
 	*/
 	map<string,unsigned int> hoststack_endpoints_port_id;
+
+	/**
+	*	@brief: map of hoststack endpoint id & port name on the switch
+	*/
+	map<string,string> hoststack_endpoints_port_name;
 
 public:
 
@@ -170,6 +175,7 @@ public:
 	map<string, vector<string> > getGreEndpointsDescription();
 	map<string,unsigned int> getPhysicalPorts();
 	map<string,unsigned int> getHoststackEndpointPortID();
+	map<string,string> getHoststackEndpointPortName();
 
 	set<string> getNetworkFunctionsId();
 	map<string,unsigned int> getNetworkFunctionsPorts(string nf_id);
@@ -208,6 +214,7 @@ protected:
 	void setDpid(uint64_t dpid);
 	bool setPhysicalPortID(string port, uint64_t id);
 	bool setHoststackEndpointPortID(string hs, uint64_t id);
+	bool setHoststackEndpointPortName(string hs, string name);
 	bool setNfSwitchPortsID(string nf_id, map<string, unsigned int>);
 	void setVLinkIDs(unsigned int position, unsigned int localID, unsigned int remoteID);
 	bool setGreEndpointPortID(string ep, uint64_t id);

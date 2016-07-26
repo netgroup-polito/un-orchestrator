@@ -3,15 +3,9 @@
 namespace highlevel
 {
 
-EndPointHostStack::EndPointHostStack(string id, string name, string configuration, string ipAddress) :
-	id(id), name(name), ipAddress(ipAddress)
+EndPointHostStack::EndPointHostStack(string id, string name, hoststack_conf_t configuration, string ipAddress) :
+	id(id), name(name), configuration(configuration), ipAddress(ipAddress)
 {
-	if(configuration==CONF_STATIC)
-		this->configuration=STATIC;
-	else if(configuration==CONF_DHCP)
-		this->configuration=DHCP;
-	else if(configuration==CONF_PPPOE)
-		this->configuration=PPPOE;
 }
 
 EndPointHostStack::~EndPointHostStack()
@@ -40,6 +34,11 @@ string EndPointHostStack::getName()
 string EndPointHostStack::getIpAddress()
 {
 	return ipAddress;
+}
+
+hoststack_conf_t EndPointHostStack::getConfiguration()
+{
+	return configuration;
 }
 
 Object EndPointHostStack::toJSON()
