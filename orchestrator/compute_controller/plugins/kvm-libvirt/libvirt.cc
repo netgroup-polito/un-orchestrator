@@ -20,7 +20,8 @@ void Libvirt::customErrorFunc(void *userdata, virErrorPtr err)
 }
 
 
-Libvirt::Libvirt()
+Libvirt::Libvirt():
+connection(NULL)
 {
 	virSetErrorFunc(NULL, customErrorFunc);
 	connect();
