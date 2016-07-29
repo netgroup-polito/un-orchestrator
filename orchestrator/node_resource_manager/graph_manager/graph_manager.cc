@@ -1149,21 +1149,12 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	map<string,string> hsPortsName = lsi->getHoststackEndpointPortName();
 	for(list<highlevel::EndPointHostStack>::iterator hs = endpointsHoststack.begin(); hs!=endpointsHoststack.end();hs++)
 	{
-		stringstream cmd_set_ip_address;
-		cmd_set_ip_address << "./node_resource_manager/scripts/set_ip_address.sh" << " " << hsPortsName[hs->getId()] << " ";
 		if (hs->getConfiguration()==DHCP)
-			cmd_set_ip_address << CONF_DHCP;
+			interfaceManager.getIpAddressFromDhcp(hsPortsName[hs->getId()]);
 		else if (hs->getConfiguration()==PPPOE)
-			cmd_set_ip_address << CONF_PPPOE;
+			interfaceManager.getIpAddressFromPppoe(hsPortsName[hs->getId()]);
 		else
-			cmd_set_ip_address << CONF_STATIC << " " << hs->getIpAddress();
-
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_set_ip_address.str().c_str());
-
-		int retVal = system(cmd_set_ip_address.str().c_str());
-		retVal = retVal >> 8;
-		if(retVal == 0)
-			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Failed to set the ip address to port %s", hsPortsName[hs->getId()].c_str() );
+			interfaceManager.setStaticIpAddress(hsPortsName[hs->getId()],hs->getIpAddress());
 	}
 
 	return true;

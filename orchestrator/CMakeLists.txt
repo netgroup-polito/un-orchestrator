@@ -322,6 +322,9 @@ SET(SOURCES1
 	node_resource_manager/security_manager/security_manager.cc
 	node_resource_manager/security_manager/security_manager.h
 
+	node_resource_manager/interface_manager/InterfaceManager.cc
+	node_resource_manager/interface_manager/InterfaceManager.h
+
 	utils/logger.h
 	utils/logger.c
 	utils/constants.h

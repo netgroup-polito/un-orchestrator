@@ -12,12 +12,12 @@ fi
 
 case "$2" in
    "DHCP")
-   	echo "dhclient $1 -v"
-   	dhclient $1 -v
+        echo "dhclient $1 -v"
+        dhclient $1 -v
    ;;
    "STATIC")
 		echo "ifconfig $1 $3"
-		ifconfig $1 $3 
+		ifconfig $1 $3
    ;;
    "PPPOE") echo "pppoe not supported yet" 
    ;;

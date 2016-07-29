@@ -18,6 +18,7 @@
 #include "../graph/high_level_graph/high_level_output_action_endpoint_hostStack.h"
 #include "../graph/graph-parser/match_parser.h"
 #include "../graph/high_level_graph/high_level_graph_vnf.h"
+#include "../interface_manager/InterfaceManager.h"
 
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"
@@ -68,6 +69,11 @@ private:
 	*	Port of the openflow controller of the next graph created
 	*/
 	static uint32_t nextControllerPort;
+
+	/**
+	*	handles L3 ports of the graphs
+	*/
+	InterfaceManager interfaceManager;
 
 	/**
 	*	This structure contains information of the number of graphs that use
