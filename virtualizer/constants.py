@@ -10,8 +10,8 @@ CONFIGURATION_FILE = 'config/configuration.ini'
 GRAPH_XML_FILE = '.universalnode.xml'
 
 #TMP file used by the virtualizer and representing the deployed graph,
-#in the JSON syntax internally used by the virtualizer itself
-#GRAPH_FILE = '.graph.json'
+#in the JSON syntax internally used by the virtualizer itself. Used only when operation-type = full-content
+GRAPH_FILE = '.graph.json'
 
 '''
 	Information to be exported
@@ -35,7 +35,8 @@ supported_matches = {
 	"dest_ip": "dest_ip",
 	"source_mac": "source_mac",
 	"dest_mac": "dest_mac",
-	"dl_type" : "ether_type"
+	"dl_type" : "ether_type",
+	"dl_src": "source_mac",
 }
 
 '''
