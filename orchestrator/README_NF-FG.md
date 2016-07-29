@@ -456,6 +456,7 @@ The NF-FG specification supports several types of endpoints:
 	`vlan`
 	`gre-tunnel`
 	`internal`
+	`host-stack`
 
 ### Endpoint type: `interface`
 
@@ -745,7 +746,7 @@ provided to the `internal` endpoint and vice versa.
 		  {
 		    "id": "inout:0",
 		    "name": "data-port"
-		  }        
+		  }
 		]
 	      }
 	    ],
@@ -833,6 +834,84 @@ In the UN, each different `internal-group` is implemented with a graph (and then
 the `LSI-0` with a number of links that is equal to twice the number of times the `internal` endpoint is used
 by graphs. This graph is not connected to any VNF; moreover, unlike standardard graphs defined through the NF-FG, 
 it implements the traditional L2 forwarding, hence it forwards packets based on the destianation MAC address.
+
+### Endpoint type: `host-stack`
+
+it rapresents an endpoint directly connected to the TCP/IP stack of the host. It is very similar to a phisical interface but implemented as internal port with an ip address.
+
+The `host-stack` endpoint is defined as follows:
+
+	{
+		"id": "00000001",
+		"name": "egress",
+		"type": "host-stack",
+		"host-stack":
+		{
+			"configuration": "DHCP"
+		}
+	}
+
+Three type of `configuration` are allowed: STATIC, DHCP and PPPOE.
+In case of STATIC configuration, the ip address must be specified through the `ipv4` field.
+
+The following example shows a graph with two endpoints of type `host-stack` and `interface` connected together.
+All the incoming traffic from eth0 reachs the tcp-ip stack of the host, if the packets match the host-stack IP.
+Vice versa the traffic sent through the host-stack port is provided to eth0.
+
+	{
+		"forwarding-graph":
+		{
+			"id": "00000001",
+			"name": "Forwarding graph",
+			"end-points": [
+			{
+				"id": "00000001",
+				"name": "ingress",
+				"type": "host-stack",
+				"host-stack": {
+					"configuration": "STATIC",
+					"ipv4": "10.0.0.1/24"
+				}
+			},
+			{
+				"id": "00000002",
+				"name": "egress",
+				"type": "interface",
+				"interface": {
+					"if-name": "eth0"
+				}
+			}
+			]
+			"big-switch": {
+				"flow-rules": [
+				{
+					"id": "00000001",
+					"priority": 1,
+					"match": {
+						"port_in": "endpoint:00000001"
+					},
+					"actions": [
+					{
+						"output_to_port": "endpoint:00000002"
+					}
+					]
+				},
+				{
+					"id": "00000002",
+					"priority": 1,
+					"match": {
+						"port_in": "endpoint:00000002"
+					},
+					"actions": [
+					{
+						"output_to_port": "endpoint:00000001"
+					}
+					]
+				}
+			}
+		}
+	}
+
 
 ## Configuration
 
