@@ -837,8 +837,7 @@ it implements the traditional L2 forwarding, hence it forwards packets based on 
 
 ### Endpoint type: `host-stack`
 
-it rapresents an endpoint directly connected to the TCP/IP stack of the host. It is very similar to a phisical interface but implemented as internal port with an ip address.
-
+It rapresents an endpoint connected to the TCP/IP stack of the host running the UN, and must be associated with an IP address.
 The `host-stack` endpoint is defined as follows:
 
 	{
@@ -851,8 +850,8 @@ The `host-stack` endpoint is defined as follows:
 		}
 	}
 
-Three type of `configuration` are allowed: STATIC, DHCP and PPPOE.
-In case of STATIC configuration, the ip address must be specified through the `ipv4` field.
+Three type of `configuration` are allowed: `static`, `dhcp` and `pppoe`.
+In case of `static` configuration, the IP address and the netmask must be specified through the `ipv4` field.
 
 The following example shows a graph with two endpoints of type `host-stack` and `interface` connected together.
 All the incoming traffic from eth0 reachs the tcp-ip stack of the host, if the packets match the host-stack IP.
