@@ -789,9 +789,9 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 				highlevel::ActionNetworkFunction *action_nf = (highlevel::ActionNetworkFunction*)action;
 				unsigned int inputPort = action_nf->getPort();
 
-				//Can be also an Endpoint
 				if(tenantNetworkFunctions.count(action_info) == 0)
 				{
+					//FIXME: is it possible that we are here?
 					logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The tenant graph expresses an action \"%s\", which is not a NF attacched to the tenant LSI",action_info.c_str());
 					throw GraphManagerException();
 				}

@@ -51,6 +51,7 @@
 			//#define PORT_ID			"id"
 			//#define PORT_NAME		"name"
 			#define PORT_MAC			"mac"
+			#define PORT_TRUSTED		"trusted"
 			#define PORT_IP				"unify-ip"
 		#define	VNF_GROUPS		"groups"
 	#define END_POINTS		"end-points"

@@ -129,6 +129,9 @@ Object VNFs::toJSON()
 			pp[PORT_IP] = p->configuration.ip_address.c_str();
 #endif
 
+		if(p->configuration.trusted)
+			pp[PORT_TRUSTED] = p->configuration.trusted;
+
 		portS.push_back(pp);
 	}
 	vnf[VNF_PORTS] = portS;

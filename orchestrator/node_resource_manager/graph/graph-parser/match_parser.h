@@ -14,6 +14,7 @@
 #include "../../../utils/constants.h"
 
 #include "../../graph_manager/graph_manager.h"
+#include "../generic_actions/eth_action.h"
 
 using namespace json_spirit;
 using namespace std;
@@ -32,7 +33,7 @@ protected:
 	static string epName(string name_port);
 	static unsigned int epPort(string name_port);
 
-	static bool parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string > &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, list<string> &hoststack_id, highlevel::Graph &graph);
+	static bool parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string > &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, list<string> &hoststack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses);
 
 private:
 	static bool validateMac(const char* mac);

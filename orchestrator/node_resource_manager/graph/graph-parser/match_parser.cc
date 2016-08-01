@@ -173,14 +173,14 @@ bool MatchParser::validateIpv4Netmask(const string &netmask)
 	return true;
 }
 
-bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, list<string> &hostStack_id, highlevel::Graph &graph)
+bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, list<string> &hostStack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses)
 {
 	bool foundOne = false;
 	bool foundEndPointID = false, foundProtocolField = false, definedInCurrentGraph = false;
 	bool is_tcp = false;
 	enum port_type { VNF_PORT_TYPE, EP_PORT_TYPE, EP_INTERNAL_TYPE };
 
-	for(Object::const_iterator i = object.begin(); i != object.end(); i++)
+	for(Object::const_iterator i = match_element.begin(); i != match_element.end(); i++)
 	{
 		const string& name  = i->first;
 		const Value&  value = i->second;
@@ -202,7 +202,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			string v_id;
 			string graph_id;
 			const char *port_in_name_tmp = port_in_name.c_str();
-			char vnf_id_tmp[BUFFER_SIZE];
+			char vnf_id_tmp[BUFFER_SIZE], real_port_id[BUFFER_SIZE];
 
 			//Check the name of port
 			char delimiter[] = ":";
@@ -239,10 +239,21 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 							strcat(vnf_id_tmp,":");
 						}
 						break;
+					case 2:
+						if(p_type == VNF_PORT_TYPE)
+						{
+							//We need the real port id to understand if a VNF port is trusted 
+							//or not
+							//XXX I don't know why the port name must be in the form abc:1, and just the number is actually used
+							strcpy(real_port_id,pnt);
+							strcat(real_port_id,":");
+						}
+						break;
 					case 3:
 						if(p_type == VNF_PORT_TYPE)
 						{
 							strcat(vnf_id_tmp,pnt);
+							strcat(real_port_id,pnt);
 						}
 				}
 
@@ -253,27 +264,39 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			//VNFs port type
 			if(p_type == VNF_PORT_TYPE)
 			{
-				//convert char *vnf_id_tmp to string vnf_name
-				string vnf_name(vnf_id_tmp, strlen(vnf_id_tmp));
+				string vnf_and_port_id(vnf_id_tmp, strlen(vnf_id_tmp));
 
-				string nf_name = nfId(vnf_name);
+				string vnf_id = nfId(vnf_and_port_id);
 				char *tmp_vnf_name = new char[BUFFER_SIZE];
-				strcpy(tmp_vnf_name, (char *)vnf_name.c_str());
-				unsigned int port = nfPort(string(tmp_vnf_name));
+				strcpy(tmp_vnf_name, (char *)vnf_and_port_id.c_str());
+				unsigned int port_id = nfPort(string(tmp_vnf_name));
 				bool is_port = nfIsPort(string(tmp_vnf_name));
 
-				if(nf_name == "" || !is_port)
+				if(vnf_id == "" || !is_port)
 				{
 					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Network function \"%s\" is not valid. It must be in the form \"name:port\"",vnf_id_tmp);
 					return false;
 				}
 				/*nf port starts from 0 - here we want that the ID starts from 1*/
-				port++;
+				port_id++;
 
-				match.setNFport(nf_name,port);
+				match.setNFport(vnf_id,port_id);
+
+				//check whether the port is trusted or not
+				map<string,bool> trusted_ports_vnf = trusted_ports[vnf_id];
+				bool trusted = trusted_ports_vnf[string(real_port_id)];
+
+				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Network function \"%s\" has the port \"%s\" which is %s",vnf_id.c_str(), real_port_id, (trusted)? "trusted" : "untrusted");
+				if(trusted)
+				{
+					//We have to extend the action with a rule that set the source mac address as specified in the NF-FG
+					map<string,string> mac_addresses_vnf = trusted_ports_mac_addresses[vnf_id];
+					GenericAction *ga = new EthAction(ACTION_TRUSTED_PORT,mac_addresses_vnf[real_port_id]);
+					action.addGenericAction(ga);
+				}
 
 			}
-			//end-points port type
+			//endpoints port type
 			else if(p_type == EP_PORT_TYPE)
 			{
 				bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false, hoststack_found=false;
@@ -283,7 +306,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 				if(eP != ""){
 					map<string,string>::iterator it = iface_id.find(eP);
 					map<string,string>::iterator it1 = internal_id.find(eP);
-					map<string,pair<string,string> >::iterator it2 = vlan_id.find(eP);
+					map<string,pair<string,string> >::iterator it2 = vlan_id.find(eP); //check if the endpoint has a vlan ID associated (in this case, the endpoint is a vlan endpoint)
 					map<string,string>::iterator it3 = gre_id.find(eP);
 					list<string>::iterator it4 = hostStack_id.begin();
 					for(;*it4!=eP && it4!=hostStack_id.end();it4++);

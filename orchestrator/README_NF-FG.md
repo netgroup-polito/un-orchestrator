@@ -280,7 +280,7 @@ Json description of the graph:
 			}
 	  	}
 	}
-		
+
 ## Matches
 
 Within the `match` element of the NF-FG description, the following fields are allowed
@@ -951,6 +951,28 @@ following example:
   	]
   
 Given this NF-FG, the un-orchestrator properly configures the VNF ports as specified by the graph itself.
+
+A VNF interface associated with a MAC address can be specified as `trusted`, like in the following example:
+
+	"VNFs": [
+	{
+		"id": "00000001",
+	   	"name": "firewall",
+    	"ports": [
+    	{
+       		"id": "inout:0",
+       		"name": "data-port",
+       		"mac": "aa:bb:cc:dd:ee:ff",
+       		"trusted": true
+    	}
+		]
+  	}
+  	]
+
+In this case, the un-orchestrator forces all the packets arriving from such an interface to have the specified 
+MAC address, by rewriting the source ethernet address field. In fact, altough the NIC is associated with the 
+required address, it may happen that the VNF explicitly generates different MAC address, e.g., to implement some
+form of attack.
 
 ### Setting environment variables to the VNF
 

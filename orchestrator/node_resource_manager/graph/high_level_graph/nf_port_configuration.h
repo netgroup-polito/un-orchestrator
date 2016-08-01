@@ -15,6 +15,11 @@ typedef struct port_network_config
 	*		E.g., aa:bb:cc:dd:ee:ff
 	*/
 	string mac_address;
+
+	/**
+	*	@brief: indicate whether the port is trusted or not
+	*/
+	bool trusted;
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	/**
 	*	@brief: IPv4/netmask to be assigned to the port

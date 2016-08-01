@@ -12,6 +12,11 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 	map<string, pair<string, string> > vlan_id;
 	//contains the id of hoststack endpoints
 	list<string> hostStack_id;
+	//The following two data structures are used for managing trusted/untrusted VNF ports
+	//for each VNF id, contains the pair port id, trusted/untrusted
+	map<string, map<string, bool> > trusted_ports;
+	//for each VNF id, contains the pair port id, mac address
+	map<string, map<string, string> > trusted_ports_mac_addresses;
 
 	/**
 	*	The graph is defined according to this schema:
@@ -306,6 +311,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											Object port = ports_array[ports].getObject();
 
 											highlevel::vnf_port_t port_descr;
+											port_descr.configuration.trusted = false; //by default the port is not trusted
+											
 											//Parse the port
 											for(Object::const_iterator p = port.begin(); p != port.end(); p++)
 											{
@@ -343,11 +350,22 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													port_descr.configuration.ip_address = p_value.getString();
 #endif
 												}
+												else if(p_name == PORT_TRUSTED)
+												{
+													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNF_PORTS,PORT_MAC,(p_value.getBool())? "true" : "false");
+													port_descr.configuration.trusted = p_value.getBool();
+												}
 												else
 												{
 													logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" in a VNF of \"%s\"",p_name.c_str(),VNF_PORTS);
 													return false;
 												}
+											}
+
+											if(port_descr.configuration.trusted && port_descr.configuration.mac_address == "")
+											{
+												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "A 'trusted' VNF port must be associated with a MAC address");
+												return false;
 											}
 
 											//Each VNF port has its own configuration if provided
@@ -391,13 +409,27 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 #else
 								highlevel::VNFs vnfs(id, name, groups, vnf_template, portS);
 #endif
+								//update information on the trusted status of VNF ports
+								for(list<highlevel::vnf_port_t>::iterator port = portS.begin(); port != portS.end(); port++)
+								{
+									map<string, bool> trusted_port_vnf = trusted_ports[id];
+									trusted_port_vnf[port->id] = port->configuration.trusted;
+									trusted_ports[id] = trusted_port_vnf;
+									
+									map<string,string> trusted_ports_mac_addresses_vnf = trusted_ports_mac_addresses[id];
+									trusted_ports_mac_addresses_vnf[port->id] = port->configuration.mac_address;
+									trusted_ports_mac_addresses[id] = trusted_ports_mac_addresses_vnf;
+									
+									logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "VNF \"%s\" - port \"%s\" - \"%s\"",id.c_str(),port->id.c_str(),(port->configuration.trusted)? "trusted":"untrusted");
+								}
+
 								graph.addVNF(vnfs);
 								portS.clear();
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 								controlPorts.clear();
 								environmentVariables.clear();
 #endif
-							}
+							}// end iteration on VNFs
 						}
 						catch(exception& e)
 						{
@@ -583,7 +615,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 										}
 
-										vlan_id[id] = make_pair(v_id, interface);
+										vlan_id[id] = make_pair(v_id, interface); //it maps: endpoint id - (vlan id, physical interface)
 										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\":\"%s\"",id.c_str(),vlan_id[id].first.c_str(),vlan_id[id].second.c_str());
 									}
 									else if(ep_name == EP_GRE)
@@ -873,7 +905,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									{
 										try{
 											foundMatch = true;
-											if(!MatchParser::parseMatch(fr_value.getObject(),match,(*action)/*,nfs_ports_found*/,iface_id,internal_id,vlan_id,gre_id,hostStack_id,graph))
+											if(!MatchParser::parseMatch(fr_value.getObject(),match,(*action),iface_id,internal_id,vlan_id,gre_id,hostStack_id,trusted_ports,trusted_ports_mac_addresses))
 											{
 												return false;
 											}
@@ -1021,7 +1053,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 															action = new highlevel::ActionNetworkFunction(id, string(port_in_name_tmp), port);
 														}
-														//end-points port type
+														//endpoints port type
 														else if(p_type == EP_PORT_TYPE)
 														{
 															//This is an output action referred to an endpoint
