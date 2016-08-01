@@ -36,7 +36,7 @@
 
 
 	\section use Using SockUtils
-	These calls are fairly easy to use. 
+	These calls are fairly easy to use.
 
 	\section content Content
 
@@ -63,10 +63,10 @@
 #ifndef WIN32
 /*!
 	\brief In Win32, the close() call cannot be used for sockets.
-	
+
 	So, we define a generic closesocket() call in order to be cross-platform compatible.
 */
-	#define closesocket(a) close(a) 
+	#define closesocket(a) close(a)
 #endif
 
 
@@ -75,7 +75,7 @@
 
 /*!
 	\brief DEBUG facility: it prints an error message on the screen (stderr)
-	
+
 	This macro prints the error on the standard error stream (stderr);
 	if we are working in debug mode (i.e. there is no NDEBUG defined) and we are in
 	Microsoft Visual C++, the error message will appear on the MSVC console as well.
@@ -106,7 +106,7 @@
  ****************************************************/
 
 //! 'checkonly' flag, into the sock_bufferize()
-#define SOCKBUF_CHECKONLY 1	
+#define SOCKBUF_CHECKONLY 1
 //! no 'checkonly' flag, into the sock_bufferize()
 #define SOCKBUF_BUFFERIZE 0
 
@@ -155,7 +155,7 @@ extern "C" {
 
 	\param port: a pointer to a user-allocated buffer containing the network port to use.
 
-	\param hints: an addrinfo variable (passed by reference) containing the flags needed to create the 
+	\param hints: an addrinfo variable (passed by reference) containing the flags needed to create the
 	addrinfo structure appropriately.
 
 	\param addrinfo: it represents the true returning value. This is a pointer to an addrinfo variable
@@ -170,7 +170,7 @@ extern "C" {
 	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return sockSUCCESS if everything is fine, sockFAILURE if some errors occurred. The error message is returned
-	in the 'errbuf' variable. The addrinfo variable that has to be used in the following sockets calls is 
+	in the 'errbuf' variable. The addrinfo variable that has to be used in the following sockets calls is
 	returned into the addrinfo parameter.
 
 	\warning The 'addrinfo' variable has to be deleted by the programmer by calling sock_freeaddrinfo() when
@@ -185,7 +185,7 @@ extern "C" {
 
 	\warning This function may return a linked list of 'addrinfo' structure. In case the depth of the structure
 	is more than '1', and you are on a server socket, you should call the sock_open() once per every structure
-	in order to allow waiting on all allowed socket (this is the case, for example, in which we can accept 
+	in order to allow waiting on all allowed socket (this is the case, for example, in which we can accept
 	both IPv4 and IPv6 connections).
 
 	In case of a client socket, the sock_open() will loop automatically through all the structures until a connection
@@ -248,7 +248,7 @@ void sock_freeaddrinfo(struct addrinfo *addrinfo);
 	\warning In order to be able to use the returned socket, you have still to call the sock_accept()
 	for accepting a new connection if you are on a server.
 
-	\warning In case of a client socket, the sock_open() will loop automatically through all the 
+	\warning In case of a client socket, the sock_open() will loop automatically through all the
 	structures until a connection is established, and it fails only if no structures give a positive result.
 
 */
@@ -281,10 +281,10 @@ int sock_accept(int socket, struct sockaddr_storage *sockaddr_from, char *errbuf
 	\brief Closes the present (TCP and UDP) socket connection.
 
 	This function closes the socket.
-	
+
 	Please note that any following operation on the socket is unavailable upon closure,
 	on both sides of the socket (for TCP connections).
-	For instance, if the server calls this function and, later, the client tries to 
+	For instance, if the server calls this function and, later, the client tries to
 	read some data that should still be there in the buffer, the data will not be
 	returned any more. In fact, the sock_close() call purges the data on both
 	sides of the TCP socket.
@@ -315,9 +315,9 @@ int sock_close(int socket, char *errbuf, int errbuflen);
 	\brief It sends the amount of data contained into 'buffer' on the given socket.
 
 	This function basically calls the send() socket function and it checks that all
-	the data specified in 'buffer' (of size 'size') will be sent. If an error occurs, 
+	the data specified in 'buffer' (of size 'size') will be sent. If an error occurs,
 	it writes the error message into 'errbuf'.
-	In case the socket buffer does not have enough space, it loops until all data 
+	In case the socket buffer does not have enough space, it loops until all data
 	has been sent.
 
 	\param socket: the connected socket currently opened.
@@ -346,7 +346,7 @@ int sock_send(int socket, const char *buffer, int size, char *errbuf, int errbuf
 	error occurred. If that happens, it writes the error message into 'errbuf'.
 
 	This function changes its behaviour according to the 'receiveall' flag: if we
-	want to receive exactly 'size' byte, it loops on the recv()	until all the requested 
+	want to receive exactly 'size' byte, it loops on the recv()	until all the requested
 	data is arrived. Otherwise, it returns the data currently available.
 
 	In case the socket does not have enough data available, it cycles on the recv()
@@ -361,8 +361,8 @@ int sock_send(int socket, const char *buffer, int size, char *errbuf, int errbuf
 	\param size: size of the allocated buffer. WARNING: this indicates the number of bytes
 	that we are expecting to be read.
 
-	\param receiveall: if '0' (or SOCK_RECEIVEALL_NO), it returns as soon as some data 
-	is ready; otherwise, (or SOCK_RECEIVEALL_YES) it waits until 'size' data has been 
+	\param receiveall: if '0' (or SOCK_RECEIVEALL_NO), it returns as soon as some data
+	is ready; otherwise, (or SOCK_RECEIVEALL_YES) it waits until 'size' data has been
 	received (in case the socket does not have enough data available).
 
 	\param maxtimeout: if greather than zero, it tells the function that it cannot block
@@ -398,7 +398,7 @@ int sock_recv(int socket, char *buffer, int size, int receiveall, unsigned int m
 	error occurred. If that happens, it writes the error message into 'errbuf'.
 
 	This function changes its behaviour according to the 'receiveall' flag: if we
-	want to receive exactly 'size' byte, it loops on the recv()	until all the requested 
+	want to receive exactly 'size' byte, it loops on the recv()	until all the requested
 	data is arrived. Otherwise, it returns the data currently available.
 
 	In case the socket does not have enough data available, it cycles on the recv()
@@ -412,8 +412,8 @@ int sock_recv(int socket, char *buffer, int size, int receiveall, unsigned int m
 	\param size: size of the allocated buffer. WARNING: this indicates the number of bytes
 	that we are expecting to be read.
 
-	\param receiveall: if '0' (or SOCK_RECEIVEALL_NO), it returns as soon as some data 
-	is ready; otherwise, (or SOCK_RECEIVEALL_YES) it waits until 'size' data has been 
+	\param receiveall: if '0' (or SOCK_RECEIVEALL_NO), it returns as soon as some data
+	is ready; otherwise, (or SOCK_RECEIVEALL_YES) it waits until 'size' data has been
 	received (in case the socket does not have enough data available).
 
 	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
@@ -458,7 +458,7 @@ int sock_recvdgram(int socket, char *buffer, int size, int receiveall, char *err
 	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
 	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
-	\return sockSUCCESS if there is data waiting to be read, sockWARNING if the function returns 
+	\return sockSUCCESS if there is data waiting to be read, sockWARNING if the function returns
 	because of timeout expires (i.e. no data has been read), sockFAILURE if some errors occurred.
 	The error message is returned in the 'errbuf' variable.
 */
@@ -470,13 +470,13 @@ int sock_check4waitingdata(int socket, unsigned int maxtimeout, char *errbuf, in
 	and it checks for buffer overflows.
 
 	This function basically copies 'size' bytes of data contained into 'buffer'
-	into 'tempbuf', starting at offset 'offset'. Before that, it checks that the 
-	resulting buffer will not be larger	than 'totsize'. Finally, it updates 
+	into 'tempbuf', starting at offset 'offset'. Before that, it checks that the
+	resulting buffer will not be larger	than 'totsize'. Finally, it updates
 	the 'offset' variable in order to point to the first empty location of the buffer.
 
 	In case the function is called with 'checkonly' equal to 1, it does not copy
 	the data into the buffer. It only checks for buffer overflows and it updates the
-	'offset' variable. This mode can be useful when the buffer already contains the 
+	'offset' variable. This mode can be useful when the buffer already contains the
 	data (maybe because the producer writes directly into the target buffer), so
 	only the buffer overflow check has to be made.
 	In this case, both 'buffer' and 'tempbuf' can be NULL values.
@@ -510,7 +510,7 @@ int sock_check4waitingdata(int socket, unsigned int maxtimeout, char *errbuf, in
 	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return sockSUCCESS if everything is fine, sockFAILURE if some errors occurred. The error message
-	is returned in the 'errbuf' variable. When the function returns, 'tempbuf' will 
+	is returned in the 'errbuf' variable. When the function returns, 'tempbuf' will
 	have the new string appended, and 'offset' will keep the length of that buffer.
 	In case of 'checkonly == 1', data is not copied, but 'offset' is updated in any case.
 
@@ -527,7 +527,7 @@ int sock_bufferize(const char *buffer, int size, char *tempbuf, int *offset, int
 	\brief It discards N bytes that are currently waiting to be read on the current socket.
 
 	This function is useful in case we receive a message we cannot undestand (e.g.
-	wrong version number when receiving a network packet), so that we have to discard all 
+	wrong version number when receiving a network packet), so that we have to discard all
 	data before reading a new message.
 
 	This function will read 'size' bytes from the socket and discard them.
@@ -556,12 +556,12 @@ int sock_discard(int socket, int size, char *errbuf, int errbuflen);
 
 	This function is useful after an accept() call in order to check if the connecting
 	host is allowed to connect to me. To do that, we have a buffer that keeps the list of the
-	allowed host; this function checks the sockaddr_storage structure of the connecting host 
+	allowed host; this function checks the sockaddr_storage structure of the connecting host
 	against this host list, and it returns '0' is the host is included in this list.
 
 	\param hostlist: pointer to a string that contains the list of the allowed host.
 
-	\param sep: a string that keeps the separators used between the hosts (for example the 
+	\param sep: a string that keeps the separators used between the hosts (for example the
 	space character) in the host list.
 
 	\param from: a sockaddr_storage structure, as it is returned by the accept() call.
@@ -592,7 +592,7 @@ int sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 
 	This function will return '0' if the two addresses matches, '-1' if not.
 
-	\param first: a sockaddr_storage structure, (for example the one that is returned by an 
+	\param first: a sockaddr_storage structure, (for example the one that is returned by an
 	accept() call), containing the first address to compare.
 
 	\param second: a sockaddr_storage structure containing the second address to compare.
@@ -629,19 +629,19 @@ int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second
 	\param flags: a set of flags (the ones defined into the getnameinfo() standard socket function)
 	that determine if the resulting address must be in numeric / literal form, and so on.
 	Allowed values are:
-	- <b>NI_NOFQDN</b>: When the NI_NAMEREQD flag is set, host names that cannot be resolved by 
+	- <b>NI_NOFQDN</b>: When the NI_NAMEREQD flag is set, host names that cannot be resolved by
 	Domain Name System (DNS) result in an error.
-	- <b>NI_NUMERICHOST</b>: Setting the NI_NOFQDN flag results in local hosts having only their 
+	- <b>NI_NUMERICHOST</b>: Setting the NI_NOFQDN flag results in local hosts having only their
 	Relative Distinguished Name (RDN) returned in the host parameter.
 	- <b>NI_NAMEREQD</b>: Setting the NI_NUMERICHOST flag returns the numeric form of the host name
 	instead of its name. The numeric form of the host name is also returned if the host name
 	cannot be resolved by DNS.
-	- <b>NI_NUMERICSERV</b>: Setting the NI_NUMERICSERV flag returns the port number of the service 
-	instead of its name. If NI_NUMERICSERV is not specified and the port number contained in 
+	- <b>NI_NUMERICSERV</b>: Setting the NI_NUMERICSERV flag returns the port number of the service
+	instead of its name. If NI_NUMERICSERV is not specified and the port number contained in
 	the (internal) sockaddr structure does not resolve to a well known service, this function
 	function fails. When NI_NUMERICSERV is specified, the port number is returned as a numeric string.
 	- <b>NI_DGRAM</b>: Setting the NI_DGRAM flag indicates that the service is a datagram service.
-	This flag is necessary for the few services that provide different port numbers for 
+	This flag is necessary for the few services that provide different port numbers for
 	UDP and TCP service.
 
 	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
@@ -655,7 +655,7 @@ int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second
 	The address and port corresponding are returned back in the buffers 'address' and 'port'.
 	In any case, the returned strings are '0' terminated.
 
-	\warning If the socket is using a connectionless protocol, the address may not be available 
+	\warning If the socket is using a connectionless protocol, the address may not be available
 	until I/O occurs on the socket.
 
 	\warning The capability to perform reverse lookups using the this function is convenient,
@@ -671,7 +671,7 @@ int sock_getmyinfo(int sock, char *address, int addrlen, char *port, int portlen
 
 	It is used to return the addess and port of the remote side of our socket. It works almost in the
 	same way of sock_getmyinfo(); it works only on connected sockets.
-	
+
 	In order to get the peer name on unconnected sockets, the sock_getascii_addrport() may be used.
 
 	\param sock: the connected socket currently opened.
@@ -690,19 +690,19 @@ int sock_getmyinfo(int sock, char *address, int addrlen, char *port, int portlen
 	\param flags: a set of flags (the ones defined into the getnameinfo() standard socket function)
 	that determine if the resulting address must be in numeric / literal form, and so on.
 	Allowed values are:
-	- <b>NI_NOFQDN</b>: When the NI_NAMEREQD flag is set, host names that cannot be resolved by 
+	- <b>NI_NOFQDN</b>: When the NI_NAMEREQD flag is set, host names that cannot be resolved by
 	Domain Name System (DNS) result in an error.
-	- <b>NI_NUMERICHOST</b>: Setting the NI_NOFQDN flag results in local hosts having only their 
+	- <b>NI_NUMERICHOST</b>: Setting the NI_NOFQDN flag results in local hosts having only their
 	Relative Distinguished Name (RDN) returned in the host parameter.
 	- <b>NI_NAMEREQD</b>: Setting the NI_NUMERICHOST flag returns the numeric form of the host name
 	instead of its name. The numeric form of the host name is also returned if the host name
 	cannot be resolved by DNS.
-	- <b>NI_NUMERICSERV</b>: Setting the NI_NUMERICSERV flag returns the port number of the service 
-	instead of its name. If NI_NUMERICSERV is not specified and the port number contained in 
+	- <b>NI_NUMERICSERV</b>: Setting the NI_NUMERICSERV flag returns the port number of the service
+	instead of its name. If NI_NUMERICSERV is not specified and the port number contained in
 	the (internal) sockaddr structure does not resolve to a well known service, this function
 	function fails. When NI_NUMERICSERV is specified, the port number is returned as a numeric string.
 	- <b>NI_DGRAM</b>: Setting the NI_DGRAM flag indicates that the service is a datagram service.
-	This flag is necessary for the few services that provide different port numbers for 
+	This flag is necessary for the few services that provide different port numbers for
 	UDP and TCP service.
 
 	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
@@ -716,7 +716,7 @@ int sock_getmyinfo(int sock, char *address, int addrlen, char *port, int portlen
 	The address and port corresponding are returned back in the buffers 'address' and 'port'.
 	In any case, the returned strings are '0' terminated.
 
-	\warning If the socket is using a connectionless protocol, the address may not be available 
+	\warning If the socket is using a connectionless protocol, the address may not be available
 	until I/O occurs on the socket.
 
 	\warning The capability to perform reverse lookups using the this function is convenient,
@@ -742,11 +742,11 @@ int sock_getmyinfo(int sock, char *address, int addrlen, char *port, int portlen
 
 	The behaviour of this function depends on the parameters we have in the 'Flags' variable, which
 	are the ones allowed in the standard getnameinfo() socket function.
-	
-	\param sockaddr: a 'sockaddr_in' or 'sockaddr_in6' structure containing the address that 
-	need to be translated from network form into the presentation form. This structure must be 
-	zero-ed prior using it, and the address family field must be filled with the proper value. 
-	The user must cast any 'sockaddr_in' or 'sockaddr_in6' structures to 'sockaddr_storage' before 
+
+	\param sockaddr: a 'sockaddr_in' or 'sockaddr_in6' structure containing the address that
+	need to be translated from network form into the presentation form. This structure must be
+	zero-ed prior using it, and the address family field must be filled with the proper value.
+	The user must cast any 'sockaddr_in' or 'sockaddr_in6' structures to 'sockaddr_storage' before
 	calling this function.
 
 	\param address: it contains the address that will be returned by the function. This buffer
@@ -763,19 +763,19 @@ int sock_getmyinfo(int sock, char *address, int addrlen, char *port, int portlen
 	\param flags: a set of flags (the ones defined into the getnameinfo() standard socket function)
 	that determine if the resulting address must be in numeric / literal form, and so on.
 	Allowed values are:
-	- <b>NI_NOFQDN</b>: When the NI_NAMEREQD flag is set, host names that cannot be resolved by 
+	- <b>NI_NOFQDN</b>: When the NI_NAMEREQD flag is set, host names that cannot be resolved by
 	Domain Name System (DNS) result in an error.
-	- <b>NI_NUMERICHOST</b>: Setting the NI_NOFQDN flag results in local hosts having only their 
+	- <b>NI_NUMERICHOST</b>: Setting the NI_NOFQDN flag results in local hosts having only their
 	Relative Distinguished Name (RDN) returned in the host parameter.
 	- <b>NI_NAMEREQD</b>: Setting the NI_NUMERICHOST flag returns the numeric form of the host name
 	instead of its name. The numeric form of the host name is also returned if the host name
 	cannot be resolved by DNS.
-	- <b>NI_NUMERICSERV</b>: Setting the NI_NUMERICSERV flag returns the port number of the service 
-	instead of its name. If NI_NUMERICSERV is not specified and the port number contained in 
+	- <b>NI_NUMERICSERV</b>: Setting the NI_NUMERICSERV flag returns the port number of the service
+	instead of its name. If NI_NUMERICSERV is not specified and the port number contained in
 	the (internal) sockaddr structure does not resolve to a well known service, this function
 	function fails. When NI_NUMERICSERV is specified, the port number is returned as a numeric string.
 	- <b>NI_DGRAM</b>: Setting the NI_DGRAM flag indicates that the service is a datagram service.
-	This flag is necessary for the few services that provide different port numbers for 
+	This flag is necessary for the few services that provide different port numbers for
 	UDP and TCP service.
 
 	\param errbuf: a pointer to an user-allocated buffer that will contain the complete

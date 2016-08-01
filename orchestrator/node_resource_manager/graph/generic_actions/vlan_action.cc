@@ -92,6 +92,11 @@ void VlanAction::print()
 	cout << endl;
 }
 
+vlan_action_t VlanAction::getType()
+{
+	return type;
+}
+
 string VlanAction::prettyPrint()
 {
 	stringstream ss;

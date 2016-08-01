@@ -193,6 +193,11 @@ public:
 	char *getInputEndpoint();
 
 	/**
+	*	@brief: check if a match on vlan (id number or ANY) exists
+	*/
+	bool checkVlanPresence();
+
+	/**
 	*	@brief: transform the match into a json
 	*/
 	Object toJSON();

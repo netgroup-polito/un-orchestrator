@@ -41,6 +41,7 @@ public:
 	*/
 	void fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigned int *position);
 
+	vlan_action_t getType();
 	void print();
 	string prettyPrint();
 };

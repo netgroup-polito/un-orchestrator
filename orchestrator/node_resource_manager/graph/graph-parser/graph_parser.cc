@@ -1231,6 +1231,23 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									return false;
 								}
 
+								list<GenericAction*> gaList = action->getGenericActions();
+								for(list<GenericAction*>::iterator ga = gaList.begin(); ga != gaList.end() ; ga++)
+								{
+									VlanAction* va = dynamic_cast<VlanAction*>(*ga);
+									if(va!=NULL) {
+										if(va->getType()==ACTION_VLAN_POP)
+										{
+											if(!match.checkVlanPresence())
+											{
+												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "A POP_VLAN action without specific match on vlan ID has been specified...");
+												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The corresponding rule can not work as well as it should");
+												break;
+											}
+										}
+									}
+								}
+
 							}//for( unsigned int fr = 0; fr < flow_rules_array.size(); ++fr )
 
 							bool same_priority = false;

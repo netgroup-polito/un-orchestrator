@@ -175,6 +175,11 @@ char *Match::getInputEndpoint()
 	return (char *)str.c_str();
 }
 
+bool Match::checkVlanPresence()
+{
+	return isVlanID || isAnyVlan || isVlanPCP;
+}
+
 Object Match::toJSON()
 {
 	Object match;
