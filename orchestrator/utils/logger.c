@@ -50,7 +50,7 @@ extern void logger(int LoggingLevel, const char *ModuleName, const char *File, i
 	vsnprintf(Buffer, BufSize, Format, Args);
 
 	// Get current time and format it appropriately
-	gettimeofday(&tv, NULL); 
+	gettimeofday(&tv, NULL);
 	CurrentTime=tv.tv_sec;
 	strftime(CurrentTimeBuffer,sizeof(CurrentTimeBuffer),"%F-%T",localtime(&CurrentTime));
 
@@ -105,7 +105,7 @@ extern void coloredLogger(char *color, int LoggingLevel, const char *ModuleName,
 	vsnprintf(Buffer, BufSize, Format, Args);
 
 	// Get current time and format it appropriately
-	gettimeofday(&tv, NULL); 
+	gettimeofday(&tv, NULL);
 	CurrentTime=tv.tv_sec;
 	strftime(CurrentTimeBuffer,sizeof(CurrentTimeBuffer),"%F-%T",localtime(&CurrentTime));
 

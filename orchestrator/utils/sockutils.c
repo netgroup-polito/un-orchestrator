@@ -22,7 +22,7 @@
  ****************************************************/
 
 int sock_ismcastaddr(const struct sockaddr *saddr);
-int ssnprintf(char* Buffer, int BufSize, const char *Format, ...);	
+int ssnprintf(char* Buffer, int BufSize, const char *Format, ...);
 void getLastError(const char *CallerString, char *ErrBuf, int ErrBufSize);
 
 /****************************************************
@@ -34,7 +34,7 @@ void getLastError(const char *CallerString, char *ErrBuf, int ErrBufSize);
 /*!
 	\brief It checks if the sockaddr variable contains a multicast address.
 
-	\return sockSUCCESS if the address is multicast, sockFAILURE if it is not. 
+	\return sockSUCCESS if the address is multicast, sockFAILURE if it is not.
 */
 int sock_ismcastaddr(const struct sockaddr *saddr)
 {
@@ -115,7 +115,7 @@ int sock;
 		// For instance, we can have both IPv6 and IPv4 addresses, but the service we're trying
 		// to connect to is unavailable in IPv6, so we have to try in IPv4 as well
 		while (tempaddrinfo)
-		{	
+		{
 			if (connect(sock, tempaddrinfo->ai_addr, (int) tempaddrinfo->ai_addrlen) == -1)
 			{
 			size_t msglen;
@@ -129,7 +129,7 @@ int sock;
 				// Returns the numeric address of the host that triggered the error
 				sock_getascii_addrport( (struct sockaddr_storage *) tempaddrinfo->ai_addr, TmpBuffer, sizeof(TmpBuffer), NULL, 0, NI_NUMERICHOST, TmpBuffer, sizeof(TmpBuffer) );
 
-				ssnprintf(errbufptr, (int) bufspaceleft, 
+				ssnprintf(errbufptr, (int) bufspaceleft,
 					"Is the server properly installed on %s?  connect() failed: %s", TmpBuffer, SocketErrorMessage);
 
 				// In case more then one 'connect' fails, we manage to keep all the error messages
@@ -149,7 +149,7 @@ int sock;
 
 		// Check how we exit from the previous loop
 		// If tempaddrinfo is equal to NULL, it means that all the connect() failed.
-		if (tempaddrinfo == NULL) 
+		if (tempaddrinfo == NULL)
 		{
 			closesocket(sock);
 			return sockFAILURE;
@@ -189,7 +189,7 @@ int sock_initaddress(const char *address, const char *port,
 							struct addrinfo *hints, struct addrinfo **addrinfo, char *errbuf, int errbuflen)
 {
 int retval;
-	
+
 	retval = getaddrinfo(address, port, hints, addrinfo);
 	if (retval != 0)
 	{
@@ -236,9 +236,9 @@ int nsent;
 send:
 #ifdef linux
 /*
-	Another pain... in Linux there's this flag 
+	Another pain... in Linux there's this flag
 	MSG_NOSIGNAL
-		Requests not to send SIGPIPE on errors on stream-oriented 
+		Requests not to send SIGPIPE on errors on stream-oriented
 		sockets when the other end breaks the connection.
 		The EPIPE error is still returned.
 */
@@ -308,7 +308,7 @@ again:
 		return sockWARNING;
 	}
 
-	// If we want to return as soon as some data has been received, 
+	// If we want to return as soon as some data has been received,
 	// let's do the job
 	if (!receiveall)
 		return nread;
@@ -361,7 +361,7 @@ again:
 		return sockWARNING;
 	}
 
-	// If we want to return as soon as some data has been received, 
+	// If we want to return as soon as some data has been received,
 	// let's do the job
 	if (!receiveall)
 		return nread;
@@ -383,7 +383,7 @@ char buffer[TEMP_BUF_SIZE];		// network buffer, to be used when the message is d
 
 	// A static allocation avoids the need of a 'malloc()' each time we want to discard a message
 	// Our feeling is that a buffer if 32KB is enough for most of the application;
-	// in case this is not enough, the "while" loop discards the message by calling the 
+	// in case this is not enough, the "while" loop discards the message by calling the
 	// sockrecv() several times.
 	// We do not want to create a bigger variable because this causes the program to exit on
 	// some platforms (e.g. BSD)
@@ -432,7 +432,7 @@ char *temphostlist;
 		getLastError("sock_check_hostlist(), malloc() failed", errbuf, errbuflen);
 		return sockFAILURE;
 	}
-	
+
 	strcpy(temphostlist, hostlist);
 
 	token= strtok(temphostlist, sep);
@@ -503,14 +503,14 @@ int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second
 	{
 		if (first->ss_family == AF_INET)
 		{
-			if (memcmp(		&(((struct sockaddr_in *) first)->sin_addr), 
+			if (memcmp(		&(((struct sockaddr_in *) first)->sin_addr),
 							&(((struct sockaddr_in *) second)->sin_addr),
 							sizeof(struct in_addr) ) == 0)
 								return sockSUCCESS;
 		}
 		else // address family is AF_INET6
 		{
-			if (memcmp(		&(((struct sockaddr_in6 *) first)->sin6_addr), 
+			if (memcmp(		&(((struct sockaddr_in6 *) first)->sin6_addr),
 							&(((struct sockaddr_in6 *) second)->sin6_addr),
 							sizeof(struct in6_addr) ) == 0)
 								return sockSUCCESS;
@@ -606,9 +606,9 @@ struct addrinfo hints;
 	memset(&hints, 0, sizeof(hints) );
 
 	hints.ai_family= addr_family;
-	// Fake protocol, to avoid the problem of some OS that return 
+	// Fake protocol, to avoid the problem of some OS that return
 	// a chain of addrinfo structures, one for each transport protocol
-	hints.ai_socktype= SOCK_STREAM;	
+	hints.ai_socktype= SOCK_STREAM;
 
 	if ( (retval= sock_initaddress(address, "22222" /* fake port */, &hints, &addrinfo, errbuf, errbuflen)) == -1 )
 		return sockFAILURE;
@@ -642,7 +642,7 @@ int retval;							// select() return value
 
 	tv.tv_sec= maxtimeout;
 	tv.tv_usec= 0;
-	
+
 	FD_SET(socket, &rfds);
 
 	retval= select(socket + 1, &rfds, NULL, NULL, &tv);
@@ -702,7 +702,7 @@ void getLastError(const char *CallerString, char *ErrBuf, int ErrBufSize)
 				FormatFlags |= FORMAT_MESSAGE_FROM_HMODULE;
 		}
 
-		// Call FormatMessage() to allow for message text to be acquired from the system 
+		// Call FormatMessage() to allow for message text to be acquired from the system
 		// or from the supplied module handle.
 		RetVal= FormatMessage(FormatFlags,
 	                  ModuleHandle, // module to get message from (NULL == system)
@@ -730,7 +730,7 @@ void getLastError(const char *CallerString, char *ErrBuf, int ErrBufSize)
 
 			return;
 		}
-	
+
 		if (ErrBuf)
 		{
 			if ( (CallerString) && (*CallerString) )
@@ -743,7 +743,7 @@ void getLastError(const char *CallerString, char *ErrBuf, int ErrBufSize)
 
 #else
 	char *Message;
-	
+
 		Message= strerror(errno);
 
 		if (ErrBuf)
