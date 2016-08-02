@@ -1,4 +1,5 @@
 #include "vlan_action.h"
+#include <linux/if_ether.h>
 
 VlanAction::VlanAction(vlan_action_t type, string vlan_endpoint, uint16_t label):
 	GenericAction(), type(type), vlan_endpoint(vlan_endpoint), label(label)
@@ -48,7 +49,7 @@ void VlanAction::fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigne
 		case OFP_12:
 			if(type == ACTION_VLAN_PUSH || type == ACTION_ENDPOINT_VLAN_PUSH)
 			{
-				message.set_instructions().set_inst_apply_actions().set_actions().add_action_push_vlan(rofl::cindex(*position)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
+				message.set_instructions().set_inst_apply_actions().set_actions().add_action_push_vlan(rofl::cindex(*position)).set_eth_type(ETH_P_8021Q);
 				(*position)++;
 				message.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(rofl::cindex(*position)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(label | rofl::openflow::OFPVID_PRESENT));
 				(*position)++;
