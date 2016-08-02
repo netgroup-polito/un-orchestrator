@@ -261,7 +261,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 					uint32_t vlanID = 0;
 					vlan_action_t actionType = ACTION_ENDPOINT_VLAN_POP;
 
-					if((sscanf(v_id.c_str(),"%"SCNd32,&vlanID) != 1) && (vlanID > 4094))
+					if((sscanf(v_id.c_str(),"%" SCNd32,&vlanID) != 1) && (vlanID > 4094))
 					{
 						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",VLAN_ID,value.getString().c_str());
 						return false;
@@ -301,7 +301,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,ETH_TYPE,value.getString().c_str());
 			uint32_t ethType;
-			if((sscanf(value.getString().c_str(),"%"SCNi32,&ethType) != 1) || (ethType > 65535))
+			if((sscanf(value.getString().c_str(),"%" SCNi32,&ethType) != 1) || (ethType > 65535))
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",ETH_TYPE,value.getString().c_str());
 				return false;
@@ -320,7 +320,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			else
 			{
 				uint32_t vlanID;
-				if((sscanf(value.getString().c_str(),"%"SCNi32,&vlanID) != 1) && (vlanID > 4094))
+				if((sscanf(value.getString().c_str(),"%" SCNi32,&vlanID) != 1) && (vlanID > 4094))
 				{
 					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",VLAN_ID,value.getString().c_str());
 					return false;
@@ -385,7 +385,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,VLAN_PCP,value.getString().c_str());
 			uint16_t vlanPCP;
-			if((sscanf(value.getString().c_str(),"%"SCNd16,&vlanPCP) != 1) || (vlanPCP > 255) )
+			if((sscanf(value.getString().c_str(),"%" SCNd16,&vlanPCP) != 1) || (vlanPCP > 255) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",VLAN_PCP,value.getString().c_str());
 				return false;
@@ -398,7 +398,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,IP_DSCP,value.getString().c_str());
 			uint16_t ipDSCP;
-			if((sscanf(value.getString().c_str(),"%"SCNd16,&ipDSCP) != 1) || (ipDSCP > 255) )
+			if((sscanf(value.getString().c_str(),"%" SCNd16,&ipDSCP) != 1) || (ipDSCP > 255) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",IP_DSCP,value.getString().c_str());
 				return false;
@@ -409,7 +409,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,IP_ECN,value.getString().c_str());
 			uint16_t ipECN;
-			if((sscanf(value.getString().c_str(),"%"SCNd16,&ipECN) != 1) || (ipECN > 255) )
+			if((sscanf(value.getString().c_str(),"%" SCNd16,&ipECN) != 1) || (ipECN > 255) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",IP_ECN,value.getString().c_str());
 				return false;
@@ -505,7 +505,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			{
 				logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,PORT_SRC,value.getString().c_str());
 				uint32_t tcpSrc;
-				if((sscanf(value.getString().c_str(),"%"SCNd32,&tcpSrc) != 1) || (tcpSrc > 65535))
+				if((sscanf(value.getString().c_str(),"%" SCNd32,&tcpSrc) != 1) || (tcpSrc > 65535))
 				{
 					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",PORT_SRC,value.getString().c_str());
 					return false;
@@ -516,7 +516,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			} else {
 				logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,PORT_SRC,value.getString().c_str());
 				uint32_t udpSrc;
-				if((sscanf(value.getString().c_str(),"%"SCNd32,&udpSrc) != 1)  || (udpSrc > 65535))
+				if((sscanf(value.getString().c_str(),"%" SCNd32,&udpSrc) != 1)  || (udpSrc > 65535))
 				{
 					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",PORT_SRC,value.getString().c_str());
 					return false;
@@ -532,7 +532,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			{
 				logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,PORT_DST,value.getString().c_str());
 				uint32_t tcpDst;
-				if((sscanf(value.getString().c_str(),"%"SCNd32,&tcpDst) != 1)  || (tcpDst > 65535))
+				if((sscanf(value.getString().c_str(),"%" SCNd32,&tcpDst) != 1)  || (tcpDst > 65535))
 				{
 					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",PORT_DST,value.getString().c_str());
 					return false;
@@ -543,7 +543,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			} else {
 				logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,PORT_DST,value.getString().c_str());
 				uint32_t udpDst;
-				if((sscanf(value.getString().c_str(),"%"SCNd32,&udpDst) != 1)  || (udpDst > 65535))
+				if((sscanf(value.getString().c_str(),"%" SCNd32,&udpDst) != 1)  || (udpDst > 65535))
 				{
 					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",PORT_DST,value.getString().c_str());
 					return false;
@@ -556,7 +556,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,SCTP_SRC,value.getString().c_str());
 			uint32_t sctpSrc;
-			if((sscanf(value.getString().c_str(),"%"SCNd32,&sctpSrc) != 1)  || (sctpSrc > 65535))
+			if((sscanf(value.getString().c_str(),"%" SCNd32,&sctpSrc) != 1)  || (sctpSrc > 65535))
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",SCTP_SRC,value.getString().c_str());
 				return false;
@@ -568,7 +568,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,SCTP_DST,value.getString().c_str());
 			uint32_t sctpDst;
-			if((sscanf(value.getString().c_str(),"%"SCNd32,&sctpDst) != 1)  || (sctpDst > 65535))
+			if((sscanf(value.getString().c_str(),"%" SCNd32,&sctpDst) != 1)  || (sctpDst > 65535))
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",SCTP_DST,value.getString().c_str());
 				return false;
@@ -580,7 +580,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,ICMPv4_TYPE,value.getString().c_str());
 			uint16_t icmpv4Type;
-			if((sscanf(value.getString().c_str(),"%"SCNd16,&icmpv4Type) != 1) || (icmpv4Type > 255) )
+			if((sscanf(value.getString().c_str(),"%" SCNd16,&icmpv4Type) != 1) || (icmpv4Type > 255) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",ICMPv4_TYPE,value.getString().c_str());
 				return false;
@@ -592,7 +592,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,ICMPv4_CODE,value.getString().c_str());
 			uint16_t icmpv4Code;
-			if((sscanf(value.getString().c_str(),"%"SCNd16,&icmpv4Code) != 1) || (icmpv4Code > 255) )
+			if((sscanf(value.getString().c_str(),"%" SCNd16,&icmpv4Code) != 1) || (icmpv4Code > 255) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",ICMPv4_CODE,value.getString().c_str());
 				return false;
@@ -604,7 +604,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,ARP_OPCODE,value.getString().c_str());
 			uint32_t arpOpCode;
-			if((sscanf(value.getString().c_str(),"%"SCNd32,&arpOpCode) != 1) || (arpOpCode > 65535) )
+			if((sscanf(value.getString().c_str(),"%" SCNd32,&arpOpCode) != 1) || (arpOpCode > 65535) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",ARP_OPCODE,value.getString().c_str());
 				return false;
@@ -710,7 +710,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,IPv6_FLABEL,value.getString().c_str());
 			uint64_t ipv6FLabel;
-			if((sscanf(value.getString().c_str(),"%"SCNd64,&ipv6FLabel) != 1) || (ipv6FLabel > 4294967295UL) )
+			if((sscanf(value.getString().c_str(),"%" SCNd64,&ipv6FLabel) != 1) || (ipv6FLabel > 4294967295UL) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",ARP_OPCODE,value.getString().c_str());
 				return false;
@@ -743,7 +743,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,ICMPv6_TYPE,value.getString().c_str());
 			uint16_t icmpv6Type;
-			if((sscanf(value.getString().c_str(),"%"SCNd16,&icmpv6Type) != 1) || (icmpv6Type > 255) )
+			if((sscanf(value.getString().c_str(),"%" SCNd16,&icmpv6Type) != 1) || (icmpv6Type > 255) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",ICMPv6_TYPE,value.getString().c_str());
 				return false;
@@ -755,7 +755,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,ICMPv6_CODE,value.getString().c_str());
 			uint16_t icmpv6Code;
-			if((sscanf(value.getString().c_str(),"%"SCNd16,&icmpv6Code) != 1) || (icmpv6Code > 255) )
+			if((sscanf(value.getString().c_str(),"%" SCNd16,&icmpv6Code) != 1) || (icmpv6Code > 255) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",ICMPv6_CODE,value.getString().c_str());
 				return false;
@@ -767,7 +767,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,MPLS_LABEL,value.getString().c_str());
 			uint64_t mplsLabel;
-			if((sscanf(value.getString().c_str(),"%"SCNd64,&mplsLabel) != 1) || (mplsLabel > 1048575) )
+			if((sscanf(value.getString().c_str(),"%" SCNd64,&mplsLabel) != 1) || (mplsLabel > 1048575) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",MPLS_LABEL,value.getString().c_str());
 				return false;
@@ -779,7 +779,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,MPLS_TC,value.getString().c_str());
 			uint16_t mplsTC;
-			if((sscanf(value.getString().c_str(),"%"SCNd16,&mplsTC) != 1) || (mplsTC > 255) )
+			if((sscanf(value.getString().c_str(),"%" SCNd16,&mplsTC) != 1) || (mplsTC > 255) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",MPLS_TC,value.getString().c_str());
 				return false;
@@ -797,7 +797,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 			else
 				is_tcp = false;
 
-			if((sscanf(value.getString().c_str(),"%"SCNd16,&ipProto) != 1) || (ipProto > 255) )
+			if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
 			{
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\"",PROTOCOL,value.getString().c_str());
 				return false;
