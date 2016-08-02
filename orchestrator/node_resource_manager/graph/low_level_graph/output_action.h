@@ -15,7 +15,6 @@
 
 #include "../generic_actions/generic_action.h"
 
-using namespace rofl;
 using namespace std;
 
 namespace lowlevel

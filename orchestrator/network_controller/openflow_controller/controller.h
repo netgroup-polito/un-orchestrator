@@ -9,7 +9,6 @@
 
 #define OFCONTROLLER_MODULE_NAME	"Openflow-Controller"
 
-using namespace rofl;
 using namespace lowlevel;
 
 /**

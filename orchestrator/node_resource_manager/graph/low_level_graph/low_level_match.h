@@ -21,7 +21,6 @@ IVANO: these include should be useless
 #include "../match.h"
 #include "../../graph_manager/lsi.h"
 
-using namespace rofl;
 using namespace std;
 
 namespace lowlevel
