@@ -6,10 +6,6 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
-#include <rofl/platform/unix/cunixenv.h>
-#include <rofl/platform/unix/cdaemon.h>
-#include <rofl/common/cparams.h>
-
 #include <rofl/common/ciosrv.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
