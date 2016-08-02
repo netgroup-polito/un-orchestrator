@@ -1,30 +1,28 @@
 #include "controller.h"
 
-Controller::Controller(rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap,Graph graph,string controllerPort)	:
-	crofbase(versionbitmap, rofl::cioloop::add_thread()),
+Controller::Controller(rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap,Graph graph, unsigned controllerPort)	:
+	thread(this),
 	dpt(NULL),
 	isOpen(false),
 	graph(graph),
 	controllerPort(controllerPort)
 {
+	set_versionbitmap(versionbitmap);
 	pthread_mutex_init(&controller_mutex, NULL);
 }
 
 void Controller::start()
 {
-	pthread_t thread[1];
-	pthread_create(&thread[0],NULL,loop,this);
-#ifdef __x86_64__
-	//the following function is not available on all platforms
-	pthread_setname_np(thread[0],"Openflow-Controller");
-#endif
+	rofl::csockaddr bind_addr(AF_INET, std::string("0.0.0.0"), controllerPort);
+	dpt_sock_listen(bind_addr);
+	thread.start();
 }
 
 void Controller::handle_dpt_open(crofdpt& dpt)
 {
 	pthread_mutex_lock(&controller_mutex);
 
-	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is open (using the TCP port %s)!",controllerPort.c_str());
+	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is open (using the TCP port %u)!",controllerPort);
 
 	dpt.flow_mod_reset();
 	switch(OFP_VERSION)
@@ -53,7 +51,7 @@ void Controller::handle_dpt_close(crofdpt& dpt)
 {
 	isOpen = false;
 	this->dpt = NULL;
-	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is closed (the connection was on the TCP port %s)",controllerPort.c_str());
+	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is closed (the connection was on the TCP port %u)",controllerPort);
 }
 
 /*void Controller::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid,rofl::openflow::cofmsg_packet_in& msg)
@@ -151,8 +149,8 @@ bool Controller::installNewRulesIntoLSI(list<Rule> rules)
 		for(; rule != rules.end(); rule++)
 		{
 			logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Installing rule %s",rule->getID().c_str());
-			rofl::openflow::cofflowmod fe(dpt->get_version_negotiated());
-			rule->fillFlowmodMessage(fe,dpt->get_version_negotiated(),ADD_RULE);
+			rofl::openflow::cofflowmod fe(dpt->get_version());
+			rule->fillFlowmodMessage(fe,dpt->get_version(),ADD_RULE);
 #ifdef DEBUG_OPENFLOW
 			std::cout << "installing new Flow-Mod entry:" << std::endl << fe;
 #endif
@@ -162,7 +160,7 @@ bool Controller::installNewRulesIntoLSI(list<Rule> rules)
 		return true;
 	}
 
-	logger(ORCH_WARNING, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "No datapath connected at the TCP port %s! Cannot install rules!",controllerPort.c_str());
+	logger(ORCH_WARNING, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "No datapath connected at the TCP port %u! Cannot install rules!",controllerPort);
 
 	return false;
 }
@@ -176,8 +174,8 @@ bool Controller::removeRulesFromLSI(list<Rule> rules)
 		list<Rule>::iterator rule = rules.begin();
 		for(; rule != rules.end(); rule++)
 		{
-			rofl::openflow::cofflowmod fe(dpt->get_version_negotiated());
-			rule->fillFlowmodMessage(fe,dpt->get_version_negotiated(),RM_RULE);
+			rofl::openflow::cofflowmod fe(dpt->get_version());
+			rule->fillFlowmodMessage(fe,dpt->get_version(),RM_RULE);
 #ifdef DEBUG_OPENFLOW
 			std::cout << "Removing Flow-Mod entry:" << std::endl << fe;
 #endif
@@ -193,25 +191,25 @@ bool Controller::removeRulesFromLSI(list<Rule> rules)
 
 void *Controller::loop(void *param)
 {
-	Controller *controller = (Controller*)param;
-
-	rofl::cparams socket_params = csocket::get_default_params(rofl::csocket::SOCKET_TYPE_PLAIN);
-	socket_params.set_param(csocket::PARAM_KEY_LOCAL_PORT).set_string() = controller->controllerPort;
-
-	controller->add_dpt_listening(0,rofl::csocket::SOCKET_TYPE_PLAIN, socket_params);
-
-	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Openflow controller is going to start on the TCP port %s...",controller->controllerPort.c_str());
-
-	rofl::cioloop::get_loop().run();
-
-	assert(0 && "Cannot be here!");
-
-	rofl::cioloop::get_loop().shutdown();
-
+//	Controller *controller = (Controller*)param;
+//
+//	rofl::cparams socket_params = csocket::get_default_params(rofl::csocket::SOCKET_TYPE_PLAIN);
+//	socket_params.set_param(csocket::PARAM_KEY_LOCAL_PORT).set_string() = controller->controllerPort;
+//
+//	controller->add_dpt_listening(0,rofl::csocket::SOCKET_TYPE_PLAIN, socket_params);
+//
+//	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Openflow controller is going to start on the TCP port %s...",controller->controllerPort.c_str());
+//
+//	rofl::cioloop::get_loop().run();
+//
+//	assert(0 && "Cannot be here!");
+//
+//	rofl::cioloop::get_loop().shutdown();
+//
 	return NULL;
 }
 
-string Controller::getControllerPort()
+unsigned Controller::getControllerPort()
 {
 	return controllerPort;
 }
