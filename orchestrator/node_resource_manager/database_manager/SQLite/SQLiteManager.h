@@ -112,7 +112,7 @@ public:
 	void getAllResourcesNames(char *generic_resource, std::list<std::string> *resources);
 };
 
-class SQLiteManagerException : public exception
+class SQLiteManagerException : public std::exception
 {
 public:
 	virtual const char* what() const throw()

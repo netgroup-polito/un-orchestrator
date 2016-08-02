@@ -24,8 +24,6 @@
 * @brief Switch manager interface. It must be properly implemented for each vSwitch supported by the node.
 */
 
-using namespace std;
-
 class SwitchManager
 {
 public:
@@ -105,7 +103,7 @@ public:
 
 };
 
-class SwitchManagerException: public exception
+class SwitchManagerException: public std::exception
 {
 public:
 	virtual const char* what() const throw()

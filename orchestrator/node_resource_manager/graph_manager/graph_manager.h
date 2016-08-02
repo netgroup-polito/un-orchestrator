@@ -272,7 +272,7 @@ public:
 };
 
 
-class GraphManagerException: public exception
+class GraphManagerException: public std::exception
 {
 public:
 	virtual const char* what() const throw()
