@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <rofl/common/logging.h>
-
 #include "../../node_resource_manager/graph/low_level_graph/graph.h"
 #include "../../utils/logger.h"
 #include "../../utils/constants.h"

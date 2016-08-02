@@ -15,7 +15,6 @@ IVANO: these include should be useless
 */
 
 //#include <rofl/common/ciosrv.h>
-#include <rofl/common/logging.h>
 #include <rofl/common/openflow/coxmatch.h>
 
 #include "../../../utils/logger.h"
