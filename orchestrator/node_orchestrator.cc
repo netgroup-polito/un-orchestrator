@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 
 #include <openssl/sha.h>
 #include "node_resource_manager/database_manager/SQLite/SQLiteManager.h"
