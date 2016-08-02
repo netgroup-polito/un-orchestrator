@@ -68,7 +68,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 			break;
 	}
 
-	Controller *controller = new Controller(versionbitmap,graph,strControllerPort.str());
+	Controller *controller = new Controller(versionbitmap,graph, controllerPort);
 	controller->start();
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Creating the LSI-0...");
@@ -620,9 +620,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	nextControllerPort++;
 	pthread_mutex_unlock(&graph_manager_mutex);
 
-	ostringstream strControllerPort;
-	strControllerPort << controllerPort;
-
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
 	switch(OFP_VERSION)
 	{
@@ -641,7 +638,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	}
 
 	lowlevel::Graph graphTmp ;
-	Controller *controller = new Controller(versionbitmap,graphTmp,strControllerPort.str());
+	Controller *controller = new Controller(versionbitmap,graphTmp, controllerPort);
 	controller->start();
 
 	/**
@@ -732,6 +729,9 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		}
 		nfs_ports_type[nf_id] = nf_ports_type;
 	}
+
+	ostringstream strControllerPort;
+	strControllerPort << controllerPort;
 
 	//Prepare the structure representing the new tenant-LSI
 	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), dummyPhyPorts, network_functions,
@@ -1146,9 +1146,6 @@ void GraphManager::handleControllerForInternalEndpoint(highlevel::Graph *graph)
 			nextControllerPort++;
 			pthread_mutex_unlock(&graph_manager_mutex);
 			
-			ostringstream strControllerPort;
-			strControllerPort << controllerPort;
-
 			rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
 			switch(OFP_VERSION)
 			{
@@ -1168,7 +1165,7 @@ void GraphManager::handleControllerForInternalEndpoint(highlevel::Graph *graph)
 
 			//create a new OF controller associated with the internal LSI
 			lowlevel::Graph graphTmp;
-			Controller *controller = new Controller(versionbitmap,graphTmp,strControllerPort.str());
+			Controller *controller = new Controller(versionbitmap,graphTmp, controllerPort);
 			controller->start();
 
 			//store the information related to the OpenFlow controller associated with the internal LSI
@@ -1199,7 +1196,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 		{
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Create the internal LSI related to internal-group: \"%s\"", internal_group.c_str());
 
-			string controllerPort = controller->getControllerPort();
+			unsigned controllerPort = controller->getControllerPort();
 
 			vector<VLink> virtual_links;
 			virtual_links.push_back(VLink(dpid0));
