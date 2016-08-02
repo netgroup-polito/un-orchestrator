@@ -24,7 +24,7 @@ class Action
 {
 
 private:
-	openflow::ofp_action_type type;
+	rofl::openflow::ofp_action_type type;
 	unsigned int port_id;
 	bool is_local_port;
 	
@@ -44,7 +44,7 @@ public:
 	Action(unsigned int port_id);
 	Action(bool is_local_port);
 	Action(bool is_local_port, bool is_normal);
-	openflow::ofp_action_type getActionType();
+	rofl::openflow::ofp_action_type getActionType();
 
 	bool operator==(const Action &other) const;
 
