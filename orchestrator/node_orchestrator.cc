@@ -314,7 +314,13 @@ int main(int argc, char *argv[])
 	printUniversalNodeInfo();
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is started!",MODULE_NAME);
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Waiting for commands on TCP port \"%d\"",rest_port);
-	rofl::cioloop::get_loop().run();
+
+	while(true) {
+		struct timeval tv;
+		tv.tv_sec = 3600;
+		tv.tv_usec = 0;
+		select(0, NULL, NULL, NULL, &tv);
+	}
 
 	return 0;
 }
