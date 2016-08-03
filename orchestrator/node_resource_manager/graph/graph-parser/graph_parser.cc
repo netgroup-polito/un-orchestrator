@@ -1223,8 +1223,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											if(!match.checkVlanPresence())
 											{
 												ULOG_WARN("A POP_VLAN action without specific match on vlan ID has been specified...");
-												ULOG_WARN("The corresponding rule can not work as well as it should");
-												break;
+												ULOG_WARN("The corresponding rule can not work");
+												return false;
 											}
 										}
 									}
