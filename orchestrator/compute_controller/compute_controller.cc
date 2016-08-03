@@ -1,5 +1,7 @@
 #include "compute_controller.h"
 
+static const char LOG_MODULE_NAME[] = "Compute-Controller";
+
 pthread_mutex_t ComputeController::nfs_manager_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 map<int,uint64_t> ComputeController::cores;
@@ -29,7 +31,7 @@ void ComputeController::setCoreMask(uint64_t core_mask)
 	nextCore = 0;
 
 	for(unsigned int i = 0; i < cores.size(); i++)
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Mask of an available core: \"%d\"",cores[i]);
+		ULOG_DBG_INFO("Mask of an available core: \"%d\"",cores[i]);
 }
 
 nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_name, string name_resolver_ip, int name_resolver_port)
@@ -38,7 +40,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
  	{
  		string translation;
 
- 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Considering the NF with id \"%s\"",nf_id.c_str());
+ 		ULOG_DBG_INFO("Considering the NF with id \"%s\"",nf_id.c_str());
 
 		char ErrBuf[BUFFER_SIZE];
 		struct addrinfo Hints;
@@ -52,13 +54,13 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 
 		Hints.ai_family= AF_INET;
 		Hints.ai_socktype= SOCK_STREAM;
-		
+
 		ostringstream oss;
 		oss << name_resolver_port;
 
 		if (sock_initaddress (name_resolver_ip.c_str(), oss.str().c_str(), &Hints, &AddrInfo, ErrBuf, sizeof(ErrBuf)) == sockFAILURE)
 		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error resolving given address/port (%s/%d): %s",  name_resolver_ip.c_str(), name_resolver_port, ErrBuf);
+			ULOG_ERR("Error resolving given address/port (%s/%d): %s",  name_resolver_ip.c_str(), name_resolver_port, ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
 
@@ -76,15 +78,15 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 		if ( (socket= sock_open(AddrInfo, 0, 0,  ErrBuf, sizeof(ErrBuf))) == sockFAILURE)
 		{
 			// AddrInfo is no longer required
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot contact the name resolver at \"%s:%d\"", name_resolver_ip.c_str(), name_resolver_port);
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s", ErrBuf);
+			ULOG_ERR("Cannot contact the name resolver at \"%s:%d\"", name_resolver_ip.c_str(), name_resolver_port);
+			ULOG_ERR("%s", ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
 
 		WrittenBytes = sock_send(socket, command, strlen(command), ErrBuf, sizeof(ErrBuf));
 		if (WrittenBytes == sockFAILURE)
 		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error sending data: %s", ErrBuf);
+			ULOG_ERR("Error sending data: %s", ErrBuf);
 			return NFManager_SERVER_ERROR;
 
 		}
@@ -92,7 +94,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 		ReadBytes= sock_recv(socket, DataBuffer, sizeof(DataBuffer), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
 		if (ReadBytes == sockFAILURE)
 		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error reading data: %s", ErrBuf);
+			ULOG_ERR("Error reading data: %s", ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
 
@@ -100,8 +102,8 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 		// Warning: this can originate a buffer overflow
 		DataBuffer[ReadBytes]= 0;
 
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Data received: ");
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%s",DataBuffer);
+		ULOG_DBG_INFO("Data received: ");
+		ULOG_DBG_INFO("%s",DataBuffer);
 
 		shutdown(socket,SHUT_WR);
 		sock_close(socket,ErrBuf,sizeof(ErrBuf));
@@ -136,7 +138,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
  	}
 	catch (std::exception& e)
 	{
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Exception: %s",e.what());
+		ULOG_ERR("Exception: %s",e.what());
 		return NFManager_SERVER_ERROR;
 	}
 
@@ -175,7 +177,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 		}
 		if(!foundNports)
 		{
-			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"num-ports\" not found in the answer");
+			ULOG_WARN("Key \"num-ports\" not found in the answer");
 			return false;
 		}
 
@@ -192,7 +194,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 		    	nf_received_name = value.getString();
 		    	if(nf_received_name != nf_name)
 		    	{
-			    	logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Required NF \"%s\", received info for NF \"%s\"",nf_name.c_str(),nf_received_name.c_str());
+			    	ULOG_WARN("Required NF \"%s\", received info for NF \"%s\"",nf_name.c_str(),nf_received_name.c_str());
 					return false;
 		    	}
 		    }
@@ -212,7 +214,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 		    	const Array& impl_array = value.getArray();
 		    	if(impl_array.size() == 0)
 		    	{
-			    	logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"implementations\" without descriptions");
+			    	ULOG_WARN("Key \"implementations\" without descriptions");
 					return false;
 		    	}
 
@@ -249,7 +251,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 							type = el_value.getString();
 							if(!NFType::isValid(type))
 							{
-								logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Invalid implementation type \"%s\". Skip it.", type.c_str());
+								ULOG_DBG_INFO("Invalid implementation type \"%s\". Skip it.", type.c_str());
 								//return false;
 								next = true;
 								break;
@@ -278,7 +280,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 
 					    	if (ports_array.size() == 0)
 					    	{
-						    	logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Empty ports list in implementation");
+						    	ULOG_WARN("Empty ports list in implementation");
 								return false;
 					    	}
 					    	for( unsigned int p = 0; p < ports_array.size(); ++p)
@@ -297,24 +299,24 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 									else if (pel_name == "type") {
 										port_type = portTypeFromString(pel_value.getString());
 										if (port_type == INVALID_PORT) {
-											logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid port type \"%s\" for implementation port", pel_value.getString().c_str());
+											ULOG_WARN("Invalid port type \"%s\" for implementation port", pel_value.getString().c_str());
 											return false;
 										}
 									}
 									else {
-										logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" within an implementation port", pel_name.c_str());
+										ULOG_WARN("Invalid key \"%s\" within an implementation port", pel_name.c_str());
 										return false;
 									}
 								}
 								if (port_id == -1) {
-									logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Missing port \"ïd\" attribute for implementation");
+									ULOG_WARN("Missing port \"ïd\" attribute for implementation");
 									return false;
 								}
 								if (port_type == UNDEFINED_PORT) {
-									logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Missing port \"type\" attribute for implementation");
+									ULOG_WARN("Missing port \"type\" attribute for implementation");
 									return false;
 								}
-								logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " Port %d id=%d type=%s", p, port_id, portTypeToString(port_type).c_str());
+								ULOG_DBG_INFO(" Port %d id=%d type=%s", p, port_id, portTypeToString(port_type).c_str());
 
 								port_types.insert(std::map<unsigned int, PortType>::value_type(port_id, port_type));
 							}
@@ -326,7 +328,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 						}
 						else
 						{
-							logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" within an implementation", el_name.c_str());
+							ULOG_WARN("Invalid key \"%s\" within an implementation", el_name.c_str());
 							return false;
 						}
 					}
@@ -340,7 +342,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 
 					if(!foundURI || !foundType)
 					{
-						logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"uri\", key \"type\", or both are not found into an implementation description");
+						ULOG_WARN("Key \"uri\", key \"type\", or both are not found into an implementation description");
 						return false;
 					}
 
@@ -356,7 +358,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 #ifdef ENABLE_DPDK_PROCESSES
 						if(!foundCores || !foundLocation)
 						{
-							logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Description of a NF of type \"%s\" received without the \"cores\" attribute, \"location\" attribute, or both",type.c_str());
+							ULOG_WARN("Description of a NF of type \"%s\" received without the \"cores\" attribute, \"location\" attribute, or both",type.c_str());
 							return false;
 						}
 
@@ -375,7 +377,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 						assert(!foundPorts);
 						if(!foundLocation || !foundDependencies)
 						{
-							logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Description of a NF of type \"%s\" received without the \"dependencies\" attribute, \"location\" attribute, or both",type.c_str());
+							ULOG_WARN("Description of a NF of type \"%s\" received without the \"dependencies\" attribute, \"location\" attribute, or both",type.c_str());
 							return false;
 						}
 						std::stringstream stream(dependencies);
@@ -394,7 +396,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 					}
 					else if(foundCores || foundLocation || foundDependencies)
 					{
-						logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Description of a NF of type \"%s\" received with a wrong attribute (\"cores\", \"location\" or \"dependencies\")",type.c_str());
+						ULOG_WARN("Description of a NF of type \"%s\" received with a wrong attribute (\"cores\", \"location\" or \"dependencies\")",type.c_str());
 						return false;
 					}
 
@@ -410,7 +412,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 							assert(type == "kvm");
 							//In case of KVM, the port type must be specified by the name-resolver.
 							assert(0 && "Probably there is a BUG in the name resover!");
-							logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Description of a NF of type \"%s\" received without the element \"ports\"",type.c_str());
+							ULOG_WARN("Description of a NF of type \"%s\" received without the element \"ports\"",type.c_str());
 							return false;
 						}
 					}
@@ -421,14 +423,14 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 		    } //end if(name == "implementations")
 		    else
 			{
-				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\"",name.c_str());
+				ULOG_WARN("Invalid key \"%s\"",name.c_str());
 				return false;
 			}
 		}//end iteration on the answer
 
 		if(!foundName || !foundImplementations || !foundTextDescription		)
 		{
-			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"name\", and/or key \"implementations\", and/or key \"description\" not found in the answer");
+			ULOG_WARN("Key \"name\", and/or key \"implementations\", and/or key \"description\" not found in the answer");
 			return false;
 		}
 
@@ -437,7 +439,7 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 
 		if(possibleDescriptions.size() == 0)
 		{
-			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Cannot find a supported implementation for the network function \"%s\"",nf_name.c_str());
+			ULOG_WARN("Cannot find a supported implementation for the network function \"%s\"",nf_name.c_str());
 			return false;
 		}
 
@@ -448,12 +450,12 @@ bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
 
 	}
 	catch (std::runtime_error& e) {
-		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "JSON parse error: %s", e.what());
+		ULOG_WARN("JSON parse error: %s", e.what());
 		return false;
 	}
 	catch(...)
 	{
-		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax");
+		ULOG_WARN("The content does not respect the JSON syntax");
 		return false;
 	}
 
@@ -468,7 +470,7 @@ void ComputeController::checkSupportedDescriptions() {
 
 		list<Description*> descriptions = current->getAvailableDescriptions();
 
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%d descriptions available for NF \"%s\".", descriptions.size(), (current->getName()).c_str());
+		ULOG_DBG_INFO("%d descriptions available for NF \"%s\".", descriptions.size(), (current->getName()).c_str());
 
 		list<Description*>::iterator descr;
 		for(descr = descriptions.begin(); descr != descriptions.end(); descr++){
@@ -481,9 +483,9 @@ void ComputeController::checkSupportedDescriptions() {
 					NFsManager *dockerManager = new Docker();
 					if(dockerManager->isSupported(**descr)){
 						(*descr)->setSupported(true);
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Docker description of NF \"%s\" is supported.",(current->getName()).c_str());
+						ULOG_DBG_INFO("Docker description of NF \"%s\" is supported.",(current->getName()).c_str());
 					} else {
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Docker description of NF \"%s\" is not supported.",(current->getName()).c_str());
+						ULOG_DBG_INFO("Docker description of NF \"%s\" is not supported.",(current->getName()).c_str());
 					}
 					delete dockerManager;
 				}
@@ -496,9 +498,9 @@ void ComputeController::checkSupportedDescriptions() {
 					NFsManager *dpdkManager = new Dpdk();
 					if(dpdkManager->isSupported(**descr)){
 						(*descr)->setSupported(true);
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "DPDK description of NF \"%s\" is supported.",(current->getName()).c_str());
+						ULOG_DBG_INFO("DPDK description of NF \"%s\" is supported.",(current->getName()).c_str());
 					} else {
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "DPDK description of NF \"%s\" is not supported.",(current->getName()).c_str());
+						ULOG_DBG_INFO("DPDK description of NF \"%s\" is not supported.",(current->getName()).c_str());
 					}
 					delete dpdkManager;
 				}
@@ -511,9 +513,9 @@ void ComputeController::checkSupportedDescriptions() {
 					NFsManager *libvirtManager = new Libvirt();
 					if(libvirtManager->isSupported(**descr)){
 						(*descr)->setSupported(true);
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "KVM description of NF \"%s\" is supported.",(current->getName()).c_str());
+						ULOG_DBG_INFO("KVM description of NF \"%s\" is supported.",(current->getName()).c_str());
 					} else {
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "KVM description of NF \"%s\" is not supported.",(current->getName()).c_str());
+						ULOG_DBG_INFO("KVM description of NF \"%s\" is not supported.",(current->getName()).c_str());
 					}
 					delete libvirtManager;
 				}
@@ -529,13 +531,13 @@ void ComputeController::checkSupportedDescriptions() {
 						nativeManager = new Native();
 						if(nativeManager->isSupported(**descr)){
 							(*descr)->setSupported(true);
-							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Native description of NF \"%s\" is supported.",(current->getName()).c_str());
+							ULOG_DBG_INFO("Native description of NF \"%s\" is supported.",(current->getName()).c_str());
 						} else {
-							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Native description of NF \"%s\" is not supported.",(current->getName()).c_str());
+							ULOG_DBG_INFO("Native description of NF \"%s\" is not supported.",(current->getName()).c_str());
 						}
 						delete nativeManager;
 					} catch (exception& e) {
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "exception %s has been thrown", e.what());
+						ULOG_DBG_INFO("exception %s has been thrown", e.what());
 						delete nativeManager;
 					}
 				}
@@ -544,7 +546,7 @@ void ComputeController::checkSupportedDescriptions() {
 					//[+] Add here other implementations for the execution environment
 
 				default:
-					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "No available execution environments for description type %s", NFType::toString((*descr)->getType()).c_str());
+					ULOG_DBG_INFO("No available execution environments for description type %s", NFType::toString((*descr)->getType()).c_str());
 			}
 
 		}
@@ -577,7 +579,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				dockerManager->setDescription(*descr);
 
 				selected = true;
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Docker description has been selected.");
+				ULOG_DBG_INFO("Docker description has been selected.");
 
 				return dockerManager;
 
@@ -593,7 +595,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				dpdkManager->setDescription(*descr);
 
 				selected = true;
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "DPDK description has been selected.");
+				ULOG_DBG_INFO("DPDK description has been selected.");
 
 				return dpdkManager;
 
@@ -609,7 +611,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				libvirtManager->setDescription(*descr);
 
 				selected = true;
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "KVM description has been selected.");
+				ULOG_DBG_INFO("KVM description has been selected.");
 
 				return libvirtManager;
 
@@ -628,12 +630,12 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 					nativeManager->setDescription(*descr);
 
 					selected = true;
-					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Native description has been selected.");
+					ULOG_DBG_INFO("Native description has been selected.");
 
 					return nativeManager;
 
 				} catch (exception& e) {
-					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "exception %s has been thrown", e.what());
+					ULOG_DBG_INFO("exception %s has been thrown", e.what());
 					delete nativeManager;
 				}
 			}
@@ -673,13 +675,13 @@ bool ComputeController::selectImplementation()
 
 			if(selectedImplementation == NULL) {
 
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "No available description for NF with id\'%s\'", nf->first.c_str());
+				ULOG_DBG_INFO("No available description for NF with id\'%s\'", nf->first.c_str());
 				return false;
 
 			}
 
 			current->setSelectedDescription(selectedImplementation);
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Implementation has been selected for NF with id \"%s\".",nf->first.c_str());
+			ULOG_DBG_INFO("Implementation has been selected for NF with id \"%s\".",nf->first.c_str());
 
 		}
 	}
@@ -688,7 +690,7 @@ bool ComputeController::selectImplementation()
 		return true;
 	}
 
-	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Some network functions do not have a supported description!");
+	ULOG_ERR("Some network functions do not have a supported description!");
 
 	return false;
 
@@ -703,7 +705,7 @@ bool ComputeController::allSelected()
 		NF *current = nf->second;
 		if(current->getSelectedDescription() == NULL)
 		{
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The NF with id \"%s\" has not been selected yet.",nf->first.c_str());
+			ULOG_DBG_INFO("The NF with id \"%s\" has not been selected yet.",nf->first.c_str());
 			retVal = false;
 		}
 	}
@@ -743,9 +745,9 @@ void ComputeController::setLsiID(uint64_t lsiID)
 
 bool ComputeController::updateNF(string nf_id, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration, list<unsigned int> newPortsToAdd)
 {
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Updating the NF with id \"%s\"", nf_id.c_str());
-	
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Number of ports for updating %d", newPortsToAdd.size());
+	ULOG_INFO("Updating the NF with id \"%s\"", nf_id.c_str());
+
+	ULOG_INFO("Number of ports for updating %d", newPortsToAdd.size());
 
 	NF *nf = nfs[nf_id];
 	NFsManager *nfsManager = nf->getSelectedDescription();
@@ -753,10 +755,10 @@ bool ComputeController::updateNF(string nf_id, map<unsigned int, string> namesOf
 
 	if(!nfsManager->updateNF(uni))
 	{
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while updating the NF with id \"%s\"",nf_id.c_str());
+		ULOG_ERR("An error occurred while updating the NF with id \"%s\"",nf_id.c_str());
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -766,39 +768,39 @@ bool ComputeController::startNF(string nf_id, map<unsigned int, string> namesOfP
 #endif
 	)
 {
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Starting the NF with id \"%s\"", nf_id.c_str());
+	ULOG_INFO("Starting the NF with id \"%s\"", nf_id.c_str());
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	if(!controlConfiguration.empty())
 	{
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tControl (%d):",controlConfiguration.size());
+		ULOG_DBG_INFO("\tControl (%d):",controlConfiguration.size());
 		for(list<port_mapping_t >::iterator n = controlConfiguration.begin(); n != controlConfiguration.end(); n++)
 		{
 			if(!(n->host_port).empty())
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tHost tcp port -> %s",(n->host_port).c_str());
+				ULOG_DBG_INFO("\t\tHost tcp port -> %s",(n->host_port).c_str());
 			if(!(n->guest_port).empty())
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tVnf tcp port -> %s",(n->guest_port).c_str());
+				ULOG_DBG_INFO("\t\tVnf tcp port -> %s",(n->guest_port).c_str());
 		}
 	}
 
 	if(!environmentVariables.empty())
 	{
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tEnvironment variables (%d):",environmentVariables.size());
+		ULOG_DBG_INFO("\tEnvironment variables (%d):",environmentVariables.size());
 		for(list<string>::iterator ev = environmentVariables.begin(); ev != environmentVariables.end(); ev++)
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\t%s",ev->c_str());
+			ULOG_DBG_INFO("\t\t%s",ev->c_str());
 	}
 #endif
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Ports of the NF connected to the switch:");
+	ULOG_DBG_INFO("Ports of the NF connected to the switch:");
 	//map<unsigned int, port_network_config_t >::iterator it1 = portsConfiguration.begin();
 	for(map<unsigned int, string>::iterator it = namesOfPortsOnTheSwitch.begin(); it != namesOfPortsOnTheSwitch.end(); it++) {
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\t%d : %s", it->first, it->second.c_str());
+		ULOG_DBG_INFO("\t\t%d : %s", it->first, it->second.c_str());
 
 		port_network_config_t configuration = portsConfiguration[it->first];
 
 		if(!configuration.mac_address.empty())
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\t\tMAC address : %s", configuration.mac_address.c_str());
+			ULOG_DBG_INFO("\t\t\tMAC address : %s", configuration.mac_address.c_str());
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		if(!configuration.ip_address.empty())
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\t\tIP address : %s", configuration.ip_address.c_str());
+			ULOG_DBG_INFO("\t\t\tIP address : %s", configuration.ip_address.c_str());
 #endif
 		//it1++;
 	}
@@ -806,7 +808,7 @@ bool ComputeController::startNF(string nf_id, map<unsigned int, string> namesOfP
 	if(nfs.count(nf_id) == 0)
 	{
 		assert(0);
-		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Unknown NF with id \"%s\"",nf_id.c_str());
+		ULOG_WARN("Unknown NF with id \"%s\"",nf_id.c_str());
 		return false;
 	}
 
@@ -821,7 +823,7 @@ bool ComputeController::startNF(string nf_id, map<unsigned int, string> namesOfP
 
 	if(!nfsManager->startNF(sni))
 	{
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while starting the NF with id \"%s\"",nf_id.c_str());
+		ULOG_ERR("An error occurred while starting the NF with id \"%s\"",nf_id.c_str());
 		return false;
 	}
 
@@ -838,11 +840,11 @@ void ComputeController::stopAll()
 
 bool ComputeController::stopNF(string nf_id)
 {
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Stopping the NF with id \"%s\"",nf_id.c_str());
+	ULOG_DBG_INFO("Stopping the NF with id \"%s\"",nf_id.c_str());
 
 	if(nfs.count(nf_id) == 0)
 	{
-		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Unknown NF with id \"%s\"",nf_id.c_str());
+		ULOG_WARN("Unknown NF with id \"%s\"",nf_id.c_str());
 		return false;
 	}
 
@@ -853,7 +855,7 @@ bool ComputeController::stopNF(string nf_id)
 
 	if(!nfsManager->stopNF(sni))
 	{
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while stopping the NF with id \"%s\"",nf_id.c_str());
+		ULOG_ERR("An error occurred while stopping the NF with id \"%s\"",nf_id.c_str());
 		return false;
 	}
 
@@ -890,7 +892,7 @@ uint64_t ComputeController::calculateCoreMask(string coresRequried)
 	}
 	pthread_mutex_unlock(&nfs_manager_mutex);
 
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The NF requires %d cores. Its core mask is  \"%x\"",requiredCores,mask);
+	ULOG_DBG_INFO("The NF requires %d cores. Its core mask is  \"%x\"",requiredCores,mask);
 
 	return mask;
 }
@@ -906,6 +908,6 @@ void ComputeController::printInfo(int graph_id)
 		else if(graph_id == 3)
 			coloredLogger(ANSI_COLOR_RED,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tID: '%s'\t-\tType: %s\t-\tStatus: %s",nf->second->getName().c_str(),(nf->first.length()<=7)? "\t" : "",nf->first.c_str(), str.c_str(),(nf->second->getRunning())?"running":"stopped");
 		else
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tID: '%s'\t-\tType: %s\t-\tStatus: %s",nf->second->getName().c_str(),(nf->first.length()<=7)? "\t" : "",nf->first.c_str(), str.c_str(),(nf->second->getRunning())?"running":"stopped");
+			ULOG_INFO("\t\tName: '%s'%s\t-\tID: '%s'\t-\tType: %s\t-\tStatus: %s",nf->second->getName().c_str(),(nf->first.length()<=7)? "\t" : "",nf->first.c_str(), str.c_str(),(nf->second->getRunning())?"running":"stopped");
 	}
 }

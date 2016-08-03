@@ -7,8 +7,6 @@
 #include "../../utils/logger.h"
 #include "../../utils/constants.h"
 
-#define OFCONTROLLER_MODULE_NAME	"Openflow-Controller"
-
 using namespace lowlevel;
 
 /**

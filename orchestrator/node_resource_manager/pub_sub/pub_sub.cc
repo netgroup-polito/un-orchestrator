@@ -1,5 +1,7 @@
 #include "pub_sub.h"
 
+static const char LOG_MODULE_NAME[] = "Double-Decker-Client";
+
 zactor_t *DoubleDeckerClient::client = NULL;
 bool DoubleDeckerClient::connected = false;
 list<publish_t> DoubleDeckerClient::messages;
@@ -12,10 +14,10 @@ bool keep_looping = true;
 
 bool DoubleDeckerClient::init(char *_clientName, char *_brokerAddress, char *_keyPath)
 {
-	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Inizializing the '%s'",DD_CLIENT_MODULE_NAME);
-	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "\t DD client name: '%s'",_clientName);
-	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "\t DD broker address: '%s'",_brokerAddress);
-	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "\t DD key to be used (path): '%s'",_keyPath);
+	ULOG_INFO("Inizializing the Double-Decker-Client");
+	ULOG_INFO("\t DD client name: '%s'",_clientName);
+	ULOG_INFO("\t DD broker address: '%s'",_brokerAddress);
+	ULOG_INFO("\t DD key to be used (path): '%s'",_keyPath);
 
 	DoubleDeckerClient::clientName = _clientName;
 	brokerAddress = _brokerAddress;
@@ -35,11 +37,11 @@ bool DoubleDeckerClient::init(char *_clientName, char *_brokerAddress, char *_ke
 
 void *DoubleDeckerClient::loop(void *param)
 {
-	logger(ORCH_DEBUG_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "DoubleDeckerClient thread started");
+	ULOG_DBG_INFO("DoubleDeckerClient thread started");
 	// create a ddactor
 	client = ddactor_new(clientName, brokerAddress, keyPath);
 
-	// create internal socket for easy termination 
+	// create internal socket for easy termination
 	zsock_t *notify = zsock_new(ZMQ_PULL);
 	zsock_bind(notify, "inproc://ddterm");
 
@@ -52,12 +54,12 @@ void *DoubleDeckerClient::loop(void *param)
 		zsock_t *which = (zsock_t *)zpoller_wait(poller, -1);
 
 		// if message from ddactor
-		if (which == (zsock_t *)client) 
+		if (which == (zsock_t *)client)
 		{
 			zmsg_t *msg = zmsg_recv(client);
-			if (msg == NULL) 
+			if (msg == NULL)
 			{
-				logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "DDClient:loop:zmsg_recv() returned NULL, was probably interrupted");
+				ULOG_INFO("DDClient:loop:zmsg_recv() returned NULL, was probably interrupted");
 			}
 			// TODO could break out all this message handling to separate function
 			//retrieve the event
@@ -68,7 +70,7 @@ void *DoubleDeckerClient::loop(void *param)
 				pthread_mutex_lock(&connected_mutex);
 				connected = true;
 				pthread_mutex_unlock(&connected_mutex);
-				logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Succcessfully registered on the Double Decker network!");
+				ULOG_INFO("Succcessfully registered on the Double Decker network!");
 				free(event);
 
 				//Let's send all the messages stored in the list
@@ -77,34 +79,34 @@ void *DoubleDeckerClient::loop(void *param)
 			}
 			else if (streq("discon",event))
 			{
-				logger(ORCH_WARNING, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Connection with the Double Decker network has been lost!");
+				ULOG_WARN("Connection with the Double Decker network has been lost!");
 				free(event);
 				//TODO: what to do in this case?
 			}
 			else if (streq("pub",event))
 			{
-				logger(ORCH_WARNING, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Received a 'publication' event. This event is ignored");
+				ULOG_WARN("Received a 'publication' event. This event is ignored");
 				free(event);
 				//TODO: add here a callback that handle the proper event
 			}
 			else if (streq("data",event))
 			{
-				logger(ORCH_WARNING, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Received a 'data' event. This event is ignored");
+				ULOG_WARN("Received a 'data' event. This event is ignored");
 				free(event);
 			}
 			else if (streq("$TERM",event))
 			{
 				char * error = zmsg_popstr(msg);
-				logger(ORCH_ERROR, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Error while trying to connect to the Double Decker network: '%s'",error);
+				ULOG_ERR("Error while trying to connect to the Double Decker network: '%s'",error);
 				free(event);
-	//			logger(ORCH_ERROR, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "This situation is not handled by the code. Please reboot the orchestrator and check if the broker is running!");
+	//			ULOG_ERR("This situation is not handled by the code. Please reboot the orchestrator and check if the broker is running!");
 	//			signal(SIGALRM,sigalarm_handler);
 	//			alarm(1);
 				keep_looping = false;
 				break;
 			}
 		} // - if(which == client) -
-		
+
 		// if inproc notification
 		if(which == notify)
 		{
@@ -114,11 +116,11 @@ void *DoubleDeckerClient::loop(void *param)
 		}
 	} // - while (keep_looping) -
 
-	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__,"Terminating DoubleDecker connection...");
+	ULOG_INFO("Terminating DoubleDecker connection...");
 	zpoller_destroy(&poller);
 	zactor_destroy(&client);
 	zsock_destroy(&notify);
-	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__,"DoubleDecker connection terminated");  
+	ULOG_INFO("DoubleDecker connection terminated");
 
 	return NULL;
 }
@@ -127,7 +129,7 @@ void DoubleDeckerClient::terminate()
 {
 	keep_looping = false;
 	// Connect to the internal notification socket and message the thread to shut down
-	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Stopping the Double Decker client");
+	ULOG_INFO("Stopping the Double Decker client");
 	zsock_t *sig = zsock_new_push("inproc://ddterm");
 	zsock_send(sig, "s", "shutdown!");
 	zsock_destroy(&sig);
@@ -151,8 +153,8 @@ void DoubleDeckerClient::publish(topic_t topic, const char *message)
 	}
 	pthread_mutex_unlock(&connected_mutex);
 
-	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Publishing on topic '%s'",topicToString(topic));
-	logger(ORCH_INFO, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Publishing message '%s'", message);
+	ULOG_INFO("Publishing on topic '%s'",topicToString(topic));
+	ULOG_INFO("Publishing message '%s'", message);
 
 	int len = strlen(message);
 	zsock_send(client,"sssb", "publish", topicToString(topic), message,&len, sizeof(len));
@@ -172,8 +174,8 @@ char *DoubleDeckerClient::topicToString(topic_t topic)
 /*
 void DoubleDeckerClient::sigalarm_handler(int sig)
 {
-	logger(ORCH_ERROR, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "Error while trying to connect to the Double Decker network!");
-	logger(ORCH_ERROR, DD_CLIENT_MODULE_NAME, __FILE__, __LINE__, "This situation is not handled by the code. Please reboot the orchestrator and check if the broker is running!");
+	ULOG_ERR("Error while trying to connect to the Double Decker network!");
+	ULOG_ERR("This situation is not handled by the code. Please reboot the orchestrator and check if the broker is running!");
 	alarm(1);
 }
 */

@@ -77,27 +77,27 @@ extern void coloredLogger(char *color, int LoggingLevel, const char *ModuleName,
 
 #define ULOG_DBG(FORMAT, ...) 					 						\
 	do {									 								\
-		logger(LEVEL, LOG_MODULE_NAME, __FILE__, __LINE__, ORCH_DEBUG, ##__VA_ARGS__);\
+		logger(ORCH_DEBUG, LOG_MODULE_NAME, __FILE__, __LINE__, FORMAT, ##__VA_ARGS__);\
 	} while(0)
 
 #define ULOG_DBG_INFO(FORMAT, ...) 					 						\
 	do {									 								\
-		logger(LEVEL, LOG_MODULE_NAME, __FILE__, __LINE__, ORCH_DEBUG_INFO, ##__VA_ARGS__);\
+		logger(ORCH_DEBUG_INFO, LOG_MODULE_NAME, __FILE__, __LINE__, FORMAT, ##__VA_ARGS__);\
 	} while(0)
 
 #define ULOG_WARN(FORMAT, ...) 					 						\
 	do {									 								\
-		logger(LEVEL, LOG_MODULE_NAME, __FILE__, __LINE__, ORCH_WARNING, ##__VA_ARGS__);\
+		logger(ORCH_WARNING, LOG_MODULE_NAME, __FILE__, __LINE__, FORMAT, ##__VA_ARGS__);\
 	} while(0)
 
 #define ULOG_ERR(FORMAT, ...) 					 						\
 	do {									 								\
-		logger(LEVEL, LOG_MODULE_NAME, __FILE__, __LINE__, ORCH_ERROR, ##__VA_ARGS__);\
+		logger(ORCH_ERROR, LOG_MODULE_NAME, __FILE__, __LINE__, FORMAT, ##__VA_ARGS__);\
 	} while(0)
 
 #define ULOG_INFO(FORMAT, ...) 					 						\
 	do {									 								\
-		logger(LEVEL, LOG_MODULE_NAME, __FILE__, __LINE__, ORCH_INFO, ##__VA_ARGS__);\
+		logger(ORCH_INFO, LOG_MODULE_NAME, __FILE__, __LINE__, FORMAT, ##__VA_ARGS__);\
 	} while(0)
 
 #ifdef __cplusplus

@@ -1,5 +1,7 @@
 #include "high_level_graph.h"
 
+static const char LOG_MODULE_NAME[] = "High-Level-Graph";
+
 namespace highlevel
 {
 
@@ -275,9 +277,9 @@ RuleRemovedInfo Graph::removeRuleFromID(string ID)
 			//finally, remove the rule!
 			rules.erase(r);
 
-			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "The graph still contains the rules: ");
+			ULOG_DBG("The graph still contains the rules: ");
 			for(list<Rule>::iterator print = rules.begin(); print != rules.end(); print++)
-				logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\t%s",print->getRuleID().c_str());
+				ULOG_DBG("\t%s",print->getRuleID().c_str());
 
 			return rri;
 		}//end if(r->getRuleID() == ID)
@@ -457,7 +459,7 @@ bool Graph::stillUsedEndpointInterface(EndPointInterface endpoint)
 	}
 
 	//The endpoint is no longer used into the graph
-	
+
 	return false;
 }
 
@@ -507,7 +509,7 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 	Graph *diff = new Graph(graphID);
 
 	// a) Add the new rules to "diff"
-	
+
 	//Extract the new rules to be instantiated
 	list<highlevel::Rule> newrules = this->calculateDiffRules(other);
 
@@ -530,7 +532,7 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 			{
 				alreadyThere = true;
 				//we have to check the ports. In fact the VNF may require new ports
-				
+
 				list<vnf_port_t> ports_needed_by_diff;							//this set will contain the ports needed by the diff
 				list<vnf_port_t> vnf_ports_already_there = there->getPorts();	//ports of the VNF before the update
 				list<vnf_port_t> vnf_ports_required = it->getPorts();		 	//ports of the VNF required by the update
@@ -550,15 +552,15 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 					}
 					if(!port_already_in_graph)
 					{
-						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tThe VNF port with id '%s' is needed for VNF '%s'",required_tmp.id.c_str(),(it->getName()).c_str());
+						ULOG_DBG_INFO("\tThe VNF port with id '%s' is needed for VNF '%s'",required_tmp.id.c_str(),(it->getName()).c_str());
 						ports_needed_by_diff.push_back(*p_required);
 					}
 				}
-				
+
 				//If the VNF requires new ports, it must be added to the "diff" graph (only with the new ports)
 				if(ports_needed_by_diff.size() !=0)
 				{
-					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tUpdate for VNF '%s' is added to the diff graph",(it->getName()).c_str());
+					ULOG_DBG_INFO("\tUpdate for VNF '%s' is added to the diff graph",(it->getName()).c_str());
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 					highlevel::VNFs the_vnf(it->getId(), it->getName(), it->getGroups(), it->getVnfTemplate(), ports_needed_by_diff, it->getControlPorts(),it->getEnvironmentVariables());
 #else
@@ -572,7 +574,7 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 		}//end itearation on the VNFs already deployed
 		if(!alreadyThere)
 		{
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "A new VNF is required - ID: '%s' - name: '%s'", (it->getId()).c_str(),(it->getName()).c_str());
+			ULOG_DBG_INFO("A new VNF is required - ID: '%s' - name: '%s'", (it->getId()).c_str(),(it->getName()).c_str());
 			diff->addVNF(*it);
 		}
 	}//end iteration on the VNFs required by the update
@@ -588,7 +590,7 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 	{
 		bool found = false;
 		//string it = nei->getInterface();
-		
+
 		for(list<highlevel::EndPointInterface>::iterator interface = endpointsInterface.begin(); interface != endpointsInterface.end(); interface++)
 		{
 			if((*new_interface) == (*interface))
@@ -601,10 +603,10 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 		if(!found)
 		{
 			diff->addEndPointInterface(*new_interface);
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Interface endpoint %s is added the to the diff graph",(new_interface->getInterface()).c_str());
+			ULOG_DBG_INFO("Interface endpoint %s is added the to the diff graph",(new_interface->getInterface()).c_str());
 		}
 		else
-			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Interface endpoint %s is already in the graph",(new_interface->getInterface()).c_str());
+			ULOG_DBG("Interface endpoint %s is already in the graph",(new_interface->getInterface()).c_str());
 	}
 
 	// c-2) gre-tunnel endpoints
@@ -627,11 +629,11 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 
 		if(!found)
 		{
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "GRE endpoint %s is added to the diff graph",new_gre->getId().c_str());
+			ULOG_DBG_INFO("GRE endpoint %s is added to the diff graph",new_gre->getId().c_str());
 			diff->addEndPointGre(*new_gre);
 		}
 		else
-			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "GRE endpoint %s is already in the graph",new_gre->getId().c_str());
+			ULOG_DBG("GRE endpoint %s is already in the graph",new_gre->getId().c_str());
 	}
 
 	// c-3) internal endpoints
@@ -654,11 +656,11 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 
 		if(!found)
 		{
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Internal endpoint %s is added to the diff graph",(new_internal->getGroup()).c_str());
+			ULOG_DBG_INFO("Internal endpoint %s is added to the diff graph",(new_internal->getGroup()).c_str());
 			diff->addEndPointInternal(*new_internal);
 		}
 		else
-			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Internal endpoint %s is already in the graph",(new_internal->getGroup()).c_str());
+			ULOG_DBG("Internal endpoint %s is already in the graph",(new_internal->getGroup()).c_str());
 	}
 
 	// c-4) vlan endpoints
@@ -682,10 +684,10 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 		if(!found)
 		{
 			diff->addEndPointVlan(*new_vlan);
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Vlan endpoint %s is added to the diff graph",(new_vlan->getVlanId()).c_str());
+			ULOG_DBG_INFO("Vlan endpoint %s is added to the diff graph",(new_vlan->getVlanId()).c_str());
 		}
 		else
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Vlan endpoint %s is already in the graph",(new_vlan)->getVlanId().c_str());
+			ULOG_DBG_INFO("Vlan endpoint %s is already in the graph",(new_vlan)->getVlanId().c_str());
 	}
 
 	return diff;
@@ -699,7 +701,7 @@ bool Graph::addGraphToGraph(highlevel::Graph *other)
 	{
 		if(!this->addRule(*rule))
 		{
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph has at least two rules with the same ID: %s",rule->getRuleID().c_str());
+			ULOG_INFO("The graph has at least two rules with the same ID: %s",rule->getRuleID().c_str());
 			return false;
 		}
 	}

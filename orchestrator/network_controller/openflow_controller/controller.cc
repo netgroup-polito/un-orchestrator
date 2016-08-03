@@ -1,5 +1,7 @@
 #include "controller.h"
 
+static const char LOG_MODULE_NAME[] = "OpenFLow-Controller";
+
 Controller::Controller(rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap,Graph graph, unsigned controllerPort)	:
 	thread(this),
 	dpt(NULL),
@@ -22,7 +24,7 @@ void Controller::handle_dpt_open(crofdpt& dpt)
 {
 	pthread_mutex_lock(&controller_mutex);
 
-	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is open (using the TCP port %u)!",controllerPort);
+	ULOG_DBG_INFO("Connection with the datapath is open (using the TCP port %u)!",controllerPort);
 
 	dpt.flow_mod_reset();
 	switch(OFP_VERSION)
@@ -51,7 +53,7 @@ void Controller::handle_dpt_close(crofdpt& dpt)
 {
 	isOpen = false;
 	this->dpt = NULL;
-	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is closed (the connection was on the TCP port %u)",controllerPort);
+	ULOG_DBG_INFO("Connection with the datapath is closed (the connection was on the TCP port %u)",controllerPort);
 }
 
 /*void Controller::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid,rofl::openflow::cofmsg_packet_in& msg)
@@ -137,18 +139,18 @@ bool Controller::installNewRulesIntoLSI(list<Rule> rules)
 {
 	if(rules.size() == 0)
 	{
-		logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "No rule to be installed.");
+		ULOG_DBG_INFO("No rule to be installed.");
 		return true;
 	}
 
 	if(isOpen)
 	{
-		logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Installing (%d) new rules!",rules.size());
+		ULOG_DBG_INFO("Installing (%d) new rules!",rules.size());
 
 		list<Rule>::iterator rule = rules.begin();
 		for(; rule != rules.end(); rule++)
 		{
-			logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Installing rule %s",rule->getID().c_str());
+			ULOG_DBG_INFO("Installing rule %s",rule->getID().c_str());
 			rofl::openflow::cofflowmod fe(dpt->get_version());
 			rule->fillFlowmodMessage(fe,dpt->get_version(),ADD_RULE);
 #ifdef DEBUG_OPENFLOW
@@ -156,11 +158,11 @@ bool Controller::installNewRulesIntoLSI(list<Rule> rules)
 #endif
 			dpt->send_flow_mod_message(cauxid(0),fe);
 		}
-		logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "%d rules installed!",rules.size());
+		ULOG_DBG_INFO("%d rules installed!",rules.size());
 		return true;
 	}
 
-	logger(ORCH_WARNING, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "No datapath connected at the TCP port %u! Cannot install rules!",controllerPort);
+	ULOG_WARN("No datapath connected at the TCP port %u! Cannot install rules!",controllerPort);
 
 	return false;
 }
@@ -169,7 +171,7 @@ bool Controller::removeRulesFromLSI(list<Rule> rules)
 {
 	if(isOpen)
 	{
-		logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Removing (%d) rules!",rules.size());
+		ULOG_DBG_INFO("Removing (%d) rules!",rules.size());
 
 		list<Rule>::iterator rule = rules.begin();
 		for(; rule != rules.end(); rule++)
@@ -184,7 +186,7 @@ bool Controller::removeRulesFromLSI(list<Rule> rules)
 		return true;
 	}
 
-	logger(ORCH_WARNING, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "No datapath connected! Cannot remove rules!");
+	ULOG_WARN("No datapath connected! Cannot remove rules!");
 
 	return false;
 }

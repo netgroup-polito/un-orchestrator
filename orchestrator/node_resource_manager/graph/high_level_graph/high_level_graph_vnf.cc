@@ -1,5 +1,7 @@
 #include "high_level_graph_vnf.h"
 
+static const char LOG_MODULE_NAME[] = "High-Level-Graph-VNF";
+
 namespace highlevel
 {
 
@@ -78,7 +80,7 @@ list<unsigned int> VNFs::getPortsId()
 	for(list<vnf_port_t>::iterator p = ports.begin(); p != ports.end(); p++)
 	{
 		string the_id = p->id;
-		logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Extracting ID for port: %s",p->id.c_str());
+		ULOG_DBG("Extracting ID for port: %s",p->id.c_str());
 		unsigned int id = extract_number_from_id(the_id);
 		ids.push_back(id);
 	}
@@ -92,7 +94,7 @@ map<unsigned int, port_network_config > VNFs::getPortsID_configuration()
 	for(list<vnf_port_t>::iterator p = ports.begin(); p != ports.end(); p++)
 	{
 		string the_id = p->id;
-		logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Extracting ID for port: %s",p->id.c_str());
+		ULOG_DBG("Extracting ID for port: %s",p->id.c_str());
 		unsigned int id = extract_number_from_id(the_id);
 		mapping[id] = p->configuration;
 	}
@@ -178,7 +180,7 @@ unsigned int VNFs::extract_number_from_id(string port_id)
 	char *pnt=strtok(/*(char*)port_id.c_str()*/tmp, delimiter);
 	unsigned int port = 0;
 
-	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Extracting ID for port: %s",port_id.c_str());
+	ULOG_DBG("Extracting ID for port: %s",port_id.c_str());
 
 	int i = 0;
 	while( pnt!= NULL )

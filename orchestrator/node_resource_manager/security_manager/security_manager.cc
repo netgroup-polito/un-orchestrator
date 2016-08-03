@@ -1,5 +1,7 @@
 #include "security_manager.h"
 
+static const char LOG_MODULE_NAME[] = "Security-Manager";
+
 SecurityManager::SecurityManager(SQLiteManager *dbm) : dbmanager(dbm) { }
 
 SecurityManager::~SecurityManager() {
@@ -94,7 +96,7 @@ bool SecurityManager::isAuthorizedForCreation(char *user, const char *generic_re
 	// The resource I want to create must not exist in the database at the moment
 	/* This check prevent the update of an existing graph!
 	if(dbmanager->resourceExists(generic_resource, resource)) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot create new resource /%s/%s: it does already exist!", generic_resource, resource);
+		ULOG_ERR("Cannot create new resource /%s/%s: it does already exist!", generic_resource, resource);
 		return false;
 	}
 	*/
@@ -131,7 +133,7 @@ bool SecurityManager::isAuthorized(user_info_t *usr, opcode_t operation, const c
 	bool result = true;
 
 	if(operation == _CREATE) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Received creation request for resource /%s/%s", generic_resource, resource);
+		ULOG_INFO("Received creation request for resource /%s/%s", generic_resource, resource);
 		return isAuthorizedForCreation(usr->user, generic_resource, resource);
 	}
 

@@ -5,6 +5,8 @@
 
 #include <algorithm>
 
+static const char LOG_MODULE_NAME[] = "OvS-OVSDB-Manager";
+
 struct in_addr sIPaddr1;/* struct IP addr server*/
 char ErrBuf[BUFFER_SIZE];
 
@@ -92,12 +94,12 @@ int commands::cmd_connect() {
 	/*Read ip and port by the server*/
 	result = inet_aton(SOCKET_IP, &sIPaddr1);
 	if (!result){
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Invalid IP address.");
+		ULOG_ERR("Invalid IP address.");
 		throw commandsException();
 	}
 
 	if (sscanf(SOCKET_PORT, "%" SCNu16, &tport_h)!=1){
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Invalid number of port.");
+		ULOG_ERR("Invalid number of port.");
 		throw commandsException();
 	}
 
@@ -108,13 +110,13 @@ int commands::cmd_connect() {
 
 	if (sock_initaddress (SOCKET_IP, SOCKET_PORT, &Hints, &AddrInfo, ErrBuf, sizeof(ErrBuf)) == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error resolving given address/port (%s/%s): %s",  SOCKET_IP, SOCKET_PORT, ErrBuf);
+		ULOG_ERR("Error resolving given address/port (%s/%s): %s",  SOCKET_IP, SOCKET_PORT, ErrBuf);
 		throw commandsException();
 	}
 
 	if ( (s=sock_open(AddrInfo, 0, 0,  ErrBuf, sizeof(ErrBuf))) == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Connection failure!");
+		ULOG_ERR("Connection failure!");
 		throw commandsException();
 	}
 
@@ -125,7 +127,7 @@ int commands::cmd_disconnect(int s){
 	char ErrBuf[BUFFER_SIZE];
 
 	if(sock_close(s, ErrBuf, sizeof(ErrBuf)) != 0){
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Closing socket failed.");
+		ULOG_ERR("Closing socket failed.");
 		throw commandsException();
 	}
 
@@ -364,21 +366,21 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
     nwritten = sock_send(s, ss.str().c_str(), strlen(ss.str().c_str()), ErrBuf, sizeof(ErrBuf));
 	if (nwritten == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error sending data: %s", ErrBuf);
+		ULOG_ERR("Error sending data: %s", ErrBuf);
 		throw commandsException();
 	}
 
     r = sock_recv(s, read_buf, sizeof(read_buf), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
 	if (r == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error reading data: %s", ErrBuf);
+		ULOG_ERR("Error reading data: %s", ErrBuf);
 		throw commandsException();
 	}
 
- 	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Message sent to ovs: ");
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, ss.str().c_str());
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Answer: ");
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, read_buf);
+ 	ULOG_DBG("Message sent to ovs: ");
+	ULOG_DBG(ss.str().c_str());
+	ULOG_DBG("Answer: ");
+	ULOG_DBG(read_buf);
 
 	//parse json response
 	Value value;
@@ -406,7 +408,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 						const Array &stuff1 = node1.getArray();
 						strr[i] = stuff1[1].getString();
 					} else if(name1 == "details"){
-						logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "%s", node1.getString().c_str());
+						ULOG_ERR("%s", node1.getString().c_str());
 						throw commandsException();
 					}
 				}
@@ -456,9 +458,9 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 				port_names_on_switch.push_back(name_on_switch);
 				port_names_and_id[name_on_switch] = nfp->port_id;
 
-				logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Network function ID: %s - port name on graph: %s - port ID on LSI: %d",(*nf).c_str(),(nfp->port_name).c_str(),rnumber-1);
-				logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Network function ID: %s - port name on LSI: %s",(*nf).c_str(),name_on_switch.c_str());
-				logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Network function ID: %s - port name on LSI: %s - port ID on graph: %d",(*nf).c_str(),name_on_switch.c_str(),nfp->port_id);
+				ULOG_DBG("Network function ID: %s - port name on graph: %s - port ID on LSI: %d",(*nf).c_str(),(nfp->port_name).c_str(),rnumber-1);
+				ULOG_DBG("Network function ID: %s - port name on LSI: %s",(*nf).c_str(),name_on_switch.c_str());
+				ULOG_DBG("Network function ID: %s - port name on LSI: %s - port ID on graph: %d",(*nf).c_str(),name_on_switch.c_str(),nfp->port_id);
 			}
 
 			/*fill the network_functions_ports*/
@@ -498,7 +500,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 
 			gnumber++;
 
-			logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "GRE tunnel -> key: %s - local IP: %s - remote IP: %s - interface: %s - safe: %s",key,local_ip,remote_ip,ifac,is_safe);
+			ULOG_DBG_INFO("GRE tunnel -> key: %s - local IP: %s - remote IP: %s - interface: %s - safe: %s",key,local_ip,remote_ip,ifac,is_safe);
 
 			add_endpoint(dnumber, local_ip, remote_ip, key, port_name, ifac, s, is_safe);
 
@@ -634,16 +636,16 @@ string find_free_dpdkr()
 	char name[] = "dpdkr9999";
 	for (idx = 1; idx < 9999; ++idx) {
 		sprintf(name, "dpdkr%d", idx);
-		logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Checking presence of DPDK Ring %s", name);
+		ULOG_DBG("Checking presence of DPDK Ring %s", name);
 		if (dpdkr_to_uuid.find(name) == dpdkr_to_uuid.end())
 			break;
 	}
 
 	if (idx >= 9999) {
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Failed to find a free DPDK ring (dpdkr) name)");
+		ULOG_ERR("Failed to find a free DPDK ring (dpdkr) name)");
 		throw OVSDBManagerException();
 	}
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Found unused DPDK Ring %s", name);
+	ULOG_DBG("Found unused DPDK Ring %s", name);
 
 	return name;
 }
@@ -671,7 +673,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 	Array third_object;
 	Array fourth_object;
 
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "add_port(%s,type=%s)", p.c_str(), portTypeToString(port_type).c_str());
+	ULOG_DBG_INFO("add_port(%s,type=%s)", p.c_str(), portTypeToString(port_type).c_str());
 
 	//connect socket
 	s = cmd_connect();
@@ -716,14 +718,14 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 #ifdef ENABLE_OVSDB_DPDK
 			row["type"] = "dpdkr";
 			port_name = find_free_dpdkr();
-			logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Port %s maps to DPDK Ring %s", p.c_str(), port_name.c_str());
+			ULOG_DBG_INFO("Port %s maps to DPDK Ring %s", p.c_str(), port_name.c_str());
 			dpdkr_from_uuid.insert(map<string, string>::value_type(uuid_name, port_name));
 			dpdkr_to_uuid.insert(map<string, string>::value_type(port_name, uuid_name));
 
 			port_name_on_switch = port_name;
 #else
 			//XXX the next rows have to be removed when this plugin with support OvS-DPDK
-			logger(ORCH_WARNING, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Currently supported by the OvS-DPDK plugin");
+			ULOG_WARN("Currently supported by the OvS-DPDK plugin");
 			assert(0 && "Currently supported by the OvS-DPDK plugin");
 			throw OVSDBManagerException();
 #endif
@@ -736,15 +738,15 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 			// Delete socket to be sure OVS can create it! (strange but needed)
 			stringstream prep_usvhost_cmd;
 			prep_usvhost_cmd << getenv("un_script_path") << PREP_USVHOST_PORT << " " << port_name;
-			logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", prep_usvhost_cmd.str().c_str());
+			ULOG_DBG_INFO("Executing command \"%s\"", prep_usvhost_cmd.str().c_str());
 			int retVal = system(prep_usvhost_cmd.str().c_str());
 			retVal = retVal >> 8;
 			if(retVal == 0) {
-				logger(ORCH_WARNING, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Failed to prepare 'usvhost' port %s", port_name.c_str());
+				ULOG_WARN("Failed to prepare 'usvhost' port %s", port_name.c_str());
 				throw OVSDBManagerException();
 			}
 #else
-			logger(ORCH_WARNING, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Currently supported by the OvS-DPDK plugin");
+			ULOG_WARN("Currently supported by the OvS-DPDK plugin");
 			assert(0 && "Currently supported by the OvS-DPDK plugin");
 			throw OVSDBManagerException();
 #endif
@@ -757,12 +759,12 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 			peer_port_name << port_name << ".d";
 			stringstream cmd_create_veth_pair;
 			cmd_create_veth_pair << getenv("un_script_path") << CREATE_VETH_PAIR << " " << port_name << " " << peer_port_name.str();
-			logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_create_veth_pair.str().c_str());
+			ULOG_DBG_INFO("Executing command \"%s\"", cmd_create_veth_pair.str().c_str());
 
 			int retVal = system(cmd_create_veth_pair.str().c_str());
 			retVal = retVal >> 8;
 			if(retVal == 0) {
-				logger(ORCH_WARNING, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Failed to create 'veth' port");
+				ULOG_WARN("Failed to create 'veth' port");
 				throw OVSDBManagerException();
 			}
 
@@ -944,21 +946,21 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 	nwritten = sock_send(s, ss.str().c_str(), strlen(ss.str().c_str()), ErrBuf, sizeof(ErrBuf));
 	if (nwritten == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error sending data: %s", ErrBuf);
+		ULOG_ERR("Error sending data: %s", ErrBuf);
 		throw commandsException();
 	}
 
 	r = sock_recv(s, read_buf, sizeof(read_buf), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
 	if (r == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error reading data: %s", ErrBuf);
+		ULOG_ERR("Error reading data: %s", ErrBuf);
 		throw commandsException();
 	}
 
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Message sent to ovs: ");
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, ss.str().c_str());
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Answer: ");
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, read_buf);
+	ULOG_DBG("Message sent to ovs: ");
+	ULOG_DBG(ss.str().c_str());
+	ULOG_DBG("Answer: ");
+	ULOG_DBG(read_buf);
 
 	Value value;
     	read( read_buf, value );
@@ -989,7 +991,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 							port_uuid[dnumber].push_back(stuff1[1].getString());
 						}
 					} else if(name1 == "details"){
-						logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "%s", node1.getString().c_str());
+						ULOG_ERR("%s", node1.getString().c_str());
 						throw commandsException();
 					}
 				}
@@ -1028,14 +1030,14 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
     	{
     		stringstream command;
 		command << getenv("un_script_path") << ACTIVATE_INTERFACE << " " << port_name;
-		logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
+		ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
 		int retVal = system(command.str().c_str());
 		retVal = retVal >> 8;
 
 		assert(retVal == 0);
 		if(retVal != 0)
 		{
-			logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "This cannot happen. It is here just for the compiler.");
+			ULOG_DBG_INFO("This cannot happen. It is here just for the compiler.");
 			assert(0);
 		}
 	}
@@ -1045,7 +1047,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 
 void commands::add_endpoint(uint64_t dpi, char local_ip[BUF_SIZE], char remote_ip[BUF_SIZE], char key[BUF_SIZE], char port_name[BUF_SIZE], char ifac[BUF_SIZE], int s, char is_safe[BUF_SIZE])
 {
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "add_endpoint(local ip=%s,remote ip=%s,key=%s,port name=%s,iface=%s)",local_ip,remote_ip,key,port_name,ifac);
+	ULOG_DBG_INFO("add_endpoint(local ip=%s,remote ip=%s,key=%s,port name=%s,iface=%s)",local_ip,remote_ip,key,port_name,ifac);
 
 	ssize_t nwritten;
 
@@ -1279,24 +1281,24 @@ void commands::add_endpoint(uint64_t dpi, char local_ip[BUF_SIZE], char remote_i
 	nwritten = sock_send(s, ss.str().c_str(), strlen(ss.str().c_str()), ErrBuf, sizeof(ErrBuf));
 	if (nwritten == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error sending data: %s", ErrBuf);
+		ULOG_ERR("Error sending data: %s", ErrBuf);
 		throw commandsException();
 	}
 
     	r = sock_recv(s, read_buf, sizeof(read_buf), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
 	if (r == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error reading data: %s", ErrBuf);
+		ULOG_ERR("Error reading data: %s", ErrBuf);
 		throw commandsException();
 	}
 
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Result of query: ");
+	ULOG_DBG_INFO("Result of query: ");
 
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, ss.str().c_str());
+	ULOG_DBG_INFO(ss.str().c_str());
 
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Response json: ");
+	ULOG_DBG_INFO("Response json: ");
 
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, read_buf);
+	ULOG_DBG_INFO(read_buf);
 
 	Value value;
 	read( read_buf, value );
@@ -1327,7 +1329,7 @@ void commands::add_endpoint(uint64_t dpi, char local_ip[BUF_SIZE], char remote_i
 							gport_uuid[dpi].push_back(stuff1[i].getString());
 						}
 					} else if(name1 == "details"){
-						logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "%s", node1.getString().c_str());
+						ULOG_ERR("%s", node1.getString().c_str());
 						throw commandsException();
 					}
 				}
@@ -1349,7 +1351,7 @@ void commands::add_endpoint(uint64_t dpi, char local_ip[BUF_SIZE], char remote_i
 
 void commands::cmd_editconfig_lsi_delete(uint64_t dpi, int s)
 {
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Deleting LSI with DPI '%u' switch '%s'",dpi, switch_id[dpi].c_str());
+	ULOG_DBG_INFO("Deleting LSI with DPI '%u' switch '%s'",dpi, switch_id[dpi].c_str());
 
     	ssize_t nwritten = 0;
 
@@ -1373,7 +1375,7 @@ void commands::cmd_editconfig_lsi_delete(uint64_t dpi, int s)
 	{
 		//*i -> the port on the bridge we are deleting (is it in vl_PortIDtoSwitchID? )
 
-	//	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Considering virtual link ID %d", *i);
+	//	ULOG_DBG_INFO("Considering virtual link ID %d", *i);
 
 		cmd_delete_virtual_link(vl_PortIDtoSwitchID[(*i)], (*i), s);
 		cmd_delete_virtual_link(vl_PortIDtoSwitchID[vl_LocalPortIDtoRemotePortID[(*i)]], vl_LocalPortIDtoRemotePortID[(*i)], s);
@@ -1383,7 +1385,7 @@ void commands::cmd_editconfig_lsi_delete(uint64_t dpi, int s)
 	for(list<string>::iterator it = port_l[dpi].begin(); it != port_l[dpi].end(); ++it) {
 		map<string, string>::iterator f_it = dpdkr_from_uuid.find(*it);
 		if (f_it != dpdkr_from_uuid.end()) {
-			logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "\tRemoving entries for DPDK Ring %s", f_it->second.c_str());
+			ULOG_DBG_INFO("\tRemoving entries for DPDK Ring %s", f_it->second.c_str());
 			dpdkr_to_uuid.erase(f_it->second);
 			dpdkr_from_uuid.erase(f_it);
 		}
@@ -1407,7 +1409,7 @@ void commands::cmd_editconfig_lsi_delete(uint64_t dpi, int s)
 
 	first_obj["where"] = where;
 
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Removing dpi: %d", dpi);
+	ULOG_DBG("Removing dpi: %d", dpi);
 	switch_uuid.erase(dpi);
 
 	for(map<uint64_t, string>::iterator sww = switch_uuid.begin(); sww != switch_uuid.end(); sww++)
@@ -1474,21 +1476,21 @@ void commands::cmd_editconfig_lsi_delete(uint64_t dpi, int s)
 	nwritten = sock_send(s, ss.str().c_str(), strlen(ss.str().c_str()), ErrBuf, sizeof(ErrBuf));
 	if (nwritten == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error sending data: %s", ErrBuf);
+		ULOG_ERR("Error sending data: %s", ErrBuf);
 		throw commandsException();
 	}
 
     	r = sock_recv(s, read_buf, sizeof(read_buf), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
 	if (r == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error reading data: %s", ErrBuf);
+		ULOG_ERR("Error reading data: %s", ErrBuf);
 		throw commandsException();
 	}
 
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Message sent to ovs: ");
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, ss.str().c_str());
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Answer: ");
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, read_buf);
+	ULOG_DBG("Message sent to ovs: ");
+	ULOG_DBG(ss.str().c_str());
+	ULOG_DBG("Answer: ");
+	ULOG_DBG(read_buf);
 
 	root.clear();
 	params.clear();
@@ -1516,7 +1518,7 @@ AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi, int socketNum
 		ports[pinfo->port_name] = rnumber - 1;
 		port_names_and_id[nameOnSwitch] = rnumber - 1;
 
-		logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Port '%s' has name '%s' on the switch.",(pinfo->port_name).c_str(),nameOnSwitch.c_str());
+		ULOG_DBG_INFO("Port '%s' has name '%s' on the switch.",(pinfo->port_name).c_str(),nameOnSwitch.c_str());
 	}
 
 	AddNFportsOut *anf = new AddNFportsOut(anpi.getNfId(), ports, ports_name_on_switch, port_names_and_id);
@@ -1535,7 +1537,7 @@ AddEndpointOut *commands::cmd_editconfig_endpoint(AddEndpointIn aepi, int s)
 	char safe[BUF_SIZE];
 
 	string id = aepi.getEPname();
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "add_endpoint(name=%s)",id.c_str());
+	ULOG_DBG_INFO("add_endpoint(name=%s)",id.c_str());
 
 	/*save the params of gre tunnel*/
 	vector<string> l_param = aepi.getEPparam();
@@ -1589,19 +1591,19 @@ void commands::cmd_editconfig_NFPorts_delete(DestroyNFportsIn dnpi, int s)
 
 		list<string> portsToBeRemoved;
 
-		logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Network function ports to be removed from the switch:");
+		ULOG_DBG_INFO("Network function ports to be removed from the switch:");
 		for(set<string>::iterator port = nfp.begin(); port != nfp.end(); port++)
 		{
 			if(peersNames.count(*port) != 0)
 			{
 				//this port is a VETH
 				portsToBeRemoved.push_back(peersNames[*port]);
-				logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "\t* %s",peersNames[*port].c_str());
+				ULOG_DBG_INFO("\t* %s",peersNames[*port].c_str());
 			}
 			else
 			{
 				portsToBeRemoved.push_back(*port);
-				logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "\t* %s",port->c_str());
+				ULOG_DBG_INFO("\t* %s",port->c_str());
 			}
 		}
 
@@ -1735,22 +1737,22 @@ void commands::cmd_editconfig_NFPorts_delete(DestroyNFportsIn dnpi, int s)
 		nwritten = sock_send(s, ss.str().c_str(), strlen(ss.str().c_str()), ErrBuf, sizeof(ErrBuf));
 		if (nwritten == sockFAILURE)
 		{
-			logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error sending data: %s", ErrBuf);
+			ULOG_ERR("Error sending data: %s", ErrBuf);
 			throw commandsException();
 		}
 
     		r = sock_recv(s, read_buf, sizeof(read_buf), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
 		if (r == sockFAILURE)
 		{
-			logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error reading data: %s", ErrBuf);
+			ULOG_ERR("Error reading data: %s", ErrBuf);
 			throw commandsException();
 		}
 		read_buf[r] = '\0';
 
-		logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Message sent to ovs: ");
-		logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, ss.str().c_str());
-		logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Answer: ");
-		logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, read_buf);
+		ULOG_DBG("Message sent to ovs: ");
+		ULOG_DBG(ss.str().c_str());
+		ULOG_DBG("Answer: ");
+		ULOG_DBG(read_buf);
 
 		root.clear();
 		params.clear();
@@ -1775,7 +1777,7 @@ void commands::cmd_editconfig_endpoint_delete(DestroyEndpointIn depi, int s){
 //	map<string, unsigned int> ports;
 
 	string ep_name = depi.getEPname();
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "endpoint_delete(name=%s)",ep_name.c_str());
+	ULOG_DBG_INFO("endpoint_delete(name=%s)",ep_name.c_str());
 
 	Object root, first_obj, second_obj, row;
 	Array params, iface, iface1, iface2, where, port1, port2, i_array;
@@ -1804,7 +1806,7 @@ void commands::cmd_editconfig_endpoint_delete(DestroyEndpointIn depi, int s){
 		fourth_object.push_back("uuid");
 		fourth_object.push_back(switch_uuid[depi.getDpid()].c_str());
 
-		logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "switch_uuid[depi.getDpid()]=%s",switch_uuid[depi.getDpid()].c_str());
+		ULOG_DBG_INFO("switch_uuid[depi.getDpid()]=%s",switch_uuid[depi.getDpid()].c_str());
 
 		third_object.push_back(fourth_object);
 		where.push_back(third_object);
@@ -1920,21 +1922,21 @@ void commands::cmd_editconfig_endpoint_delete(DestroyEndpointIn depi, int s){
 		nwritten = sock_send(s, ss.str().c_str(), strlen(ss.str().c_str()), ErrBuf, sizeof(ErrBuf));
 		if (nwritten == sockFAILURE)
 		{
-			logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error sending data: %s", ErrBuf);
+			ULOG_ERR("Error sending data: %s", ErrBuf);
 			throw commandsException();
 		}
 
     		r = sock_recv(s, read_buf, sizeof(read_buf), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
 		if (r == sockFAILURE)
 		{
-			logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error reading data: %s", ErrBuf);
+			ULOG_ERR("Error reading data: %s", ErrBuf);
 			throw commandsException();
 		}
 
-		logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Message sent to ovs: ");
-		logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, ss.str().c_str());
-		logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Answer: ");
-		logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, read_buf);
+		ULOG_DBG_INFO("Message sent to ovs: ");
+		ULOG_DBG_INFO(ss.str().c_str());
+		ULOG_DBG_INFO("Answer: ");
+		ULOG_DBG_INFO(read_buf);
 
 		root.clear();
 		params.clear();
@@ -1986,9 +1988,9 @@ AddVirtualLinkOut *commands::cmd_addVirtualLink(AddVirtualLinkIn avli, int s)
 
 	/*store the information [switch_id, port_id]*/
 
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Creating the following virtual link:");
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, " Port ID '%d' on switch ID '%d'",rnumber-2,avli.getDpidA());
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, " Port ID '%d' on switch ID '%d'",rnumber-1,avli.getDpidB());
+	ULOG_DBG_INFO("Creating the following virtual link:");
+	ULOG_DBG_INFO(" Port ID '%d' on switch ID '%d'",rnumber-2,avli.getDpidA());
+	ULOG_DBG_INFO(" Port ID '%d' on switch ID '%d'",rnumber-1,avli.getDpidB());
 	vl_PortIDtoSwitchID[rnumber-2] = avli.getDpidA();
 	vl_PortIDtoSwitchID[rnumber-1] = avli.getDpidB();
 
@@ -2210,21 +2212,21 @@ void commands::cmd_add_virtual_link(string vrt, string trv, char ifac[BUF_SIZE],
 	nwritten = sock_send(s, ss.str().c_str(), strlen(ss.str().c_str()), ErrBuf, sizeof(ErrBuf));
 	if (nwritten == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error sending data: %s", ErrBuf);
+		ULOG_ERR("Error sending data: %s", ErrBuf);
 		throw commandsException();
 	}
 
     	r = sock_recv(s, read_buf, sizeof(read_buf), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
 	if (r == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error reading data: %s", ErrBuf);
+		ULOG_ERR("Error reading data: %s", ErrBuf);
 		throw commandsException();
 	}
 
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Message sent to ovs: ");
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, ss.str().c_str());
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Answer: ");
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, read_buf);
+	ULOG_DBG("Message sent to ovs: ");
+	ULOG_DBG(ss.str().c_str());
+	ULOG_DBG("Answer: ");
+	ULOG_DBG(read_buf);
 
 	Value value;
     	read( read_buf, value );
@@ -2255,7 +2257,7 @@ void commands::cmd_add_virtual_link(string vrt, string trv, char ifac[BUF_SIZE],
 							vport_uuid[dpi].push_back(stuff1[i].getString());
 						}
 					} else if(name1 == "details"){
-						logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "%s", node1.getString().c_str());
+						ULOG_ERR("%s", node1.getString().c_str());
 						throw commandsException();
 					}
 				}
@@ -2303,7 +2305,7 @@ void commands::cmd_destroyVirtualLink(DestroyVirtualLinkIn dvli, int s){
 
 void commands::cmd_delete_virtual_link(uint64_t dpi, uint64_t idp, int s)
 {
-	logger(ORCH_DEBUG_INFO, OVSDB_MODULE_NAME, __FILE__, __LINE__, "cmd_delete_virtual_link(dpi=%d, ipd=%d)",dpi,idp);
+	ULOG_DBG_INFO("cmd_delete_virtual_link(dpi=%d, ipd=%d)",dpi,idp);
 
 	ssize_t nwritten;
 
@@ -2450,21 +2452,21 @@ void commands::cmd_delete_virtual_link(uint64_t dpi, uint64_t idp, int s)
 	nwritten = sock_send(s, ss.str().c_str(), strlen(ss.str().c_str()), ErrBuf, sizeof(ErrBuf));
 	if (nwritten == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error sending data: %s", ErrBuf);
+		ULOG_ERR("Error sending data: %s", ErrBuf);
 		throw commandsException();
 	}
 
     	r = sock_recv(s, read_buf, sizeof(read_buf), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
 	if (r == sockFAILURE)
 	{
-		logger(ORCH_ERROR, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Error reading data: %s", ErrBuf);
+		ULOG_ERR("Error reading data: %s", ErrBuf);
 		throw commandsException();
 	}
 
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Message sent to ovs: ");
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, ss.str().c_str());
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, "Answer: ");
-	logger(ORCH_DEBUG, OVSDB_MODULE_NAME, __FILE__, __LINE__, read_buf);
+	ULOG_DBG("Message sent to ovs: ");
+	ULOG_DBG(ss.str().c_str());
+	ULOG_DBG("Answer: ");
+	ULOG_DBG(read_buf);
 
 	root.clear();
 	params.clear();

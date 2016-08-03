@@ -1,5 +1,7 @@
 #include "low_level_match.h"
 
+static const char LOG_MODULE_NAME[] = "Low-Level-Match";
+
 namespace lowlevel
 {
 
@@ -17,9 +19,9 @@ Match::Match(bool is_local_port) :
 
 bool Match::operator==(const Match &other) const
 {
-	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Matches to be compared:");
-	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tisInputPort %s vs %s ",(isInput_port)?"yes":"no",(other.isInput_port)?"yes":"no");
-	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tinput port: %d vs %d",input_port,other.input_port);
+	ULOG_DBG("Matches to be compared:");
+	ULOG_DBG("\tisInputPort %s vs %s ",(isInput_port)?"yes":"no",(other.isInput_port)?"yes":"no");
+	ULOG_DBG("\tinput port: %d vs %d",input_port,other.input_port);
 
 	if((isInput_port && !other.isInput_port) ||
 		(!isInput_port && other.isInput_port) )
@@ -28,7 +30,7 @@ bool Match::operator==(const Match &other) const
 	if(input_port != other.input_port)
 		return false;
 
-	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Comparing other fields...");
+	ULOG_DBG("Comparing other fields...");
 
 	return this->isEqual(other);
 }

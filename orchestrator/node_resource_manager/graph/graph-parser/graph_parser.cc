@@ -1,5 +1,7 @@
 #include "graph_parser.h"
 
+static const char LOG_MODULE_NAME[] = "Graph-Parser";
+
 bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph, GraphManager *gm)
 {
 	//for each endpoint (interface), contains the id
@@ -43,7 +45,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 					forwarding_graph = value.getObject();
 				} catch(std::exception& e)
 				{
-					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Object", FORWARDING_GRAPH);
+					ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Object", FORWARDING_GRAPH);
 					return false;
 				}
 				for(Object::const_iterator fg = forwarding_graph.begin(); fg != forwarding_graph.end(); fg++)
@@ -56,17 +58,17 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 					const Value&  fg_value = fg->second;
 
 					if(fg_name == _ID)
-						logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",FORWARDING_GRAPH,_ID,fg_value.getString().c_str());
+						ULOG_DBG("\"%s\"->\"%s\": \"%s\"",FORWARDING_GRAPH,_ID,fg_value.getString().c_str());
 					else if(fg_name == _NAME)
 					{
-						logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",FORWARDING_GRAPH,_NAME,fg_value.getString().c_str());
+						ULOG_DBG("\"%s\"->\"%s\": \"%s\"",FORWARDING_GRAPH,_NAME,fg_value.getString().c_str());
 
 						//set name of the graph
 						graph.setName(fg_value.getString());
 					}
 					else if(fg_name == F_DESCR)
 					{
-						logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",FORWARDING_GRAPH,F_DESCR,fg_value.getString().c_str());
+						ULOG_DBG("\"%s\"->\"%s\": \"%s\"",FORWARDING_GRAPH,F_DESCR,fg_value.getString().c_str());
 
 						//XXX: currently, this information is ignored
 					}
@@ -80,7 +82,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								fg_value.getArray();
 							} catch(std::exception& e)
 							{
-								logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Array", VNFS);
+								ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Array", VNFS);
 								return false;
 							}
 
@@ -99,7 +101,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									vnfs_array[vnf].getObject();
 								} catch(std::exception& e)
 								{
-									logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" element should be an Object", VNFS);
+									ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" element should be an Object", VNFS);
 									return false;
 								}
 
@@ -142,33 +144,33 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 									if(nf_name == _NAME)
 									{
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNFS,_NAME,nf_value.getString().c_str());
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNFS,_NAME,nf_value.getString().c_str());
 										foundName = true;
 										name = nf_value.getString();
 									}
 									else if(nf_name == VNF_TEMPLATE)
 									{
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNFS,VNF_TEMPLATE,nf_value.getString().c_str());
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNFS,VNF_TEMPLATE,nf_value.getString().c_str());
 										vnf_template = nf_value.getString();
-										logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" found. It is ignored in the current implementation of the %s",VNF_TEMPLATE,MODULE_NAME);
+										ULOG_WARN("Key \"%s\" found. It is ignored in the current implementation of the %s",VNF_TEMPLATE,MODULE_NAME);
 									}
 									else if(nf_name == _ID)
 									{
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNFS,_ID,nf_value.getString().c_str());
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNFS,_ID,nf_value.getString().c_str());
 										//store value of VNF id
 										id.assign(nf_value.getString().c_str());
 									}
 									else if(nf_name == UNIFY_CONTROL)
 									{
 #ifndef ENABLE_UNIFY_PORTS_CONFIGURATION
-										logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" is ignored in this configuration of the %s!",UNIFY_CONTROL,MODULE_NAME);
+										ULOG_WARN("Key \"%s\" is ignored in this configuration of the %s!",UNIFY_CONTROL,MODULE_NAME);
 										continue;
 #else
 										try{
 											nf_value.getArray();
 										} catch(std::exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Array", UNIFY_CONTROL);
+											ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Array", UNIFY_CONTROL);
 											return false;
 										}
 
@@ -181,7 +183,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												control_array[ctrl].getObject();
 											} catch(std::exception& e)
 											{
-												logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: element of \"%s\" should be an Object", UNIFY_CONTROL);
+												ULOG_DBG_INFO("The content does not respect the JSON syntax: element of \"%s\" should be an Object", UNIFY_CONTROL);
 												return false;
 											}
 
@@ -200,13 +202,13 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 												if(c_name == HOST_PORT)
 												{
-													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%d\"",UNIFY_CONTROL,HOST_PORT,c_value.getInt());
+													ULOG_DBG("\"%s\"->\"%s\": \"%d\"",UNIFY_CONTROL,HOST_PORT,c_value.getInt());
 
 													host_tcp_port = c_value.getInt();
 												}
 												else if(c_name == VNF_PORT)
 												{
-													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%d\"",UNIFY_CONTROL,VNF_PORT,c_value.getInt());
+													ULOG_DBG("\"%s\"->\"%s\": \"%d\"",UNIFY_CONTROL,VNF_PORT,c_value.getInt());
 
 													vnf_tcp_port = c_value.getInt();
 												}
@@ -227,7 +229,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									else if(nf_name == UNIFY_ENV_VARIABLES)
 									{
 #ifndef ENABLE_UNIFY_PORTS_CONFIGURATION
-										logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" is ignored in this configuration of the %s!",UNIFY_ENV_VARIABLES,MODULE_NAME);
+										ULOG_WARN("Key \"%s\" is ignored in this configuration of the %s!",UNIFY_ENV_VARIABLES,MODULE_NAME);
 										continue;
 #else
 
@@ -235,7 +237,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											nf_value.getArray();
 										} catch(std::exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Array", UNIFY_CONTROL);
+											ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Array", UNIFY_CONTROL);
 											return false;
 										}
 
@@ -248,7 +250,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												env_variables_array[env_var].getObject();
 											} catch(std::exception& e)
 											{
-												logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: element of \"%s\" should be an Object", UNIFY_CONTROL);
+												ULOG_DBG_INFO("The content does not respect the JSON syntax: element of \"%s\" should be an Object", UNIFY_CONTROL);
 												return false;
 											}
 
@@ -265,12 +267,12 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 												if(ev_name == VARIABLE)
 												{
-													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",UNIFY_ENV_VARIABLES,VARIABLE,(ev_value.getString()).c_str());
+													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",UNIFY_ENV_VARIABLES,VARIABLE,(ev_value.getString()).c_str());
 													theEnvVar << ev_value.getString();
 												}
 												else
 												{
-													logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" in an element of \"%s\"",ev_name.c_str(),UNIFY_ENV_VARIABLES);
+													ULOG_WARN("Invalid key \"%s\" in an element of \"%s\"",ev_name.c_str(),UNIFY_ENV_VARIABLES);
 													return false;
 												}
 											}
@@ -285,7 +287,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											nf_value.getArray();
 										} catch(std::exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Array", VNF_PORTS);
+											ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Array", VNF_PORTS);
 											return false;
 										}
 
@@ -298,7 +300,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												ports_array[ports].getObject();
 											} catch(std::exception& e)
 											{
-												logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" element should be an Object", VNF_PORTS);
+												ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" element should be an Object", VNF_PORTS);
 												return false;
 											}
 
@@ -314,7 +316,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 												if(p_name == _ID)
 												{
-													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNF_PORTS,_ID,p_value.getString().c_str());
+													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNF_PORTS,_ID,p_value.getString().c_str());
 
 													port_id = p_value.getString();
 
@@ -322,7 +324,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												}
 												else if(p_name == _NAME)
 												{
-													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNF_PORTS,_NAME,p_value.getString().c_str());
+													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNF_PORTS,_NAME,p_value.getString().c_str());
 
 													port_name = p_value.getString();
 
@@ -330,15 +332,15 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												}
 												else if(p_name == PORT_MAC)
 												{
-													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNF_PORTS,PORT_MAC,p_value.getString().c_str());
+													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNF_PORTS,PORT_MAC,p_value.getString().c_str());
 													if(!AddressValidator::validateMac(p_value.getString().c_str()))
 													{
-														logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\". Please specify a correct MAC address.",PORT_MAC,p_value.getString().c_str());
+														ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\". Please specify a correct MAC address.",PORT_MAC,p_value.getString().c_str());
 														return false;
 													}
 													if(!AddressValidator::isUnicastMac(p_value.getString().c_str()))
 													{
-														logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" with wrong value \"%s\". Multicast address cannot be assigned to VNF ports.",PORT_MAC,p_value.getString().c_str());
+														ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\". Multicast address cannot be assigned to VNF ports.",PORT_MAC,p_value.getString().c_str());
 														return false;
 													}
 													port_descr.configuration.mac_address = p_value.getString();
@@ -346,16 +348,16 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												else if(p_name == PORT_IP)
 												{
 #ifndef ENABLE_UNIFY_PORTS_CONFIGURATION
-													logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" is ignored in this configuration of the %s!",PORT_IP,MODULE_NAME);
+													ULOG_WARN("Key \"%s\" is ignored in this configuration of the %s!",PORT_IP,MODULE_NAME);
 													continue;
 #else
-													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNF_PORTS,PORT_IP,p_value.getString().c_str());
+													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNF_PORTS,PORT_IP,p_value.getString().c_str());
 													port_descr.configuration.ip_address = p_value.getString();
 #endif
 												}
 												else
 												{
-													logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" in a VNF of \"%s\"",p_name.c_str(),VNF_PORTS);
+													ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",p_name.c_str(),VNF_PORTS);
 													return false;
 												}
 											}
@@ -372,27 +374,27 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											nf_value.getArray();
 										} catch(std::exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" element should be an Object", VNFS);
+											ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" element should be an Object", VNFS);
 											return false;
 										}
 										const Array& myGroups_Array = nf_value.getArray();
 										for(unsigned int i = 0; i<myGroups_Array.size();i++)
 										{
-											logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VNFS,VNF_GROUPS,myGroups_Array[i].getString().c_str());
+											ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNFS,VNF_GROUPS,myGroups_Array[i].getString().c_str());
 											string group = myGroups_Array[i].getString();
 											groups.push_back(group);
 										}
-										logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" found. It is ignored in the current implementation of the %s",VNF_GROUPS,MODULE_NAME);
+										ULOG_WARN("Key \"%s\" found. It is ignored in the current implementation of the %s",VNF_GROUPS,MODULE_NAME);
 									}
 									else
 									{
-										logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" in a VNF of \"%s\"",nf_name.c_str(),VNFS);
+										ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",nf_name.c_str(),VNFS);
 										return false;
 									}
 								}
 								if(!foundName)
 								{
-									logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" not found in an element of \"%s\"",_NAME,VNFS);
+									ULOG_WARN("Key \"%s\" not found in an element of \"%s\"",_NAME,VNFS);
 									return false;
 								}
 
@@ -411,7 +413,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 						}
 						catch(std::exception& e)
 						{
-							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The \"%s\" element does not respect the JSON syntax: \"%s\"", VNFS, e.what());
+							ULOG_DBG_INFO("The \"%s\" element does not respect the JSON syntax: \"%s\"", VNFS, e.what());
 							return false;
 						}
 			    	}
@@ -425,7 +427,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								fg_value.getArray();
 							} catch(std::exception& e)
 							{
-								logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Array", END_POINTS);
+								ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Array", END_POINTS);
 								return false;
 							}
 
@@ -443,7 +445,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 							const Array& end_points_array = fg_value.getArray();
 
-							logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"",END_POINTS);
+							ULOG_DBG("\"%s\"",END_POINTS);
 
 							//Iterate on the end-points
 							for( unsigned int ep = 0; ep < end_points_array.size(); ++ep )
@@ -452,7 +454,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									end_points_array[ep].getObject();
 								} catch(std::exception& e)
 								{
-									logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" element should be an Object", END_POINTS);
+									ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" element should be an Object", END_POINTS);
 									return false;
 								}
 
@@ -467,17 +469,17 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 									if(ep_name == _ID)
 									{
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",END_POINTS,_ID,ep_value.getString().c_str());
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",END_POINTS,_ID,ep_value.getString().c_str());
 										id = ep_value.getString();
 									}
 									else if(ep_name == _NAME)
 									{
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",END_POINTS,_NAME,ep_value.getString().c_str());
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",END_POINTS,_NAME,ep_value.getString().c_str());
 										e_name = ep_value.getString();
 									}
 									else if(ep_name == EP_TYPE)
 									{
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",END_POINTS,EP_TYPE,ep_value.getString().c_str());
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",END_POINTS,EP_TYPE,ep_value.getString().c_str());
 										string type = ep_value.getString();
 									}
 									//identify interface end-points
@@ -488,7 +490,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											ep_value.getObject();
 										} catch(std::exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Object", EP_IFACE);
+											ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Object", EP_IFACE);
 											return false;
 										}
 
@@ -502,33 +504,33 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 											if(epi_name == NODE_ID)
 											{
-												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_IFACE,NODE_ID,epi_value.getString().c_str());
-												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Element \"%s\" is ignored by the current implementation of the %s", NODE_ID,EP_IFACE);
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_IFACE,NODE_ID,epi_value.getString().c_str());
+												ULOG_WARN("Element \"%s\" is ignored by the current implementation of the %s", NODE_ID,EP_IFACE);
 											}
 											else if(epi_name == IF_NAME)
 											{
-												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_IFACE,IF_NAME,epi_value.getString().c_str());
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_IFACE,IF_NAME,epi_value.getString().c_str());
 
 												interface = epi_value.getString();
 												iface_id[id] = epi_value.getString();
-												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\"",id.c_str(), iface_id[id].c_str());
+												ULOG_DBG("\"%s\"->\"%s\"",id.c_str(), iface_id[id].c_str());
 											}
 											else
 											{
-												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" inside \"%s\"",epi_name.c_str(),EP_IFACE);
+												ULOG_WARN("Invalid key \"%s\" inside \"%s\"",epi_name.c_str(),EP_IFACE);
 												return false;
 											}
 										}
 									}
 									else if(ep_name == EP_INTERNAL)
 									{
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Element \"%s\" is an empty object!", EP_INTERNAL,MODULE_NAME);
+										ULOG_DBG("Element \"%s\" is an empty object!", EP_INTERNAL,MODULE_NAME);
 
 										try{
 											ep_value.getObject();
 										} catch(std::exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Object", VLAN);
+											ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Object", VLAN);
 											return false;
 										}
 
@@ -543,18 +545,18 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 											if(epi_name == INTERNAL_GROUP)
 											{
-												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_INTERNAL,INTERNAL_GROUP,epi_value.getString().c_str());
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_INTERNAL,INTERNAL_GROUP,epi_value.getString().c_str());
 												in_group = epi_value.getString();
 											}
 										}
 
 										internal_id[id] = in_group;
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\"",id.c_str(),internal_id[id].c_str());
+										ULOG_DBG("\"%s\"->\"%s\"",id.c_str(),internal_id[id].c_str());
 									}
 									//identify interface-out end-points
 									else if(ep_name == EP_IFACE_OUT)
 									{
-										logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Element \"%s\" is ignored by the current implementation of the %s. This type of end-point is not supported!", EP_IFACE_OUT,MODULE_NAME);
+										ULOG_WARN("Element \"%s\" is ignored by the current implementation of the %s. This type of end-point is not supported!", EP_IFACE_OUT,MODULE_NAME);
 									}
 									//identify vlan end-points
 									else if(ep_name == VLAN)
@@ -563,7 +565,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											ep_value.getObject();
 										} catch(std::exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Object", VLAN);
+											ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Object", VLAN);
 											return false;
 										}
 
@@ -578,23 +580,23 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 											if(epi_name == V_ID)
 											{
-												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VLAN,VLAN_ID,epi_value.getString().c_str());
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VLAN,VLAN_ID,epi_value.getString().c_str());
 												v_id = epi_value.getString();
 											}
 											else if(epi_name == IF_NAME)
 											{
-												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VLAN,IF_NAME,epi_value.getString().c_str());
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VLAN,IF_NAME,epi_value.getString().c_str());
 												interface = epi_value.getString();
 											}
 											else if(epi_name == NODE_ID)
 											{
-												logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",VLAN,NODE_ID,epi_value.getString().c_str());
-												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Element \"%s\" is ignored by the current implementation of the %s", NODE_ID,VLAN);
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VLAN,NODE_ID,epi_value.getString().c_str());
+												ULOG_WARN("Element \"%s\" is ignored by the current implementation of the %s", NODE_ID,VLAN);
 											}
 										}
 
 										vlan_id[id] = make_pair(v_id, interface);
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\":\"%s\"",id.c_str(),vlan_id[id].first.c_str(),vlan_id[id].second.c_str());
+										ULOG_DBG("\"%s\"->\"%s\":\"%s\"",id.c_str(),vlan_id[id].first.c_str(),vlan_id[id].second.c_str());
 									}
 									else if(ep_name == EP_GRE)
 									{
@@ -603,7 +605,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											ep_value.getObject();
 										} catch(std::exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Object", EP_GRE);
+											ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Object", EP_GRE);
 											return false;
 										}
 
@@ -638,44 +640,44 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 												if(epi_name == LOCAL_IP)
 												{
-													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_GRE,LOCAL_IP,epi_value.getString().c_str());
+													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,LOCAL_IP,epi_value.getString().c_str());
 													found_local_ip = true;
 													local_ip = epi_value.getString();
 												}
 												else if(epi_name == REMOTE_IP)
 												{
-													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_GRE,REMOTE_IP,epi_value.getString().c_str());
+													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,REMOTE_IP,epi_value.getString().c_str());
 													found_remote_ip = true;
 													remote_ip = epi_value.getString();
 												}
 												else if(epi_name == TTL)
 												{
-													logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_GRE,TTL,epi_value.getString().c_str());
+													ULOG_DBG_INFO("\"%s\"->\"%s\": \"%s\"",EP_GRE,TTL,epi_value.getString().c_str());
 
 													ttl = epi_value.getString();
 												}
 												else if(epi_name == GRE_KEY)
 												{
-													logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",EP_GRE,GRE_KEY,epi_value.getString().c_str());
+													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,GRE_KEY,epi_value.getString().c_str());
 													found_key = true;
 													gre_key = epi_value.getString();
 												}
 												else if(epi_name == SAFE)
 												{
-													logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%d\"",EP_GRE,SAFE,epi_value.getBool());
+													ULOG_DBG_INFO("\"%s\"->\"%s\": \"%d\"",EP_GRE,SAFE,epi_value.getBool());
 
 													safe = epi_value.getBool();
 												}
 												else
 												{
-													logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" inside \"%s\"",epi_name.c_str(),EP_GRE);
+													ULOG_WARN("Invalid key \"%s\" inside \"%s\"",epi_name.c_str(),EP_GRE);
 													return false;
 												}
 											}
 
 											if(!found_local_ip || !found_remote_ip || !found_key)
 											{
-												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\", or  Key \"%s\", or Key \"%s\" not found in \"%s\"",LOCAL_IP,REMOTE_IP,GRE_KEY,EP_GRE);
+												ULOG_WARN("Key \"%s\", or  Key \"%s\", or Key \"%s\" not found in \"%s\"",LOCAL_IP,REMOTE_IP,GRE_KEY,EP_GRE);
 												return false;
 											}
 
@@ -688,12 +690,12 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										}
 										catch(std::exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The \"%s\" element does not respect the JSON syntax: \"%s\"", EP_GRE, e.what());
+											ULOG_DBG_INFO("The \"%s\" element does not respect the JSON syntax: \"%s\"", EP_GRE, e.what());
 											return false;
 										}
 									}
 									else
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,END_POINTS,ep_value.getString().c_str());
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,END_POINTS,ep_value.getString().c_str());
 								}//End of iteration on the elements of an endpoint
 
 								//add interface end-points
@@ -724,7 +726,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 						}
 						catch(std::exception& e)
 						{
-							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The \"%s\" element does not respect the JSON syntax: \"%s\"", END_POINTS, e.what());
+							ULOG_DBG_INFO("The \"%s\" element does not respect the JSON syntax: \"%s\"", END_POINTS, e.what());
 							return false;
 						}
 					}//End if(fg_name == END_POINTS)
@@ -736,7 +738,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 							fg_value.getObject();
 						} catch(std::exception& e)
 						{
-							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Object", BIG_SWITCH);
+							ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Object", BIG_SWITCH);
 							return false;
 						}
 
@@ -746,7 +748,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 					}
 					else
 					{
-						logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" in \"%s\"",fg_name.c_str(),FORWARDING_GRAPH);
+						ULOG_WARN("Invalid key \"%s\" in \"%s\"",fg_name.c_str(),FORWARDING_GRAPH);
 						return false;
 					}
 
@@ -770,7 +772,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								bs_value.getArray();
 							} catch(std::exception& e)
 							{
-								logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Array", FLOW_RULES);
+								ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Array", FLOW_RULES);
 								return false;
 							}
 
@@ -803,13 +805,13 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									}
 									else if(fr_name == F_DESCR)
 									{
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",FLOW_RULES,F_DESCR,fr_value.getString().c_str());
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",FLOW_RULES,F_DESCR,fr_value.getString().c_str());
 
 										//XXX: currently, this information is ignored
 									}
 									else if(fr_name == PRIORITY)
 									{
-										logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%d\"",FLOW_RULES,PRIORITY,fr_value.getInt());
+										ULOG_DBG("\"%s\"->\"%s\": \"%d\"",FLOW_RULES,PRIORITY,fr_value.getInt());
 
 										priority = fr_value.getInt();
 									}
@@ -823,7 +825,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 										} catch(std::exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\"", MATCH);
+											ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\"", MATCH);
 											return false;
 										}
 									}
@@ -836,7 +838,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												fr_value.getArray();
 											} catch(std::exception& e)
 											{
-												logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" should be an Array", ACTIONS);
+												ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Array", ACTIONS);
 												return false;
 											}
 
@@ -855,7 +857,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													actions_array[ac].getObject();
 												} catch(std::exception& e)
 												{
-													logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: \"%s\" element should be an Object", ACTIONS);
+													ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" element should be an Object", ACTIONS);
 													return false;
 												}
 
@@ -864,7 +866,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												assert(theAction.size() == 1);
 												if(theAction.size() != 1)
 												{
-													logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Too many keywords in an element of \"%s\"",ACTIONS);
+													ULOG_DBG_INFO("Too many keywords in an element of \"%s\"",ACTIONS);
 													return false;
 												}
 
@@ -934,7 +936,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 														if(foundOneOutputToPort)
 														{
-															logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Only one between keys \"%s\", \"%s\" and \"%s\" are allowed in \"%s\"",PORT_IN,VNF,ENDPOINT,ACTIONS);
+															ULOG_DBG_INFO("Only one between keys \"%s\", \"%s\" and \"%s\" are allowed in \"%s\"",PORT_IN,VNF,ENDPOINT,ACTIONS);
 															return false;
 														}
 														foundOneOutputToPort = true;
@@ -946,7 +948,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															//convert char *vnf_id_tmp to string vnf_id
 															string vnf_id(vnf_id_tmp, strlen(vnf_id_tmp));
 
-															logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,VNF,vnf_id.c_str());
+															ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,VNF,vnf_id.c_str());
 
 															string id = MatchParser::nfId(vnf_id);
 															char *tmp_vnf_id = new char[BUFFER_SIZE];
@@ -956,7 +958,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 															if(id == "" || !is_port)
 															{
-																logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Network function \"%s\" is not valid. It must be in the form \"id:port\"",vnf_id.c_str());
+																ULOG_DBG_INFO("Network function \"%s\" is not valid. It must be in the form \"id:port\"",vnf_id.c_str());
 																return false;
 															}
 
@@ -1013,7 +1015,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															{
 																if(internal_group == "")
 																{
-																	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Internal endpoint \"%s\" is not valid. It must have the \"%s\" attribute",value.getString().c_str(), INTERNAL_GROUP);
+																	ULOG_DBG_INFO("Internal endpoint \"%s\" is not valid. It must have the \"%s\" attribute",value.getString().c_str(), INTERNAL_GROUP);
 																	return false;
 																}
 																action = new highlevel::ActionEndPointInternal(internal_group, string(s_a_value));
@@ -1043,13 +1045,13 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													}//End action == output_to_port
 													else if(a_name == SET_VLAN_ID)
 													{
-														logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_VLAN_ID,a_value.getString().c_str());
+														ULOG_DBG_INFO("\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_VLAN_ID,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
 													else if(a_name == SET_VLAN_PRIORITY)
 													{
-														logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_VLAN_PRIORITY,a_value.getString().c_str());
+														ULOG_DBG_INFO("\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_VLAN_PRIORITY,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
@@ -1087,87 +1089,87 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													}//end if(a_name == VLAN_POP)
 													else if(a_name == SET_ETH_SRC_ADDR)
 													{
-														logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "\"%s\" \"%s\" not available",ACTIONS,SET_ETH_SRC_ADDR);
+														ULOG_WARN("\"%s\" \"%s\" not available",ACTIONS,SET_ETH_SRC_ADDR);
 
-														logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_ETH_SRC_ADDR,a_value.getString().c_str());
+														ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_ETH_SRC_ADDR,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
 													else if(a_name == SET_ETH_DST_ADDR)
 													{
-														logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "\"%s\" \"%s\" not available",ACTIONS,SET_ETH_DST_ADDR);
+														ULOG_WARN("\"%s\" \"%s\" not available",ACTIONS,SET_ETH_DST_ADDR);
 
-														logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_ETH_DST_ADDR,a_value.getString().c_str());
+														ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_ETH_DST_ADDR,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
 													else if(a_name == SET_IP_SRC_ADDR)
 													{
-														logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "\"%s\" \"%s\" not available",ACTIONS,SET_IP_SRC_ADDR);
+														ULOG_WARN("\"%s\" \"%s\" not available",ACTIONS,SET_IP_SRC_ADDR);
 
-														logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_IP_SRC_ADDR,a_value.getString().c_str());
+														ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_IP_SRC_ADDR,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
 													else if(a_name == SET_IP_DST_ADDR)
 													{
-														logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "\"%s\" \"%s\" not available",ACTIONS,SET_IP_DST_ADDR);
+														ULOG_WARN("\"%s\" \"%s\" not available",ACTIONS,SET_IP_DST_ADDR);
 
-														logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_IP_DST_ADDR,a_value.getString().c_str());
+														ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_IP_DST_ADDR,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
 													else if(a_name == SET_IP_TOS)
 													{
-														logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "\"%s\" \"%s\" not available",ACTIONS,SET_IP_TOS);
+														ULOG_WARN("\"%s\" \"%s\" not available",ACTIONS,SET_IP_TOS);
 
-														logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_IP_TOS,a_value.getString().c_str());
+														ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_IP_TOS,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
 													else if(a_name == SET_L4_SRC_PORT)
 													{
-														logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "\"%s\" \"%s\" not available",ACTIONS,SET_L4_SRC_PORT);
+														ULOG_WARN("\"%s\" \"%s\" not available",ACTIONS,SET_L4_SRC_PORT);
 
-														logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_L4_SRC_PORT,a_value.getString().c_str());
+														ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_L4_SRC_PORT,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
 													else if(a_name == SET_L4_DST_PORT)
 													{
-														logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "\"%s\" \"%s\" not available",ACTIONS,SET_L4_DST_PORT);
+														ULOG_WARN("\"%s\" \"%s\" not available",ACTIONS,SET_L4_DST_PORT);
 
-														logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_L4_DST_PORT,a_value.getString().c_str());
+														ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,SET_L4_DST_PORT,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
 													else if(a_name == OUT_TO_QUEUE)
 													{
-														logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "\"%s\" \"%s\" not available",ACTIONS,OUT_TO_QUEUE);
+														ULOG_WARN("\"%s\" \"%s\" not available",ACTIONS,OUT_TO_QUEUE);
 
-														logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,OUT_TO_QUEUE,a_value.getString().c_str());
+														ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,OUT_TO_QUEUE,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
 													else if(a_name == DROP)
 													{
-														logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "\"%s\" \"%s\" not available",ACTIONS,DROP);
+														ULOG_WARN("\"%s\" \"%s\" not available",ACTIONS,DROP);
 
-														logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,DROP,a_value.getString().c_str());
+														ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,DROP,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
 													else if(a_name == OUTPUT_TO_CTRL)
 													{
-														logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "\"%s\" \"%s\" not available",ACTIONS,OUTPUT_TO_CTRL);
+														ULOG_WARN("\"%s\" \"%s\" not available",ACTIONS,OUTPUT_TO_CTRL);
 
-														logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",ACTIONS,OUTPUT_TO_CTRL,a_value.getString().c_str());
+														ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,OUTPUT_TO_CTRL,a_value.getString().c_str());
 
 														//XXX: currently, this information is ignored
 													}
 													else
 													{
-														logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" in \"%s\"",a_name.c_str(),ACTIONS);
+														ULOG_WARN("Invalid key \"%s\" in \"%s\"",a_name.c_str(),ACTIONS);
 														return false;
 													}
 												}//end iteration on the keywords of an action element (remember that a single keywork is allowed in each element)
@@ -1177,7 +1179,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											if(!foundOneOutputToPort)
 											{
 												//"output_to_port" is a mandatory action
-												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" not found in \"%s\"",OUTPUT,ACTIONS);
+												ULOG_WARN("Key \"%s\" not found in \"%s\"",OUTPUT,ACTIONS);
 												return false;
 											}
 											assert(action != NULL);
@@ -1186,20 +1188,20 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										}//end of try
 										catch(std::exception& e)
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The \"%s\" element does not respect the JSON syntax: \"%s\"", ACTIONS, e.what());
+											ULOG_DBG_INFO("The \"%s\" element does not respect the JSON syntax: \"%s\"", ACTIONS, e.what());
 											return false;
 										}
 									}//end if(fr_name == ACTION)
 									else
 									{
-										logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" in a rule of \"%s\"",name.c_str(),FLOW_RULES);
+										ULOG_WARN("Invalid key \"%s\" in a rule of \"%s\"",name.c_str(),FLOW_RULES);
 										return false;
 									}
 								}
 
 								if(!foundAction || !foundMatch || !foundID)
 								{
-									logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\", or key \"%s\", or key \"%s\", or all of them not found in an elmenet of \"%s\"",_ID,MATCH,ACTIONS,FLOW_RULES);
+									ULOG_WARN("Key \"%s\", or key \"%s\", or key \"%s\", or all of them not found in an elmenet of \"%s\"",_ID,MATCH,ACTIONS,FLOW_RULES);
 									return false;
 								}
 
@@ -1207,7 +1209,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 								if(!graph.addRule(rule))
 								{
-									logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph has at least two rules with the same ID: %s",ruleID.c_str());
+									ULOG_DBG_INFO("The graph has at least two rules with the same ID: %s",ruleID.c_str());
 									return false;
 								}
 
@@ -1220,8 +1222,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										{
 											if(!match.checkVlanPresence())
 											{
-												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "A POP_VLAN action without specific match on vlan ID has been specified...");
-												logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The corresponding rule can not work as well as it should");
+												ULOG_WARN("A POP_VLAN action without specific match on vlan ID has been specified...");
+												ULOG_WARN("The corresponding rule can not work as well as it should");
 												break;
 											}
 										}
@@ -1249,26 +1251,26 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 							if(same_priority)
 							{
-								logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "One or more flow rule with the same priority...");
-								logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Note that, if they match the same port, they may cause a conflict on the vSwitch!");
+								ULOG_WARN("One or more flow rule with the same priority...");
+								ULOG_WARN("Note that, if they match the same port, they may cause a conflict on the vSwitch!");
 							}
 						}
 						catch(std::exception& e)
 						{
-							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The \"%s\" element does not respect the JSON syntax: \"%s\"", FLOW_RULES, e.what());
+							ULOG_DBG_INFO("The \"%s\" element does not respect the JSON syntax: \"%s\"", FLOW_RULES, e.what());
 							return false;
 						}
 					}// end  if (fg_name == FLOW_RULES)
 					else
 					{
-						logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key: %s",bs_name.c_str());
+						ULOG_WARN("Invalid key: %s",bs_name.c_str());
 						return false;
 					}
 				}//End iteration on the elements inside "big-switch"
 
 				if(foundBigSwitch && !foundFlowRules)
 				{
-					logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" not found in \"%s\"",FLOW_RULES,BIG_SWITCH);
+					ULOG_WARN("Key \"%s\" not found in \"%s\"",FLOW_RULES,BIG_SWITCH);
 					return false;
 				}
 
@@ -1276,18 +1278,18 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 			}//End if(name == FORWARDING_GRAPH)
 			else
 			{
-				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Invalid key: %s",name.c_str());
+				ULOG_WARN("Invalid key: %s",name.c_str());
 				return false;
 			}
 		}
 		if(!foundFlowGraph)
 		{
-			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" not found",FORWARDING_GRAPH);
+			ULOG_WARN("Key \"%s\" not found",FORWARDING_GRAPH);
 			return false;
 		}
 	}catch(std::exception& e)
 	{
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: %s",e.what());
+		ULOG_DBG_INFO("The content does not respect the JSON syntax: %s",e.what());
 		return false;
 	}
 

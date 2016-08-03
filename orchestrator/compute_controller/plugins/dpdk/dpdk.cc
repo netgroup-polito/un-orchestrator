@@ -1,5 +1,7 @@
 #include "dpdk.h"
 
+static const char LOG_MODULE_NAME[] = "DPDK-Process-Manager";
+
 bool Dpdk::isSupported(Description&)
 {
 	//TODO: we are assuming that, if dpdk is enabled by compilation,
@@ -20,17 +22,17 @@ bool Dpdk::startNF(StartNFIn sni)
 	for(map<unsigned int, port_network_config_t >::iterator configuration = portsConfiguration.begin(); configuration != portsConfiguration.end(); configuration++)
 	{
 		if(configuration->second.mac_address != "")
-			logger(ORCH_WARNING, DPDK_MODULE_NAME, __FILE__, __LINE__, "Required to assign MAC address to interface %s:%d. This feature is not supported by DPDK type",nf_name.c_str(),configuration->first);
+			ULOG_WARN("Required to assign MAC address to interface %s:%d. This feature is not supported by DPDK type",nf_name.c_str(),configuration->first);
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		if(configuration->second.ip_address != "")
-			logger(ORCH_WARNING, DPDK_MODULE_NAME, __FILE__, __LINE__, "Required to assign IP address to interface %s:%d. This feature is not supported by DPDK type",nf_name.c_str(),configuration->first);
+			ULOG_WARN("Required to assign IP address to interface %s:%d. This feature is not supported by DPDK type",nf_name.c_str(),configuration->first);
 #endif
 	}
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	list<port_mapping_t > control_ports = sni.getControlPorts();
 	if(control_ports.size() != 0)
-		logger(ORCH_WARNING, DPDK_MODULE_NAME, __FILE__, __LINE__, "Required %d control connections for VNF '%s'. Control connections are not supported by DPDK type", control_ports.size(),nf_name.c_str());
+		ULOG_WARN("Required %d control connections for VNF '%s'. Control connections are not supported by DPDK type", control_ports.size(),nf_name.c_str());
 #endif
 
 	string uri_image = description->getURI();
@@ -42,7 +44,7 @@ bool Dpdk::startNF(StartNFIn sni)
 		if(dpdkDescr.getLocation() == "local")
 			uri << "file://";
 	} catch (exception& e) {
-		logger(ORCH_DEBUG_INFO, DPDK_MODULE_NAME, __FILE__, __LINE__, "exception %s", e.what());
+		ULOG_DBG_INFO("exception %s", e.what());
 		return false;
 	}
 
@@ -54,7 +56,7 @@ bool Dpdk::startNF(StartNFIn sni)
 	for(map<unsigned int, string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)
 		command << " "  << pn->second;
 
-	logger(ORCH_DEBUG_INFO, DPDK_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
+	ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
 
 	int retVal = system(command.str().c_str());
 	retVal = retVal >> 8;
@@ -74,7 +76,7 @@ bool Dpdk::stopNF(StopNFIn sni)
 
 	command  << getenv("un_script_path") << STOP_DPDK_NF << " " << lsiID << " " << nf_name;
 
-	logger(ORCH_DEBUG_INFO, DPDK_MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
+	ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
 
 	int retVal = system(command.str().c_str());
 	retVal = retVal >> 8;
@@ -88,7 +90,7 @@ bool Dpdk::stopNF(StopNFIn sni)
 
 bool Dpdk::updateNF(UpdateNFIn uni)
 {
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Update not supported by this type of functions");
+	ULOG_INFO("Update not supported by this type of functions");
 	return false;
 }
 
@@ -106,8 +108,7 @@ string Dpdk::getCores() {
 		 * It is not a DPDK description
 		 */
 
-		logger(ORCH_WARNING, DPDK_MODULE_NAME, __FILE__, __LINE__,
-				"Exception %s raised! Wrong description treated as dpdk description", e.what());
+		ULOG_WARN("Exception %s raised! Wrong description treated as dpdk description", e.what());
 		return "";
 	}
 	return cores;

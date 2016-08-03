@@ -7,16 +7,16 @@ static const char LOG_MODULE_NAME[] = "KVM-Manager";
 
 void Libvirt::customErrorFunc(void *userdata, virErrorPtr err)
 {
-	UN_LOG(ORCH_ERROR, "Failure of libvirt library call:");
-	UN_LOG(ORCH_ERROR, "\tCode: %d", err->code);
-	UN_LOG(ORCH_ERROR, "\tDomain: %d", err->domain);
-	UN_LOG(ORCH_ERROR, "\tMessage: %s", err->message);
-	UN_LOG(ORCH_ERROR, "\tLevel: %d", err->level);
-	UN_LOG(ORCH_ERROR, "\tstr1: %s", err->str1);
-	UN_LOG(ORCH_ERROR, "\tstr2: %s", err->str2);
-	UN_LOG(ORCH_ERROR, "\tstr3: %s", err->str3);
-	UN_LOG(ORCH_ERROR, "\tint1: %d", err->int1);
-	UN_LOG(ORCH_ERROR, "\tint2: %d", err->int2);
+	ULOG_ERR("Failure of libvirt library call:");
+	ULOG_ERR("\tCode: %d", err->code);
+	ULOG_ERR("\tDomain: %d", err->domain);
+	ULOG_ERR("\tMessage: %s", err->message);
+	ULOG_ERR("\tLevel: %d", err->level);
+	ULOG_ERR("\tstr1: %s", err->str1);
+	ULOG_ERR("\tstr2: %s", err->str2);
+	ULOG_ERR("\tstr3: %s", err->str3);
+	ULOG_ERR("\tint1: %d", err->int1);
+	ULOG_ERR("\tint2: %d", err->int2);
 }
 
 
@@ -49,12 +49,12 @@ void Libvirt::connect()
 		//The connection is already open
 		return;
 
-	UN_LOG(ORCH_DEBUG_INFO, "Connecting to Libvirt ...");
+	ULOG_DBG_INFO("Connecting to Libvirt ...");
 	connection = virConnectOpen("qemu:///system");
 	if (connection == NULL)
-		UN_LOG(ORCH_ERROR, "Failed to open connection to qemu:///system");
+		ULOG_ERR("Failed to open connection to qemu:///system");
 	else
-		UN_LOG(ORCH_DEBUG_INFO, "Open connection to qemu:///system successfull");
+		ULOG_DBG_INFO("Open connection to qemu:///system successfull");
 }
 
 void Libvirt::disconnect()
@@ -65,7 +65,7 @@ void Libvirt::disconnect()
 
 bool Libvirt::updateNF(UpdateNFIn uni)
 {
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Update not supported by this type of functions");
+	ULOG_INFO("Update not supported by this type of functions");
         return false;
 }
 
@@ -81,7 +81,7 @@ bool Libvirt::startNF(StartNFIn sni)
 	/* Domain name */
 	sprintf(domain_name, "%" PRIu64 "_%s", sni.getLsiID(), nf_name.c_str());
 
-	UN_LOG(ORCH_DEBUG_INFO, "Using Libvirt XML template %s", uri_image.c_str());
+	ULOG_DBG_INFO("Using Libvirt XML template %s", uri_image.c_str());
 	xmlInitParser();
 
 	xmlDocPtr doc;
@@ -91,21 +91,21 @@ bool Libvirt::startNF(StartNFIn sni)
 	/* Load XML document */
 	doc = xmlParseFile(uri_image.c_str());
 	if (doc == NULL) {
-		UN_LOG(ORCH_ERROR, "Unable to parse file \"%s\"", uri_image.c_str());
+		ULOG_ERR("Unable to parse file \"%s\"", uri_image.c_str());
 		return 0;
 	}
 
 	/* xpath evaluation for Libvirt various elements we may want to update */
 	xpathCtx = xmlXPathNewContext(doc);
 	if(xpathCtx == NULL) {
-		UN_LOG(ORCH_ERROR, "Unable to create new XPath context");
+		ULOG_ERR("Unable to create new XPath context");
 		xmlFreeDoc(doc);
 		return 0;
 	}
 	const xmlChar* xpathExpr = BAD_CAST "/domain/devices/interface|/domain/name|/domain/devices/emulator";
 	xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
 	if(xpathObj == NULL) {
-		UN_LOG(ORCH_ERROR, "Error: unable to evaluate xpath expression \"%s\"", xpathExpr);
+		ULOG_ERR("Error: unable to evaluate xpath expression \"%s\"", xpathExpr);
 		xmlXPathFreeContext(xpathCtx);
 		xmlFreeDoc(doc);
 		return 0;
@@ -119,7 +119,7 @@ bool Libvirt::startNF(StartNFIn sni)
 
 	xmlNodeSetPtr nodes = xpathObj->nodesetval;
 	int size = (nodes) ? nodes->nodeNr : 0;
-	UN_LOG(ORCH_DEBUG_INFO, "xpath return size: %d", size);
+	ULOG_DBG_INFO("xpath return size: %d", size);
 	int i;
 	for(i = size - 1; i >= 0; i--) {
 	  	xmlNodePtr node = nodes->nodeTab[i];
@@ -150,10 +150,10 @@ bool Libvirt::startNF(StartNFIn sni)
 					}
 					break;
 				case XML_ATTRIBUTE_NODE:
-					UN_LOG(ORCH_ERROR, "ATTRIBUTE found here");
+					ULOG_ERR("ATTRIBUTE found here");
 					break;
 				default:
-					UN_LOG(ORCH_ERROR, "Other type");
+					ULOG_ERR("Other type");
 					break;
 			}
 		}
@@ -193,14 +193,14 @@ bool Libvirt::startNF(StartNFIn sni)
 	const xmlChar* xpathExpr_devs = BAD_CAST "/domain/devices";
 	xpathObj = xmlXPathEvalExpression(xpathExpr_devs, xpathCtx);
 	if(xpathObj == NULL) {
-		UN_LOG(ORCH_ERROR, "Error: unable to evaluate xpath expression \"%s\"", xpathExpr);
+		ULOG_ERR("Error: unable to evaluate xpath expression \"%s\"", xpathExpr);
 		xmlXPathFreeContext(xpathCtx);
 		xmlFreeDoc(doc);
 		return 0;
 	}
 	nodes = xpathObj->nodesetval;
 	if (!nodes || (nodes->nodeNr != 1)) {
-		UN_LOG(ORCH_DEBUG_INFO, "xpath(devices) failed accessing <devices> node");
+		ULOG_DBG_INFO("xpath(devices) failed accessing <devices> node");
 		xmlXPathFreeContext(xpathCtx);
 		xmlFreeDoc(doc);
 		return 0;
@@ -237,7 +237,7 @@ bool Libvirt::startNF(StartNFIn sni)
 		const string& port_name = p->second;
 
 		PortType port_type = description->getPortTypes().at(port_id);
-		UN_LOG(ORCH_DEBUG_INFO, "NF Port \"%s\":%d (%s) is of type %s", nf_name.c_str(), port_id, port_name.c_str(), portTypeToString(port_type).c_str());
+		ULOG_DBG_INFO("NF Port \"%s\":%d (%s) is of type %s", nf_name.c_str(), port_id, port_name.c_str(), portTypeToString(port_type).c_str());
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		/* retrieve ip address */
@@ -247,7 +247,7 @@ bool Libvirt::startNF(StartNFIn sni)
 		/* retrieve mac address */
 		string port_mac_address = portsConfiguration[port_id].mac_address;
 
-		UN_LOG(ORCH_DEBUG, "Interface \"%s\" associated with MAC address \"%s\"", port_name.c_str(), port_mac_address.c_str());
+		ULOG_DBG("Interface \"%s\" associated with MAC address \"%s\"", port_name.c_str(), port_mac_address.c_str());
 
 		if (port_type == USVHOST_PORT) {
 			xmlNodePtr ifn = xmlNewChild(devices, NULL, BAD_CAST "interface", NULL);
@@ -301,7 +301,7 @@ bool Libvirt::startNF(StartNFIn sni)
 			else
 			{
 				assert(0 && "There is a BUG! You cannot be here!");
-				UN_LOG(ORCH_ERROR, "Something went wrong in the creation of the ports for the VNF...");
+				ULOG_ERR("Something went wrong in the creation of the ports for the VNF...");
 				return false;
 			}
 	}
@@ -318,29 +318,29 @@ bool Libvirt::startNF(StartNFIn sni)
 		for (vector< pair<string, string> >::iterator it = ivshmemPorts.begin(); it != ivshmemPorts.end(); ++it) {
 			cmd << " IVSHMEM:" << sni.getLsiID() << "-" << it->first;
 		}
-		UN_LOG(ORCH_DEBUG_INFO, "Generating IVSHMEM QEMU command line using ERFS cmd: %s", cmd.str().c_str());
+		ULOG_DBG_INFO("Generating IVSHMEM QEMU command line using ERFS cmd: %s", cmd.str().c_str());
 
 		ostringstream oss;
 		oss << "echo " << cmd.str().c_str() << " | nc localhost 16632"; // FIXME: this should be a parameter later
-		UN_LOG(ORCH_DEBUG_INFO, "final command: %s", oss.str().c_str());
+		ULOG_DBG_INFO("final command: %s", oss.str().c_str());
 
 		int r = system(oss.str().c_str());
 		if(r == -1 || WEXITSTATUS(r) == -1) {
-			UN_LOG(ORCH_DEBUG_INFO, "Error executing command line generator");
+			ULOG_DBG_INFO("Error executing command line generator");
 		}
 
 		char name[256];
 		sprintf(name, "/tmp/ivshmem_qemu_cmdline_%lu.%s", sni.getLsiID(), sni.getNfId().c_str());
 		FILE *f = fopen(name, "r");
 		if(f == NULL) {
-			UN_LOG(ORCH_DEBUG_INFO, "Error opening file");
+			ULOG_DBG_INFO("Error opening file");
 			return false;
 		}
 		if(fgets(cmdline, sizeof(cmdline), f) == NULL) {
-			UN_LOG(ORCH_DEBUG_INFO,"Error in reading file");
+			ULOG_DBG_INFO("Error in reading file");
 			return false;
 		}
-		UN_LOG(ORCH_DEBUG_INFO,"commandline: %s", cmdline);
+		ULOG_DBG_INFO("commandline: %s", cmdline);
 		ivshmemCmdElems.push_back(cmdline);
 #else
 
@@ -351,7 +351,7 @@ bool Libvirt::startNF(StartNFIn sni)
 			return false;
 		}
 
-		UN_LOG(ORCH_DEBUG_INFO, "Command line for ivshmem '%s'", cmdline);
+		ULOG_DBG_INFO("Command line for ivshmem '%s'", cmdline);
 		ivshmemCmdElems.push_back(cmdline);
 #else
 		// Mempool(s)
@@ -381,7 +381,7 @@ bool Libvirt::startNF(StartNFIn sni)
 					xmlNewProp(argEl, BAD_CAST "value", BAD_CAST it->substr(sizeof(START_KEY)).c_str());
 				}
 				else {
-					UN_LOG(ORCH_ERROR, "Unexpected result from IVSHMEM command line generation: %s", it->c_str());
+					ULOG_ERR("Unexpected result from IVSHMEM command line generation: %s", it->c_str());
 					return false;
 				}
 			}
@@ -409,7 +409,7 @@ bool Libvirt::startNF(StartNFIn sni)
 #ifdef DEBUG_KVM
 	stringstream filename;
 	filename << domain_name << ".xml";
-	UN_LOG(ORCH_DEBUG_INFO, "Dumping XML to %s", filename.str().c_str());
+	ULOG_DBG_INFO("Dumping XML to %s", filename.str().c_str());
 	FILE* fp = fopen(filename.str().c_str(), "w");
 	if (fp) {
 		fwrite(xmlconfig, 1, strlen(xmlconfig), fp);
@@ -422,11 +422,11 @@ bool Libvirt::startNF(StartNFIn sni)
 	dom = virDomainCreateXML(connection, xmlconfig, 0);
 	if (!dom) {
 		//virDomainFree(dom);
-		UN_LOG(ORCH_ERROR, "Domain definition failed");
+		ULOG_ERR("Domain definition failed");
 		return false;
 	}
 
-	UN_LOG(ORCH_DEBUG_INFO, "Boot guest");
+	ULOG_DBG_INFO("Boot guest");
 
 	virDomainFree(dom);
 
@@ -443,7 +443,7 @@ bool Libvirt::stopNF(StopNFIn sni)
 
 	/*destroy the VM*/
 	if(virDomainDestroy(virDomainLookupByName(connection, vm_name)) != 0){
-		UN_LOG(ORCH_ERROR, "failed to stop (destroy) VM. %s", vm_name);
+		ULOG_ERR("failed to stop (destroy) VM. %s", vm_name);
 		return false;
 	}
 

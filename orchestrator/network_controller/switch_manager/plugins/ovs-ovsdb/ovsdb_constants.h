@@ -1,8 +1,6 @@
 #ifndef OVS_CONSTANTS_H_
 #define OVS_CONSTANTS_H_ 1
 
-#define OVSDB_MODULE_NAME			"OvS-OVSDB-Manager"
-
 /**
 *	@brief: paths of the bash scripts exploited by the plugin
 */
