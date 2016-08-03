@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-#ifdef VSWITCH_IMPLEMENTATION_ERFS
+#if defined(VSWITCH_IMPLEMENTATION_ERFS) || defined(VSWITCH_IMPLEMENTATION_OVSDB)
 	OFP_VERSION = OFP_13;
 #else
 	OFP_VERSION = OFP_12;

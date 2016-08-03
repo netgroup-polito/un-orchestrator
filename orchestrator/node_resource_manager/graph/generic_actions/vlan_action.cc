@@ -47,6 +47,7 @@ void VlanAction::fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigne
 			exit(0);
 			break;
 		case OFP_12:
+		case OFP_13:
 			if(type == ACTION_VLAN_PUSH || type == ACTION_ENDPOINT_VLAN_PUSH)
 			{
 				message.set_instructions().set_inst_apply_actions().set_actions().add_action_push_vlan(rofl::cindex(*position)).set_eth_type(ETH_P_8021Q);
@@ -59,11 +60,6 @@ void VlanAction::fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigne
 				message.set_instructions().set_inst_apply_actions().set_actions().add_action_pop_vlan(rofl::cindex(*position));
 				(*position)++;
 			}
-			break;
-		case OFP_13:
-			assert(0 && "TODO");
-			//TODO
-			exit(0);
 			break;
 	}
 }
