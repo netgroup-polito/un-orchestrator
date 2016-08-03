@@ -102,8 +102,6 @@ public:
 	*/
 	bool removeRules(list<Rule> rules);
 
-	static void *loop(void *param);
-
 protected:
 	/**
 	*	@brief: return the TCP port that the dpath should use to contact the controller

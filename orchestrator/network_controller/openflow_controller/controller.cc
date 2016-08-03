@@ -189,26 +189,6 @@ bool Controller::removeRulesFromLSI(list<Rule> rules)
 	return false;
 }
 
-void *Controller::loop(void *param)
-{
-//	Controller *controller = (Controller*)param;
-//
-//	rofl::cparams socket_params = csocket::get_default_params(rofl::csocket::SOCKET_TYPE_PLAIN);
-//	socket_params.set_param(csocket::PARAM_KEY_LOCAL_PORT).set_string() = controller->controllerPort;
-//
-//	controller->add_dpt_listening(0,rofl::csocket::SOCKET_TYPE_PLAIN, socket_params);
-//
-//	logger(ORCH_DEBUG_INFO, OFCONTROLLER_MODULE_NAME, __FILE__, __LINE__, "Openflow controller is going to start on the TCP port %s...",controller->controllerPort.c_str());
-//
-//	rofl::cioloop::get_loop().run();
-//
-//	assert(0 && "Cannot be here!");
-//
-//	rofl::cioloop::get_loop().shutdown();
-//
-	return NULL;
-}
-
 unsigned Controller::getControllerPort()
 {
 	return controllerPort;
