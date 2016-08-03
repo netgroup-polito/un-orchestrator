@@ -48,7 +48,7 @@ public:
 	bool updateNF(UpdateNFIn uni);
 };
 
-class NativeException : public exception {
+class NativeException : public std::exception {
 public:
 	virtual const char* what() const throw()
 	{
