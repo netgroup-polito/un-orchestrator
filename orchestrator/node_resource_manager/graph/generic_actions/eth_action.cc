@@ -30,16 +30,12 @@ void EthAction::fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigned
 			exit(0);
 			break;
 		case OFP_12:
+		case OFP_13:
 			assert(type == ACTION_TRUSTED_PORT);
 
 			message.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(rofl::cindex(*position)).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(rofl::cmacaddr(mac_address)));
 			(*position)++;
 
-			break;
-		case OFP_13:
-			assert(0 && "TODO");
-			//TODO
-			exit(0);
 			break;
 	}
 }
