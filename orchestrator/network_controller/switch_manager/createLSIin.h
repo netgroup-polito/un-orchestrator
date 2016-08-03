@@ -36,7 +36,7 @@ private:
 	/**
 	*	@brief: TCP port of the Openflow controller
 	*/
-	string controllerPort;
+	unsigned controllerPort;
 
 	/**
 	*	@brief: list of physical ports to be connected to the lsi
@@ -83,7 +83,7 @@ protected:
 
 	//FIXME: endpoints mean "endpoint gre"
 
-	CreateLsiIn(string controllerAddress, string controllerPort, list<string> physicalPortsName, map<string,nf_t>  nf_types, map<string,list<struct nf_port_info> > netFunctionsPortsInfo, map<string,vector<string> > endpointsPortsName, list<uint64_t> vlinksRemoteLsi, string local_ip, string ipsec_certificate)
+	CreateLsiIn(string controllerAddress, unsigned controllerPort, list<string> physicalPortsName, map<string,nf_t>  nf_types, map<string,list<struct nf_port_info> > netFunctionsPortsInfo, map<string,vector<string> > endpointsPortsName, list<uint64_t> vlinksRemoteLsi, string local_ip, string ipsec_certificate)
 		: controllerAddress(controllerAddress), controllerPort(controllerPort),
 		physicalPortsName(physicalPortsName.begin(),physicalPortsName.end()),
 		nf_types(nf_types.begin(),nf_types.end()),
@@ -105,7 +105,7 @@ public:
 		return controllerAddress;
 	}
 
-	string getControllerPort()
+	unsigned getControllerPort()
 	{
 		return controllerPort;
 	}
