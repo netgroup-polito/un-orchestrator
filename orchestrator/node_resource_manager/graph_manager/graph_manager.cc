@@ -31,9 +31,6 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 	pthread_mutex_unlock(&graph_manager_mutex);
 	nameResolverPort = name_resolver_port;
 
-	ostringstream strControllerPort;
-	strControllerPort << controllerPort;
-
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Checking the available physical interfaces...");
 	try
 	{
@@ -79,7 +76,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 	list<highlevel::EndPointGre> dummy_gre_endpoints;
 	vector<VLink> dummy_virtual_links;
 
-	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), phyPorts, dummy_network_functions,
+	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), controllerPort, phyPorts, dummy_network_functions,
 	dummy_gre_endpoints,dummy_virtual_links,dummy_nfs_ports_type);
 
 	try
@@ -90,7 +87,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 		map<string,nf_t>  nf_types;
 		map<string,list<nf_port_info> > netFunctionsPortsInfo;
 
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(),lsi->getPhysicalPortsName(),nf_types,netFunctionsPortsInfo,gre_endpoints,lsi->getVirtualLinksRemoteLSI(), this->un_address, this->ipsec_certificate);
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort,lsi->getPhysicalPortsName(),nf_types,netFunctionsPortsInfo,gre_endpoints,lsi->getVirtualLinksRemoteLSI(), this->un_address, this->ipsec_certificate);
 
 		CreateLsiOut *clo = switchManager.createLsi(cli);
 
@@ -730,11 +727,8 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		nfs_ports_type[nf_id] = nf_ports_type;
 	}
 
-	ostringstream strControllerPort;
-	strControllerPort << controllerPort;
-
 	//Prepare the structure representing the new tenant-LSI
-	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), dummyPhyPorts, network_functions,
+	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), controllerPort, dummyPhyPorts, network_functions,
 		endpointsGre,virtual_links,nfs_ports_type);
 
 	CreateLsiOut *clo = NULL;
@@ -767,7 +761,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 		assert(description_gre_endpoints.size() == endpoints_gre.size());
 
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(), lsi->getPhysicalPortsName(), nf_types, lsi->getNetworkFunctionsPortsInfo(), description_gre_endpoints, lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), this->ipsec_certificate);
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(), nf_types, lsi->getNetworkFunctionsPortsInfo(), description_gre_endpoints, lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), this->ipsec_certificate);
 
 		clo = switchManager.createLsi(cli);
 
