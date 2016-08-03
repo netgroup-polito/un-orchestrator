@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+static const char LOG_MODULE_NAME[] = "LSI";
 
 static string nf_port_name(const string& nf_id, unsigned int port_id)
 {
@@ -11,10 +12,9 @@ static string nf_port_name(const string& nf_id, unsigned int port_id)
 	return ss.str();
 }
 
-LSI::LSI(string controllerAddress, string controllerPort, set<string> physical_ports,
-		 list<highlevel::VNFs> network_functions, list<highlevel::EndPointGre> gre_endpoints_ports,
-		 vector<VLink> virtual_links, map<string, map<unsigned int, PortType> > a_nfs_ports_type,
-		 list<highlevel::EndPointHostStack> hoststack_endpoints_port) :
+LSI::LSI(string controllerAddress, unsigned controllerPort, set<string> physical_ports, list<highlevel::VNFs> network_functions,
+	list<highlevel::EndPointGre> gre_endpoints_ports, vector<VLink> virtual_links, map<string, map<unsigned int,PortType> > a_nfs_ports_type,
+	list<highlevel::EndPointHostStack> hoststack_endpoints_port) :
 		controllerAddress(controllerAddress), controllerPort(controllerPort),
 		virtual_links(virtual_links.begin(),virtual_links.end()),
 		hoststack_endpoints_port(hoststack_endpoints_port.begin(),hoststack_endpoints_port.end())
@@ -25,11 +25,11 @@ LSI::LSI(string controllerAddress, string controllerPort, set<string> physical_p
 	//create NF ports (and give them names)
 	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 	{
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Adding network function with id '%s' to the LSI",nf->getId().c_str());
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "It contains the following ports: ");
+		ULOG_DBG_INFO("Adding network function with id '%s' to the LSI",nf->getId().c_str());
+		ULOG_DBG_INFO("It contains the following ports: ");
 		list<unsigned int> nf_ports = nf->getPortsId();
 		for(list<unsigned int>::iterator port = nf_ports.begin(); port != nf_ports.end(); port++)
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t%d",*port);
+			ULOG_DBG_INFO("\t%d",*port);
 
 		addNF(nf->getId(), nf_ports, a_nfs_ports_type[nf->getId()]);
 	}
@@ -44,7 +44,7 @@ string LSI::getControllerAddress()
 	return controllerAddress;
 }
 
-string LSI::getControllerPort()
+unsigned LSI::getControllerPort()
 {
 	return controllerPort;
 }
@@ -294,10 +294,10 @@ void LSI::setNetworkFunctionsPortsNameOnSwitch(string nf_id, map<string, unsigne
 		return;  //TODO: ERROR
 
 	struct nfData& nf_data = network_functions[nf_id];
-	
+
 
 	for (map<string, unsigned int>::iterator n_it = names.begin(); n_it != names.end(); ++n_it) {
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Setting the network names port of %s %d", n_it->first.c_str(), n_it->second);
+		ULOG_DBG_INFO("Setting the network names port of %s %d", n_it->first.c_str(), n_it->second);
 		nf_data.ports_name_on_switch.insert(map<unsigned int, string>::value_type(n_it->second, n_it->first));
 	}
 }
@@ -473,8 +473,8 @@ bool LSI::addNF(string nf_id, list< unsigned int> ports, const map<unsigned int,
 {
 	//TODO: this assert will not be valid when we will introduce the hotplug.
 	//In that case, this function should be modified so that the nfData (already existing) of the network
-	//function is retrieved and updated. 
-	nfData nf_data;	
+	//function is retrieved and updated.
+	nfData nf_data;
 	if(network_functions.count(nf_id) != 0)
 	{
 		nf_data = network_functions[nf_id];
@@ -497,7 +497,7 @@ bool LSI::addNF(string nf_id, list< unsigned int> ports, const map<unsigned int,
 			return false;
 		nf_data.ports_type[port_name] = pt_it->second;
 	}
-	
+
 	network_functions[nf_id] = nf_data;
 
 	return true;

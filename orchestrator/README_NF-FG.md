@@ -943,7 +943,7 @@ following example:
     	{
     		"id": "inout:1",
     		"name": "data-port",
-    		"mac": "11:22:33:44:55:66",
+    		"mac": "aa:bb:cc:11:22:33",
        		"unify-ip": "10.0.0.1/24"
    		}
 		]

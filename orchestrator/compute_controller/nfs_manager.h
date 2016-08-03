@@ -82,7 +82,7 @@ public:
 	virtual string getCores();
 };
 
-class NFsManagerException: public exception
+class NFsManagerException: public std::exception
 {
 public:
 	virtual const char* what() const throw()

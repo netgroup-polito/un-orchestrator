@@ -1,6 +1,8 @@
 #include "rest_server.h"
 #include "../database_manager/SQLite/SQLiteManager.h"
 
+static const char LOG_MODULE_NAME[] = "Rest-Server";
+
 GraphManager *RestServer::gm = NULL;
 SQLiteManager *dbmanager = NULL;
 
@@ -42,14 +44,12 @@ bool RestServer::init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boo
 }
 
 bool RestServer::readGraphFromFile(const string &nffgResourceName, string &nffgFileName) {
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__,
-			"Considering the graph described in file '%s'", nffgFileName.c_str());
+	ULOG_INFO("Considering the graph described in file '%s'", nffgFileName.c_str());
 
 	std::ifstream file;
 	file.open(nffgFileName.c_str());
 	if (file.fail()) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__,
-				"Cannot open the file %s", nffgFileName.c_str());
+		ULOG_ERR("Cannot open the file %s", nffgFileName.c_str());
 		return false;
 	}
 
@@ -101,7 +101,7 @@ int RestServer::answer_to_connection(void *cls,
 		void **con_cls) {
 
 	if (NULL == *con_cls) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "New %s request for %s using version %s", method, url, version);
+		ULOG_INFO("New %s request for %s using version %s", method, url, version);
 
 		if (LOGGING_LEVEL <= ORCH_DEBUG)
 			MHD_get_connection_values(connection, MHD_HEADER_KIND, &print_out_key, NULL);
@@ -167,7 +167,7 @@ int RestServer::answer_to_connection(void *cls,
 			return MHD_YES;
 		} else {
 			con_info->message[con_info->length] = '\0';
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Method \"%s\" not implemented",method);
+			ULOG_INFO("Method \"%s\" not implemented",method);
 			return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 		}
 	}
@@ -178,7 +178,7 @@ int RestServer::answer_to_connection(void *cls,
 
 int RestServer::print_out_key(void *cls, enum MHD_ValueKind kind,
 		const char *key, const char *value) {
-	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "%s: %s", key, value);
+	ULOG_DBG("%s: %s", key, value);
 	return MHD_YES;
 }
 
@@ -195,21 +195,21 @@ int RestServer::login(struct MHD_Connection *connection, void **con_cls) {
 
 	if (dbmanager == NULL) {
 		con_info->message[con_info->length] = '\0';
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Login can be performed only if authentication is required.");
+		ULOG_INFO("Login can be performed only if authentication is required.");
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	}
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "User login");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Content:");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "%s", con_info->message);
+	ULOG_INFO("User login");
+	ULOG_INFO("Content:");
+	ULOG_INFO("%s", con_info->message);
 
 	if (MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host") == NULL) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\"Host\" header not present in the request");
+		ULOG_INFO("\"Host\" header not present in the request");
 		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 	}
 
 	if (!parsePostBody(*con_info, username, password)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Login error: Malformed content");
+		ULOG_INFO("Login error: Malformed content");
 		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 	}
 
@@ -229,7 +229,7 @@ int RestServer::login(struct MHD_Connection *connection, void **con_cls) {
 		strcpy(user_tmp, username);
 
 		if(!dbmanager->userExists(user_tmp, hash_pwd)) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Login failed: wrong username or password!");
+			ULOG_ERR("Login failed: wrong username or password!");
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
@@ -251,7 +251,7 @@ int RestServer::login(struct MHD_Connection *connection, void **con_cls) {
 
 		rc = RAND_bytes(temp, sizeof(temp));
 		if (rc != 1) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while generating nonce!");
+			ULOG_ERR("An error occurred while generating nonce!");
 			return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 		}
 
@@ -281,7 +281,7 @@ int RestServer::login(struct MHD_Connection *connection, void **con_cls) {
 		return ret;
 
 	} catch (...) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred during user login!");
+		ULOG_ERR("An error occurred during user login!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 }
@@ -296,16 +296,16 @@ int RestServer::createUser(char *username, struct MHD_Connection *connection, co
 
 	assert(con_info != NULL);
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "User creation:");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "%s", con_info->message);
+	ULOG_INFO("User creation:");
+	ULOG_INFO("%s", con_info->message);
 
 	if (MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host") == NULL) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\"Host\" header not present in the request");
+		ULOG_INFO("\"Host\" header not present in the request");
 		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 	}
 
 	if (!parsePostBody(*con_info, NULL, &password, &group)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Create user error: Malformed content");
+		ULOG_INFO("Create user error: Malformed content");
 		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 	}
 
@@ -314,7 +314,7 @@ int RestServer::createUser(char *username, struct MHD_Connection *connection, co
 
 	try {
 		if (username == NULL || group == NULL || password == NULL) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Client unathorized!");
+			ULOG_ERR("Client unathorized!");
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
@@ -328,19 +328,19 @@ int RestServer::createUser(char *username, struct MHD_Connection *connection, co
 		}
 
 		if(dbmanager->userExists(username, hash_pwd)) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "User creation failed: already existing!");
+			ULOG_ERR("User creation failed: already existing!");
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
 		if(!dbmanager->resourceExists(BASE_URL_GROUP, t_group)) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "User creation failed! The group '%s' cannot be recognized!", t_group);
+			ULOG_ERR("User creation failed! The group '%s' cannot be recognized!", t_group);
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
 		char *token = (char *) MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Auth-Token");
 
 		if(token == NULL) {
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\"Token\" header not present in the request");
+			ULOG_INFO("\"Token\" header not present in the request");
 			return false;
 		}
 
@@ -363,7 +363,7 @@ int RestServer::createUser(char *username, struct MHD_Connection *connection, co
 		return httpResponse(connection, MHD_HTTP_ACCEPTED);
 
 	} catch (...) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred during user login!");
+		ULOG_ERR("An error occurred during user login!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 }
@@ -401,23 +401,19 @@ bool RestServer::parseLoginForm(Value value, char *user, char *pwd) {
 				foundPwd = true;
 				strcpy(pwd, value.getString().c_str());
 			} else {
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-						"Invalid key: %s", name.c_str());
+				ULOG_DBG_INFO("Invalid key: %s", name.c_str());
 				return false;
 			}
 		}
 		if (!foundUser) {
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-					"Key \"%s\" not found", USER);
+			ULOG_DBG_INFO("Key \"%s\" not found", USER);
 			return false;
 		} else if (!foundPwd) {
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-					"Key \"%s\" not found", PASS);
+			ULOG_DBG_INFO("Key \"%s\" not found", PASS);
 			return false;
 		}
-	} catch (exception& e) {
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-				"The content does not respect the JSON syntax: ", e.what());
+	} catch (std::exception& e) {
+		ULOG_DBG_INFO("The content does not respect the JSON syntax: ", e.what());
 		return false;
 	}
 
@@ -438,30 +434,26 @@ bool RestServer::parseUserCreationForm(Value value, char **pwd, char **group) {
 			if (name == PASS) {
 				foundPwd = true;
 				(*pwd) = (char *) value.getString().c_str();
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tPwd: %s", *pwd);
+				ULOG_DBG_INFO("\tPwd: %s", *pwd);
 
 			} else if (name == GROUP) {
 				foundGroup = true;
 				(*group) = (char *) value.getString().c_str();
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tGrp: %s", *group);
+				ULOG_DBG_INFO("\tGrp: %s", *group);
 			} else {
-				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-						"Invalid key: %s", name.c_str());
+				ULOG_DBG_INFO("Invalid key: %s", name.c_str());
 				return false;
 			}
 		}
 
 		if (!foundPwd) {
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-					"Key \"%s\" not found", PASS);
+			ULOG_DBG_INFO("Key \"%s\" not found", PASS);
 			return false;
 		} else if (!foundGroup) {
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-					"Key \"%s\" not found", GROUP);
+			ULOG_DBG_INFO("Key \"%s\" not found", GROUP);
 		}
-	} catch (exception& e) {
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-				"The content does not respect the JSON syntax: ", e.what());
+	} catch (std::exception& e) {
+		ULOG_DBG_INFO("The content does not respect the JSON syntax: ", e.what());
 		return false;
 	}
 
@@ -471,31 +463,29 @@ bool RestServer::parseUserCreationForm(Value value, char **pwd, char **group) {
 
 int RestServer::createGraphFromFile(const string &graphID, string toBeCreated) {
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph ID: %s", graphID.c_str());
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph content:");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "%s",
+	ULOG_INFO("Graph ID: %s", graphID.c_str());
+	ULOG_INFO("Graph content:");
+	ULOG_INFO("%s",
 			toBeCreated.c_str());
 
 	highlevel::Graph *graph = new highlevel::Graph(graphID);
 
 	if (!parseGraphFromFile(toBeCreated, *graph, true)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Malformed content");
+		ULOG_INFO("Malformed content");
 		return 0;
 	}
 
 	graph->print();
 	try {
 		if (!gm->newGraph(graph)) {
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__,
-					"The graph description is not valid!");
+			ULOG_INFO("The graph description is not valid!");
 			return 0;
 		}
 		// If security is required, update database
 		if(dbmanager != NULL)
 			dbmanager->insertResource(BASE_URL_GRAPH, graphID.c_str(), ADMIN);
 	} catch (...) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__,
-				"An error occurred during the creation of the graph!");
+		ULOG_ERR("An error occurred during the creation of the graph!");
 		return 0;
 	}
 
@@ -524,14 +514,14 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 
 	// If security is required, check that the generic resource exist
 	if (dbmanager != NULL && !dbmanager->resourceExists(generic_resource)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Resource \"%s\" does not exist", generic_resource);
+		ULOG_INFO("Resource \"%s\" does not exist", generic_resource);
 		return httpResponse(connection, MHD_HTTP_NOT_FOUND);
 	}
 
 	if(strcmp(method, GET) == 0) {
 		// If security is required, check READ permission on the generic resource
 		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _READ, generic_resource)) {
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "User not authorized to execute %s \"%s\"", method, generic_resource);
+			ULOG_INFO("User not authorized to execute %s \"%s\"", method, generic_resource);
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
@@ -545,17 +535,17 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	} else if(strcmp(method, PUT) == 0) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "There are no operations using PUT with generic resources");
+		ULOG_INFO("There are no operations using PUT with generic resources");
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	} else if(strcmp(method, DELETE) == 0) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "There are no operations using DELETE with generic resources");
+		ULOG_INFO("There are no operations using DELETE with generic resources");
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	} else if(strcmp(method, POST) == 0) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "There are no operations using POST with generic resources");
+		ULOG_INFO("There are no operations using POST with generic resources");
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	}
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Method %s is currently not supported to operate on generic resources", method);
+	ULOG_INFO("Method %s is currently not supported to operate on generic resources", method);
 	return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 }
 
@@ -569,7 +559,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 
 		// If security is required, check READ authorization
 		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _READ, generic_resource, resource)) {
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "User not authorized to execute %s on %s", method, resource);
+			ULOG_INFO("User not authorized to execute %s on %s", method, resource);
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
@@ -584,7 +574,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 
 		// If security is required, check CREATE authorization
 		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _CREATE, generic_resource, resource)) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "User not authorized to execute %s on %s", method, resource);
+			ULOG_ERR("User not authorized to execute %s on %s", method, resource);
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 		if(strcmp(generic_resource, BASE_URL_GRAPH) == 0)
@@ -597,7 +587,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 
 		// Check authorization for deleting the single resource
 		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _DELETE, generic_resource, resource)) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "User not authorized to execute %s on %s", method, resource);
+			ULOG_ERR("User not authorized to execute %s on %s", method, resource);
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
@@ -613,7 +603,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 		if(strcmp(generic_resource, BASE_URL_USER) == 0) {
 			// Check authorization
 			if (dbmanager != NULL && !secmanager->isAuthorized(usr, _CREATE, generic_resource, resource)) {
-				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "User not authorized to execute %s on %s", method, resource);
+				ULOG_ERR("User not authorized to execute %s on %s", method, resource);
 				return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 			}
 			return createUser((char *) resource, connection, con_info);
@@ -622,7 +612,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	}
 
-	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: %s on /%s/%s not implemented!", method, generic_resource, resource);
+	ULOG_ERR("Error: %s on /%s/%s not implemented!", method, generic_resource, resource);
 	return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 }
 
@@ -633,7 +623,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 
 		// If security is required, check READ authorization
 		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _READ, generic_resource, resource)) {
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "User not authorized to execute %s on %s", method, resource);
+			ULOG_INFO("User not authorized to execute %s on %s", method, resource);
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 		if(strcmp(generic_resource,BASE_URL_GRAPH)==0 && strcmp(resource,URL_STATUS)==0)
@@ -641,11 +631,11 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 	}
 	// PUT, POST, DELETE: currently not supported
 	else if(strcmp(method, POST) == 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: POST on /%s/%s/%s not implemented!", generic_resource, resource, extra_info);
+		ULOG_ERR("Error: POST on /%s/%s/%s not implemented!", generic_resource, resource, extra_info);
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	}
 
-	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: %s on /%s/%s/%s not implemented!", method, generic_resource, resource, extra_info);
+	ULOG_ERR("Error: %s on /%s/%s/%s not implemented!", method, generic_resource, resource, extra_info);
 	return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 }
 
@@ -671,14 +661,14 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 
 	// Check Host field in HTTP header
 	if (MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host") == NULL) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\"Host\" header not present in the request");
+		ULOG_INFO("\"Host\" header not present in the request");
 		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 	}
 
 	// HTTP body must be empty in GET and DELETE requests
 	if(strcmp(method, GET) == 0 || strcmp(method, DELETE) == 0) {
 		if (con_info->length != 0) {
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "%s with body is not allowed", method);
+			ULOG_INFO("%s with body is not allowed", method);
 			return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 		}
 
@@ -686,7 +676,7 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 	} else if(strcmp(method, PUT) == 0 || strcmp(method, POST) == 0) {
 		const char *c_type = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Content-Type");
 		if ((c_type == NULL) || (strcmp(c_type, JSON_C_TYPE) != 0)) {
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Content-Type must be: "JSON_C_TYPE);
+			ULOG_INFO("Content-Type must be: \"%s\"",JSON_C_TYPE);
 			return httpResponse(connection, MHD_HTTP_UNSUPPORTED_MEDIA_TYPE);
 		}
 	}
@@ -695,7 +685,7 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 
 	// If security is required, check whether the current message is a login request
 	if(dbmanager != NULL && isLoginRequest(method, url)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Received a login request!");
+		ULOG_INFO("Received a login request!");
 		// execute login routine
 		return login(connection, con_cls);
 	}
@@ -706,13 +696,13 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 		token = (char *) MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Auth-Token");
 
 		if(token == NULL) {
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\"Token\" header not present in the request");
+			ULOG_INFO("\"Token\" header not present in the request");
 			return false;
 		}
 
 		if(!secmanager->isAuthenticated(connection, token)) {
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Token: %s",token);
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "User not authenticated: request rejected!");
+			ULOG_DBG_INFO("Token: %s",token);
+			ULOG_ERR("User not authenticated: request rejected!");
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 	}
@@ -736,7 +726,7 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 		ret = doOperationOnResource(connection, con_info, usr, method,
 				generic_resource.c_str());
 
-	// If operation on a single resource (e.g. /NF-FG/myGraph) 
+	// If operation on a single resource (e.g. /NF-FG/myGraph)
 	else if(!generic_resource.empty() && !resource.empty() && extra.empty())
 		ret = doOperationOnResource(connection, con_info, usr, method,
 				generic_resource.c_str(), resource.c_str());
@@ -748,7 +738,7 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 
 	// all other requests (e.g. a request to "/") --> 404
 	else {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Returning 404 for %s request on %s", method, url);
+		ULOG_INFO("Returning 404 for %s request on %s", method, url);
 		return httpResponse(connection, MHD_HTTP_NOT_FOUND);
 	}
 
@@ -765,16 +755,16 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 	return ret;
 }
 
-int RestServer::readGraph(struct MHD_Connection *connection, char *graphID) 
+int RestServer::readGraph(struct MHD_Connection *connection, char *graphID)
 {
 	struct MHD_Response *response;
 	int ret;
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Required resource: %s", graphID);
+	ULOG_INFO("Required resource: %s", graphID);
 
 	// Check whether the graph exists in the local database and in the graph manager
 	if ( (dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_GRAPH, graphID)) || (dbmanager == NULL && !gm->graphExists(graphID))) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Method GET is not supported for this resource (i.e. it does not exist)");
+		ULOG_INFO("Method GET is not supported for this resource (i.e. it does not exist)");
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Allow", PUT);
@@ -799,7 +789,7 @@ int RestServer::readGraph(struct MHD_Connection *connection, char *graphID)
 		MHD_destroy_response(response);
 		return ret;
 	} catch (...) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while retrieving the graph description!");
+		ULOG_ERR("An error occurred while retrieving the graph description!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 }
@@ -810,11 +800,11 @@ int RestServer::readUser(struct MHD_Connection *connection, char *username) {
 	struct MHD_Response *response;
 	int ret;
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Required resource: %s", username);
+	ULOG_INFO("Required resource: %s", username);
 
 	// Check whether the user exists
 	if (!dbmanager->resourceExists(BASE_URL_USER, username)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Method GET is not supported for this resource (i.e. it does not exist)");
+		ULOG_INFO("Method GET is not supported for this resource (i.e. it does not exist)");
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Allow", PUT);
@@ -845,7 +835,7 @@ int RestServer::readUser(struct MHD_Connection *connection, char *username) {
 		MHD_destroy_response(response);
 		return ret;
 	} catch (...) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while retrieving the user description!");
+		ULOG_ERR("An error occurred while retrieving the user description!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 }
@@ -856,11 +846,11 @@ int RestServer::readMultipleGroups(struct MHD_Connection *connection, user_info_
 	struct MHD_Response *response;
 	int ret;
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Required resource: %s", BASE_URL_GROUP);
+	ULOG_INFO("Required resource: %s", BASE_URL_GROUP);
 
 	// Check whether groups exists as a generic resourse in the local database
 	if (!dbmanager->resourceExists(BASE_URL_GROUP)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The generic resource %s does not exist in the local database", BASE_URL_GROUP);
+		ULOG_INFO("The generic resource %s does not exist in the local database", BASE_URL_GROUP);
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Allow", PUT);
@@ -901,7 +891,7 @@ int RestServer::readMultipleGroups(struct MHD_Connection *connection, user_info_
 		MHD_destroy_response(response);
 		return ret;
 	} catch (...) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while retrieving the graph description!");
+		ULOG_ERR("An error occurred while retrieving the graph description!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 }
@@ -912,11 +902,11 @@ int RestServer::readMultipleUsers(struct MHD_Connection *connection, user_info_t
 	struct MHD_Response *response;
 	int ret;
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Required resource: %s", BASE_URL_USER);
+	ULOG_INFO("Required resource: %s", BASE_URL_USER);
 
 	// Check whether NF-FG exists as a generic resourse in the local database
 	if (!dbmanager->resourceExists(BASE_URL_USER)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The generic resource %s does not exist in the local database", BASE_URL_GRAPH);
+		ULOG_INFO("The generic resource %s does not exist in the local database", BASE_URL_GRAPH);
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Allow", PUT);
@@ -960,7 +950,7 @@ int RestServer::readMultipleUsers(struct MHD_Connection *connection, user_info_t
 		MHD_destroy_response(response);
 		return ret;
 	} catch (...) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while retrieving the graph description!");
+		ULOG_ERR("An error occurred while retrieving the graph description!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 }
@@ -971,11 +961,11 @@ int RestServer::readMultipleGraphs(struct MHD_Connection *connection, user_info_
 	struct MHD_Response *response;
 	int ret;
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Required resource: %s", BASE_URL_GRAPH);
+	ULOG_INFO("Required resource: %s", BASE_URL_GRAPH);
 
 	// Check whether NF-FG exists as a generic resourse in the local database
 	if (!dbmanager->resourceExists(BASE_URL_GRAPH)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The generic resource %s does not exist in the local database", BASE_URL_GRAPH);
+		ULOG_INFO("The generic resource %s does not exist in the local database", BASE_URL_GRAPH);
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Allow", PUT);
@@ -1017,7 +1007,7 @@ int RestServer::readMultipleGraphs(struct MHD_Connection *connection, user_info_
 		MHD_destroy_response(response);
 		return ret;
 	} catch (...) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while retrieving the graph description!");
+		ULOG_ERR("An error occurred while retrieving the graph description!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 }
@@ -1029,23 +1019,23 @@ int RestServer::createGroup(struct MHD_Connection *connection, struct connection
 	int ret = 0;
 	struct MHD_Response *response;
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Received request for deploying %s/%s", BASE_URL_GROUP, resource);
+	ULOG_INFO("Received request for deploying %s/%s", BASE_URL_GROUP, resource);
 
 	// Check whether the group already exists in the database
 	if(dbmanager->resourceExists(BASE_URL_GROUP, resource)) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: cannot create an already existing group in the database!");
+		ULOG_ERR("Error: cannot create an already existing group in the database!");
 		return httpResponse(connection, MHD_HTTP_FORBIDDEN);
 	}
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Resource to be created/updated: %s/%s", BASE_URL_GROUP, resource);
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Content:");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "%s", con_info->message);
+	ULOG_INFO("Resource to be created/updated: %s/%s", BASE_URL_GROUP, resource);
+	ULOG_INFO("Content:");
+	ULOG_INFO("%s", con_info->message);
 
 	// Update database
 	dbmanager->insertResource(BASE_URL_GROUP, resource, usr->user);
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The group has been properly created!");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+	ULOG_INFO("The group has been properly created!");
+	ULOG_INFO("");
 
 	//TODO: put the proper content in the answer
 	response = MHD_create_response_from_buffer(0, (void*) "", MHD_RESPMEM_PERSISTENT);
@@ -1063,18 +1053,18 @@ int RestServer::deployNewGraph(struct MHD_Connection *connection, struct connect
 	int ret = 0;
 	struct MHD_Response *response;
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Received request for deploying %s/%s", BASE_URL_GRAPH, resource);
+	ULOG_INFO("Received request for deploying %s/%s", BASE_URL_GRAPH, resource);
 	// If security is required, check whether the graph already exists in the database
 
 	/* this check prevent updates!
 	if(dbmanager != NULL && dbmanager->resourceExists(BASE_URL_GRAPH, resource)) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: cannot deploy an already existing graph in the database!");
+		ULOG_ERR("Error: cannot deploy an already existing graph in the database!");
 		return httpResponse(connection, MHD_HTTP_FORBIDDEN);
 	}
 
 	// The same check within the graph manager
 	if(gm->graphExists(resource)) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: cannot deploy an already existing graph in the manager!");
+		ULOG_ERR("Error: cannot deploy an already existing graph in the manager!");
 		return httpResponse(connection, MHD_HTTP_FORBIDDEN);
 	}*/
 
@@ -1082,15 +1072,15 @@ int RestServer::deployNewGraph(struct MHD_Connection *connection, struct connect
 
 	highlevel::Graph *graph = new highlevel::Graph(gID);
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Resource to be created/updated: %s/%s", BASE_URL_GRAPH, resource);
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Content:");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "%s", con_info->message);
+	ULOG_INFO("Resource to be created/updated: %s/%s", BASE_URL_GRAPH, resource);
+	ULOG_INFO("Content:");
+	ULOG_INFO("%s", con_info->message);
 
 	bool newGraph = true;
 
 	// Check whether the body is well formed
 	if (!parsePutBody(*con_info, *graph, newGraph)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Malformed content");
+		ULOG_INFO("Malformed content");
 		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 	}
 
@@ -1098,25 +1088,25 @@ int RestServer::deployNewGraph(struct MHD_Connection *connection, struct connect
 
 	try {
 		if(gm->graphExists(resource)) {
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "An existing graph must be updated");
+			ULOG_INFO("An existing graph must be updated");
 			if (!gm->updateGraph(gID,graph)) {
-				logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph description is not valid!");
+				ULOG_INFO("The graph description is not valid!");
 				return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 			}
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph has been properly updated!");
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+			ULOG_INFO("The graph has been properly updated!");
+			ULOG_INFO("");
 		}else{
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "A new graph must be created");
+			ULOG_INFO("A new graph must be created");
 			if (!gm->newGraph(graph)) {
-				logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph description is not valid!");
+				ULOG_INFO("The graph description is not valid!");
 				return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 			}
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph has been properly created!");
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+			ULOG_INFO("The graph has been properly created!");
+			ULOG_INFO("");
 		}
 	}
 	catch (...) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred during the creation of the graph!");
+		ULOG_ERR("An error occurred during the creation of the graph!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 
@@ -1140,11 +1130,11 @@ int RestServer::deleteGraph(struct MHD_Connection *connection, char *resource) {
 	int ret = 0;
 	struct MHD_Response *response;
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Received request for deleting %s/%s", BASE_URL_GRAPH, resource);
+	ULOG_INFO("Received request for deleting %s/%s", BASE_URL_GRAPH, resource);
 
 	// If security is required, check whether the graph does exist in the database
 	if(dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_GRAPH, resource)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Cannot delete a non-existing graph in the database!");
+		ULOG_INFO("Cannot delete a non-existing graph in the database!");
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header (response, "Allow", PUT);
 		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
@@ -1154,7 +1144,7 @@ int RestServer::deleteGraph(struct MHD_Connection *connection, char *resource) {
 
 	// Check whether the graph does exist in the graph manager
 	if (!gm->graphExists(resource)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Cannot delete a non-existing graph in the manager!");
+		ULOG_INFO("Cannot delete a non-existing graph in the manager!");
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header (response, "Allow", PUT);
 		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
@@ -1166,7 +1156,7 @@ int RestServer::deleteGraph(struct MHD_Connection *connection, char *resource) {
 
 		// Delete the graph
 		if (!gm->deleteGraph(resource)) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "deleteGraph returns false!");
+			ULOG_ERR("deleteGraph returns false!");
 			return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 		}
 
@@ -1175,11 +1165,11 @@ int RestServer::deleteGraph(struct MHD_Connection *connection, char *resource) {
 			dbmanager->deleteResource(BASE_URL_GRAPH, resource);
 
 	} catch (...) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred during the destruction of the graph!");
+		ULOG_ERR("An error occurred during the destruction of the graph!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph has been properly deleted!");
+	ULOG_INFO("The graph has been properly deleted!");
 
 	return httpResponse(connection, MHD_HTTP_NO_CONTENT);
 }
@@ -1190,11 +1180,11 @@ int RestServer::deleteGroup(struct MHD_Connection *connection, char *group) {
 	int ret = 0;
 	struct MHD_Response *response;
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Received request for deleting %s/%s", BASE_URL_GROUP, group);
+	ULOG_INFO("Received request for deleting %s/%s", BASE_URL_GROUP, group);
 
 	// Check whether the user does exist in the database
 	if(!dbmanager->resourceExists(BASE_URL_GROUP, group)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Cannot delete a non-existing group in the database!");
+		ULOG_INFO("Cannot delete a non-existing group in the database!");
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header (response, "Allow", PUT);
 		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
@@ -1204,10 +1194,10 @@ int RestServer::deleteGroup(struct MHD_Connection *connection, char *group) {
 
 	if(!dbmanager->usersExistForGroup(group)) {
 			dbmanager->deleteGroup(group);
-			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The group has been properly deleted!");
+			ULOG_INFO("The group has been properly deleted!");
 			return httpResponse(connection, MHD_HTTP_ACCEPTED);
 	} else {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Cannot remove a group having one or more members!");
+		ULOG_INFO("Cannot remove a group having one or more members!");
 		return httpResponse(connection, MHD_HTTP_FORBIDDEN);
 	}
 }
@@ -1217,11 +1207,11 @@ int RestServer::deleteUser(struct MHD_Connection *connection, char *username) {
 	int ret = 0;
 	struct MHD_Response *response;
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Received request for deleting %s/%s", BASE_URL_USER, username);
+	ULOG_INFO("Received request for deleting %s/%s", BASE_URL_USER, username);
 
 	// If security is required, check whether the user does exist in the database
 	if(dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_USER, username)) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Cannot delete a non-existing user in the database!");
+		ULOG_INFO("Cannot delete a non-existing user in the database!");
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header (response, "Allow", PUT);
 		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
@@ -1236,11 +1226,11 @@ int RestServer::deleteUser(struct MHD_Connection *connection, char *username) {
 			dbmanager->deleteUser(username);
 		}
 	} catch (...) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred during the deletion of the user!");
+		ULOG_ERR("An error occurred during the deletion of the user!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The user has been properly deleted!");
+	ULOG_INFO("The user has been properly deleted!");
 
 	return httpResponse(connection, MHD_HTTP_NO_CONTENT);
 }
@@ -1250,11 +1240,11 @@ int RestServer::doGetStatus(struct MHD_Connection *connection,const char *graphI
 	struct MHD_Response *response;
 	int ret;
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Required get status for resource: %s",graphID);
+	ULOG_INFO("Required get status for resource: %s",graphID);
 
 	if(!gm->graphExists(graphID))
 	{
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Resource \"%s\" does not exist", graphID);
+		ULOG_INFO("Resource \"%s\" does not exist", graphID);
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
 		ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
 		MHD_destroy_response (response);

@@ -1,12 +1,14 @@
 #include "resource_manager.h"
 
+static const char LOG_MODULE_NAME[] = "Resource-Manager";
+
 void ResourceManager::publishDescriptionFromFile(char *descr_file)
 {
 	assert(descr_file != NULL);
 
 	FILE *fp = fopen(descr_file, "rb");
 	if(fp == NULL) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Something wrong while opening file '%s'.",descr_file);
+		ULOG_ERR("Something wrong while opening file '%s'.",descr_file);
 		fclose(fp);
 		return;
 	}
@@ -16,7 +18,7 @@ void ResourceManager::publishDescriptionFromFile(char *descr_file)
 
 	char *mesg = (char *) malloc(fsize + 1);
 	if(fread(mesg, fsize, 1, fp) != 1) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Something wrong while reading file '%s'.",descr_file);
+		ULOG_ERR("Something wrong while reading file '%s'.",descr_file);
 		free(mesg);
 		fclose(fp);
 		return;
@@ -40,7 +42,7 @@ bool ResourceManager::publishUpdating()
 
 	FILE *fp = fopen(FILE_NAME, "r");
 	if(fp == NULL)
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "ERROR reading file.");
+		ULOG_ERR("ERROR reading file.");
 
 	int i = 0, n = 0;
 	while(fscanf(fp, "%c", &c) != EOF){
@@ -55,7 +57,7 @@ bool ResourceManager::publishUpdating()
 
 	fp = fopen(FILE_NAME, "r");
 	if(fp == NULL)
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "ERROR reading file.");
+		ULOG_ERR("ERROR reading file.");
 
 	for(i=0;i<n;i++){
 		fscanf(fp, "%c", &c);
@@ -64,7 +66,7 @@ bool ResourceManager::publishUpdating()
 
 	mesg[i-1] = '\0';
 
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Publishing node configuration.");
+	ULOG_DBG_INFO("Publishing node configuration.");
 
 	fclose(fp);
 

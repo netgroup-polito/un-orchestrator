@@ -34,6 +34,9 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 
 	; Now install the above library according to the description provided
 	; in the cloned folder
+	
+	; Update the dynamic libraries cache
+	$ sudo ldconfig
 
 
 ## Getting the code

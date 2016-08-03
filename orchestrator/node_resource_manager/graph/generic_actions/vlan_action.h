@@ -8,7 +8,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <rofl/common/protocols/fvlanframe.h>
+//#include <rofl/common/protocols/fvlanframe.h>
 
 //Tthe "ENDPOINT" values are different with the normal one in the generation of the
 //json associated with the action

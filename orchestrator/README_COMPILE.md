@@ -21,21 +21,15 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 
 	; Install ROFL-common (library to parse OpenFlow messages)
 	; Alternatively, a copy of ROFL-common is provided in `[un-orchestrator]/contrib/rofl-common.zip`
-	; Please note that you have to use version 0.6; newer versions have a different API that
-	; is not compatible with our code.
-	
+
 	$ git clone https://github.com/bisdn/rofl-common
 	$ cd rofl-common/
-	$ git checkout stable-0.6
 
 	; Now install the above library according to the description provided
 	; in the cloned folder
 	
-	; Install inih (a nice library used to read the configuration file)
-	$ cd [un-orchestrator]/contrib
-	$ unzip inih.zip
-	$ cd inih
-	$ cp * ../../orchestrator/node_resource_manager/database_manager/SQLite
+	; Update the dynamic libraries cache
+	$ sudo ldconfig
 
 The following libraries are required if you plan to enable the publisher/subscriber 
 mechanism, which is used by the un-orchestrator, for instance, to export the configuration
@@ -47,6 +41,9 @@ of the universal node.
 	
 	; Now install the above library according to the description provided
 	; in the cloned folder
+	
+	; Update the dynamic libraries cache
+	$ sudo ldconfig
 
 ## Install the proper virtual switch
 
@@ -185,6 +182,9 @@ You can build it from sources using the following commands:
 	$ ./autogen.sh
 	$ make
 	$ sudo make install
+	
+	; Update the dynamic libraries cache
+	$ sudo ldconfig
 
 #### QEMU/KVM
 

@@ -4,7 +4,6 @@
 #pragma once
 
 #include <rofl/common/crofbase.h>
-#include <rofl/common/logging.h>
 #include <rofl/common/openflow/openflow_common.h>
 #include <rofl/common/caddress.h>
 

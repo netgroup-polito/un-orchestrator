@@ -4,6 +4,7 @@ PROJECT(node-orchestrator)
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
         ADD_DEFINITIONS(-Wall -Werror -Wno-write-strings)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 IF(CMAKE_COMPILER_IS_GNUCC)
         ADD_DEFINITIONS(-Wall -Werror -Wno-write-strings)
@@ -249,6 +250,8 @@ SET(SOURCES1
 	node_resource_manager/graph/graph-parser/graph_parser.cc
 	node_resource_manager/graph/graph-parser/match_parser.h
 	node_resource_manager/graph/graph-parser/match_parser.cc
+	node_resource_manager/graph/graph-parser/address_validator.h
+	node_resource_manager/graph/graph-parser/address_validator.cc
 
 	node_resource_manager/graph/low_level_graph/output_action.h
 	node_resource_manager/graph/low_level_graph/output_action.cc
@@ -458,7 +461,7 @@ INCLUDE_DIRECTORIES (
 SET(CMAKE_SKIP_RPATH TRUE)
 LINK_DIRECTORIES(
 	${CMAKE_BINARY_DIR}/externals/lib/
-)
+	)
 
 # Create the executable
 ADD_EXECUTABLE(
@@ -466,9 +469,14 @@ ADD_EXECUTABLE(
 	${SOURCES8}
 )
 
-ADD_DEPENDENCIES(node-orchestrator JSON_Spirit)
-ADD_DEPENDENCIES(node-orchestrator ROFL_Common)
-ADD_DEPENDENCIES(node-orchestrator Libvirt)
+IF(BUILD_ExternalProjects)
+	ADD_DEPENDENCIES(node-orchestrator JSON_Spirit)
+	ADD_DEPENDENCIES(node-orchestrator ROFL_Common)
+	IF(ENABLE_KVM)
+		ADD_DEPENDENCIES(node-orchestrator Libvirt)
+	ENDIF(ENABLE_KVM)
+ENDIF(BUILD_ExternalProjects)
+
 ADD_DEPENDENCIES(node-orchestrator Inih)
 
 TARGET_LINK_LIBRARIES( node-orchestrator
@@ -498,7 +506,10 @@ IF(ENABLE_KVM)
 	)
 ENDIF(ENABLE_KVM)
 
-# Add configuration rules to compile command line generator
+###############################################################################
+
+#Add configuration rules to compile command line generator
+
 IF(ENABLE-DPDK-CMDLINE-GENERATOR)
 
 	IF(NOT DEFINED ENV{RTE_SDK})
@@ -542,35 +553,40 @@ IF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) 
 	message(FATAL_ERROR "At least one execution environmnet must be enabled")
 ENDIF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) AND (NOT ENABLE_KVM) )
 
+###############################################################################
+
+# Build external projects
 
 include (ExternalProject)
 IF(BUILD_ExternalProjects)
 
-# rofl-common: extract, build, install (locally in build-dir):
-ExternalProject_Add(
-	ROFL_Common
-	URL ${CMAKE_SOURCE_DIR}/contrib/rofl-common.zip
-	URL_MD5 5127f286f96010ec9e85dcf4c712599d
-	BUILD_IN_SOURCE 1
-	CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_BINARY_DIR}/externals
-)
+	# rofl-common: extract, build, install (locally in build-dir):
+	ExternalProject_Add(
+		ROFL_Common
+		URL ${CMAKE_SOURCE_DIR}/contrib/rofl-common.zip
+		URL_MD5 5127f286f96010ec9e85dcf4c712599d
+		BUILD_IN_SOURCE 1
+		CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_BINARY_DIR}/externals
+	)
 
-# libvirt - specific revision
-ExternalProject_Add( Libvirt
+	IF(ENABLE_KVM)
+		# libvirt - specific revision
+		ExternalProject_Add( Libvirt
 
-	## this refers to the specific revision from README_COMPILE.md
-	# GIT_REPOSITORY git://libvirt.org/libvirt.git
-	# GIT_TAG f57842ecfda1ece8c59718e62464e17f75a27062
+			## this refers to the specific revision from README_COMPILE.md
+			# GIT_REPOSITORY git://libvirt.org/libvirt.git
+			# GIT_TAG f57842ecfda1ece8c59718e62464e17f75a27062
 
-	# try a regular release instead:
-	URL http://libvirt.org/sources/libvirt-1.2.17.tar.gz
-	URL_MD5 a1f49050223be3cbd7678c32b1ee2756
+			# try a regular release instead:
+			URL http://libvirt.org/sources/libvirt-1.2.17.tar.gz
+			URL_MD5 a1f49050223be3cbd7678c32b1ee2756
 
-	BUILD_IN_SOURCE 1
-	CONFIGURE_COMMAND ./autogen.sh --prefix=${CMAKE_BINARY_DIR}/externals
-	UPDATE_COMMAND ""
-	ALWAYS 0
-)
+			BUILD_IN_SOURCE 1
+			CONFIGURE_COMMAND ./autogen.sh --prefix=${CMAKE_BINARY_DIR}/externals
+			UPDATE_COMMAND ""
+			ALWAYS 0
+		)
+	ENDIF(ENABLE_KVM)
 
 ENDIF(BUILD_ExternalProjects)
 

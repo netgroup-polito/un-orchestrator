@@ -3,15 +3,10 @@
 
 #pragma once
 
-#include <rofl/common/logging.h>
-
 #include "../../node_resource_manager/graph/low_level_graph/graph.h"
 #include "../../utils/logger.h"
 #include "../../utils/constants.h"
 
-#define OFCONTROLLER_MODULE_NAME	"Openflow-Controller"
-
-using namespace rofl;
 using namespace lowlevel;
 
 /**
@@ -21,11 +16,12 @@ using namespace lowlevel;
 *		the LSI itself.
 */
 
-class Controller : public crofbase
+class Controller : public rofl::crofbase, public virtual rofl::cthread_env
 {
-friend class GraphManager;
+  friend class GraphManager;
 
 private:
+	rofl::cthread thread;
 	/**
 	*	@brief: handle to the datapath
 	*/
@@ -45,7 +41,7 @@ private:
 	/**
 	*	@brief: TCP port that the dpath should use to contact the controller
 	*/
-	string controllerPort;
+	unsigned controllerPort;
 
 	/**
 	*	@brief: all the operations in the controller are serialized with
@@ -64,7 +60,7 @@ private:
 	bool removeRulesFromLSI(list<Rule> rules);
 
 public:
-	Controller(rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap,Graph graph,string controllerPort);
+	Controller(rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap,Graph graph, unsigned controllerPort);
 
 	void start();
 
@@ -104,13 +100,11 @@ public:
 	*/
 	bool removeRules(list<Rule> rules);
 
-	static void *loop(void *param);
-
 protected:
 	/**
 	*	@brief: return the TCP port that the dpath should use to contact the controller
 	*/
-	string getControllerPort();
+	unsigned getControllerPort();
 
 };
 

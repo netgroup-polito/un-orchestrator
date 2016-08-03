@@ -1,8 +1,6 @@
 #ifndef DOCKER_CONSTANTS_H_
 #define DOCKER_CONSTANTS_H_ 1
 
-#define DOCKER_MODULE_NAME		"Docker-Manager"
-
 /**
 *	@brief: paths of the bash scripts used to manage dockers
 */

@@ -1,6 +1,8 @@
 #include "SQLiteManager.h"
 #include "SQLiteManager_constants.h"
 
+static const char LOG_MODULE_NAME[] = "SQLite-Manager";
+
 sqlite3 *SQLiteManager::db = NULL;
 char *SQLiteManager::db_name = NULL;
 
@@ -8,12 +10,10 @@ SQLiteManager::SQLiteManager(char *db_name) {
 	this->db_name = db_name;
 
 	if (connect(db_name)) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__,
-				"Can't open database: %s.", sqlite3_errmsg(this->db));
+		ULOG_ERR("Can't open database: %s.", sqlite3_errmsg(this->db));
 		throw SQLiteManagerException();
 	} else
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-				"Opened database successfully.");
+		ULOG_DBG_INFO("Opened database successfully.");
 }
 
 SQLiteManager::~SQLiteManager() {
@@ -80,12 +80,10 @@ bool SQLiteManager::createTables() {
 	rc = sqlite3_exec(this->db, sql, NULL, NULL, &zErrMsg);
 
 	if (rc != SQLITE_OK) {
-		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "SQL error: %s.",
-				zErrMsg);
+		ULOG_WARN("SQL error: %s.", zErrMsg);
 		return false;
 	} else
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-				"Table created successfully.");
+		ULOG_DBG_INFO("Table created successfully.");
 
 	return true;
 }
@@ -177,12 +175,10 @@ bool SQLiteManager::cleanTables() {
 	rc = sqlite3_exec(this->db, sql, NULL, NULL, &zErrMsg);
 
 	if (rc != SQLITE_OK) {
-		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "SQL error: %s.",
-				zErrMsg);
+		ULOG_WARN("SQL error: %s.", zErrMsg);
 		return false;
 	} else
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-				"Tables (LOGIN, RESOURCES, PERMISSIONS) has been cleaned up.");
+		ULOG_DBG_INFO("Tables (LOGIN, RESOURCES, PERMISSIONS) has been cleaned up.");
 
 	return true;
 }

@@ -254,8 +254,6 @@ def processVNFs(nffg, content):
 	universal_node = infrastructure.nodes.node[constants.NODE_ID]
 	instances = universal_node.NF_instances
 	
-	foundTypes = []
-	
 	LOG.debug("Considering instances:")
 	LOG.debug("'%s'",infrastructure.xml())
 	
@@ -284,12 +282,6 @@ def processVNFs(nffg, content):
 			LOG.error("VNF of type '%s' is not supported by the UN!",vnfType)
 			raise ClientError("VNF of type "+ vnfType +" is not supported by the UN!")
 		
-		if vnfType in foundTypes:
-			LOG.error("Found multiple NF instances with the same type '%s'!",vnfType)
-			LOG.error("This is not supported by the universal node!")
-			raise ClientError("Found multiple NF instances with the same type "+vnfType)
-			
-		foundTypes.append(vnfType)
 		port_list = []
 		unify_control = []
 		unify_env_variables = []

@@ -1,8 +1,6 @@
 #ifndef XDPD_CONSTANTS_H_
 #define XDPD_CONSTANTS_H_ 1
 
-#define XDPD_MODULE_NAME			"xDPd-Manager"
-
 /**
 *	@brief: IP address and TCP port to be used to send commands to xDPd
 */
