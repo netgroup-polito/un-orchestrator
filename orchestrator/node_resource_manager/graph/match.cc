@@ -7,14 +7,11 @@ Match::Match() :
 	eth_src(NULL), eth_src_mask(NULL), eth_dst(NULL), eth_dst_mask(NULL), isEthType(false),
 	isVlanID(false),isNoVlan(false),isAnyVlan(false),isVlanPCP(false),isEndpointVlanID(false),
 	isIpDSCP(false),isIpECN(false),isIpProto(false), ipv4_src(NULL), ipv4_src_mask(NULL),
-		ipv4_dst(NULL), ipv4_dst_mask(NULL),
-	isTcpSrc(false), isTcpDst(false),
-	isUdpSrc(false), isUdpDst(false),
-	isSctpSrc(false), isSctpDst(false),
-	isIcmpv4Type(false), isIcmpv4Code(false),
+	ipv4_dst(NULL), ipv4_dst_mask(NULL), isTcpProtocol(false), isUdpProtocol(false),
+	isSctpProtocol(false), isIcmpv4Type(false), isIcmpv4Code(false),
 	isArpOpcode(false), arp_spa(NULL),arp_spa_mask(NULL), arp_tpa(NULL), arp_tpa_mask(NULL), arp_sha(NULL), arp_tha(NULL),
 	ipv6_src(NULL), ipv6_src_mask(NULL), ipv6_dst(NULL), ipv6_dst_mask(NULL), isIpv6Flabel(false),
-		ipv6_flabel(false),ipv6_nd_target(NULL), ipv6_nd_sll(NULL), ipv6_nd_tll(NULL),
+	ipv6_flabel(false),ipv6_nd_target(NULL), ipv6_nd_sll(NULL), ipv6_nd_tll(NULL),
 	isIcmpv6Type(false), isIcmpv6Code(false),
 	isMplsLabel(false), mplsLabel(false), isMplsTC(false), mplsTC(false),
 	gre_key(NULL)
@@ -152,40 +149,26 @@ bool Match::isEqual(const Match &other) const
 	/*
 	*	TCP
 	*/
-	if((isTcpSrc && !other.isTcpSrc) || (!isTcpSrc && other.isTcpSrc))
+	if((isTcpProtocol != other.isTcpProtocol))
 		return false;
-	if(isTcpSrc && tcp_src != other.tcp_src)
+	if(isTcpProtocol && (transport_src_port != other.transport_src_port || transport_dst_port != other.transport_dst_port))
 		return false;
 
-	if((isTcpDst && !other.isTcpDst) || (!isTcpDst && other.isTcpDst))
-		return false;
-	if(isTcpDst && tcp_dst != other.tcp_dst)
-		return false;
 
 	/*
 	*	UDP
 	*/
-	if((isUdpSrc && !other.isUdpSrc) || (!isUdpSrc && other.isUdpSrc))
+	if(isUdpProtocol != other.isUdpProtocol)
 		return false;
-	if(isUdpSrc && udp_src != other.udp_src)
-		return false;
-
-	if((isUdpDst && !other.isUdpDst) || (!isUdpDst && other.isUdpDst))
-		return false;
-	if(isUdpDst && udp_dst != other.udp_dst)
+	if(isUdpProtocol && (transport_src_port != other.transport_src_port || transport_dst_port != other.transport_dst_port))
 		return false;
 
 	/*
 	*	SCTP
 	*/
-	if((isSctpSrc && !other.isSctpSrc) || (!isSctpSrc && other.isSctpSrc))
-		return false;
-	if(isSctpSrc && sctp_src != other.sctp_src)
-		return false;
-
-	if((isSctpDst && !other.isSctpDst) || (!isSctpDst && other.isSctpDst))
-		return false;
-	if(isSctpDst && sctp_dst != other.sctp_dst)
+	if(isSctpProtocol != other.isSctpProtocol)
+	return false;
+	if(isSctpProtocol && (transport_src_port != other.transport_src_port || transport_dst_port != other.transport_dst_port))
 		return false;
 
 	/*
@@ -439,28 +422,13 @@ void Match::setAllCommonFields(Match match)
 		setIpv4DstMask(match.ipv4_dst_mask);
 
 	/*
-	*	TCP
+	*	TCP, UDP, SCTP
 	*/
-	if(match.isTcpSrc)
-		setTcpSrc(match.tcp_src);
-	if(match.isTcpDst)
-		setTcpDst(match.tcp_dst);
-
-	/*
-	*	UDP
-	*/
-	if(match.isUdpSrc)
-		setUdpSrc(match.udp_src);
-	if(match.isUdpDst)
-		setUdpDst(match.udp_dst);
-
-	/*
-	*	SCTP
-	*/
-	if(match.isSctpSrc)
-		setSctpSrc(match.sctp_src);
-	if(match.isSctpDst)
-		setSctpDst(match.sctp_dst);
+	if(match.isTcpProtocol || match.isUdpProtocol || match.isSctpProtocol)
+	{
+		setTransportSrcPort(match.transport_src_port);
+		setTransportDstPort(match.transport_dst_port);
+	}
 
 	/*
 	*	ICMPv4
@@ -607,6 +575,15 @@ void Match::setIpProto(uint8_t ipProto)
 {
 	this->ipProto = ipProto;
 	isIpProto = true;
+	switch (ipProto)
+	{
+		case 6: isTcpProtocol=true;
+			break;
+		case 17: isUdpProtocol=true;
+			break;
+		case 132: isSctpProtocol=true;
+			break;
+	}
 }
 
 void Match::setIpv4Src(char *ipv4_src)
@@ -633,40 +610,29 @@ void Match::setIpv4DstMask(char *ipv4_dst_mask)
 	strcpy(this->ipv4_dst_mask,ipv4_dst_mask);
 }
 
-void Match::setTcpSrc(uint16_t tcp_src)
+void Match::setTransportSrcPort(uint16_t tcp_src)
 {
-	this->tcp_src = tcp_src;
-	isTcpSrc = true;
+	this->transport_src_port = tcp_src;
 }
 
-void Match::setTcpDst(uint16_t tcp_dst)
+void Match::setTransportDstPort(uint16_t tcp_dst)
 {
-	this->tcp_dst = tcp_dst;
-	isTcpDst = true;
+	this->transport_dst_port = tcp_dst;
 }
 
-void Match::setUdpSrc(uint16_t udp_src)
+void Match::setTcpProtocol()
 {
-	this->udp_src = udp_src;
-	isUdpSrc = true;
+	isTcpProtocol = true;
 }
 
-void Match::setUdpDst(uint16_t udp_dst)
+void Match::setUdpProtocol()
 {
-	this->udp_dst = udp_dst;
-	isUdpDst = true;
+	isUdpProtocol = true;
 }
 
-void Match::setSctpSrc(uint16_t sctp_src)
+void Match::setSctpProtocol()
 {
-	this->sctp_src = sctp_src;
-	isSctpSrc = true;
-}
-
-void Match::setSctpDst(uint16_t sctp_dst)
-{
-	this->sctp_dst = sctp_dst;
-	isSctpDst = true;
+	isSctpProtocol = true;
 }
 
 void Match::setIcmpv4Type(uint8_t icmpv4Type)
@@ -879,51 +845,39 @@ void Match::toJSON(Object &match)
 		match[IPv4_DST_MASK] =  ipv4_dst_mask;
 
 	/*
-	*	TCP
+	*	TCP, UDP
 	*/
-	if(isTcpSrc)
+	if(isTcpProtocol || isUdpProtocol)
 	{
-		stringstream tcpsrc;
-		tcpsrc << tcp_src;
-		match[PORT_SRC] = tcpsrc.str().c_str();
-	}
-	if(isTcpDst)
-	{
-		stringstream tcpdst;
-		tcpdst << tcp_dst;
-		match[PORT_DST] = tcpdst.str().c_str();
-	}
-
-	/*
-	*	UDP
-	*/
-	if(isUdpSrc)
-	{
-		stringstream udpsrc;
-		udpsrc << udp_src;
-		match[PORT_SRC] = udpsrc.str().c_str();
-	}
-	if(isUdpDst)
-	{
-		stringstream udpdst;
-		udpdst << udp_dst;
-		match[PORT_DST] = udpdst.str().c_str();
+		stringstream tcpUdpProto;
+		if(transport_src_port)
+		{
+			tcpUdpProto << transport_src_port;
+			match[PORT_SRC] = tcpUdpProto.str().c_str();
+		}
+		else if(transport_dst_port)
+		{
+			tcpUdpProto << transport_dst_port;
+			match[PORT_DST] = tcpUdpProto.str().c_str();
+		}
 	}
 
 	/*
 	*	SCTP
 	*/
-	if(isSctpSrc)
+	if(isSctpProtocol)
 	{
-		stringstream sctpsrc;
-		sctpsrc << sctp_src;
-		match[SCTP_SRC] = sctpsrc.str().c_str();
-	}
-	if(isSctpDst)
-	{
-		stringstream sctpdst;
-		sctpdst << sctp_dst;
-		match[SCTP_DST] = sctpdst.str().c_str();
+		stringstream scptProto;
+		if(transport_src_port)
+		{
+			scptProto << transport_src_port;
+			match[SCTP_SRC] = scptProto.str().c_str();
+		}
+		else if(transport_dst_port)
+		{
+			scptProto << transport_dst_port;
+			match[SCTP_DST] = scptProto.str().c_str();
+		}
 	}
 
 	/*
@@ -1068,7 +1022,7 @@ string Match::prettyPrint()
 	if(isIpECN)
 		ss << " # IPv4 ecn: " << int(ipECN);
 	if(isIpProto)
-		ss << " # IPv4 proto: " << (ipProto & 0xF);
+		ss << " # IPv4 proto: " << (ipProto & 0xFF);
 	if(ipv4_src)
 		ss << " # IPv4 src: " << ipv4_src;
 	if(ipv4_src_mask)
@@ -1081,26 +1035,26 @@ string Match::prettyPrint()
 	/*
 	*	TCP
 	*/
-	if(isTcpSrc)
-		ss << " # TCP src port: " << tcp_src;
-	if(isTcpDst)
-		ss << " # TCP dst port: " << tcp_dst;
+	if(isTcpProtocol && transport_src_port)
+		ss << " # TCP src port: " << transport_src_port;
+	if(isTcpProtocol && transport_dst_port)
+		ss << " # TCP dst port: " << transport_dst_port;
 
 	/*
 	*	UDP
 	*/
-	if(isUdpSrc)
-		ss << " # UDP src port: " << udp_src;
-	if(isUdpDst)
-		ss << " # UDP dst port: " << udp_dst;
+	if(isUdpProtocol && transport_src_port)
+		ss << " # UDP src port: " << transport_src_port;
+	if(isUdpProtocol && transport_dst_port)
+		ss << " # UDP dst port: " << transport_dst_port;
 
 	/*
 	*	SCTP
 	*/
-	if(isSctpSrc)
-		ss << " # SCTP src port: " << sctp_src;
-	if(isSctpDst)
-		ss << " # SCTP dst port: " << sctp_dst;
+	if(isSctpProtocol && transport_src_port)
+		ss << " # SCTP src port: " << transport_src_port;
+	if(isSctpProtocol && transport_dst_port)
+		ss << " # SCTP dst port: " << transport_dst_port;
 
 	/*
 	*	ICMPv4

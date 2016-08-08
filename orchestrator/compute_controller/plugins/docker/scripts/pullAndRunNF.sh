@@ -36,7 +36,7 @@ num_ports=$4
 position_num_forwarding=`expr 4 + $num_ports \* 3 + 1`
 num_forwarding=${!position_num_forwarding}
 
-echo -ne "sudo docker run -d --name $1_$2 "   > $tmp_file
+echo -ne "sudo docker run -d -i --name $1_$2 "   > $tmp_file
 
 if [ $num_forwarding != 0 ]
 then
@@ -86,7 +86,7 @@ then
 	done
 fi
 
-echo "--privileged=true  $3 " >> $tmp_file
+echo "--privileged=true  $3 /bin/bash" >> $tmp_file
 
 echo [`date`]"[$0] Executing command: '"`cat $tmp_file`"'"
 
@@ -130,19 +130,19 @@ do
 	echo [`date`]"[$0] Inserting port ${!current} inside a container. It will have name eth$c"
 	
 	ip netns exec $PID ip link set dev ${!current} name eth$c
- 	ip netns exec $PID ip link set eth$c up
- 	
- 	if [ ${!current_mac} != 0 ]
- 	then
- 		echo [`date`]"[$0] Assigning MAC address '${!current_mac}'"
- 		ip netns exec $PID ifconfig eth$c hw ether ${!current_mac}
- 	fi
- 	
- 	if [ ${!current_ip} != 0 ]
- 	then
- 		echo [`date`]"[$0] Assigning IP configuration '${!current_ip}'"
- 		ip netns exec $PID ifconfig eth$c ${!current_ip}
- 	fi
+	ip netns exec $PID ip link set eth$c up
+	
+	if [ ${!current_mac} != 0 ]
+	then
+		echo [`date`]"[$0] Assigning MAC address '${!current_mac}'"
+		ip netns exec $PID ifconfig eth$c hw ether ${!current_mac}
+	fi
+	
+	if [ ${!current_ip} != 0 ]
+	then
+		echo [`date`]"[$0] Assigning IP configuration '${!current_ip}'"
+		ip netns exec $PID ifconfig eth$c ${!current_ip}
+	fi
 	
 #	ip netns exec $PID ifconfig eth$c
 	
@@ -150,5 +150,10 @@ do
 	current_mac=`expr $current_mac + 3`
 	current_ip=`expr $current_ip + 3`	
 done
+
+# Start the script "start.sh" inside the container
+echo [`date`]"[$0] Executing command 'sudo docker exec $1_$2 ./start.sh &> $1_$2.log &'"
+sudo docker exec $1_$2 ./start.sh &> $1_$2.log &
+echo [`date`]"[$0] VNF log available in file '$1_$2.log'"
 
 exit 1

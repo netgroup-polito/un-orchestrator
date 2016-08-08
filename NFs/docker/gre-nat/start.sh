@@ -1,8 +1,5 @@
 #! /bin/bash
 
-#This gives time to the UN to configure the network namespace of the container
-sleep 3
-
 # Traffic comes in from BNG over GRE tunnel(s) on eth1
 # and goes out, NAT'ed, at eth0
 # eth0 gets its IP automatically assigned and this address is
@@ -48,10 +45,3 @@ ifconfig
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
 sysctl net.ipv4.ip_forward=1
-
-#Keep the container alive
-while true
-do
-	sleep 100
-done
-

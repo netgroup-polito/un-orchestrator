@@ -481,6 +481,8 @@ def processRules(nffg, content):
 					endpoint = endp
 					break
 			if endpoint is None:
+				while nffg.getEndPoint(str(endpoint_id)) is not None:
+					endpoint_id += 1
 				endpoint = EndPoint(_id = str(endpoint_id) ,_type = "interface", interface = port_name, name = port.name.get_value())
 				nffg.addEndPoint(endpoint)				
 				endpoint_id += 1
@@ -541,6 +543,8 @@ def processRules(nffg, content):
 					endpoint = endp
 					break
 			if endpoint is None:
+				while nffg.getEndPoint(str(endpoint_id)) is not None:
+					endpoint_id += 1
 				endpoint = EndPoint(_id = str(endpoint_id) ,_type = "interface", interface = port_name, name = port.name.get_value())
 				nffg.addEndPoint(endpoint)
 				endpoint_id += 1
@@ -1180,4 +1184,7 @@ api.add_route('/edit-config',DoEditConfig())
 #in_file = open ("config/nffg_examples/nffg_delete_flow_vnf.xml")
 #in_file = open ("config/nffg_examples/er_nffg_virtualizer5.xml")
 #in_file = open ("config/nffg_examples/step1.xml")
+#in_file = open ("config/nffg_examples/a.xml")
+#DoEditConfig().on_post(in_file.read(), None)
+#in_file = open ("config/nffg_examples/b.xml")
 #DoEditConfig().on_post(in_file.read(), None)

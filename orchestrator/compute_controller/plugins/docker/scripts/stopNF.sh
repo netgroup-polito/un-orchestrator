@@ -37,6 +37,6 @@ else
 	exit 0
 fi
 
-rm $file
+rm $file $file.log
 
 exit 1

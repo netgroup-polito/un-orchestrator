@@ -69,26 +69,23 @@ protected:
 	/*
 	*	TCP
 	*/
-	bool isTcpSrc;
-	uint16_t tcp_src;
-	bool isTcpDst;
-	uint16_t tcp_dst;
+	bool isTcpProtocol;
 
 	/*
 	*	UDP
 	*/
-	bool isUdpSrc;
-	uint16_t udp_src;
-	bool isUdpDst;
-	uint16_t udp_dst;
+	bool isUdpProtocol;
 
 	/*
 	*	SCTP
 	*/
-	bool isSctpSrc;
-	uint16_t sctp_src;
-	bool isSctpDst;
-	uint16_t sctp_dst;
+	bool isSctpProtocol;
+
+	/*
+	*	SCTP/TCP/UDP src and dest port
+	*/
+	uint16_t transport_src_port;
+	uint16_t transport_dst_port;
 
 	/*
 	*	ICMPv4
@@ -166,12 +163,11 @@ public:
 	void setIpv4SrcMask(char *ipv4_src_mask);
 	void setIpv4Dst(char *ipv4_dst);
 	void setIpv4DstMask(char *ipv4_dst_mask);
-	void setTcpSrc(uint16_t tcp_src);
-	void setTcpDst(uint16_t tcp_dst);
-	void setUdpSrc(uint16_t udp_src);
-	void setUdpDst(uint16_t udp_dst);
-	void setSctpSrc(uint16_t sctp_src);
-	void setSctpDst(uint16_t sctp_dst);
+	void setTransportSrcPort(uint16_t tcp_src);
+	void setTransportDstPort(uint16_t tcp_dst);
+	void setTcpProtocol();
+	void setUdpProtocol();
+	void setSctpProtocol();
 	void setIcmpv4Type(uint8_t icmpv4Type);
 	void setIcmpv4Code(uint8_t icmpv4Code);
 	void setArpOpCode(uint16_t arpOpcode);
