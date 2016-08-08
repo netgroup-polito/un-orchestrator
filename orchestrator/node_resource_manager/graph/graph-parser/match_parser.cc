@@ -538,7 +538,7 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 		{
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,PORT_SRC,value.getString().c_str());
 			uint32_t transportSrcPort;
-			if((sscanf(value.getString().c_str(),"%"SCNd32,&transportSrcPort) != 1) || (transportSrcPort > 65535))
+			if((sscanf(value.getString().c_str(),"%" SCNd32,&transportSrcPort) != 1) || (transportSrcPort > 65535))
 			{
 				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",PORT_SRC,value.getString().c_str());
 				return false;
@@ -550,7 +550,7 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 		{
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,PORT_DST,value.getString().c_str());
 			uint32_t transportDstPort;
-			if((sscanf(value.getString().c_str(),"%"SCNd32,&transportDstPort) != 1)  || (transportDstPort > 65535))
+			if((sscanf(value.getString().c_str(),"%" SCNd32,&transportDstPort) != 1)  || (transportDstPort > 65535))
 			{
 				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",PORT_DST,value.getString().c_str());
 				return false;
@@ -774,7 +774,7 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,PROTOCOL,value.getString().c_str());
 			uint16_t ipProto;
 
-			if((sscanf(value.getString().c_str(),"%"SCNd16,&ipProto) != 1) || (ipProto > 255) )
+			if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
 			{
 				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",PROTOCOL,value.getString().c_str());
 				return false;
