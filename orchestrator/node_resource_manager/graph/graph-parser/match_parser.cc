@@ -534,7 +534,7 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 
 			//XXX: currently, this information is ignored
 		}
-		else if(name == PORT_SRC || name == SCTP_SRC)
+		else if(name == PORT_SRC)
 		{
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,PORT_SRC,value.getString().c_str());
 			uint32_t transportSrcPort;
@@ -546,13 +546,37 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			match.setTransportSrcPort(transportSrcPort & 0xFFFF);
 			foundProtocolField = true;
 		}
-		else if(name == PORT_DST || name == SCTP_DST)
+		else if(name == SCTP_SRC)
+		{
+			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,SCTP_SRC,value.getString().c_str());
+			uint32_t transportSrcPort;
+			if((sscanf(value.getString().c_str(),"%" SCNd32,&transportSrcPort) != 1) || (transportSrcPort > 65535))
+			{
+				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",SCTP_SRC,value.getString().c_str());
+				return false;
+			}
+			match.setTransportSrcPort(transportSrcPort & 0xFFFF);
+			foundProtocolField = true;
+		}
+		else if(name == PORT_DST)
 		{
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,PORT_DST,value.getString().c_str());
 			uint32_t transportDstPort;
 			if((sscanf(value.getString().c_str(),"%" SCNd32,&transportDstPort) != 1)  || (transportDstPort > 65535))
 			{
 				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",PORT_DST,value.getString().c_str());
+				return false;
+			}
+			match.setTransportDstPort(transportDstPort & 0xFFFF);
+			foundProtocolField = true;
+		}
+		else if(name == SCTP_DST)
+		{
+			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,SCTP_DST,value.getString().c_str());
+			uint32_t transportDstPort;
+			if((sscanf(value.getString().c_str(),"%" SCNd32,&transportDstPort) != 1)  || (transportDstPort > 65535))
+			{
+				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",SCTP_DST,value.getString().c_str());
 				return false;
 			}
 			match.setTransportDstPort(transportDstPort & 0xFFFF);

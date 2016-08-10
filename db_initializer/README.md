@@ -10,14 +10,27 @@ Database Initializer is the module responsible for creating and populating the d
 - Current resources permissions: includes the resources provided by the system plus permissions information
 - Default usage permissions: default permissions for each class of resoruces
 
-##How to use it
+## Compile the Database Initializer
 
-Compile:
+	$ cd [un-orchestrator]
 
+	; Choose among possible compilation options
+	$ ccmake .
+
+The previous command allows you to select some configuration parameters for the
+db-initializder, such as the logging level. 
+**Please be sure that the option `BUILD_DBInitializer ` is `ON`.**
+When you're finished, exit from the `ccmake` interface by 
+*generating the configuration files* (press 'c' and 'g')
+and type the following commands:
+
+	; Create makefile scripts based on the previously selected options
 	$ cmake .
+
+	; Compile and create the executable
 	$ make
-	
-Run: 
+
+# How to run the Database Initializer
 
 	$ sudo ./db_initializer <default-admin-password>
 

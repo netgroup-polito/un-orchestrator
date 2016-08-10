@@ -225,17 +225,17 @@ Otherwise use:
 	$ export RTE_SDK=$DPDK_DIR
 	$ export RTE_TARGET=x86_64-ivshmem-linuxapp-gcc
 
-You can then build the un-orchestrator and/or name resolver:
+You can then build the un-orchestrator:
 
-	$ cd un-orchestrator
+	$ cd [un-orchestrator]
 	
 	; Choose among possible compilation options
 	$ ccmake .
 
 The previous command allows you to select some configuration parameters for the
-un-orchestrator and name resolver, such as the virtual switch used, which kind of execution environment(s)
-you want to enable, and more. 
-Please be sure that the option BUILD_ExternalProjects is OFF to avoid reinstalling the dependencies. 
+un-orchestrator, such as the virtual switch used, which kind of execution environment(s)
+you want to enable, and more.
+**Please be sure that the option `BUILD_Orchestrator` is `ON`.**
 When you're finished, exit from the `ccmake` interface by 
 *generating the configuration files* (press 'c' and 'g') and type the following commands:
 	

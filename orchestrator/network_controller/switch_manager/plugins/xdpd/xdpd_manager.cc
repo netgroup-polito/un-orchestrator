@@ -8,10 +8,10 @@ static const char LOG_MODULE_NAME[] = "xDPd-Manager";
 struct comparePortInfoName
 {
 	comparePortInfoName(const std::string& name) : name(name) {}
-  bool operator()(const struct nf_port_info& pi) { return pi.port_name == name; }
+	bool operator()(const struct nf_port_info& pi) { return pi.port_name == name; }
 
 private:
-  std::string name;
+	std::string name;
 };
 
 XDPDManager::XDPDManager()

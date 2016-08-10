@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include "../orchestrator/node_resource_manager/database_manager/SQLite/SQLiteManager.h"
-#include "../orchestrator/node_resource_manager/database_manager/SQLite/INIReader.h"
+#include <INIReader.h>
 
 #include "../orchestrator/utils/constants.h"
 #include "../orchestrator/utils/logger.h"

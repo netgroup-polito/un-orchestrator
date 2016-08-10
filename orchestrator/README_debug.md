@@ -45,6 +45,7 @@ The following commands show how to setup Wireshark to debug OpenFlow messages
 
 	; For each controller port different from well known TCP ports for
 	OpenFlow (6633 and 6653) exec the following command:
+	$ sudo su
 	$ echo "tcp_dissector_table:add(#PORT, p_of)" >> \
 	  /usr/lib/x86_64-linux-gnu/wireshark/libwireshark3/plugins/openflow.lua
 	; where #PORT is the port number of the controller

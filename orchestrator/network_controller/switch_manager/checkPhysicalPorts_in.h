@@ -60,22 +60,6 @@ public:
 		return type;
 	}
 
-	string getPortTypeToString()
-	{
-		switch(type)
-		{
-			case ETHERNET_PORT:
-				return string("ethernet");
-				break;
-			case WIFI_PORT:
-				return string("wifi");
-				break;
-			default:
-				assert(0);
-				return "";
-		}
-	}
-
 	//XXX this operator is required to put an object of this class into a set
 	bool operator< (const CheckPhysicalPortsIn& lhs) const
 	{
