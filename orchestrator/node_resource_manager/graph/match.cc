@@ -8,7 +8,7 @@ Match::Match() :
 	isVlanID(false),isNoVlan(false),isAnyVlan(false),isVlanPCP(false),isEndpointVlanID(false),
 	isIpDSCP(false),isIpECN(false),isIpProto(false), ipv4_src(NULL), ipv4_src_mask(NULL),
 	ipv4_dst(NULL), ipv4_dst_mask(NULL), isTcpProtocol(false), isUdpProtocol(false),
-	isSctpProtocol(false), isIcmpv4Type(false), isIcmpv4Code(false),
+	isSctpProtocol(false), transport_src_port(0), transport_dst_port(0), isIcmpv4Type(false), isIcmpv4Code(false),
 	isArpOpcode(false), arp_spa(NULL),arp_spa_mask(NULL), arp_tpa(NULL), arp_tpa_mask(NULL), arp_sha(NULL), arp_tha(NULL),
 	ipv6_src(NULL), ipv6_src_mask(NULL), ipv6_dst(NULL), ipv6_dst_mask(NULL), isIpv6Flabel(false),
 	ipv6_flabel(false),ipv6_nd_target(NULL), ipv6_nd_sll(NULL), ipv6_nd_tll(NULL),
