@@ -3,8 +3,8 @@
 namespace lowlevel
 {
 
-Action::Action(unsigned int port_id)
-	: type(openflow::OFPAT_OUTPUT), port_id(port_id), is_local_port(false), is_normal(false)
+Action::Action()
+	: type(openflow::OFPAT_OUTPUT), is_local_port(false), is_normal(false)
 {
 
 }
@@ -21,12 +21,19 @@ Action::Action(bool is_local_port, bool is_normal)
 
 }
 
+void Action::addOutputPort(unsigned int port_id)
+{
+	ports_id.push_back(port_id);
+}
+
 bool Action::operator==(const Action &other) const
 {
-	if((type == other.type) && (port_id == other.port_id))
-		return true;
+	if((type != other.type) && (ports_id.front() == other.ports_id.front()))
+		return false;
+	//for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
+	// TODO: check if ports_id list are equal!!
 
-	return false;
+	return true;
 }
 
 openflow::ofp_action_type Action::getActionType()
@@ -41,26 +48,30 @@ void Action::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
 		(*ga)->fillFlowmodMessage(message,&position);
 
-	//Now we can consider the output action
-	switch(OFP_VERSION)
+	//Now we can consider the output actions
+	for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
 	{
-		case OFP_10:
-			if(is_local_port)
-				message.set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_LOCAL);
-			else if(is_normal)
-				message.set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_NORMAL);
-			else
-				message.set_actions().add_action_output(cindex(position)).set_port_no(port_id);
-			break;
-		case OFP_12:
-		case OFP_13:
-			if(is_local_port)
-				message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_LOCAL);
-			else if(is_normal)
-				message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_NORMAL);
-			else
-				message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(port_id);
-			break;
+		switch(OFP_VERSION)
+		{
+			case OFP_10:
+				if(is_local_port)
+					message.set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_LOCAL);
+				else if(is_normal)
+					message.set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_NORMAL);
+				else
+					message.set_actions().add_action_output(cindex(position)).set_port_no(*outputPort);
+				break;
+			case OFP_12:
+			case OFP_13:
+				if(is_local_port)
+					message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_LOCAL);
+				else if(is_normal)
+					message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_NORMAL);
+				else
+					message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(*outputPort);
+				break;
+		}
+		position++;
 	}
 }
 
@@ -74,7 +85,7 @@ void Action::print()
 		else if(is_normal)
 			cout << "\t\t\tOUTPUT: " << "NORMAL" << endl;
 		else
-			cout << "\t\t\tOUTPUT: " << port_id << endl;
+			cout << "\t\t\tOUTPUT: " << ports_id.front() << endl; // TODO: fix this (.front() is not correct!)
 		for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
 			(*ga)->print();
 		cout << "\t\t}" << endl;
@@ -90,7 +101,7 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 	map<string,unsigned int> pysicalPorts = lsi0->getPhysicalPorts();
 	for(map<string,unsigned int>::iterator it = pysicalPorts.begin(); it != pysicalPorts.end(); it++)
 	{
-		if(it->second == port_id)
+		if(it->second == ports_id.front())// TODO: fix this (.front() is not correct!)
 		{
 			ss << it->first;
 			return ss.str();
@@ -104,9 +115,9 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 		vector<VLink> vlinks = it->second->getVirtualLinks();
 		for(vector<VLink>::iterator vl = vlinks.begin(); vl != vlinks.end(); vl++)
 		{
-			if(vl->getRemoteID() == port_id)
+			if(vl->getRemoteID() == ports_id.front())// TODO: fix this (.front() is not correct!)
 			{
-				ss << port_id << " (graph: " << it->first << ")";
+				ss << ports_id.front() << " (graph: " << it->first << ")";
 				goto conclude;
 			}
 		}
@@ -119,7 +130,7 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 	else
 	{
 		//The code could be here only when a SIGINT is received and all the graph are going to be removed
-		ss << port_id << " (unknown graph)";
+		ss << ports_id.front() << " (unknown graph)";// TODO: fix this (.front() is not correct!)
 	}
 
 conclude:

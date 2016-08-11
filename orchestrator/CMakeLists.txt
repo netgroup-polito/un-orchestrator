@@ -215,6 +215,16 @@ SET(SOURCES1
 	node_resource_manager/graph/generic_actions/generic_action.cc
 	node_resource_manager/graph/generic_actions/vlan_action.h
 	node_resource_manager/graph/generic_actions/vlan_action.cc
+	node_resource_manager/graph/output_actions/output_action.h
+	node_resource_manager/graph/output_actions/output_action.cc
+	node_resource_manager/graph/output_actions/action_port.h
+	node_resource_manager/graph/output_actions/action_port.cc
+	node_resource_manager/graph/output_actions/action_network_function.h
+	node_resource_manager/graph/output_actions/action_network_function.cc
+	node_resource_manager/graph/output_actions/action_endpoint_internal.h
+	node_resource_manager/graph/output_actions/action_endpoint_internal.cc
+	node_resource_manager/graph/output_actions/action_endpoint_gre.h
+	node_resource_manager/graph/output_actions/action_endpoint_gre.cc
 
 	node_resource_manager/graph/graph-parser/graph_parser.h
 	node_resource_manager/graph/graph-parser/graph_parser.cc

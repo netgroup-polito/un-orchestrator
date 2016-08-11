@@ -138,6 +138,8 @@ protected:
 	*		endpoint gre -> NF:
 	*			The generic actions are inserted in the tenant LSI
 	*/
+
+	static void handleMathOnPortLSI0(highlevel::Graph *graph, LSI *tenantLSI,string ruleID, highlevel::Match& match, highlevel::Action *action, uint64_t priority, map<string,unsigned int>& ports_lsi0, vector<VLink>& tenantVirtualLinks,lowlevel::Graph &lsi0Graph);
 };
 
 #endif //GRAPH_TRANSLATOR_H_

@@ -6,6 +6,11 @@
 #include "../../../utils/constants.h"
 #include "../generic_actions/generic_action.h"
 #include "../generic_actions/vlan_action.h"
+#include "../output_actions/output_action.h"
+#include "../output_actions/action_port.h"
+#include "../output_actions/action_network_function.h"
+#include "../output_actions/action_endpoint_internal.h"
+#include "../output_actions/action_endpoint_gre.h"
 
 #include <string>
 #include <iostream>
@@ -37,14 +42,24 @@ public:
 	virtual string toString() = 0;
 
 	/**
-	*	Associate a generic action with this output action
+	*	Associate a generic action with this action
 	*/
 	void addGenericAction(GenericAction *ga);
 
 	/**
-	*	Return the generic actions associated with this output action
+	*	Return the generic actions associated with this action
 	*/
 	list<GenericAction*> getGenericActions();
+
+	/**
+	*	Associate a output action with this action
+	*/
+	void addOutputAction(OutputAction *oa);
+
+	/**
+	*	Return the output actions associated with this action
+	*/
+	list<OutputAction*> getOutputActions();
 
 	virtual ~Action();
 
@@ -52,11 +67,15 @@ protected:
 	Action(action_t type);
 
 	/**
-	*	The outuput action contains a list of generic actions!
-	*	The code is organized in this way, because the output action is
-	*	mandatory in each rule.
+	*	The action contains a list of generic actions!
 	**/
 	list<GenericAction*> genericActions;
+
+	/**
+	*	The action contains a list of output actions!
+	*	Have almost one outputAction is mandatory!
+	**/
+	list<OutputAction*> outputActions;
 };
 
 }

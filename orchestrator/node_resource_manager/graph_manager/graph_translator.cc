@@ -53,246 +53,121 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 			continue;
 		}
 
-		if( (match.matchOnNF() || match.matchOnEndPointGre()) && (action->getType() == highlevel::ACTION_ON_ENDPOINT_INTERNAL) )
-		{
-			/**
-			*	NF -> internal end point
-			*	Gre -> internal end point
-			*/
-			ULOG_DBG("\tThe rule is not inserted in the LSI-0");
-
-			string action_info = action->getInfo();
-			if(match.matchOnNF())
-				ULOG_DBG("Match on NF \"%s\", action is on end point \"%s\"",match.getNF().c_str(),action->toString().c_str());
-			else
-				ULOG_DBG("Match on gre end point \"%s\", action is on end point \"%s\"",match.getEndPointGre().c_str(),action->toString().c_str());
-
-			//Translate the match
-			lowlevel::Match lsi0Match;
-
-			map<string, uint64_t> internal_endpoints_vlinks = tenantLSI->getEndPointsVlinks(); //retrive the virtual link associated with th einternal endpoitn
-			if(internal_endpoints_vlinks.count(action->toString()) == 0)
-			{
-				ULOG_WARN("The tenant graph expresses an action on internal endpoint \"%s\", which has not been translated into a virtual link",action->toString().c_str());
-			}
-			uint64_t vlink_id = internal_endpoints_vlinks.find(action->toString())->second;
-			ULOG_DBG_INFO("\t\tThe virtual link related to internal endpoint \"%s\" has ID: %x",action->toString().c_str(),vlink_id);
-			vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
-			for(;vlink != tenantVirtualLinks.end(); vlink++)
-			{
-				if(vlink->getID() == vlink_id)
-					break;
-			}
-			assert(vlink != tenantVirtualLinks.end());
-			lsi0Match.setInputPort(vlink->getRemoteID());
-
-			//Translate the action
-			//XXX The generic actions will be added to the tenant lsi.
-			map<string, unsigned int> internalLSIsConnectionsOfEndpoint = internalLSIsConnections[action->toString()];
-			unsigned int port_to_be_used = internalLSIsConnectionsOfEndpoint[graph->getID()];
-			lowlevel::Action lsi0Action(port_to_be_used);
-
-			//Create the rule and add it to the graph
-			//The rule ID is created as follows  highlevelGraphID_hlrID
-			stringstream newRuleID;
-			newRuleID << graph->getID() << "_" << hlr->getRuleID();
-			lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
-			lsi0Graph.addRule(lsi0Rule);
-
-			continue;
-		}
 		if(match.matchOnPort())
 		{
-			//The port name must be replaced with the port identifier
+			handleMathOnPortLSI0(graph,tenantLSI,hlr->getRuleID(),match,action,priority,ports_lsi0,tenantVirtualLinks,lsi0Graph);
 
-			string port = match.getPhysicalPort();
-			if(ports_lsi0.count(port) == 0)
-			{
-				ULOG_WARN("The tenant graph expresses a match on port \"%s\", which is not attached to LSI-0",port.c_str());
-				throw GraphManagerException();
-			}
 
-			//Translate the match
-			lowlevel::Match lsi0Match;
-			lsi0Match.setAllCommonFields(match);
-			map<string,unsigned int>::iterator translation = ports_lsi0.find(port);
-			lsi0Match.setInputPort(translation->second);
-
-			//Translate the action
-			string action_info = action->getInfo();
-			if(action->getType() == highlevel::ACTION_ON_PORT)
-			{
-				ULOG_DBG("\tIt matches the port \"%s\", and the action is output to port %s",port.c_str(),action_info.c_str());
-
-				//The port name must be replaced with the port identifier
-				if(ports_lsi0.count(action_info) == 0)
-				{
-					ULOG_WARN("The tenant graph expresses an action on port \"%s\", which is not attached to LSI-0",port.c_str());
-					throw GraphManagerException();
-				}
-
-				map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
-				unsigned int portForAction = translation->second;
-
-				lowlevel::Action lsi0Action(portForAction);
-				//XXX the generic actions must be inserted in this graph.
-				list<GenericAction*> gas = action->getGenericActions();
-				for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
-					lsi0Action.addGenericAction(*ga);
-
-				//Create the rule and add it to the graph
-				//The rule ID is created as follows  highlevelGraphID_hlrID
-				stringstream newRuleID;
-				newRuleID << graph->getID() << "_" << hlr->getRuleID();
-				lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
-				lsi0Graph.addRule(lsi0Rule);
-			}
-			else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE)
-			{
-				assert(action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE);
-
-				highlevel::ActionEndPointGre *action_ep = (highlevel::ActionEndPointGre*)action;
-
-				ULOG_DBG("\tIt matches the port \"%s\", and the action is \"%s:%s\"",port.c_str(),action_info.c_str(),(action_ep->getOutputEndpointID()).c_str());
-
-				//All the traffic for a endpoint is sent on the same virtual link
-
-				string action_port = action_ep->getOutputEndpointID();
-
-				map<string, uint64_t> ep_vlinks = tenantLSI->getEndPointsGreVlinks();
-				if(ep_vlinks.count(action_port) == 0)
-				{
-					ULOG_WARN("The tenant graph expresses a gre endpoint action \"%s:%s\" which has not been translated into a virtual link",action_info.c_str(),(action_ep->getOutputEndpointID()).c_str());
-					ULOG_DBG("\tGre endpoint translated to virtual links are the following:");
-					for(map<string, uint64_t>::iterator vl = ep_vlinks.begin(); vl != ep_vlinks.end(); vl++)
-						ULOG_DBG_INFO("\t\t%s",(vl->first).c_str());
-					assert(0);
-				}
-
-				uint64_t vlink_id = ep_vlinks.find(action_port)->second;
-				vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
-				for(;vlink != tenantVirtualLinks.end(); vlink++)
-				{
-					if(vlink->getID() == vlink_id)
-						break;
-				}
-				assert(vlink != tenantVirtualLinks.end());
-				lowlevel::Action lsi0Action(vlink->getRemoteID());
-
-				//XXX the generic actions must be inserted in this graph.
-				list<GenericAction*> gas = action->getGenericActions();
-				for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
-					lsi0Action.addGenericAction(*ga);
-
-				//Create the rule and add it to the graph
-				//The rule ID is created as follows  highlevelGraphID_hlrID
-				stringstream newRuleID;
-				newRuleID << graph->getID() << "_" << hlr->getRuleID();
-				lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
-				lsi0Graph.addRule(lsi0Rule);
-			}
-			else if(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION)
-			{
-				assert(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION);
-
-				highlevel::ActionNetworkFunction *action_nf = (highlevel::ActionNetworkFunction*)action;
-
-				ULOG_DBG("\tIt matches the port \"%s\", and the action is \"%s:%d\"",port.c_str(),action_info.c_str(),action_nf->getPort());
-
-				//All the traffic for a NF is sent on the same virtual link
-
-				stringstream action_port;
-				action_port << action_info << "_" << action_nf->getPort();
-
-				map<string, uint64_t> nfs_vlinks = tenantLSI->getNFsVlinks();
-				if(nfs_vlinks.count(action_port.str()) == 0)
-				{
-					ULOG_WARN("The tenant graph expresses a NF action \"%s:%d\" which has not been translated into a virtual link",action_info.c_str(),action_nf->getPort());
-					ULOG_DBG("\tNetwork functions ports translated to virtual links are the following:");
-					for(map<string, uint64_t>::iterator vl = nfs_vlinks.begin(); vl != nfs_vlinks.end(); vl++)
-						ULOG_DBG_INFO("\t\t%s",(vl->first).c_str());
-					assert(0);
-				}
-				uint64_t vlink_id = nfs_vlinks.find(action_port.str())->second;
-				ULOG_DBG("\t\tThe virtual link related to NF \"%s\" has ID: %x",action_port.str().c_str(),vlink_id);
-				vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
-				for(;vlink != tenantVirtualLinks.end(); vlink++)
-				{
-					if(vlink->getID() == vlink_id)
-						break;
-				}
-				assert(vlink != tenantVirtualLinks.end());
-				lowlevel::Action lsi0Action(vlink->getRemoteID());
-
-				//XXX the generic actions must be inserted in this graph.
-				list<GenericAction*> gas = action->getGenericActions();
-				for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
-					lsi0Action.addGenericAction(*ga);
-
-				//Create the rule and add it to the graph
-				//The rule ID is created as follows  highlevelGraphID_hlrID
-				stringstream newRuleID;
-				newRuleID << graph->getID() << "_" << hlr->getRuleID();
-				lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
-				lsi0Graph.addRule(lsi0Rule);
-			}
-
-		 } //end of match.matchOnPort()
+		} //end of match.matchOnPort()
 		 else if(match.matchOnEndPointGre())
 		 {
-		 	assert(action->getType() == highlevel::ACTION_ON_PORT);
+			 if(action->getType() == highlevel::ACTION_ON_ENDPOINT_INTERNAL)
+			 {
+				 /**
+                 *	NF -> internal end point
+                 *	Gre -> internal end point
+                 */
+				 ULOG_DBG("\tThe rule is not inserted in the LSI-0");
 
-			//Translate the match
-			lowlevel::Match lsi0Match;
-			string action_info = action->getInfo();
+				 string action_info = action->getInfo();
+				 if(match.matchOnNF())
+					 ULOG_DBG("Match on NF \"%s\", action is on end point \"%s\"",match.getNF().c_str(),action->toString().c_str());
+				 else
+					 ULOG_DBG("Match on gre end point \"%s\", action is on end point \"%s\"",match.getEndPointGre().c_str(),action->toString().c_str());
 
-			map<string, uint64_t> port_vlinks = tenantLSI->getPortsVlinks(); ///tenantLSI->getEndPointsGreVlinks(); IVANO->this is probably wrong
-			if(port_vlinks.count(action_info) == 0)
-			{
-				ULOG_WARN("The tenant graph expresses an action on the physical port \"%s\" which has not been translated into a virtual link",action_info.c_str());
-			}
-			else
-			{
-				uint64_t vlink_id = port_vlinks.find(action_info)->second;
-				vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
-				for(;vlink != tenantVirtualLinks.end(); vlink++)
-				{
-					if(vlink->getID() == vlink_id)
-						break;
-				}
-				assert(vlink != tenantVirtualLinks.end());
+				 //Translate the match
+				 lowlevel::Match lsi0Match;
 
-				ULOG_DBG_INFO("Virtual link used for a rule GRE -> physical_port has ID: %d",vlink_id);
+				 map<string, uint64_t> internal_endpoints_vlinks = tenantLSI->getEndPointsVlinks(); //retrive the virtual link associated with th einternal endpoitn
+				 if(internal_endpoints_vlinks.count(action->toString()) == 0)
+				 {
+					 ULOG_WARN("The tenant graph expresses an action on internal endpoint \"%s\", which has not been translated into a virtual link",action->toString().c_str());
+				 }
+				 uint64_t vlink_id = internal_endpoints_vlinks.find(action->toString())->second;
+				 ULOG_DBG_INFO("\t\tThe virtual link related to internal endpoint \"%s\" has ID: %x",action->toString().c_str(),vlink_id);
+				 vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
+				 for(;vlink != tenantVirtualLinks.end(); vlink++)
+				 {
+					 if(vlink->getID() == vlink_id)
+						 break;
+				 }
+				 assert(vlink != tenantVirtualLinks.end());
+				 lsi0Match.setInputPort(vlink->getRemoteID());
 
-				//All the traffic for a gre endpoint is sent on the same virtual link
-				lsi0Match.setAllCommonFields(match);
-				lsi0Match.setInputPort(vlink->getRemoteID());
-			}
+				 //Translate the action
+				 //XXX The generic actions will be added to the tenant lsi.
+				 map<string, unsigned int> internalLSIsConnectionsOfEndpoint = internalLSIsConnections[action->toString()];
+				 unsigned int port_to_be_used = internalLSIsConnectionsOfEndpoint[graph->getID()];
+				 lowlevel::Action lsi0Action;
+				 lsi0Action.addOutputPort(port_to_be_used);
 
-			ULOG_DBG("\tIt matches a gre tunnel \"%s\", and the action is the output to port \"%s\"",match.getEndPointGre().c_str(),action_info.c_str());
+				 //Create the rule and add it to the graph
+				 //The rule ID is created as follows  highlevelGraphID_hlrID
+				 stringstream newRuleID;
+				 newRuleID << graph->getID() << "_" << hlr->getRuleID();
+				 lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
+				 lsi0Graph.addRule(lsi0Rule);
 
-			//The port name must be replaced with the port identifier
-			if(ports_lsi0.count(action_info) == 0)
-			{
-				ULOG_WARN("The tenant graph expresses an action on port \"%s\", which is not attached to LSI-0",action_info.c_str());
-				throw GraphManagerException();
-			}
+				 continue;
+			 }
+			 else
+			 {
+				 assert(action->getType() == highlevel::ACTION_ON_PORT);
 
-			map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
-			unsigned int portForAction = translation->second;
+				 //Translate the match
+				 lowlevel::Match lsi0Match;
+				 string action_info = action->getInfo();
 
-			lowlevel::Action lsi0Action(portForAction);
-			//XXX the generic actions must be inserted in this graph.
-			list<GenericAction*> gas = action->getGenericActions();
-			for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
-				lsi0Action.addGenericAction(*ga);
+				 map<string, uint64_t> port_vlinks = tenantLSI->getPortsVlinks(); ///tenantLSI->getEndPointsGreVlinks(); IVANO->this is probably wrong
+				 if(port_vlinks.count(action_info) == 0)
+				 {
+					 ULOG_WARN("The tenant graph expresses an action on the physical port \"%s\" which has not been translated into a virtual link",action_info.c_str());
+				 }
+				 else
+				 {
+					 uint64_t vlink_id = port_vlinks.find(action_info)->second;
+					 vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
+					 for(;vlink != tenantVirtualLinks.end(); vlink++)
+					 {
+						 if(vlink->getID() == vlink_id)
+							 break;
+					 }
+					 assert(vlink != tenantVirtualLinks.end());
 
-			//Create the rule and add it to the graph
-			//The rule ID is created as follows  highlevelGraphID_hlrID
-			stringstream newRuleID;
-			newRuleID << graph->getID() << "_" << hlr->getRuleID();
-			lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
-			lsi0Graph.addRule(lsi0Rule);
+					 ULOG_DBG_INFO("Virtual link used for a rule GRE -> physical_port has ID: %d",vlink_id);
+
+					 //All the traffic for a gre endpoint is sent on the same virtual link
+					 lsi0Match.setAllCommonFields(match);
+					 lsi0Match.setInputPort(vlink->getRemoteID());
+				 }
+
+				 ULOG_DBG("\tIt matches a gre tunnel \"%s\", and the action is the output to port \"%s\"",match.getEndPointGre().c_str(),action_info.c_str());
+
+				 //The port name must be replaced with the port identifier
+				 if(ports_lsi0.count(action_info) == 0)
+				 {
+					 ULOG_WARN("The tenant graph expresses an action on port \"%s\", which is not attached to LSI-0",action_info.c_str());
+					 throw GraphManagerException();
+				 }
+
+				 map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
+				 unsigned int portForAction = translation->second;
+
+				 lowlevel::Action lsi0Action;
+				 lsi0Action.addOutputPort(portForAction);
+				 //XXX the generic actions must be inserted in this graph.
+				 list<GenericAction*> gas = action->getGenericActions();
+				 for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
+					 lsi0Action.addGenericAction(*ga);
+
+				 //Create the rule and add it to the graph
+				 //The rule ID is created as follows  highlevelGraphID_hlrID
+				 stringstream newRuleID;
+				 newRuleID << graph->getID() << "_" << hlr->getRuleID();
+				 lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
+				 lsi0Graph.addRule(lsi0Rule);
+			 }
+
 
 		 } //end of match.matchOnEndPointGre()
 		 else if (match.matchOnEndPointInternal())
@@ -342,7 +217,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 					 break;
 				 }
 				 assert(vlink != tenantVirtualLinks.end());
-				 lowlevel::Action lsi0Action(vlink->getRemoteID());
+				 lowlevel::Action lsi0Action;
+				 lsi0Action.addOutputPort(vlink->getRemoteID());
 
 				 //XXX the generic actions must be inserted in this graph.
 				 list<GenericAction*> gas = action->getGenericActions();
@@ -387,7 +263,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 						 break;
 				 }
 				 assert(vlink != tenantVirtualLinks.end());
-				 lowlevel::Action lsi0Action(vlink->getRemoteID());
+				 lowlevel::Action lsi0Action;
+				 lsi0Action.addOutputPort(vlink->getRemoteID());
 
 				 //XXX the generic actions must be inserted in this graph.
 				 list<GenericAction*> gas = action->getGenericActions();
@@ -443,8 +320,48 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 				map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
 				unsigned int portForAction = translation->second;
 
-				lowlevel::Action lsi0Action(portForAction);
+				lowlevel::Action lsi0Action;
+				lsi0Action.addOutputPort(portForAction);
 				//XXX The generic actions will be added to the tenant lsi.
+
+				//Create the rule and add it to the graph
+				//The rule ID is created as follows  highlevelGraphID_hlrID
+				stringstream newRuleID;
+				newRuleID << graph->getID() << "_" << hlr->getRuleID();
+				lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
+				lsi0Graph.addRule(lsi0Rule);
+			}
+			 else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_INTERNAL)
+			{
+				string action_info = action->getInfo();
+
+				ULOG_DBG("Match on NF \"%s\", action is on end point \"%s\"",match.getNF().c_str(),action->toString().c_str());
+
+				//Translate the match
+				lowlevel::Match lsi0Match;
+
+				map<string, uint64_t> internal_endpoints_vlinks = tenantLSI->getEndPointsVlinks(); //retrive the virtual link associated with th einternal endpoitn
+				if(internal_endpoints_vlinks.count(action->toString()) == 0)
+				{
+					ULOG_WARN("The tenant graph expresses an action on internal endpoint \"%s\", which has not been translated into a virtual link",action->toString().c_str());
+				}
+				uint64_t vlink_id = internal_endpoints_vlinks.find(action->toString())->second;
+				ULOG_DBG_INFO("\t\tThe virtual link related to internal endpoint \"%s\" has ID: %x",action->toString().c_str(),vlink_id);
+				vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
+				for(;vlink != tenantVirtualLinks.end(); vlink++)
+				{
+					if(vlink->getID() == vlink_id)
+						break;
+				}
+				assert(vlink != tenantVirtualLinks.end());
+				lsi0Match.setInputPort(vlink->getRemoteID());
+
+				//Translate the action
+				//XXX The generic actions will be added to the tenant lsi.
+				map<string, unsigned int> internalLSIsConnectionsOfEndpoint = internalLSIsConnections[action->toString()];
+				unsigned int port_to_be_used = internalLSIsConnectionsOfEndpoint[graph->getID()];
+				lowlevel::Action lsi0Action;
+				lsi0Action.addOutputPort(port_to_be_used);
 
 				//Create the rule and add it to the graph
 				//The rule ID is created as follows  highlevelGraphID_hlrID
@@ -563,7 +480,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 						e_id = ep->second;
 				}
 
-				lowlevel::Action tenantAction(e_id);
+				lowlevel::Action tenantAction;
+				tenantAction.addOutputPort(e_id);
 
 				//Create the rule and add it to the graph
 				lowlevel::Rule tenantRule(tenantMatch,tenantAction,hlr->getRuleID(),priority);
@@ -619,7 +537,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 
 				//Translate the action
 				map<string,unsigned int>::iterator translation = tenantNetworkFunctionsPorts.find(nf_port.str());
-				lowlevel::Action tenantAction(translation->second);
+				lowlevel::Action tenantAction;
+				tenantAction.addOutputPort(translation->second);
 
 				//XXX The generic actions has been added to the lsi-0.
 
@@ -671,7 +590,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 				//Translate the action
 				map<string,unsigned int>::iterator translation = tenantNetworkFunctionsPorts.find(action_port.str());
 
-				lowlevel::Action tenantAction(/*vlink->getRemoteID()*/translation->second);
+				lowlevel::Action tenantAction;
+				tenantAction.addOutputPort(translation->second);
 
 				//XXX the generic actions must be inserted in this graph.
 				list<GenericAction*> gas = action->getGenericActions();
@@ -706,7 +626,9 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 						break;
 				}
 				assert(vlink != tenantVirtualLinks.end());
-				lowlevel::Action tenantAction(vlink->getLocalID());
+				lowlevel::Action tenantAction;
+				tenantAction.addOutputPort(vlink->getLocalID());
+
 
 				//XXX the generic actions must be inserted in this graph.
 				list<GenericAction*> gas = action->getGenericActions();
@@ -737,7 +659,9 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 						break;
 				}
 				assert(vlink != tenantVirtualLinks.end());
-				lowlevel::Action tenantAction(vlink->getLocalID());
+				lowlevel::Action tenantAction;
+				tenantAction.addOutputPort(vlink->getLocalID());
+
 
 				//XXX the generic actions must be inserted in this graph.
 				list<GenericAction*> gas = action->getGenericActions();
@@ -813,7 +737,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 					throw GraphManagerException();
 				}
 				map<string,unsigned int>::iterator translation = tenantNetworkFunctionsPortsAction.find(nf_port.str());
-				lowlevel::Action tenantAction(translation->second);
+				lowlevel::Action tenantAction;
+				tenantAction.addOutputPort(translation->second);
 
 				//XXX the generic actions must be inserted in this graph.
 				list<GenericAction*> gas = action->getGenericActions();
@@ -850,7 +775,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 						break;
 				}
 				assert(vlink != tenantVirtualLinks.end());
-				lowlevel::Action tenantAction(vlink->getLocalID());
+				lowlevel::Action tenantAction;
+				tenantAction.addOutputPort(vlink->getLocalID());
 
 				//XXX the generic actions must be inserted in this graph.
 				list<GenericAction*> gas = action->getGenericActions();
@@ -891,7 +817,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 						break;
 				}
 				assert(vlink != tenantVirtualLinks.end());
-				lowlevel::Action tenantAction(vlink->getLocalID());
+				lowlevel::Action tenantAction;
+				tenantAction.addOutputPort(vlink->getLocalID());
 
 				//XXX the generic actions must be inserted in this graph.
 				list<GenericAction*> gas = action->getGenericActions();
@@ -925,7 +852,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 						e_id = ep->second;
 				}
 
-				lowlevel::Action tenantAction(/*vlink->getLocalID()*/e_id);
+				lowlevel::Action tenantAction;
+				tenantAction.addOutputPort(e_id);
 
 				//XXX the generic actions must be inserted in this graph.
 				list<GenericAction*> gas = action->getGenericActions();
@@ -941,4 +869,155 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 	}
 
 	return tenantGraph;
+}
+
+void GraphTranslator::handleMathOnPortLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match& match, highlevel::Action *action, uint64_t priority, map<string,unsigned int>& ports_lsi0, vector<VLink>& tenantVirtualLinks,lowlevel::Graph& lsi0Graph)
+{
+
+	stringstream newRuleID;
+	newRuleID << graph->getID() << "_" << ruleID;
+
+	string port = match.getPhysicalPort();
+	if(ports_lsi0.count(port) == 0)
+	{
+		ULOG_WARN("The tenant graph expresses a match on port \"%s\", which is not attached to LSI-0",port.c_str());
+		throw GraphManagerException();
+	}
+
+	//Translate the match
+	lowlevel::Match lsi0Match;
+	lsi0Match.setAllCommonFields(match);
+	map<string,unsigned int>::iterator translation = ports_lsi0.find(port);
+	lsi0Match.setInputPort(translation->second);
+
+	lowlevel::Action lsi0Action;
+	//Translate the action
+	list<OutputAction*> outputActions = action->getOutputActions();
+	for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
+	{
+		string action_info = (*outputAction)->getInfo();
+
+		TempActionPort* actionPort = dynamic_cast<TempActionPort* >(*outputAction);
+		if(actionPort!=NULL)
+		{
+			ULOG_DBG("\tIt matches the port \"%s\", and the action is output to port %s",port.c_str(),action_info.c_str());
+
+			//The port name must be replaced with the port identifier
+			if(ports_lsi0.count(action_info) == 0)
+			{
+				ULOG_WARN("The tenant graph expresses an action on port \"%s\", which is not attached to LSI-0",port.c_str());
+				throw GraphManagerException();
+			}
+
+			map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
+			unsigned int portForAction = translation->second;
+
+			lsi0Action.addOutputPort(portForAction);
+			//XXX the generic actions must be inserted in this graph.
+			list<GenericAction*> gas = action->getGenericActions();
+			for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
+				lsi0Action.addGenericAction(*ga);
+
+		}
+
+		//TODO: CONTINUE HERE
+
+		if(action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE)
+		{
+
+			highlevel::ActionEndPointGre *action_ep = (highlevel::ActionEndPointGre*)action;
+
+			ULOG_DBG("\tIt matches the port \"%s\", and the action is \"%s:%s\"",port.c_str(),action_info.c_str(),(action_ep->getOutputEndpointID()).c_str());
+
+			//All the traffic for a endpoint is sent on the same virtual link
+
+			string action_port = action_ep->getOutputEndpointID();
+
+			map<string, uint64_t> ep_vlinks = tenantLSI->getEndPointsGreVlinks();
+			if(ep_vlinks.count(action_port) == 0)
+			{
+				ULOG_WARN("The tenant graph expresses a gre endpoint action \"%s:%s\" which has not been translated into a virtual link",action_info.c_str(),(action_ep->getOutputEndpointID()).c_str());
+				ULOG_DBG("\tGre endpoint translated to virtual links are the following:");
+				for(map<string, uint64_t>::iterator vl = ep_vlinks.begin(); vl != ep_vlinks.end(); vl++)
+					ULOG_DBG_INFO("\t\t%s",(vl->first).c_str());
+				assert(0);
+			}
+
+			uint64_t vlink_id = ep_vlinks.find(action_port)->second;
+			vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
+			for(;vlink != tenantVirtualLinks.end(); vlink++)
+			{
+				if(vlink->getID() == vlink_id)
+					break;
+			}
+			assert(vlink != tenantVirtualLinks.end());
+			lowlevel::Action lsi0Action;
+			lsi0Action.addOutputPort(vlink->getRemoteID());
+
+			//XXX the generic actions must be inserted in this graph.
+			list<GenericAction*> gas = action->getGenericActions();
+			for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
+				lsi0Action.addGenericAction(*ga);
+
+			//Create the rule and add it to the graph
+			//The rule ID is created as follows  highlevelGraphID_hlrID
+			stringstream newRuleID;
+			newRuleID << graph->getID() << "_" << ruleID;
+			lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
+			lsi0Graph.addRule(lsi0Rule);
+		}
+		else if(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION)
+		{
+			assert(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION);
+
+			highlevel::ActionNetworkFunction *action_nf = (highlevel::ActionNetworkFunction*)action;
+
+			ULOG_DBG("\tIt matches the port \"%s\", and the action is \"%s:%d\"",port.c_str(),action_info.c_str(),action_nf->getPort());
+
+			//All the traffic for a NF is sent on the same virtual link
+
+			stringstream action_port;
+			action_port << action_info << "_" << action_nf->getPort();
+
+			map<string, uint64_t> nfs_vlinks = tenantLSI->getNFsVlinks();
+			if(nfs_vlinks.count(action_port.str()) == 0)
+			{
+				ULOG_WARN("The tenant graph expresses a NF action \"%s:%d\" which has not been translated into a virtual link",action_info.c_str(),action_nf->getPort());
+				ULOG_DBG("\tNetwork functions ports translated to virtual links are the following:");
+				for(map<string, uint64_t>::iterator vl = nfs_vlinks.begin(); vl != nfs_vlinks.end(); vl++)
+					ULOG_DBG_INFO("\t\t%s",(vl->first).c_str());
+				assert(0);
+			}
+			uint64_t vlink_id = nfs_vlinks.find(action_port.str())->second;
+			ULOG_DBG("\t\tThe virtual link related to NF \"%s\" has ID: %x",action_port.str().c_str(),vlink_id);
+			vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
+			for(;vlink != tenantVirtualLinks.end(); vlink++)
+			{
+				if(vlink->getID() == vlink_id)
+					break;
+			}
+			assert(vlink != tenantVirtualLinks.end());
+			lowlevel::Action lsi0Action;
+			lsi0Action.addOutputPort(vlink->getRemoteID());
+
+			//XXX the generic actions must be inserted in this graph.
+			list<GenericAction*> gas = action->getGenericActions();
+			for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
+				lsi0Action.addGenericAction(*ga);
+
+			//Create the rule and add it to the graph
+			//The rule ID is created as follows  highlevelGraphID_hlrID
+			stringstream newRuleID;
+			newRuleID << graph->getID() << "_" << ruleID;
+			lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
+			lsi0Graph.addRule(lsi0Rule);
+		}
+
+	}
+
+	//Create the rule and add it to the graph
+	//The rule ID is created as follows  highlevelGraphID_hlrID
+	lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
+	lsi0Graph.addRule(lsi0Rule);
+
 }
