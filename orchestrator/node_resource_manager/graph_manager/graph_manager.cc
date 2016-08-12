@@ -2486,66 +2486,70 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 
 	for(list<highlevel::Rule>::iterator rule = rules.begin(); rule != rules.end(); rule++)
 	{
-		highlevel::Action *action = rule->getAction();
+		list<OutputAction*> outputActions = rule->getAction()->getOutputActions();
 		highlevel::Match match = rule->getMatch();
-		if(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION)
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 		{
-			//we are considering rules as
-			//	- match: internal-25 - action: output to VNF firewall port 1
-			//	- match: interface eth0 - action: output to VNF firewall port 1
-			//Each different VNF port that is in an action matching an internal endpoint or an interface endpoint requires a different virtual link
-			if(match.matchOnPort() || match.matchOnEndPointInternal())
+			if((*outputAction)->getType() == TEMP_ACTION_ON_NETWORK_FUNCTION)
 			{
-				highlevel::ActionNetworkFunction *action_nf = (highlevel::ActionNetworkFunction*)action;
-				stringstream ss;
-				ss << action->getInfo() << "_" << action_nf->getPort();
-				NFs.insert(ss.str()); //the set avoids duplications
+				//we are considering rules as
+				//	- match: internal-25 - action: output to VNF firewall port 1
+				//	- match: interface eth0 - action: output to VNF firewall port 1
+				//Each different VNF port that is in an action matching an internal endpoint or an interface endpoint requires a different virtual link
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					TempActionNetworkFunction *action_nf = (TempActionNetworkFunction*)(*outputAction);
+					stringstream ss;
+					ss << (*outputAction)->getInfo() << "_" << action_nf->getPort();
+					NFs.insert(ss.str()); //the set avoids duplications
+				}
+
+				// gre -> VNF does not require any virtual link
+				// VNF -> VNF does not require any virtual link
 			}
-
-			// gre -> VNF does not require any virtual link
-			// VNF -> VNF does not require any virtual link
-		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE)
-		{
-			//we are considering rules as
-			//	- match: internal-25 - action: output to gre tunnel with key 1
-			//	- match: interface eth0 - action: output to gre tunnel with key 1
-			//Each different gre tunnel (i.e., tunnel with a different key) that is in an action matching
-			//an internal endpoint or an interface endpoint requires a different virtual link
-
-			if(match.matchOnPort() || match.matchOnEndPointInternal())
+			else if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_GRE)
 			{
-				highlevel::ActionEndPointGre *action_ep = (highlevel::ActionEndPointGre*)action;
-				endPointsGre.insert(action_ep->toString());
+				//we are considering rules as
+				//	- match: internal-25 - action: output to gre tunnel with key 1
+				//	- match: interface eth0 - action: output to gre tunnel with key 1
+				//Each different gre tunnel (i.e., tunnel with a different key) that is in an action matching
+				//an internal endpoint or an interface endpoint requires a different virtual link
+
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					TempActionEndPointGre *action_ep = (TempActionEndPointGre*)(*outputAction);
+					endPointsGre.insert(action_ep->toString());
+				}
+
+				// gre -> gre does not require any virtual link
+				// VNF -> gre does not require any virtual link
+				// VNF -> VNF does not require any virtual link
 			}
-
-			// gre -> gre does not require any virtual link
-			// VNF -> gre does not require any virtual link
-			// VNF -> VNF does not require any virtual link
-		}
-		else if(action->getType() == highlevel::ACTION_ON_PORT)
-		{
-			//we are considering rules as
-			//	- match: gre tunnel with key 1 - action: output to interface eth0
-			//	- match: VNF firewall port 1 - action: output to interface eth0
-			//Each different interface requires a different virtual link
-			if(match.matchOnNF() || match.matchOnEndPointGre())
-				phyPorts.insert(action->getInfo());
-
-			// interface -> interface does not require any virtual link
-			// internal endpoint -> interface does not require any virtual link
-		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_INTERNAL)
-		{
-			if(!match.matchOnPort() && !match.matchOnEndPointInternal())
+			else if((*outputAction)->getType() == TEMP_ACTION_ON_PORT)
 			{
-				highlevel::ActionEndPointInternal *action_ep = (highlevel::ActionEndPointInternal*)action;
-				endPointsInternal.insert(action_ep->toString());
-			}
+				//we are considering rules as
+				//	- match: gre tunnel with key 1 - action: output to interface eth0
+				//	- match: VNF firewall port 1 - action: output to interface eth0
+				//Each different interface requires a different virtual link
+				if(match.matchOnNF() || match.matchOnEndPointGre())
+					phyPorts.insert((*outputAction)->getInfo());
 
-			// internal endpoint -> internal endpoint does not require any virtual link
-			// interface -> internal endpoint does not require any virtual link
+				// interface -> interface does not require any virtual link
+				// internal endpoint -> interface does not require any virtual link
+			}
+			else if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_INTERNAL)
+			{
+				if(!match.matchOnPort() && !match.matchOnEndPointInternal())
+				{
+					TempActionEndPointInternal *action_ep = (TempActionEndPointInternal*)(*outputAction);
+					endPointsInternal.insert(action_ep->toString());
+				}
+
+				// internal endpoint -> internal endpoint does not require any virtual link
+				// interface -> internal endpoint does not require any virtual link
+			}
 		}
+
 	}
 
 	if(NFs.size() != 0)

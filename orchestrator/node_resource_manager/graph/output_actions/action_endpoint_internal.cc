@@ -2,7 +2,7 @@
 
 
 TempActionEndPointInternal::TempActionEndPointInternal(string group, string endpointName) :
-        group(group), endpointName(endpointName)
+        OutputAction(TEMP_ACTION_ON_ENDPOINT_INTERNAL),group(group), endpointName(endpointName)
 {
 }
 

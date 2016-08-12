@@ -65,7 +65,6 @@ public:
 
 protected:
 	Action(action_t type);
-
 	/**
 	*	The action contains a list of generic actions!
 	**/

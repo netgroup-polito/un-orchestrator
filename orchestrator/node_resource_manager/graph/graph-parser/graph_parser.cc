@@ -798,7 +798,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 							{
 								//This is a rule, with a match, an action, and an ID
 								Object flow_rule = flow_rules_array[fr].getObject();
-								highlevel::Action *action = NULL;
+								highlevel::Action *action = new highlevel::ActionPort(string("fra"), string("1")); //TODO: delete this row
 								list<GenericAction*> genericActions;
 								list<OutputAction*> outputActions;
 								highlevel::Match match;
@@ -976,7 +976,6 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															/*nf port starts from 0 - here we want that they start from 1*/
 															port++;
 
-															action = new highlevel::ActionNetworkFunction(id, string(port_in_name_tmp), port);
 															action->addOutputAction(new TempActionNetworkFunction(id, string(port_in_name_tmp), port));
 														}
 														//end-points port type
@@ -1021,8 +1020,6 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															//physical endpoint
 															if(iface_found)
 															{
-																if(action==NULL)
-																	action = new highlevel::ActionPort(realName, string(s_a_value)); //TODO: delete this row
 																action->addOutputAction(new TempActionPort(realName, string(s_a_value)));
 															}
 															else if(internal_found)
@@ -1032,7 +1029,6 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																	ULOG_DBG_INFO("Internal endpoint \"%s\" is not valid. It must have the \"%s\" attribute",value.getString().c_str(), INTERNAL_GROUP);
 																	return false;
 																}
-																action = new highlevel::ActionEndPointInternal(internal_group, string(s_a_value));
 																action->addOutputAction(new TempActionEndPointInternal(internal_group, string(s_a_value)));
 															}
 															//vlan endpoint
@@ -1046,7 +1042,6 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																sscanf(vlan_id[epID].first.c_str(),"%u",&vlanID);
 
 																/*add "output_port" action*/
-																action = new highlevel::ActionPort(vlan_id[epID].second, string(s_a_value));
 																action->addOutputAction(new TempActionPort(vlan_id[epID].second, string(s_a_value)));
 																/*add "push_vlan" action*/
 																GenericAction *ga = new VlanAction(actionType,string(s_a_value),vlanID);
@@ -1055,7 +1050,6 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															//gre-tunnel endpoint
 															else if(gre_found)
 															{
-																action = new highlevel::ActionEndPointGre(epID, string(s_a_value));
 																action->addOutputAction(new TempActionEndPointGre(epID, string(s_a_value)));
 															}
 														}

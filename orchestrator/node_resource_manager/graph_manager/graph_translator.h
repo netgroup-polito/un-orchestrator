@@ -139,7 +139,37 @@ protected:
 	*			The generic actions are inserted in the tenant LSI
 	*/
 
-	static void handleMathOnPortLSI0(highlevel::Graph *graph, LSI *tenantLSI,string ruleID, highlevel::Match& match, highlevel::Action *action, uint64_t priority, map<string,unsigned int>& ports_lsi0, vector<VLink>& tenantVirtualLinks,lowlevel::Graph &lsi0Graph);
+	static void handleMatchOnPortLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
+									  highlevel::Action *action, uint64_t priority,
+									  map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+									  lowlevel::Graph &lsi0Graph);
+
+	static void handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
+									  highlevel::Action *action, uint64_t priority,
+									  map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+									  lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections);
+
+	static void handleMatchOnEndpointInternalLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
+											 highlevel::Action *action, uint64_t priority,
+											 map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+											 lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections);
+
+	static void handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
+												  highlevel::Action *action, uint64_t priority,
+												  map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+												  lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections);
+
+	static void handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *tenantLSI, string ruleID,
+													 highlevel::Match &match, highlevel::Action *action, uint64_t priority,
+													 vector<VLink> &tenantVirtualLinks, set<string>& tenantNetworkFunctions, lowlevel::Graph &tenantGraph);
+
+	static void handleMatchOnEndpointGreLSITenant(highlevel::Graph *graph, LSI *tenantLSI, string ruleID,
+															highlevel::Match &match, highlevel::Action *action, uint64_t priority,
+															vector<VLink> &tenantVirtualLinks, lowlevel::Graph &tenantGraph);
+
+	static void handleMatchOnNetworkFunctionLSITenant(highlevel::Graph *graph, LSI *tenantLSI, string ruleID,
+																highlevel::Match &match, highlevel::Action *action, uint64_t priority,
+																vector<VLink> &tenantVirtualLinks, set<string>& tenantNetworkFunctions, lowlevel::Graph &tenantGraph);
 };
 
 #endif //GRAPH_TRANSLATOR_H_

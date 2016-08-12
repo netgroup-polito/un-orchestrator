@@ -2,7 +2,7 @@
 
 
 TempActionNetworkFunction::TempActionNetworkFunction(string nfId, string endpointPortName, unsigned int port) :
-         nfId(nfId), endpointPortName(endpointPortName), port(port)
+        OutputAction(TEMP_ACTION_ON_NETWORK_FUNCTION),nfId(nfId), endpointPortName(endpointPortName), port(port)
 {
 
 }

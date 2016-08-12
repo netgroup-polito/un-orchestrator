@@ -2,7 +2,7 @@
 
 
 TempActionEndPointGre::TempActionEndPointGre(string endpointID, string endpointName) :
-        endpointID(endpointID), endpointName(endpointName)
+        OutputAction(TEMP_ACTION_ON_ENDPOINT_GRE),endpointID(endpointID), endpointName(endpointName)
 {
 }
 

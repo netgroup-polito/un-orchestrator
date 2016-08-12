@@ -2,7 +2,7 @@
 
 
 TempActionPort::TempActionPort(string portName, string endpointName) :
-        portName(portName), endpointName(endpointName)
+        OutputAction(TEMP_ACTION_ON_PORT),portName(portName), endpointName(endpointName)
 {
 
 }
