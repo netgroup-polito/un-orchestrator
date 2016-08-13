@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 
 #include <openssl/sha.h>
 #include "node_resource_manager/database_manager/SQLite/SQLiteManager.h"
@@ -152,7 +153,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-#ifdef VSWITCH_IMPLEMENTATION_ERFS
+#if defined(VSWITCH_IMPLEMENTATION_ERFS) || defined(VSWITCH_IMPLEMENTATION_OVSDB)
 	OFP_VERSION = OFP_13;
 #else
 	OFP_VERSION = OFP_12;
@@ -313,9 +314,15 @@ int main(int argc, char *argv[])
 	sigaction(SIGINT, &sa, NULL);
 
 	printUniversalNodeInfo();
-	ULOG_INFO( "The '%s' is started!",MODULE_NAME);
-	ULOG_INFO( "Waiting for commands on TCP port \"%d\"",rest_port);
-	rofl::cioloop::get_loop().run();
+	ULOG_INFO("The '%s' is started!",MODULE_NAME);
+	ULOG_INFO("Waiting for commands on TCP port \"%d\"",rest_port);
+
+	while(true) {
+		struct timeval tv;
+		tv.tv_sec = 3600;
+		tv.tv_usec = 0;
+		select(0, NULL, NULL, NULL, &tv);
+	}
 
 	return 0;
 }

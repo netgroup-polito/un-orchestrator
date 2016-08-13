@@ -33,9 +33,6 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 	pthread_mutex_unlock(&graph_manager_mutex);
 	nameResolverPort = name_resolver_port;
 
-	ostringstream strControllerPort;
-	strControllerPort << controllerPort;
-
 	ULOG_INFO("Checking the available physical interfaces...");
 	try
 	{
@@ -70,7 +67,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 			break;
 	}
 
-	Controller *controller = new Controller(versionbitmap,graph,strControllerPort.str());
+	Controller *controller = new Controller(versionbitmap,graph, controllerPort);
 	controller->start();
 
 	ULOG_INFO("Creating the LSI-0...");
@@ -81,7 +78,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 	list<highlevel::EndPointGre> dummy_gre_endpoints;
 	vector<VLink> dummy_virtual_links;
 
-	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), phyPorts, dummy_network_functions,
+	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), controllerPort, phyPorts, dummy_network_functions,
 	dummy_gre_endpoints,dummy_virtual_links,dummy_nfs_ports_type);
 
 	try
@@ -92,7 +89,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 		map<string,nf_t>  nf_types;
 		map<string,list<nf_port_info> > netFunctionsPortsInfo;
 
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(),lsi->getPhysicalPortsName(),nf_types,netFunctionsPortsInfo,gre_endpoints,lsi->getVirtualLinksRemoteLSI(), this->un_address, this->ipsec_certificate);
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort,lsi->getPhysicalPortsName(),nf_types,netFunctionsPortsInfo,gre_endpoints,lsi->getVirtualLinksRemoteLSI(), this->un_address, this->ipsec_certificate);
 
 		CreateLsiOut *clo = switchManager.createLsi(cli);
 
@@ -622,9 +619,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	nextControllerPort++;
 	pthread_mutex_unlock(&graph_manager_mutex);
 
-	ostringstream strControllerPort;
-	strControllerPort << controllerPort;
-
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
 	switch(OFP_VERSION)
 	{
@@ -643,7 +637,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	}
 
 	lowlevel::Graph graphTmp ;
-	Controller *controller = new Controller(versionbitmap,graphTmp,strControllerPort.str());
+	Controller *controller = new Controller(versionbitmap,graphTmp, controllerPort);
 	controller->start();
 
 	/**
@@ -736,7 +730,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	}
 
 	//Prepare the structure representing the new tenant-LSI
-	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), dummyPhyPorts, network_functions,
+	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), controllerPort, dummyPhyPorts, network_functions,
 		endpointsGre,virtual_links,nfs_ports_type);
 
 	CreateLsiOut *clo = NULL;
@@ -769,7 +763,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 		assert(description_gre_endpoints.size() == endpoints_gre.size());
 
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(), lsi->getPhysicalPortsName(), nf_types, lsi->getNetworkFunctionsPortsInfo(), description_gre_endpoints, lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), this->ipsec_certificate);
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(), nf_types, lsi->getNetworkFunctionsPortsInfo(), description_gre_endpoints, lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), this->ipsec_certificate);
 
 		clo = switchManager.createLsi(cli);
 
@@ -1148,9 +1142,6 @@ void GraphManager::handleControllerForInternalEndpoint(highlevel::Graph *graph)
 			nextControllerPort++;
 			pthread_mutex_unlock(&graph_manager_mutex);
 
-			ostringstream strControllerPort;
-			strControllerPort << controllerPort;
-
 			rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
 			switch(OFP_VERSION)
 			{
@@ -1170,7 +1161,7 @@ void GraphManager::handleControllerForInternalEndpoint(highlevel::Graph *graph)
 
 			//create a new OF controller associated with the internal LSI
 			lowlevel::Graph graphTmp;
-			Controller *controller = new Controller(versionbitmap,graphTmp,strControllerPort.str());
+			Controller *controller = new Controller(versionbitmap,graphTmp, controllerPort);
 			controller->start();
 
 			//store the information related to the OpenFlow controller associated with the internal LSI
@@ -1201,7 +1192,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 		{
 			ULOG_DBG_INFO("Create the internal LSI related to internal-group: \"%s\"", internal_group.c_str());
 
-			string controllerPort = controller->getControllerPort();
+			unsigned controllerPort = controller->getControllerPort();
 
 			vector<VLink> virtual_links;
 			virtual_links.push_back(VLink(dpid0));

@@ -412,7 +412,7 @@ bool RestServer::parseLoginForm(Value value, char *user, char *pwd) {
 			ULOG_DBG_INFO("Key \"%s\" not found", PASS);
 			return false;
 		}
-	} catch (exception& e) {
+	} catch (std::exception& e) {
 		ULOG_DBG_INFO("The content does not respect the JSON syntax: ", e.what());
 		return false;
 	}
@@ -452,7 +452,7 @@ bool RestServer::parseUserCreationForm(Value value, char **pwd, char **group) {
 		} else if (!foundGroup) {
 			ULOG_DBG_INFO("Key \"%s\" not found", GROUP);
 		}
-	} catch (exception& e) {
+	} catch (std::exception& e) {
 		ULOG_DBG_INFO("The content does not respect the JSON syntax: ", e.what());
 		return false;
 	}
@@ -676,7 +676,7 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 	} else if(strcmp(method, PUT) == 0 || strcmp(method, POST) == 0) {
 		const char *c_type = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Content-Type");
 		if ((c_type == NULL) || (strcmp(c_type, JSON_C_TYPE) != 0)) {
-			ULOG_INFO("Content-Type must be: "JSON_C_TYPE);
+			ULOG_INFO("Content-Type must be: \"%s\"",JSON_C_TYPE);
 			return httpResponse(connection, MHD_HTTP_UNSUPPORTED_MEDIA_TYPE);
 		}
 	}

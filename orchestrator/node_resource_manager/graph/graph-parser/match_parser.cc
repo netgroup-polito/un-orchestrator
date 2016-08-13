@@ -762,7 +762,6 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 		{
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,PROTOCOL,value.getString().c_str());
 			uint16_t ipProto;
-
 			if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
 			{
 				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",PROTOCOL,value.getString().c_str());

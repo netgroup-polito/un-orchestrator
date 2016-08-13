@@ -8,8 +8,6 @@
 #include "rule.h"
 #include "../../../utils/logger.h"
 
-using namespace std;
-
 namespace lowlevel
 {
 
@@ -68,7 +66,7 @@ public:
 	void prettyPrint(LSI *lsi0,map<string,LSI *> lsis);
 };
 
-class GraphException: public exception
+class GraphException: public std::exception
 {
 public:
 	virtual const char* what() const throw()
