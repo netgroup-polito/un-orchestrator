@@ -42,7 +42,7 @@ private:
 	/**
 	*	@brief: this is the port used by the OF controller for the LSI
 	*/
-	string controllerPort;
+	unsigned controllerPort;
 
 	/**
 	*	@brief: data plane identifier
@@ -133,11 +133,11 @@ private:
 
 public:
 
-	LSI(string controllerAddress, string controllerPort, set<string> physical_ports, list<highlevel::VNFs> network_functions,
+	LSI(string controllerAddress, unsigned controllerPort, set<string> physical_ports, list<highlevel::VNFs> network_functions,
 		list<highlevel::EndPointGre> gre_endpoints_ports, vector<VLink> virtual_links, map<string, map<unsigned int, PortType> > nfs_ports_type);
 
 	string getControllerAddress();
-	string getControllerPort();
+	unsigned getControllerPort();
 
 	list<highlevel::EndPointGre> getEndpointsPorts();
 

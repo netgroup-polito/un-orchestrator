@@ -12,7 +12,7 @@ static string nf_port_name(const string& nf_id, unsigned int port_id)
 	return ss.str();
 }
 
-LSI::LSI(string controllerAddress, string controllerPort, set<string> physical_ports, list<highlevel::VNFs> network_functions,
+LSI::LSI(string controllerAddress, unsigned controllerPort, set<string> physical_ports, list<highlevel::VNFs> network_functions,
 	list<highlevel::EndPointGre> gre_endpoints_ports, vector<VLink> virtual_links, map<string, map<unsigned int,PortType> > a_nfs_ports_type) :
 		controllerAddress(controllerAddress), controllerPort(controllerPort),
 		virtual_links(virtual_links.begin(),virtual_links.end())
@@ -42,7 +42,7 @@ string LSI::getControllerAddress()
 	return controllerAddress;
 }
 
-string LSI::getControllerPort()
+unsigned LSI::getControllerPort()
 {
 	return controllerPort;
 }

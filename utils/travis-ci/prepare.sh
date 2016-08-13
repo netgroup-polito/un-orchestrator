@@ -7,13 +7,12 @@ BASE=`pwd`
 cd $HOME
 ls
 if [ ! -d "rofl-common/build" ]; then
-	git clone https://github.com/bisdn/rofl-common
+	git clone https://github.com/toanju/rofl-common -b fix-ovs
 	cd rofl-common/
-	git checkout stable-0.6
 	./autogen.sh
 	cd build
 	../configure
-	make -j
+	make -j2
 else
 	echo "rofl-common exists"
 	cd rofl-common/build
@@ -27,7 +26,7 @@ if [ ! -d "json-spirit/build" ]; then
 	git clone https://github.com/sirikata/json-spirit
 	cd json-spirit/build
 	cmake .
-	make -j
+	make -j2
 else
 	echo "json-spirit exists"
 	cd json-spirit/build
@@ -52,7 +51,7 @@ if [ ! -d "double_decker/DoubleDecker" ]; then
 	cd czmq-3.0.2
 	./autogen.sh
 	./configure --prefix=/usr
-	make -j
+	make -j2
 	sudo make install
 
 	# - urcu
@@ -61,7 +60,7 @@ if [ ! -d "double_decker/DoubleDecker" ]; then
 	tar xvfj userspace-rcu-0.9.1.tar.bz2
 	cd userspace-rcu-0.9.1
 	./configure --prefix=/usr
-	make -j
+	make -j2
 	sudo make install
 
 	# - libsodium
@@ -70,7 +69,7 @@ if [ ! -d "double_decker/DoubleDecker" ]; then
 	tar xvfz libsodium-1.0.7.tar.gz
 	cd libsodium-1.0.7
 	./configure
-	make -j
+	make -j2
 	sudo make install
 
 	# double decker
@@ -79,7 +78,7 @@ if [ ! -d "double_decker/DoubleDecker" ]; then
 	cd DoubleDecker
 	./boot.sh
 	./configure
-	make -j
+	make -j2
 	sudo make install
 else
 	echo "****Double decker cache found****"

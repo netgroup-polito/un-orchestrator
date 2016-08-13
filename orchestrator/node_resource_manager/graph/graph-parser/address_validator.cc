@@ -84,7 +84,7 @@ bool AddressValidator::isUnicastMac(const char* mac)
 
 	assert(validateMac(mac));
 
-	sscanf(mac,"%"SCNx8":%"SCNx8":%"SCNx8":%"SCNx8":%"SCNx8":%"SCNx8"",&octet,&aux,&aux,&aux,&aux,&aux);
+	sscanf(mac,"%" SCNx8 ":%" SCNx8 ":%" SCNx8 ":%" SCNx8 ":%" SCNx8 ":%" SCNx8 "",&octet,&aux,&aux,&aux,&aux,&aux);
 
 	return ((octet & 0x1) == 0);
 }

@@ -4,19 +4,19 @@ namespace lowlevel
 {
 
 Action::Action()
-	: type(openflow::OFPAT_OUTPUT), is_local_port(false), is_normal(false)
+	: type(rofl::openflow::OFPAT_OUTPUT), is_local_port(false), is_normal(false)
 {
 
 }
 
 Action::Action(bool is_local_port)
-	: type(openflow::OFPAT_OUTPUT), is_local_port(is_local_port), is_normal(false)
+	: type(rofl::openflow::OFPAT_OUTPUT), is_local_port(is_local_port), is_normal(false)
 {
 
 }
 
 Action::Action(bool is_local_port, bool is_normal)
-		: type(openflow::OFPAT_OUTPUT), is_local_port(is_local_port), is_normal(is_normal)
+		: type(rofl::openflow::OFPAT_OUTPUT), is_local_port(is_local_port), is_normal(is_normal)
 {
 
 }
@@ -47,13 +47,15 @@ bool Action::operator==(const Action &other) const
 	return true;
 }
 
-openflow::ofp_action_type Action::getActionType()
+rofl::openflow::ofp_action_type Action::getActionType()
 {
 	return type;
 }
 
 void Action::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 {
+	using rofl::cindex;
+
 	//Before inserting the output action, the other actions are considered
 	unsigned int position = 0;
 	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)

@@ -15,14 +15,12 @@ IVANO: these include should be useless
 */
 
 //#include <rofl/common/ciosrv.h>
-#include <rofl/common/logging.h>
 #include <rofl/common/openflow/coxmatch.h>
 
 #include "../../../utils/logger.h"
 #include "../match.h"
 #include "../../graph_manager/lsi.h"
 
-using namespace rofl;
 using namespace std;
 
 namespace lowlevel

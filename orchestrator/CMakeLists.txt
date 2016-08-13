@@ -4,6 +4,7 @@ PROJECT(node-orchestrator)
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
         ADD_DEFINITIONS(-Wall -Werror -Wno-write-strings)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 IF(CMAKE_COMPILER_IS_GNUCC)
         ADD_DEFINITIONS(-Wall -Werror -Wno-write-strings)

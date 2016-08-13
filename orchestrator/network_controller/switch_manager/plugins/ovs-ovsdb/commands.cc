@@ -219,7 +219,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 	int l = 0;
 
 	/*Create the current target of a controller*/
-	sprintf(tcp_s, "tcp:%s:%s", cli.getControllerAddress().c_str(), cli.getControllerPort().c_str());
+	sprintf(tcp_s, "tcp:%s:%u", cli.getControllerAddress().c_str(), cli.getControllerPort());
 
 	/*insert Controller*/
 	first_obj["op"] = "insert";
