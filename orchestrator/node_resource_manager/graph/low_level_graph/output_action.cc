@@ -28,11 +28,22 @@ void Action::addOutputPort(unsigned int port_id)
 
 bool Action::operator==(const Action &other) const
 {
-	if((type != other.type) && (ports_id.front() == other.ports_id.front()))
+	if((type != other.type) || (ports_id.size() != other.ports_id.size()))
 		return false;
-	//for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
-	// TODO: check if ports_id list are equal!!
-
+	for(list<unsigned int>::const_iterator port_id = this->ports_id.begin(); port_id != this->ports_id.end(); port_id++)
+	{
+		bool found = false;
+		for(list<unsigned int>::const_iterator port_id_other = other.ports_id.begin(); port_id_other != other.ports_id.end(); port_id_other++)
+		{
+			if(*port_id==*port_id_other)
+			{
+				found=true;
+				break;
+			}
+		}
+		if(!found)
+			return false;
+	}
 	return true;
 }
 
@@ -80,12 +91,16 @@ void Action::print()
 	if(LOGGING_LEVEL <= ORCH_DEBUG_INFO)
 	{
 		cout << "\t\tAction:" << endl << "\t\t{" << endl;
+
 		if(is_local_port)
 			cout << "\t\t\tOUTPUT: " << "LOCAL" << endl;
 		else if(is_normal)
 			cout << "\t\t\tOUTPUT: " << "NORMAL" << endl;
 		else
-			cout << "\t\t\tOUTPUT: " << ports_id.front() << endl; // TODO: fix this (.front() is not correct!)
+		{
+			for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
+				cout << "\t\t\tOUTPUT: " << *outputPort << endl;
+		}
 		for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
 			(*ga)->print();
 		cout << "\t\t}" << endl;
@@ -97,43 +112,64 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 	stringstream ss;
 
 	ss << "output to ";
+	bool foundOne=false;
 
 	map<string,unsigned int> pysicalPorts = lsi0->getPhysicalPorts();
 	for(map<string,unsigned int>::iterator it = pysicalPorts.begin(); it != pysicalPorts.end(); it++)
 	{
-		if(it->second == ports_id.front())// TODO: fix this (.front() is not correct!)
+		for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
 		{
-			ss << it->first;
-			return ss.str();
+			if(it->second == *outputPort)
+			{
+				if(foundOne)
+					ss << ", output to ";
+				else
+					foundOne=true;
+				ss << it->first;
+				break;
+			}
 		}
 	}
+	if(foundOne)
+		return ss.str();
 
 	//The port corresponds to a virtual link... we search the corresponding graph
-
 	for(map<string,LSI *>::iterator it = lsis.begin(); it != lsis.end(); it++)
 	{
 		vector<VLink> vlinks = it->second->getVirtualLinks();
 		for(vector<VLink>::iterator vl = vlinks.begin(); vl != vlinks.end(); vl++)
 		{
-			if(vl->getRemoteID() == ports_id.front())// TODO: fix this (.front() is not correct!)
+			for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
 			{
-				ss << ports_id.front() << " (graph: " << it->first << ")";
-				goto conclude;
+				if(vl->getRemoteID() == *outputPort)
+				{
+					if(foundOne)
+						ss << ", output to ";
+					else
+						foundOne=true;
+					ss << *outputPort;
+					break;
+				}
 			}
 		}
 	}
 
-	if(is_local_port)
-		ss << "LOCAL" << " (LOCAL graph)";
-	else if(is_normal)
-		ss << "NORMAL" << " (INTERNAL graph)";
-	else
+	if(!foundOne)
 	{
-		//The code could be here only when a SIGINT is received and all the graph are going to be removed
-		ss << ports_id.front() << " (unknown graph)";// TODO: fix this (.front() is not correct!)
+		if(is_local_port)
+			ss << "LOCAL" << " (LOCAL graph)";
+		else if(is_normal)
+			ss << "NORMAL" << " (INTERNAL graph)";
+		else
+		{
+			//The code could be here only when a SIGINT is received and all the graph are going to be removed
+			for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
+			{
+				ss << *outputPort << ", ";
+			}
+			ss<<" (unknown graph)";
+		}
 	}
-
-conclude:
 
 	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
 		ss << (*ga)->prettyPrint();

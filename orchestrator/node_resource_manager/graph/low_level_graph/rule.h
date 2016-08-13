@@ -48,6 +48,11 @@ public:
 	*/
 	string getID();
 
+	/**
+	*	@brief: set the identifier of this rule
+	*/
+	void setID(string id);
+
 	void print();
 	void prettyPrint(LSI *lsi0,map<string,LSI *> lsis);
 };

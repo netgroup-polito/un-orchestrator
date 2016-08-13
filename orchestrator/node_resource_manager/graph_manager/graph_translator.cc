@@ -208,9 +208,7 @@ void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI 
 										 map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
 										 lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections )
 {
-	//Translate the match
-	lowlevel::Match lsi0Match;
-	lowlevel::Action lsi0Action;
+	list<lowlevel::Rule> rulesList;
 
 	//Translate the action
 	list<OutputAction*> outputActions = action->getOutputActions();
@@ -233,12 +231,15 @@ void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI 
 
 			ULOG_DBG("Match on gre end point \"%s\", action is on end point \"%s\"",match.getEndPointGre().c_str(),(*outputAction)->toString().c_str());
 
+
 			map<string, uint64_t> internal_endpoints_vlinks = tenantLSI->getEndPointsVlinks(); //retrive the virtual link associated with th internal endpoint
 			if(internal_endpoints_vlinks.count((*outputAction)->toString()) == 0)
 			{
 				ULOG_WARN("The tenant graph expresses an action on internal endpoint \"%s\", which has not been translated into a virtual link",action->toString().c_str());
 				throw GraphManagerException();
 			}
+			//Translate the match
+			lowlevel::Match lsi0Match;
 			uint64_t vlink_id = internal_endpoints_vlinks.find((*outputAction)->toString())->second;
 			ULOG_DBG_INFO("\t\tThe virtual link related to internal endpoint \"%s\" has ID: %x",(*outputAction)->toString().c_str(),vlink_id);
 			vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
@@ -253,8 +254,13 @@ void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI 
 			//Translate the action
 			map<string, unsigned int> internalLSIsConnectionsOfEndpoint = internalLSIsConnections[(*outputAction)->toString()];
 			unsigned int port_to_be_used = internalLSIsConnectionsOfEndpoint[graph->getID()];
-
+			lowlevel::Action lsi0Action;
 			lsi0Action.addOutputPort(port_to_be_used);
+			//The rule ID is created as follows  highlevelGraphID_hlrID
+			stringstream newRuleID;
+			newRuleID << graph->getID() << "_" << ruleID;
+			lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
+			rulesList.push_back(lsi0Rule);
 		}
 		else
 		{
@@ -268,7 +274,8 @@ void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI 
 				ULOG_WARN("The tenant graph expresses an action on the physical port \"%s\" which has not been translated into a virtual link",action_info.c_str());
 				throw GraphManagerException();
 			}
-
+			//Translate the match
+			lowlevel::Match lsi0Match;
 			uint64_t vlink_id = port_vlinks.find(action_info)->second;
 			vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
 			for(;vlink != tenantVirtualLinks.end(); vlink++)
@@ -292,23 +299,32 @@ void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI 
 
 			map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
 			unsigned int portForAction = translation->second;
-
+			lowlevel::Action lsi0Action;
 			lsi0Action.addOutputPort(portForAction);
-
+			//The rule ID is created as follows  highlevelGraphID_hlrID
+			stringstream newRuleID;
+			newRuleID << graph->getID() << "_" << ruleID;
+			lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
+			rulesList.push_back(lsi0Rule);
 		}
 	}
 
-	//XXX the generic actions must be inserted in this graph.
-	list<GenericAction*> gas = action->getGenericActions();
-	for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
-		lsi0Action.addGenericAction(*ga);
+	//multiple output to port action on LSI Tenant is splitted on LSI0
+	if(rulesList.size()>1)
+	{
+		int nSplit=1;
+		for(list<lowlevel::Rule>::iterator rule = rulesList.begin(); rule != rulesList.end(); rule++)
+		{
+			stringstream newRuleID;
+			newRuleID << rule->getID() << "_split" << nSplit++;
+			rule->setID(newRuleID.str());
+			//Create the rule and add it to the graph
+			lsi0Graph.addRule(*rule);
+		}
+	}
+	else if(rulesList.size()==1)
+		lsi0Graph.addRule(rulesList.back());
 
-	//Create the rule and add it to the graph
-	//The rule ID is created as follows  highlevelGraphID_hlrID
-	stringstream newRuleID;
-	newRuleID << graph->getID() << "_" << ruleID;
-	lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
-	lsi0Graph.addRule(lsi0Rule);
 }
 
 void GraphTranslator::handleMatchOnEndpointInternalLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
@@ -419,9 +435,7 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, 
 											 map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
 											 lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections)
 {
-	//Translate the match
-	lowlevel::Match lsi0Match;
-	lowlevel::Action lsi0Action;
+	list<lowlevel::Rule> rulesList;
 
 	list<OutputAction*> outputActions = action->getOutputActions();
 	for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
@@ -458,6 +472,8 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, 
 				ULOG_WARN("The tenant graph expresses an action on port \"%s\", which has not been translated into a virtual link",action_info.c_str());
 				throw GraphManagerException();
 			}
+			//Translate the match
+			lowlevel::Match lsi0Match;
 			uint64_t vlink_id = ports_vlinks.find(action_info)->second;
 			ULOG_DBG("\t\tThe virtual link related to port \"%s\" has ID: %x",action_info.c_str(),vlink_id);
 			vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
@@ -473,7 +489,13 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, 
 			map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
 			unsigned int portForAction = translation->second;
 
+			lowlevel::Action lsi0Action;
 			lsi0Action.addOutputPort(portForAction);
+			//The rule ID is created as follows  highlevelGraphID_hlrID
+			stringstream newRuleID;
+			newRuleID << graph->getID() << "_" << ruleID;
+			lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
+			rulesList.push_back(lsi0Rule);
 		}
 		else if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_INTERNAL)
 		{
@@ -486,6 +508,8 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, 
 				ULOG_WARN("The tenant graph expresses an action on internal endpoint \"%s\", which has not been translated into a virtual link",action->toString().c_str());
 				throw GraphManagerException();
 			}
+			//Translate the match
+			lowlevel::Match lsi0Match;
 			uint64_t vlink_id = internal_endpoints_vlinks.find(action->toString())->second;
 			ULOG_DBG_INFO("\t\tThe virtual link related to internal endpoint \"%s\" has ID: %x",(*outputAction)->toString().c_str(),vlink_id);
 			vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
@@ -498,25 +522,34 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, 
 			lsi0Match.setInputPort(vlink->getRemoteID());
 
 			//Translate the action
-			//XXX The generic actions will be added to the tenant lsi.
 			map<string, unsigned int> internalLSIsConnectionsOfEndpoint = internalLSIsConnections[action->toString()];
 			unsigned int port_to_be_used = internalLSIsConnectionsOfEndpoint[graph->getID()];
+
+			lowlevel::Action lsi0Action;
 			lsi0Action.addOutputPort(port_to_be_used);
+			//The rule ID is created as follows  highlevelGraphID_hlrID
+			stringstream newRuleID;
+			newRuleID << graph->getID() << "_" << ruleID;
+			lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
+			rulesList.push_back(lsi0Rule);
 		}
 	}
 
-	//XXX the generic actions must be inserted in this graph.
-	list<GenericAction*> gas = action->getGenericActions();
-	for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
-		lsi0Action.addGenericAction(*ga);
-
-
-	//Create the rule and add it to the graph
-	//The rule ID is created as follows  highlevelGraphID_hlrID
-	stringstream newRuleID;
-	newRuleID << graph->getID() << "_" << ruleID;
-	lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
-	lsi0Graph.addRule(lsi0Rule);
+	//multiple output to port action on LSI Tenant is splitted on LSI0
+	if(rulesList.size()>1)
+	{
+		int nSplit=1;
+		for(list<lowlevel::Rule>::iterator rule = rulesList.begin(); rule != rulesList.end(); rule++)
+		{
+			stringstream newRuleID;
+			newRuleID << rule->getID() << "_split" << nSplit++;
+			rule->setID(newRuleID.str());
+			//Create the rule and add it to the graph
+			lsi0Graph.addRule(*rule);
+		}
+	}
+	else if(rulesList.size()==1)
+		lsi0Graph.addRule(rulesList.back());
 }
 
 void GraphTranslator::handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *tenantLSI, string ruleID,
@@ -530,8 +563,7 @@ void GraphTranslator::handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *t
 	*	representing the action itself
 	*/
 
-	lowlevel::Match tenantMatch;
-	lowlevel::Action tenantAction;
+	list<lowlevel::Rule> rulesList;
 
 	list<OutputAction*> outputActions = action->getOutputActions();
 	for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
@@ -572,6 +604,7 @@ void GraphTranslator::handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *t
 				ULOG_DBG("Match on port \"%s\", action is \"%s:%s\"",match.getPhysicalPort().c_str(),action_info.c_str(),ep_port.c_str());
 
 			//Translate the match
+			lowlevel::Match tenantMatch;
 			map<string, uint64_t> ep_vlinks = tenantLSI->getEndPointsGreVlinks();
 			if(ep_vlinks.count(ep_port) == 0)
 			{
@@ -596,8 +629,10 @@ void GraphTranslator::handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *t
 				if(strcmp(ep->first.c_str(), action_ep->getOutputEndpointID().c_str()) == 0)
 					e_id = ep->second;
 			}
-
+			lowlevel::Action tenantAction;
 			tenantAction.addOutputPort(e_id);
+			lowlevel::Rule tenantRule(tenantMatch,tenantAction,ruleID,priority);
+			rulesList.push_back(tenantRule);
 		}
 		else
 		{
@@ -621,6 +656,7 @@ void GraphTranslator::handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *t
 			if(match.matchOnPort())
 				ULOG_DBG("Match on port \"%s\", action is \"%s:%d\"",match.getPhysicalPort().c_str(),action_info.c_str(),inputPort);
 
+			lowlevel::Match tenantMatch;
 			//Can be also an Endpoint
 			if(tenantNetworkFunctionsPorts.count(nf_port.str()) == 0)
 			{
@@ -646,20 +682,29 @@ void GraphTranslator::handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *t
 			tenantMatch.setInputPort(vlink->getLocalID());
 
 			//Translate the action
+			lowlevel::Action tenantAction;
 			map<string,unsigned int>::iterator translation = tenantNetworkFunctionsPorts.find(nf_port.str());
 			tenantAction.addOutputPort(translation->second);
+			lowlevel::Rule tenantRule(tenantMatch,tenantAction,ruleID,priority);
+			rulesList.push_back(tenantRule);
 		}
 	}
 
-	//XXX the generic actions must be inserted in this graph.
-	list<GenericAction*> gas = action->getGenericActions();
-	for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
-		tenantAction.addGenericAction(*ga);
-
-	//Create the rule and add it to the graph
-	lowlevel::Rule tenantRule(tenantMatch,tenantAction,ruleID,priority);
-	tenantGraph.addRule(tenantRule);
-
+	//multiple output to port action on LSI0 is splitted on LSI Tenant
+	if(rulesList.size()>1)
+	{
+		int nSplit=1;
+		for(list<lowlevel::Rule>::iterator rule = rulesList.begin(); rule != rulesList.end(); rule++)
+		{
+			stringstream newRuleID;
+			newRuleID << rule->getID() << "_split" << nSplit++;
+			rule->setID(newRuleID.str());
+			//Create the rule and add it to the graph
+			tenantGraph.addRule(*rule);
+		}
+	}
+	else if(rulesList.size()==1)
+		tenantGraph.addRule(rulesList.back());
 }
 
 void GraphTranslator::handleMatchOnEndpointGreLSITenant(highlevel::Graph *graph, LSI *tenantLSI, string ruleID,
