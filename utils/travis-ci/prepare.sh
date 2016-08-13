@@ -7,7 +7,7 @@ BASE=`pwd`
 cd $HOME
 ls
 if [ ! -d "rofl-common/build" ]; then
-	git clone https://github.com/bisdn/rofl-common
+	git clone https://github.com/toanju/rofl-common -b fix-ovs
 	cd rofl-common/
 	./autogen.sh
 	cd build
