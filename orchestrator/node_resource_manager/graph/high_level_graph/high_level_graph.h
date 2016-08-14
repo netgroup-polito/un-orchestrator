@@ -14,8 +14,6 @@
 #include "high_level_graph_endpoint_vlan.h"
 #include "high_level_graph_vnf.h"
 #include "high_level_rule.h"
-#include "high_level_output_action_nf.h"
-#include "high_level_output_action_port.h"
 #include "../../graph_manager/rule_removed_info.h"
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
@@ -282,7 +280,7 @@ public:
 	*
 	*	@param:	ID	Identifier of the rule to be removed
 	*/
-	RuleRemovedInfo removeRuleFromID(string ID);
+	list<RuleRemovedInfo> removeRuleFromID(string ID);
 
 	/**
 	*	Functions to get the description of the graph

@@ -243,16 +243,8 @@ SET(SOURCES1
 	node_resource_manager/graph/low_level_graph/rule.h
 	node_resource_manager/graph/low_level_graph/rule.cc
 
-	node_resource_manager/graph/high_level_graph/high_level_output_action.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action.cc
-	node_resource_manager/graph/high_level_graph/high_level_output_action_nf.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action_nf.cc
-	node_resource_manager/graph/high_level_graph/high_level_output_action_port.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action_port.cc
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_gre.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_gre.cc
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_internal.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_internal.cc
+	node_resource_manager/graph/high_level_graph/high_level_action.h
+	node_resource_manager/graph/high_level_graph/high_level_action.cc
 	node_resource_manager/graph/high_level_graph/high_level_rule.h
 	node_resource_manager/graph/high_level_graph/high_level_rule.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface.cc

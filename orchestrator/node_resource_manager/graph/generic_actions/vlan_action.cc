@@ -12,7 +12,7 @@ VlanAction::~VlanAction()
 
 }
 
-void VlanAction::toJSON(Object &action)
+void VlanAction::toJSON(Array &action)
 {
 	if(type == ACTION_ENDPOINT_VLAN_PUSH || type == ACTION_ENDPOINT_VLAN_POP)
 		//We don't add anything in case of the action implemnts a vlan endpoint
@@ -29,12 +29,13 @@ void VlanAction::toJSON(Object &action)
 	stringstream s_label;
 	s_label << label;
 	if(type == ACTION_VLAN_PUSH)
-		action[vlan_op] = s_label.str();
+		vlanAction[vlan_op] = s_label.str();
 	else
 	{
 		assert(type == ACTION_VLAN_POP);
-		action[vlan_op] = true;
+		vlanAction[vlan_op] = true;
 	}
+	action.push_back(vlanAction);
 }
 
 void VlanAction::fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigned int *position)

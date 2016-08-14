@@ -1,12 +1,12 @@
 #include "action_endpoint_internal.h"
 
 
-TempActionEndPointInternal::TempActionEndPointInternal(string group, string endpointName) :
-        OutputAction(TEMP_ACTION_ON_ENDPOINT_INTERNAL),group(group), endpointName(endpointName)
+ActionEndpointInternal::ActionEndpointInternal(string group, string endpointName) :
+        OutputAction(ACTION_ON_ENDPOINT_INTERNAL),group(group), endpointName(endpointName)
 {
 }
 
-bool TempActionEndPointInternal::operator==(const TempActionEndPointInternal &other) const
+bool ActionEndpointInternal::operator==(const ActionEndpointInternal &other) const
 {
     if(/*(graphID == other.graphID) && */group == other.group)
         return true;
@@ -14,12 +14,12 @@ bool TempActionEndPointInternal::operator==(const TempActionEndPointInternal &ot
     return false;
 }
 
-string TempActionEndPointInternal::getInfo()
+string ActionEndpointInternal::getInfo()
 {
     return group;
 }
 
-unsigned int TempActionEndPointInternal::getGroup()
+unsigned int ActionEndpointInternal::getGroup()
 {
     unsigned int in_group;
 
@@ -28,7 +28,7 @@ unsigned int TempActionEndPointInternal::getGroup()
     return in_group;
 }
 
-string TempActionEndPointInternal::getOutputEndpointID()
+string ActionEndpointInternal::getOutputEndpointID()
 {
     //Check the name of port
     char delimiter[] = ":";
@@ -56,7 +56,7 @@ string TempActionEndPointInternal::getOutputEndpointID()
     return str;
 }
 
-string TempActionEndPointInternal::toString()
+string ActionEndpointInternal::toString()
 {
     stringstream ss;
     ss << group;
@@ -64,7 +64,7 @@ string TempActionEndPointInternal::toString()
     return ss.str();
 }
 
-Object TempActionEndPointInternal::toJSON()
+Object ActionEndpointInternal::toJSON()
 {
     Object action;
     action[OUTPUT] = endpointName.c_str();

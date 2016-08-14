@@ -1,12 +1,12 @@
 #include "action_endpoint_gre.h"
 
 
-TempActionEndPointGre::TempActionEndPointGre(string endpointID, string endpointName) :
-        OutputAction(TEMP_ACTION_ON_ENDPOINT_GRE),endpointID(endpointID), endpointName(endpointName)
+ActionEndpointGre::ActionEndpointGre(string endpointID, string endpointName) :
+        OutputAction(ACTION_ON_ENDPOINT_GRE),endpointID(endpointID), endpointName(endpointName)
 {
 }
 
-bool TempActionEndPointGre::operator==(const TempActionEndPointGre &other) const
+bool ActionEndpointGre::operator==(const ActionEndpointGre &other) const
 {
     if((endpointID == other.endpointID))
         return true;
@@ -14,7 +14,7 @@ bool TempActionEndPointGre::operator==(const TempActionEndPointGre &other) const
     return false;
 }
 
-string TempActionEndPointGre::getInfo()
+string ActionEndpointGre::getInfo()
 {
     //Check the name of port
     char delimiter[] = ":";
@@ -43,17 +43,17 @@ string TempActionEndPointGre::getInfo()
     return str;
 }
 
-string TempActionEndPointGre::getOutputEndpointID()
+string ActionEndpointGre::getOutputEndpointID()
 {
     return endpointID;
 }
 
-string TempActionEndPointGre::toString()
+string ActionEndpointGre::toString()
 {
     return endpointID;
 }
 
-Object TempActionEndPointGre::toJSON()
+Object ActionEndpointGre::toJSON()
 {
     Object action;
     action[OUTPUT] = endpointName.c_str();

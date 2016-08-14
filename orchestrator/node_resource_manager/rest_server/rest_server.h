@@ -32,8 +32,6 @@
 #include "../../utils/constants.h"
 #include "../../utils/logger.h"
 
-#include "../graph/high_level_graph/high_level_output_action_port.h"
-#include "../graph/high_level_graph/high_level_output_action_endpoint_internal.h"
 #include "../graph/generic_actions/vlan_action.h"
 #include "../graph/output_actions/action_port.h"
 

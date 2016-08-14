@@ -6,7 +6,7 @@
 #include <iostream>
 #include <sstream>
 
-class TempActionEndPointInternal: public OutputAction {
+class ActionEndpointInternal: public OutputAction {
 
 private:
 
@@ -22,13 +22,13 @@ private:
 
 public:
 
-    TempActionEndPointInternal(string group, string endpointName);
+    ActionEndpointInternal(string group, string endpointName);
     string getInfo();
     unsigned int getGroup();
     string getOutputEndpointID();
     string toString();
 
-    bool operator==(const TempActionEndPointInternal &other) const;
+    bool operator==(const ActionEndpointInternal &other) const;
 
     Object toJSON();
 };

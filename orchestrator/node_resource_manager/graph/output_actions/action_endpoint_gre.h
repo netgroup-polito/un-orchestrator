@@ -7,7 +7,7 @@
 #include <sstream>
 
 
-class TempActionEndPointGre: public OutputAction {
+class ActionEndpointGre: public OutputAction {
 
 private:
 
@@ -23,12 +23,12 @@ private:
 
 public:
 
-    TempActionEndPointGre(string endpointID, string endpointName);
+    ActionEndpointGre(string endpointID, string endpointName);
     string getInfo();
     string getOutputEndpointID();
     string toString();
 
-    bool operator==(const TempActionEndPointGre &other) const;
+    bool operator==(const ActionEndpointGre &other) const;
 
     Object toJSON();
 };

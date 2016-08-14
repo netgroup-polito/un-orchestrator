@@ -26,20 +26,12 @@ using namespace std;
 namespace highlevel
 {
 
-enum action_t {INVALID,ACTION_ON_PORT,ACTION_ON_NETWORK_FUNCTION,ACTION_ON_ENDPOINT_GRE,ACTION_ON_ENDPOINT_INTERNAL};
-
 class Action
 {
 
-private:
-	action_t type;
-
 public:
-	action_t getType();
-	virtual string getInfo() = 0;
 
-	virtual Object toJSON() = 0;
-	virtual string toString() = 0;
+	Array toJSON();
 
 	/**
 	*	Associate a generic action with this action
@@ -61,10 +53,10 @@ public:
 	*/
 	list<OutputAction*> getOutputActions();
 
-	virtual ~Action();
+	~Action();
 
+	Action();
 protected:
-	Action(action_t type);
 	/**
 	*	The action contains a list of generic actions!
 	**/

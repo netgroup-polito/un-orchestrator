@@ -1,6 +1,6 @@
 #include "output_action.h"
 
-OutputAction::OutputAction(temp_action_t type)
+OutputAction::OutputAction(output_action_t type)
 {
     this->type=type;
 }
@@ -10,7 +10,7 @@ OutputAction::~OutputAction()
 
 }
 
-temp_action_t OutputAction::getType()
+output_action_t OutputAction::getType()
 {
     return type;
 }

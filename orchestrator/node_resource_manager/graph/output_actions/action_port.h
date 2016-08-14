@@ -8,7 +8,7 @@
 
 using namespace std;
 
-class TempActionPort: public OutputAction {
+class ActionPort: public OutputAction {
 
 private:
 
@@ -23,12 +23,12 @@ private:
     string endpointName;
 
 public:
-    ~TempActionPort();
-    TempActionPort(string portName, string endpointName);
+    ~ActionPort();
+    ActionPort(string portName, string endpointName);
     string getInfo();
     string toString();
 
-    bool operator==(const TempActionPort &other) const;
+    bool operator==(const ActionPort &other) const;
 
     Object toJSON();
 

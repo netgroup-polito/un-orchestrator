@@ -108,7 +108,7 @@ void GraphTranslator::handleMatchOnPortLSI0(highlevel::Graph *graph, LSI *tenant
 	for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 	{
 		string action_info = (*outputAction)->getInfo();
-		if((*outputAction)->getType() == TEMP_ACTION_ON_PORT)
+		if((*outputAction)->getType() == ACTION_ON_PORT)
 		{
 			ULOG_DBG("\tIt matches the port \"%s\", and the action is output to port %s",port.c_str(),action_info.c_str());
 
@@ -125,10 +125,10 @@ void GraphTranslator::handleMatchOnPortLSI0(highlevel::Graph *graph, LSI *tenant
 			lsi0Action.addOutputPort(portForAction);
 
 		}
-		else if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_GRE)
+		else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE)
 		{
 
-			TempActionEndPointGre *action_ep = (TempActionEndPointGre*)(*outputAction);
+			ActionEndpointGre *action_ep = (ActionEndpointGre*)(*outputAction);
 
 			ULOG_DBG("\tIt matches the port \"%s\", and the action is \"%s:%s\"",port.c_str(),action_info.c_str(),(action_ep->getOutputEndpointID()).c_str());
 
@@ -157,9 +157,9 @@ void GraphTranslator::handleMatchOnPortLSI0(highlevel::Graph *graph, LSI *tenant
 			lsi0Action.addOutputPort(vlink->getRemoteID());
 
 		}
-		else if((*outputAction)->getType() == TEMP_ACTION_ON_NETWORK_FUNCTION)
+		else if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
 		{
-			TempActionNetworkFunction *action_nf = (TempActionNetworkFunction*)(*outputAction);
+			ActionNetworkFunction *action_nf = (ActionNetworkFunction*)(*outputAction);
 
 			ULOG_DBG("\tIt matches the port \"%s\", and the action is \"%s:%d\"",port.c_str(),action_info.c_str(),action_nf->getPort());
 
@@ -214,19 +214,19 @@ void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI 
 	list<OutputAction*> outputActions = action->getOutputActions();
 	for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 	{
-		if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_GRE)
+		if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE)
 		{
 			//gre -> gre : rule not included in LSI-0 - it's a strange case, but let's consider it
 			ULOG_DBG("\tIt matches a GRE tunnel, and the action is a GRE tunnel. Not inserted in LSI-0");
 			continue;
 		}
-		if((*outputAction)->getType() == TEMP_ACTION_ON_NETWORK_FUNCTION)
+		if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
 		{
 			//gre -> NF : rule not included in LSI-0 - it's a strange case, but let's consider it
 			ULOG_DBG("\tIt matches a GRE tunnel, and the action is a Network function. Not inserted in LSI-0");
 			continue;
 		}
-		if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_INTERNAL)
+		if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL)
 		{
 
 			ULOG_DBG("Match on gre end point \"%s\", action is on end point \"%s\"",match.getEndPointGre().c_str(),(*outputAction)->toString().c_str());
@@ -235,7 +235,7 @@ void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI 
 			map<string, uint64_t> internal_endpoints_vlinks = tenantLSI->getEndPointsVlinks(); //retrive the virtual link associated with th internal endpoint
 			if(internal_endpoints_vlinks.count((*outputAction)->toString()) == 0)
 			{
-				ULOG_WARN("The tenant graph expresses an action on internal endpoint \"%s\", which has not been translated into a virtual link",action->toString().c_str());
+				ULOG_WARN("The tenant graph expresses an action on internal endpoint \"%s\", which has not been translated into a virtual link",(*outputAction)->toString().c_str());
 				throw GraphManagerException();
 			}
 			//Translate the match
@@ -264,7 +264,7 @@ void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI 
 		}
 		else
 		{
-			assert((*outputAction)->getType() == TEMP_ACTION_ON_PORT);
+			assert((*outputAction)->getType() == ACTION_ON_PORT);
 
 			string action_info = (*outputAction)->getInfo();
 
@@ -351,12 +351,12 @@ void GraphTranslator::handleMatchOnEndpointInternalLSI0(highlevel::Graph *graph,
 	list<OutputAction*> outputActions = action->getOutputActions();
 	for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 	{
-		assert((*outputAction)->getType() == TEMP_ACTION_ON_NETWORK_FUNCTION || (*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_GRE); //other action types are not implemented
+		assert((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION || (*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE); //other action types are not implemented
 
-		if((*outputAction)->getType() == TEMP_ACTION_ON_NETWORK_FUNCTION)
+		if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
 		{
 
-			TempActionNetworkFunction *action_nf = (TempActionNetworkFunction*)(*outputAction);
+			ActionNetworkFunction *action_nf = (ActionNetworkFunction*)(*outputAction);
 
 			//All the traffic for a NF is sent on the same virtual link
 			stringstream action_port;
@@ -384,7 +384,7 @@ void GraphTranslator::handleMatchOnEndpointInternalLSI0(highlevel::Graph *graph,
 		}
 		else //action on endpoint gre
 		{
-			TempActionEndPointGre *action_ep = (TempActionEndPointGre*)(*outputAction);
+			ActionEndpointGre *action_ep = (ActionEndpointGre*)(*outputAction);
 
 			string action_info = (*outputAction)->getInfo();
 
@@ -440,19 +440,19 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, 
 	list<OutputAction*> outputActions = action->getOutputActions();
 	for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 	{
-		if((*outputAction)->getType() == TEMP_ACTION_ON_NETWORK_FUNCTION)
+		if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
 		{
 			//NF -> NF : rule not included in LSI-0
 			ULOG_DBG("\tIt matches a NF, and the action is a NF. Not inserted in LSI-0");
 			continue;
 		}
-		if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_GRE)
+		if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE)
 		{
 			//NF -> gre : rule not included in LSI-0
 			ULOG_DBG("\tIt matches a NF, and the action is a GRE tunnel. Not inserted in LSI-0");
 			continue;
 		}
-		if((*outputAction)->getType() == TEMP_ACTION_ON_PORT)
+		if((*outputAction)->getType() == ACTION_ON_PORT)
 		{
 			//The entire match must be replaced with the virtual link associated with the port
 			//expressed in the OUTPUT action.
@@ -497,20 +497,20 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, 
 			lowlevel::Rule lsi0Rule(lsi0Match,lsi0Action,newRuleID.str(),priority);
 			rulesList.push_back(lsi0Rule);
 		}
-		else if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_INTERNAL)
+		else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL)
 		{
 			string action_info = (*outputAction)->getInfo();
 			ULOG_DBG("Match on NF \"%s\", action is on end point \"%s\"",match.getNF().c_str(),(*outputAction)->toString().c_str());
 
 			map<string, uint64_t> internal_endpoints_vlinks = tenantLSI->getEndPointsVlinks(); //retrive the virtual link associated with th einternal endpoitn
-			if(internal_endpoints_vlinks.count(action->toString()) == 0)
+			if(internal_endpoints_vlinks.count((*outputAction)->toString()) == 0)
 			{
-				ULOG_WARN("The tenant graph expresses an action on internal endpoint \"%s\", which has not been translated into a virtual link",action->toString().c_str());
+				ULOG_WARN("The tenant graph expresses an action on internal endpoint \"%s\", which has not been translated into a virtual link",(*outputAction)->toString().c_str());
 				throw GraphManagerException();
 			}
 			//Translate the match
 			lowlevel::Match lsi0Match;
-			uint64_t vlink_id = internal_endpoints_vlinks.find(action->toString())->second;
+			uint64_t vlink_id = internal_endpoints_vlinks.find((*outputAction)->toString())->second;
 			ULOG_DBG_INFO("\t\tThe virtual link related to internal endpoint \"%s\" has ID: %x",(*outputAction)->toString().c_str(),vlink_id);
 			vector<VLink>::iterator vlink = tenantVirtualLinks.begin();
 			for(;vlink != tenantVirtualLinks.end(); vlink++)
@@ -522,7 +522,7 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, 
 			lsi0Match.setInputPort(vlink->getRemoteID());
 
 			//Translate the action
-			map<string, unsigned int> internalLSIsConnectionsOfEndpoint = internalLSIsConnections[action->toString()];
+			map<string, unsigned int> internalLSIsConnectionsOfEndpoint = internalLSIsConnections[(*outputAction)->toString()];
 			unsigned int port_to_be_used = internalLSIsConnectionsOfEndpoint[graph->getID()];
 
 			lowlevel::Action lsi0Action;
@@ -569,7 +569,7 @@ void GraphTranslator::handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *t
 	for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 	{
 		string action_info = (*outputAction)->getInfo();
-		if((*outputAction)->getType() == TEMP_ACTION_ON_PORT)
+		if((*outputAction)->getType() == ACTION_ON_PORT)
 		{
 			/**
 			*	physical port -> physical port : rule not included in LSI-0
@@ -581,7 +581,7 @@ void GraphTranslator::handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *t
 				ULOG_DBG("\tIt matches an internal endpoint, and the action is OUTPUT to a physical port. Not inserted in the tenant LSI");
 			continue;
 		}
-		if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_INTERNAL)
+		if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL)
 		{
 			/**
 			*	physical port -> internal endpoint : rule not included in LSI-0
@@ -593,11 +593,11 @@ void GraphTranslator::handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *t
 				ULOG_DBG("\tIt matches an internal endpoint, and the action is OUTPUT to an internal endpoint. Not inserted in the tenant LSI");
 			continue;
 		}
-		if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_GRE)
+		if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE)
 		{
 			map<string,unsigned int> tenantEndpointsPorts = tenantLSI->getEndpointsPortsId();
 
-			TempActionEndPointGre *action_ep = (TempActionEndPointGre*)(*outputAction);
+			ActionEndpointGre *action_ep = (ActionEndpointGre*)(*outputAction);
 			string ep_port = action_ep->getOutputEndpointID();
 
 			if(match.matchOnPort())
@@ -636,9 +636,9 @@ void GraphTranslator::handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *t
 		}
 		else
 		{
-			assert((*outputAction)->getType() == TEMP_ACTION_ON_NETWORK_FUNCTION);
+			assert((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION);
 
-			TempActionNetworkFunction *action_nf = (TempActionNetworkFunction*)(*outputAction);
+			ActionNetworkFunction *action_nf = (ActionNetworkFunction*)(*outputAction);
 			unsigned int inputPort = action_nf->getPort();
 
 			//Can be also an Endpoint
@@ -739,9 +739,9 @@ void GraphTranslator::handleMatchOnEndpointGreLSITenant(highlevel::Graph *graph,
 	for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 	{
 		string action_info = (*outputAction)->getInfo();
-		if((*outputAction)->getType() == TEMP_ACTION_ON_NETWORK_FUNCTION)
+		if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
 		{
-			TempActionNetworkFunction *action_nf = (TempActionNetworkFunction*)(*outputAction);
+			ActionNetworkFunction *action_nf = (ActionNetworkFunction*)(*outputAction);
 
 			ULOG_DBG("\tIt matches the gre endpoint \"%s\", and the action is \"%s:%d\"",input_endpoint,action_info.c_str(),action_nf->getPort());
 
@@ -754,7 +754,7 @@ void GraphTranslator::handleMatchOnEndpointGreLSITenant(highlevel::Graph *graph,
 			map<string,unsigned int>::iterator translation = tenantNetworkFunctionsPorts.find(action_port.str());
 			tenantAction.addOutputPort(translation->second);
 		}
-		else if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_INTERNAL)
+		else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL)
 		{
 			ULOG_DBG("\tIt matches the gre endpoint \"%s\", and the action is \"%s\"",input_endpoint,action_info.c_str());
 
@@ -779,10 +779,10 @@ void GraphTranslator::handleMatchOnEndpointGreLSITenant(highlevel::Graph *graph,
 			assert(vlink != tenantVirtualLinks.end());
 			tenantAction.addOutputPort(vlink->getLocalID());
 		}
-		else if((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_GRE)
+		else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE)
 		{
 
-			TempActionEndPointGre *action_ep = (TempActionEndPointGre*)(*outputAction);
+			ActionEndpointGre *action_ep = (ActionEndpointGre*)(*outputAction);
 			string ep_port = action_ep->getOutputEndpointID();
 
 			ULOG_DBG("\tIt matches the gre endpoint \"%s\", and the action is \"%s\"",input_endpoint,action_info.c_str());
@@ -876,9 +876,9 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSITenant(highlevel::Graph *gr
 	for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 	{
 		string action_info = (*outputAction)->getInfo();
-		if((*outputAction)->getType() == TEMP_ACTION_ON_NETWORK_FUNCTION)
+		if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
 		{
-			TempActionNetworkFunction *action_nf = (TempActionNetworkFunction*)(*outputAction);
+			ActionNetworkFunction *action_nf = (ActionNetworkFunction*)(*outputAction);
 			unsigned int inputPort = action_nf->getPort();//e.g., "1"
 			stringstream nf_port;
 			nf_port << action_info << "_" << inputPort;//e.g., "firewall_1"
@@ -902,7 +902,7 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSITenant(highlevel::Graph *gr
 			map<string,unsigned int>::iterator translation = tenantNetworkFunctionsPortsAction.find(nf_port.str());
 			tenantAction.addOutputPort(translation->second);
 		}
-		else if((*outputAction)->getType() == TEMP_ACTION_ON_PORT)
+		else if((*outputAction)->getType() == ACTION_ON_PORT)
 		{
 			/**
             *	The phyPort is translated into the tenant side virtual link that
@@ -930,7 +930,7 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSITenant(highlevel::Graph *gr
 			assert(vlink != tenantVirtualLinks.end());
 			tenantAction.addOutputPort(vlink->getLocalID());
 		}
-		else if((*outputAction)->getType() ==TEMP_ACTION_ON_ENDPOINT_INTERNAL)
+		else if((*outputAction)->getType() ==ACTION_ON_ENDPOINT_INTERNAL)
 		{
 			/**
             *	the endpoint is translated into the tenant side virtual link that
@@ -944,7 +944,7 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSITenant(highlevel::Graph *gr
 
 			map<string, uint64_t> endpoints_vlinks = tenantLSI->getEndPointsVlinks();
 
-			if(endpoints_vlinks.count(action->toString()) == 0)
+			if(endpoints_vlinks.count((*outputAction)->toString()) == 0)
 			{
 				ULOG_ERR("The tenant graph expresses an action on internal endpoint \"%s\" which has not been translated into a virtual link",(*outputAction)->toString().c_str());
 				assert(0);
@@ -962,7 +962,7 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSITenant(highlevel::Graph *gr
 		}
 		else
 		{
-			assert((*outputAction)->getType() == TEMP_ACTION_ON_ENDPOINT_GRE);
+			assert((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE);
 
 			/**
             *	the endpoint is translated into the tenant side virtual link that
@@ -970,7 +970,7 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSITenant(highlevel::Graph *gr
             *	expressed in the match are not changed.
             */
 
-			TempActionEndPointGre *action_ep = (TempActionEndPointGre*)(*outputAction);
+			ActionEndpointGre *action_ep = (ActionEndpointGre*)(*outputAction);
 			string ep_port = action_ep->getOutputEndpointID();
 
 			ULOG_DBG("\tIt matches the \"%s:%d\", and the action is an output on endpoint \"%s\"",nf.c_str(),nfPort,ep_port.c_str());

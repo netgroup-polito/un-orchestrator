@@ -1,13 +1,13 @@
 #include "action_network_function.h"
 
 
-TempActionNetworkFunction::TempActionNetworkFunction(string nfId, string endpointPortName, unsigned int port) :
-        OutputAction(TEMP_ACTION_ON_NETWORK_FUNCTION),nfId(nfId), endpointPortName(endpointPortName), port(port)
+ActionNetworkFunction::ActionNetworkFunction(string nfId, string endpointPortName, unsigned int port) :
+        OutputAction(ACTION_ON_NETWORK_FUNCTION),nfId(nfId), endpointPortName(endpointPortName), port(port)
 {
 
 }
 
-bool TempActionNetworkFunction::operator==(const TempActionNetworkFunction &other) const
+bool ActionNetworkFunction::operator==(const ActionNetworkFunction &other) const
 {
     if((nfId == other.nfId) && (port == other.port) && (endpointPortName == other.endpointPortName))
         return true;
@@ -15,17 +15,17 @@ bool TempActionNetworkFunction::operator==(const TempActionNetworkFunction &othe
     return false;
 }
 
-string TempActionNetworkFunction::getInfo()
+string ActionNetworkFunction::getInfo()
 {
     return nfId;
 }
 
-unsigned int TempActionNetworkFunction::getPort()
+unsigned int ActionNetworkFunction::getPort()
 {
     return port;
 }
 
-string TempActionNetworkFunction::toString()
+string ActionNetworkFunction::toString()
 {
     stringstream ss;
     ss << nfId << ":" << port;
@@ -33,7 +33,7 @@ string TempActionNetworkFunction::toString()
     return ss.str();
 }
 
-Object TempActionNetworkFunction::toJSON()
+Object ActionNetworkFunction::toJSON()
 {
     Object action;
     stringstream network_function;

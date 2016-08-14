@@ -7,7 +7,7 @@
 #include <sstream>
 
 
-class TempActionNetworkFunction: public OutputAction {
+class ActionNetworkFunction: public OutputAction {
 private:
     /**
     *	@brief: the id of the NF (e.g., 0001)
@@ -26,12 +26,12 @@ private:
 
 public:
 
-    TempActionNetworkFunction(string nfId, string endpointPortName, unsigned int port = 1);
+    ActionNetworkFunction(string nfId, string endpointPortName, unsigned int port = 1);
     string getInfo();
     unsigned int getPort();
     string toString();
 
-    bool operator==(const TempActionNetworkFunction &other) const;
+    bool operator==(const ActionNetworkFunction &other) const;
 
     Object toJSON();
 };

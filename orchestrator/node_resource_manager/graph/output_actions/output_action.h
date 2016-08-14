@@ -15,12 +15,12 @@
 using namespace json_spirit;
 using namespace std;
 
-enum temp_action_t {TEMP_ACTION_ON_PORT,TEMP_ACTION_ON_NETWORK_FUNCTION,TEMP_ACTION_ON_ENDPOINT_GRE,TEMP_ACTION_ON_ENDPOINT_INTERNAL};
+enum output_action_t {ACTION_ON_PORT,ACTION_ON_NETWORK_FUNCTION,ACTION_ON_ENDPOINT_GRE,ACTION_ON_ENDPOINT_INTERNAL};
 
 class OutputAction {
 
 public:
-    temp_action_t getType();
+    output_action_t getType();
 
     virtual ~OutputAction();
 
@@ -32,8 +32,8 @@ public:
 
 
 protected:
-    OutputAction(temp_action_t type);
-    temp_action_t type;
+    OutputAction(output_action_t type);
+    output_action_t type;
 
 };
 

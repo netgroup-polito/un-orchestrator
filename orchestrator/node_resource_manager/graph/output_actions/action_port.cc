@@ -1,18 +1,18 @@
 #include "action_port.h"
 
 
-TempActionPort::TempActionPort(string portName, string endpointName) :
-        OutputAction(TEMP_ACTION_ON_PORT),portName(portName), endpointName(endpointName)
+ActionPort::ActionPort(string portName, string endpointName) :
+        OutputAction(ACTION_ON_PORT),portName(portName), endpointName(endpointName)
 {
 
 }
 
-TempActionPort::~TempActionPort()
+ActionPort::~ActionPort()
 {
 
 }
 
-bool TempActionPort::operator==(const TempActionPort &other) const
+bool ActionPort::operator==(const ActionPort &other) const
 {
     if(portName == other.portName && endpointName == other.endpointName)
         return true;
@@ -20,17 +20,17 @@ bool TempActionPort::operator==(const TempActionPort &other) const
     return false;
 }
 
-string TempActionPort::getInfo()
+string ActionPort::getInfo()
 {
     return portName;
 }
 
-string TempActionPort::toString()
+string ActionPort::toString()
 {
     return portName;
 }
 
-Object TempActionPort::toJSON()
+Object ActionPort::toJSON()
 {
     Object action;
     action[OUTPUT] = endpointName.c_str();
