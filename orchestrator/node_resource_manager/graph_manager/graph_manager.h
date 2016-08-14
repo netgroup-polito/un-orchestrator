@@ -216,6 +216,24 @@ private:
 	*/
 	bool updateGraph_remove(string graphID, highlevel::Graph *newGraph);
 
+	/**
+	*	@brief: given a flow ID returns a list of corresponding
+	*	rules on LSI0.
+	*	Note that the size of the list can be more than 1 due to
+	*	the possibility to specify more than one output_to_port in action
+	*	(that can involves the splitting of a rule)
+	*/
+	list<string> getRulesIDForLSI0(highlevel::Rule rule, string graphID);
+
+	/**
+	*	@brief: given a flow ID returns a list of corresponding
+	*	rules on LSI Tenant.
+	*	Note that the size of the list can be more than 1 due to
+	*	the possibility to specify more than one output_to_port in action
+	*	(that can involves the splitting of a rule)
+	*/
+	list<string> getRulesIDForLSITenant(highlevel::Rule rule);
+
 public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF
 	//(plus other fields)

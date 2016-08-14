@@ -2067,7 +2067,7 @@ bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph
 
 	ULOG_DBG_INFO("2) Removing the flow rules");
 	Controller *lsi0Controller = graphInfoLSI0.getController();
-
+/* vecchia
 	list<highlevel::Rule> rulesToBeRemoved = diff->getRules();
 	for(list<highlevel::Rule>::iterator rule = rulesToBeRemoved.begin(); rule != rulesToBeRemoved.end(); rule++)
 	{
@@ -2084,6 +2084,29 @@ bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph
 		ULOG_DBG_INFO("Removing the flow from the tenant-LSI graph");
 		Controller *tenantController = graphInfo.getController();
 		tenantController->removeRuleFromID(ruleID);
+	}*/
+
+	list<highlevel::Rule> rulesToBeRemoved = diff->getRules();
+	for(list<highlevel::Rule>::iterator rule = rulesToBeRemoved.begin(); rule != rulesToBeRemoved.end(); rule++)
+	{
+		string generalRuleID = rule->getRuleID();
+		ULOG_DBG_INFO("Removing the flow rule with id '%s'",generalRuleID.c_str());
+
+		// Considering the LSI-0
+		list<string> rulesIDLSI0 = getRulesIDForLSI0(*rule,graph->getID());
+		for(list<string>::iterator ruleID = rulesIDLSI0.begin(); ruleID!=rulesIDLSI0.end(); ruleID++)
+		{
+			lsi0Controller->removeRuleFromID(*ruleID);
+			graphLSI0lowLevel.removeRuleFromID(*ruleID);
+		}
+
+		// Considering the tenant-LSI
+		ULOG_DBG_INFO("Removing the flow from the tenant-LSI graph");
+		Controller *tenantController = graphInfo.getController();
+		list<string> rulesIDLSITenant = getRulesIDForLSITenant(*rule);
+		for(list<string>::iterator ruleID = rulesIDLSITenant.begin(); ruleID !=rulesIDLSITenant.end(); ruleID++)
+			tenantController->removeRuleFromID(*ruleID);
+
 	}
 
 	/**
@@ -2093,7 +2116,7 @@ bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph
 
 	ULOG_DBG_INFO("3) Removing the virtual links");
 
-	assert(removeRuleInfo.size() == rulesToBeRemoved.size());
+	assert(removeRuleInfo.size() >= rulesToBeRemoved.size());
 	for(list<RuleRemovedInfo>::iterator tbr = removeRuleInfo.begin(); tbr != removeRuleInfo.end(); tbr++)
 		removeUselessVlinks(*tbr,graph,lsi);
 
@@ -2749,5 +2772,71 @@ void GraphManager::printInfo(bool completed)
 	}
 
 	ULOG_INFO("");
+}
+
+list<string> GraphManager::getRulesIDForLSI0(highlevel::Rule rule, string graphID)
+{
+	list<string> rulesID;
+
+	stringstream ss;
+	ss << graphID << "_" << rule.getRuleID();
+	string startingRuleID = ss.str();
+
+	list<OutputAction*> outputActions = rule.getAction()->getOutputActions();
+	highlevel::Match match = rule.getMatch();
+
+	int vlinkUsed=0;
+	if(match.matchOnEndPointGre() || match.matchOnNF())
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
+		{
+			output_action_t actionType = (*outputAction)->getType();
+			if(actionType == ACTION_ON_PORT || actionType == ACTION_ON_ENDPOINT_INTERNAL)
+				vlinkUsed++;
+		}
+
+	if(vlinkUsed<2)
+		rulesID.push_back(startingRuleID);
+	else
+		for(int n=0; n<vlinkUsed; n++)
+		{
+			stringstream newRuleID;
+			newRuleID << startingRuleID << "_split" << (n+1);
+			rulesID.push_back(newRuleID.str());
+		}
+
+	return rulesID;
+}
+
+list<string> GraphManager::getRulesIDForLSITenant(highlevel::Rule rule)
+{
+	list<string> rulesID;
+
+	stringstream ss;
+	ss << rule.getRuleID();
+	string startingRuleID = ss.str();
+
+	list<OutputAction*> outputActions = rule.getAction()->getOutputActions();
+	highlevel::Match match = rule.getMatch();
+
+	int vlinkUsed=0;
+	if(match.matchOnPort() || match.matchOnEndPointInternal())
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
+		{
+			output_action_t actionType = (*outputAction)->getType();
+			if(actionType == ACTION_ON_NETWORK_FUNCTION || actionType == ACTION_ON_ENDPOINT_GRE)
+				vlinkUsed++;
+		}
+
+	if(vlinkUsed<2)
+		rulesID.push_back(startingRuleID);
+	else
+		for(int n=0; n<vlinkUsed; n++)
+		{
+			stringstream newRuleID;
+			newRuleID << startingRuleID << "_split" << (n+1);
+			rulesID.push_back(newRuleID.str());
+		}
+
+	return rulesID;
 }
 
