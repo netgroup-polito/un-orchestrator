@@ -338,7 +338,7 @@ Within the `action` element of the NF-FG description, the following elements can
 	`pop_vlan`
   
 Note that multiple actions can be specified in the same `flowrule`, and that `output_to_port` 
-should appear **one and only one** in each `flowrule`.
+can appear more than one in each `flowrule`.
   
 As an example, the following NF-FG tags all the packets coming from interface `firewall:inout:1` 
 (belonging to the `firewall` VNF) and forwards them to the `network-monitor` VNF, by means of its 
