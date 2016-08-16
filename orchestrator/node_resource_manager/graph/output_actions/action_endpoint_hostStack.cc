@@ -1,10 +1,7 @@
-#include "high_level_output_action_endpoint_hostStack.h"
-
-namespace highlevel
-{
+#include "action_endpoint_hostStack.h"
 
 ActionEndPointHostStack::ActionEndPointHostStack(string endpointID, string endpointName) :
-	Action(ACTION_ON_ENDPOINT_HOSTSTACK), endpointID(endpointID), endpointName(endpointName)
+	OutputAction(ACTION_ON_ENDPOINT_HOSTSTACK), endpointID(endpointID), endpointName(endpointName)
 {
 }
 
@@ -59,11 +56,5 @@ Object ActionEndPointHostStack::toJSON()
 {
 	Object action;
 	action[OUTPUT] = endpointName.c_str();
-
-	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
-		(*ga)->toJSON(action);
-
 	return action;
-}
-
 }

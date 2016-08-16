@@ -2120,7 +2120,7 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 
 	ULOG_DBG_INFO("2) Removing the flow rules");
 	Controller *lsi0Controller = graphInfoLSI0.getController();
-
+/* vecchia
 	list<highlevel::Rule> rulesToBeRemoved = diff->getRules();
 	for(list<highlevel::Rule>::iterator rule = rulesToBeRemoved.begin(); rule != rulesToBeRemoved.end(); rule++)
 	{
@@ -2137,6 +2137,29 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 		ULOG_DBG_INFO("Removing the flow from the tenant-LSI graph");
 		Controller *tenantController = graphInfo.getController();
 		tenantController->removeRuleFromID(ruleID);
+	}*/
+
+	list<highlevel::Rule> rulesToBeRemoved = diff->getRules();
+	for(list<highlevel::Rule>::iterator rule = rulesToBeRemoved.begin(); rule != rulesToBeRemoved.end(); rule++)
+	{
+		string generalRuleID = rule->getRuleID();
+		ULOG_DBG_INFO("Removing the flow rule with id '%s'",generalRuleID.c_str());
+
+		// Considering the LSI-0
+		list<string> rulesIDLSI0 = getRulesIDForLSI0(*rule,graph->getID());
+		for(list<string>::iterator ruleID = rulesIDLSI0.begin(); ruleID!=rulesIDLSI0.end(); ruleID++)
+		{
+			lsi0Controller->removeRuleFromID(*ruleID);
+			graphLSI0lowLevel.removeRuleFromID(*ruleID);
+		}
+
+		// Considering the tenant-LSI
+		ULOG_DBG_INFO("Removing the flow from the tenant-LSI graph");
+		Controller *tenantController = graphInfo.getController();
+		list<string> rulesIDLSITenant = getRulesIDForLSITenant(*rule);
+		for(list<string>::iterator ruleID = rulesIDLSITenant.begin(); ruleID !=rulesIDLSITenant.end(); ruleID++)
+			tenantController->removeRuleFromID(*ruleID);
+
 	}
 
 	/**
@@ -2146,7 +2169,7 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 
 	ULOG_DBG_INFO("3) Removing the virtual links");
 
-	assert(removeRuleInfo.size() == rulesToBeRemoved.size());
+	assert(removeRuleInfo.size() >= rulesToBeRemoved.size());
 	for(list<RuleRemovedInfo>::iterator tbr = removeRuleInfo.begin(); tbr != removeRuleInfo.end(); tbr++)
 		removeUselessVlinks(*tbr,graph,lsi);
 
@@ -2251,19 +2274,23 @@ void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *gr
 			highlevel::Action *a = again->getAction();
 			highlevel::Match m = again->getMatch();
 
-			if(a->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION && (m.matchOnEndPointInternal() || m.matchOnPort() ))
+			list<OutputAction*> outputActions = a->getOutputActions();
+			for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 			{
-				//The network function port can still be used in an action, but the match should be on something not requiring the vlink: another VNF port or a gre tunnel
-
-				stringstream nf_port;
-				nf_port << ((highlevel::ActionNetworkFunction*)a)->getInfo() << "_" << ((highlevel::ActionNetworkFunction*)a)->getPort();
-				string nf_port_string = nf_port.str();
-
-				if(nf_port_string == rri.nf_port)
+				if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION && (m.matchOnEndPointInternal() || m.matchOnPort() ))
 				{
-					//The action is on the same VNF port of the removed one, hence the vlink must not be removed
-					ULOG_DBG_INFO("The vlink cannot be removed, since there are other actions expressed on the NF port '%s'",rri.nf_port.c_str());
-					return;
+					//The network function port can still be used in an action, but the match should be on something not requiring the vlink: another VNF port or a gre tunnel
+
+					stringstream nf_port;
+					nf_port << ((ActionNetworkFunction*)(*outputAction))->getInfo() << "_" << ((ActionNetworkFunction*)(*outputAction))->getPort();
+					string nf_port_string = nf_port.str();
+
+					if(nf_port_string == rri.nf_port)
+					{
+						//The action is on the same VNF port of the removed one, hence the vlink must not be removed
+						ULOG_DBG_INFO("The vlink cannot be removed, since there are other actions expressed on the NF port '%s'",rri.nf_port.c_str());
+						return;
+					}
 				}
 			}
 		}//end of again iterator on the rules of the graph
@@ -2330,15 +2357,18 @@ void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *gr
 			highlevel::Action *a = again->getAction();
 			highlevel::Match m = again->getMatch();
 
-			if(a->getType() == highlevel::ACTION_ON_ENDPOINT_GRE && (m.matchOnEndPointInternal() || m.matchOnPort()))
+			list<OutputAction*> outputActions = a->getOutputActions();
+			for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 			{
-				if(((highlevel::ActionEndPointGre*)a)->toString() == rri.endpointGre)
+				if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE && (m.matchOnEndPointInternal() || m.matchOnPort()))
 				{
-					//The action is on the same gre endpoint of the removed one, hence the vlink must not be removed
-					return;
+					if(((ActionEndpointGre*)(*outputAction))->toString() == rri.endpointGre)
+					{
+						//The action is on the same gre endpoint of the removed one, hence the vlink must not be removed
+						return;
+					}
 				}
 			}
-
 		}//end of again iterator on the rules of the graph
 
 		ULOG_DBG_INFO("Virtual link no longer required for the gre endpoint: %s",rri.endpointGre.c_str());
@@ -2398,12 +2428,16 @@ void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *gr
 			highlevel::Action *a = again->getAction();
 			highlevel::Match m = again->getMatch();
 
-			if(a->getType() == highlevel::ACTION_ON_PORT && (m.matchOnEndPointGre() || m.matchOnNF()))
+			list<OutputAction*> outputActions = a->getOutputActions();
+			for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 			{
-				if(((highlevel::ActionPort*)a)->getInfo() == rri.port)
+				if((*outputAction)->getType() == ACTION_ON_PORT && (m.matchOnEndPointGre() || m.matchOnNF()))
 				{
-					//The action are the same, hence no vlink must be removed
-					return;
+					if(((ActionPort*)(*outputAction))->getInfo() == rri.port)
+					{
+						//The action are the same, hence no vlink must be removed
+						return;
+					}
 				}
 			}
 
@@ -2467,15 +2501,18 @@ void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *gr
 			highlevel::Action *a = again->getAction();
 			highlevel::Match m = again->getMatch();
 
-			if(a->getType() == highlevel::ACTION_ON_ENDPOINT_INTERNAL  && (m.matchOnEndPointGre() || m.matchOnNF()))
+			list<OutputAction*> outputActions = a->getOutputActions();
+			for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 			{
-				if(((highlevel::ActionEndPointInternal*)a)->toString() == rri.endpointInternal)
+				if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL  && (m.matchOnEndPointGre() || m.matchOnNF()))
 				{
-					//The action is on the same endpoint of the removed one, hence the vlink must not be removed
-					return;
+					if(((ActionEndpointInternal*)(*outputAction))->toString() == rri.endpointInternal)
+					{
+						//The action is on the same endpoint of the removed one, hence the vlink must not be removed
+						return;
+					}
 				}
 			}
-
 		}//end of again iterator on the rules of the graph
 
 		ULOG_DBG_INFO("Virtual link no longer required for the internal endpoint: %s",rri.endpointInternal.c_str());
@@ -2531,81 +2568,84 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 
 	for(list<highlevel::Rule>::iterator rule = rules.begin(); rule != rules.end(); rule++)
 	{
-		highlevel::Action *action = rule->getAction();
+		list<OutputAction*> outputActions = rule->getAction()->getOutputActions();
 		highlevel::Match match = rule->getMatch();
-		if(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION)
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 		{
-			//we are considering rules as
-			//	- match: internal-25 - action: output to VNF firewall port 1
-			//	- match: interface eth0 - action: output to VNF firewall port 1
-			//Each different VNF port that is in an action matching an internal endpoint or an interface endpoint requires a different virtual link
-			if(match.matchOnPort() || match.matchOnEndPointInternal())
+			if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
 			{
-				highlevel::ActionNetworkFunction *action_nf = (highlevel::ActionNetworkFunction*)action;
-				stringstream ss;
-				ss << action->getInfo() << "_" << action_nf->getPort();
-				NFs.insert(ss.str()); //the set avoids duplications
+				//we are considering rules as
+				//	- match: internal-25 - action: output to VNF firewall port 1
+				//	- match: interface eth0 - action: output to VNF firewall port 1
+				//Each different VNF port that is in an action matching an internal endpoint or an interface endpoint requires a different virtual link
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					ActionNetworkFunction *action_nf = (ActionNetworkFunction*)(*outputAction);
+					stringstream ss;
+					ss << (*outputAction)->getInfo() << "_" << action_nf->getPort();
+					NFs.insert(ss.str()); //the set avoids duplications
+				}
+
+				// gre -> VNF does not require any virtual link
+				// VNF -> VNF does not require any virtual link
 			}
-
-			// gre -> VNF does not require any virtual link
-			// VNF -> VNF does not require any virtual link
-		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE)
-		{
-			//we are considering rules as
-			//	- match: internal-25 - action: output to gre tunnel with key 1
-			//	- match: interface eth0 - action: output to gre tunnel with key 1
-			//Each different gre tunnel (i.e., tunnel with a different key) that is in an action matching
-			//an internal endpoint or an interface endpoint requires a different virtual link
-
-			if(match.matchOnPort() || match.matchOnEndPointInternal())
+			else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE)
 			{
-				highlevel::ActionEndPointGre *action_ep = (highlevel::ActionEndPointGre*)action;
-				endPointsGre.insert(action_ep->toString());
+				//we are considering rules as
+				//	- match: internal-25 - action: output to gre tunnel with key 1
+				//	- match: interface eth0 - action: output to gre tunnel with key 1
+				//Each different gre tunnel (i.e., tunnel with a different key) that is in an action matching
+				//an internal endpoint or an interface endpoint requires a different virtual link
+
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					ActionEndpointGre *action_ep = (ActionEndpointGre*)(*outputAction);
+					endPointsGre.insert(action_ep->toString());
+				}
+
+				// gre -> gre does not require any virtual link
+				// VNF -> gre does not require any virtual link
+				// VNF -> VNF does not require any virtual link
 			}
-
-			// gre -> gre does not require any virtual link
-			// VNF -> gre does not require any virtual link
-			// VNF -> VNF does not require any virtual link
-		}
-		else if(action->getType() == highlevel::ACTION_ON_PORT)
-		{
-			//we are considering rules as
-			//	- match: gre tunnel with key 1 - action: output to interface eth0
-			//	- match: VNF firewall port 1 - action: output to interface eth0
-			//	- match: Hoststack port - action: output to interface eth0
-			//Each different interface requires a different virtual link
-			if(match.matchOnNF() || match.matchOnEndPointGre() || match.matchOnEndPointHoststack())
-				phyPorts.insert(action->getInfo());
-
-			// interface -> interface does not require any virtual link
-			// internal endpoint -> interface does not require any virtual link
-		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_INTERNAL)
-		{
-			if(!match.matchOnPort() && !match.matchOnEndPointInternal())
+			else if((*outputAction)->getType() == ACTION_ON_PORT)
 			{
-				highlevel::ActionEndPointInternal *action_ep = (highlevel::ActionEndPointInternal*)action;
-				endPointsInternal.insert(action_ep->toString());
+				//we are considering rules as
+				//	- match: gre tunnel with key 1 - action: output to interface eth0
+				//	- match: VNF firewall port 1 - action: output to interface eth0
+				//	- match: Hoststack port - action: output to interface eth0
+				//Each different interface requires a different virtual link
+				if(match.matchOnNF() || match.matchOnEndPointGre() || match.matchOnEndPointHoststack())
+					phyPorts.insert((*outputAction)->getInfo());
+
+				// interface -> interface does not require any virtual link
+				// internal endpoint -> interface does not require any virtual link
 			}
-
-			// internal endpoint -> internal endpoint does not require any virtual link
-			// interface -> internal endpoint does not require any virtual link
-		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_HOSTSTACK)
-		{
-			//we are considering rules as
-			//	- match: internal-25 - action: output to hoststack endpoint
-			//	- match: interface eth0 - action: output to hoststack endpoint
-
-			if(match.matchOnPort() || match.matchOnEndPointInternal())
+			else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL)
 			{
-				highlevel::ActionEndPointHostStack *action_ep = (highlevel::ActionEndPointHostStack*)action;
-				endPointsHoststack.insert(action_ep->toString());
-			}
+				if(!match.matchOnPort() && !match.matchOnEndPointInternal())
+				{
+					ActionEndpointInternal *action_ep = (ActionEndpointInternal*)(*outputAction);
+					endPointsInternal.insert(action_ep->toString());
+				}
 
-			// VNF -> hoststackEP does not require any virtual link
-			// hoststackEP -> VNF does not require any virtual link
+				// internal endpoint -> internal endpoint does not require any virtual link
+				// interface -> internal endpoint does not require any virtual link
+			}
+			else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_HOSTSTACK)
+			{
+				//we are considering rules as
+				//	- match: internal-25 - action: output to hoststack endpoint
+				//	- match: interface eth0 - action: output to hoststack endpoint
+
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					ActionEndPointHostStack *action_ep = (ActionEndPointHostStack*)(*outputAction);
+					endPointsHoststack.insert(action_ep->toString());
+				}
+
+				// VNF -> hoststackEP does not require any virtual link
+				// hoststackEP -> VNF does not require any virtual link
+			}
 		}
 	}
 
@@ -2669,51 +2709,56 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 	{
 		highlevel::Action *action = rule->getAction();
 		highlevel::Match match = rule->getMatch();
-		if(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION)
-		{
-			if(match.matchOnPort() || match.matchOnEndPointInternal())
-			{
-				highlevel::ActionNetworkFunction *action_nf = (highlevel::ActionNetworkFunction*)action;
 
-				//Check if a vlink is required for this network function port
-				map<string, uint64_t> nfs_vlinks = lsi->getNFsVlinks();
-				stringstream ss;
-				ss << action->getInfo() << "_" << action_nf->getPort();
-				if(nfs_vlinks.count(ss.str()) == 0)
-					NFs.insert(ss.str());
-			}
-		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE)
+		list<OutputAction*> outputActions = action->getOutputActions();
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 		{
-			if(match.matchOnPort() || match.matchOnEndPointInternal())
+			if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
 			{
-				//check if a vlink is required for this gre-tunnel endpoint
-				map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsGreVlinks();
-				highlevel::ActionEndPointGre *action_ep = (highlevel::ActionEndPointGre*)action;
-				if(endpoints_vlinks.count(action_ep->toString()) == 0)
-					endPointsGre.insert(action_ep->toString());
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					ActionNetworkFunction *action_nf = (ActionNetworkFunction*)(*outputAction);
+
+					//Check if a vlink is required for this network function port
+					map<string, uint64_t> nfs_vlinks = lsi->getNFsVlinks();
+					stringstream ss;
+					ss << (*outputAction)->getInfo() << "_" << action_nf->getPort();
+					if(nfs_vlinks.count(ss.str()) == 0)
+						NFs.insert(ss.str());
+				}
 			}
-		}
-		else if(action->getType() == highlevel::ACTION_ON_PORT)
-		{
-			if(match.matchOnNF() || match.matchOnEndPointGre())
+			else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE)
 			{
-				//check if a vlink is required for this physical port (i.e., interface endpoint)
-				map<string, uint64_t> ports_vlinks = lsi->getPortsVlinks();
-				highlevel::ActionPort *action_port = (highlevel::ActionPort*)action;
-				if(ports_vlinks.count(action_port->getInfo()) == 0)
-					phyPorts.insert(action_port->getInfo());
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					//check if a vlink is required for this gre-tunnel endpoint
+					map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsGreVlinks();
+					ActionEndpointGre *action_ep = (ActionEndpointGre*)(*outputAction);
+					if(endpoints_vlinks.count(action_ep->toString()) == 0)
+						endPointsGre.insert(action_ep->toString());
+				}
 			}
-		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_INTERNAL)
-		{
-			if(!match.matchOnPort() && !match.matchOnEndPointInternal())
+			else if((*outputAction)->getType() == ACTION_ON_PORT)
 			{
-				//check if a vlink is required for this internal endpoint
-				map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsVlinks();
-				highlevel::ActionEndPointInternal *action_ep = (highlevel::ActionEndPointInternal*)action;
-				if(endpoints_vlinks.count(action_ep->toString()) == 0)
-					endPointsInternal.insert(action_ep->toString());
+				if(match.matchOnNF() || match.matchOnEndPointGre())
+				{
+					//check if a vlink is required for this physical port (i.e., interface endpoint)
+					map<string, uint64_t> ports_vlinks = lsi->getPortsVlinks();
+					ActionPort *action_port = (ActionPort*)(*outputAction);
+					if(ports_vlinks.count(action_port->getInfo()) == 0)
+						phyPorts.insert(action_port->getInfo());
+				}
+			}
+			else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL)
+			{
+				if(!match.matchOnPort() && !match.matchOnEndPointInternal())
+				{
+					//check if a vlink is required for this internal endpoint
+					map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsVlinks();
+					ActionEndpointInternal *action_ep = (ActionEndpointInternal*)(*outputAction);
+					if(endpoints_vlinks.count(action_ep->toString()) == 0)
+						endPointsInternal.insert(action_ep->toString());
+				}
 			}
 		}
 	}
@@ -2804,5 +2849,71 @@ void GraphManager::printInfo(bool completed)
 	}
 
 	ULOG_INFO("");
+}
+
+list<string> GraphManager::getRulesIDForLSI0(highlevel::Rule rule, string graphID)
+{
+	list<string> rulesID;
+
+	stringstream ss;
+	ss << graphID << "_" << rule.getRuleID();
+	string startingRuleID = ss.str();
+
+	list<OutputAction*> outputActions = rule.getAction()->getOutputActions();
+	highlevel::Match match = rule.getMatch();
+
+	int vlinkUsed=0;
+	if(match.matchOnEndPointGre() || match.matchOnNF())
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
+		{
+			output_action_t actionType = (*outputAction)->getType();
+			if(actionType == ACTION_ON_PORT || actionType == ACTION_ON_ENDPOINT_INTERNAL)
+				vlinkUsed++;
+		}
+
+	if(vlinkUsed<2)
+		rulesID.push_back(startingRuleID);
+	else
+		for(int n=0; n<vlinkUsed; n++)
+		{
+			stringstream newRuleID;
+			newRuleID << startingRuleID << "_split" << (n+1);
+			rulesID.push_back(newRuleID.str());
+		}
+
+	return rulesID;
+}
+
+list<string> GraphManager::getRulesIDForLSITenant(highlevel::Rule rule)
+{
+	list<string> rulesID;
+
+	stringstream ss;
+	ss << rule.getRuleID();
+	string startingRuleID = ss.str();
+
+	list<OutputAction*> outputActions = rule.getAction()->getOutputActions();
+	highlevel::Match match = rule.getMatch();
+
+	int vlinkUsed=0;
+	if(match.matchOnPort() || match.matchOnEndPointInternal())
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
+		{
+			output_action_t actionType = (*outputAction)->getType();
+			if(actionType == ACTION_ON_NETWORK_FUNCTION || actionType == ACTION_ON_ENDPOINT_GRE)
+				vlinkUsed++;
+		}
+
+	if(vlinkUsed<2)
+		rulesID.push_back(startingRuleID);
+	else
+		for(int n=0; n<vlinkUsed; n++)
+		{
+			stringstream newRuleID;
+			newRuleID << startingRuleID << "_split" << (n+1);
+			rulesID.push_back(newRuleID.str());
+		}
+
+	return rulesID;
 }
 

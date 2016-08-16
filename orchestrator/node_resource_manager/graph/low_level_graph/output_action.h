@@ -14,6 +14,7 @@
 #include "../../graph_manager/lsi.h"
 
 #include "../generic_actions/generic_action.h"
+#include "../output_actions/output_action.h"
 
 using namespace std;
 
@@ -25,7 +26,6 @@ class Action
 
 private:
 	rofl::openflow::ofp_action_type type;
-	unsigned int port_id;
 	bool is_local_port;
 	
 	/**
@@ -34,17 +34,22 @@ private:
 	bool is_normal;
 
 	/**
-	*	The outuput action contains a list of generic actions!
-	*	The code is organized in this way, because the output action is
-	*	mandatory in each rule.
+	*	The action contains a list of generic actions!
 	**/
 	list<GenericAction*> genericActions;
 
+	/**
+	*	list of ports id where the traffic must exit!
+	**/
+	list<unsigned int> ports_id;
+
 public:
-	Action(unsigned int port_id);
+	Action();
 	Action(bool is_local_port);
 	Action(bool is_local_port, bool is_normal);
 	rofl::openflow::ofp_action_type getActionType();
+
+	void addOutputPort(unsigned int port_id);
 
 	bool operator==(const Action &other) const;
 
@@ -59,9 +64,10 @@ public:
 	string prettyPrint(LSI *lsi0,map<string,LSI *> lsis);
 
 	/**
-	*	Associate a generic action with this output action
+	*	Associate a generic action with this action
 	*/
 	void addGenericAction(GenericAction *ga);
+
 };
 
 }

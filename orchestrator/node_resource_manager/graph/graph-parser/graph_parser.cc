@@ -898,8 +898,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 							{
 								//This is a rule, with a match, an action, and an ID
 								Object flow_rule = flow_rules_array[fr].getObject();
-								highlevel::Action *action = NULL;
+								highlevel::Action *action = new highlevel::Action();
 								list<GenericAction*> genericActions;
+								list<OutputAction*> outputActions;
 								highlevel::Match match;
 								string ruleID;
 								uint64_t priority = 0;
@@ -1049,11 +1050,6 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															i++;
 														}
 
-														if(foundOneOutputToPort)
-														{
-															ULOG_DBG_INFO("Only one between keys \"%s\", \"%s\" and \"%s\" are allowed in \"%s\"",PORT_IN,VNF,ENDPOINT,ACTIONS);
-															return false;
-														}
 														foundOneOutputToPort = true;
 
 														if(p_type == VNF_PORT_TYPE)
@@ -1080,7 +1076,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															/*nf port starts from 0 - here we want that they start from 1*/
 															port++;
 
-															action = new highlevel::ActionNetworkFunction(id, string(port_in_name_tmp), port);
+															action->addOutputAction(new ActionNetworkFunction(id, string(port_in_name_tmp), port));
 														}
 														//endpoints port type
 														else if(p_type == EP_PORT_TYPE)
@@ -1130,7 +1126,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															//physical endpoint
 															if(iface_found)
 															{
-																	action = new highlevel::ActionPort(realName, string(s_a_value));
+																action->addOutputAction(new ActionPort(realName, string(s_a_value)));
 															}
 															else if(internal_found)
 															{
@@ -1139,7 +1135,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																	ULOG_DBG_INFO("Internal endpoint \"%s\" is not valid. It must have the \"%s\" attribute",value.getString().c_str(), INTERNAL_GROUP);
 																	return false;
 																}
-																action = new highlevel::ActionEndPointInternal(internal_group, string(s_a_value));
+																action->addOutputAction(new ActionEndpointInternal(internal_group, string(s_a_value)));
 															}
 															//vlan endpoint
 															else if(vlan_found)
@@ -1152,7 +1148,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																sscanf(vlan_id[epID].first.c_str(),"%u",&vlanID);
 
 																/*add "output_port" action*/
-																action = new highlevel::ActionPort(vlan_id[epID].second, string(s_a_value));
+																action->addOutputAction(new ActionPort(vlan_id[epID].second, string(s_a_value)));
 																/*add "push_vlan" action*/
 																GenericAction *ga = new VlanAction(actionType,string(s_a_value),vlanID);
 																action->addGenericAction(ga);
@@ -1160,11 +1156,11 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															//gre-tunnel endpoint
 															else if(gre_found)
 															{
-																action = new highlevel::ActionEndPointGre(epID, string(s_a_value));
+																action->addOutputAction(new ActionEndpointGre(epID, string(s_a_value)));
 															}
 															else if(hostStack_found)
 															{
-																action = new highlevel::ActionEndPointHostStack(epID, string(s_a_value));
+																action->addOutputAction(new ActionEndPointHostStack(epID, string(s_a_value)));
 															}
 														}
 													}//End action == output_to_port

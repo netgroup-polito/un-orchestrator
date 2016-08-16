@@ -27,7 +27,7 @@ public:
 	EthAction(eth_action_t type, string mac_address);
 	~EthAction();
 
-	void toJSON(Object &json);
+	void toJSON(Array &json);
 
 	/**
 	*	@brief: insert the generic action into a flowmod message

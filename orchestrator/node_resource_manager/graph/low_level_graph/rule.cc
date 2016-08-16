@@ -77,6 +77,11 @@ string Rule::getID()
 	return flowID;
 }
 
+void Rule::setID(string id)
+{
+	flowID=id;
+}
+
 void Rule::print()
 {
 	if(LOGGING_LEVEL <= ORCH_DEBUG_INFO)

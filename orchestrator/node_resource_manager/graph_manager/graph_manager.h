@@ -10,12 +10,7 @@
 #include "../../utils/constants.h"
 #include "../graph/high_level_graph/high_level_graph.h"
 #include "../graph/low_level_graph/graph.h"
-#include "../graph/high_level_graph/high_level_output_action_nf.h"
-#include "../graph/high_level_graph/high_level_output_action_port.h"
 #include "../graph/high_level_graph/high_level_graph_endpoint_interface.h"
-
-#include "../graph/high_level_graph/high_level_output_action_endpoint_gre.h"
-#include "../graph/high_level_graph/high_level_output_action_endpoint_hostStack.h"
 #include "../graph/graph-parser/match_parser.h"
 #include "../graph/high_level_graph/high_level_graph_vnf.h"
 #include "../interface_manager/InterfaceManager.h"
@@ -231,6 +226,24 @@ private:
 	*		specific ID.
 	*/
 	highlevel::Graph *updateGraph_remove(string graphID, highlevel::Graph *newGraph);
+
+	/**
+	*	@brief: given a flow ID returns a list of corresponding
+	*	rules on LSI0.
+	*	Note that the size of the list can be more than 1 due to
+	*	the possibility to specify more than one output_to_port in action
+	*	(that can involves the splitting of a rule)
+	*/
+	list<string> getRulesIDForLSI0(highlevel::Rule rule, string graphID);
+
+	/**
+	*	@brief: given a flow ID returns a list of corresponding
+	*	rules on LSI Tenant.
+	*	Note that the size of the list can be more than 1 due to
+	*	the possibility to specify more than one output_to_port in action
+	*	(that can involves the splitting of a rule)
+	*/
+	list<string> getRulesIDForLSITenant(highlevel::Rule rule);
 
 public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF

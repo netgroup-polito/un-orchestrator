@@ -11,7 +11,7 @@ EthAction::~EthAction()
 
 }
 
-void EthAction::toJSON(Object &action)
+void EthAction::toJSON(Array &action)
 {
 	if(type == ACTION_TRUSTED_PORT)
 		//We don't add anything in case of the action implements a trusted port

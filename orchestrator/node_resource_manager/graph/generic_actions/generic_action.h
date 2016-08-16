@@ -22,7 +22,7 @@ class GenericAction
 public:
 	virtual ~GenericAction();
 
-	virtual void toJSON(Object &json) = 0;
+	virtual void toJSON(Array &json) = 0;
 
 	/**
 	*	@brief: insert the generic action into a flowmod message
