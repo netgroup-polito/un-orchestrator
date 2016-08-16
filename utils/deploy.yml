@@ -81,9 +81,9 @@
       when: enable_docker == "ON"
 
     - name: "fetch rofl"
-      git: repo=https://github.com/bisdn/rofl-common
+      git: repo=https://github.com/toanju/rofl-common
            dest={{ path }}/rofl-common
-           version=stable-0.6
+           version=fix-ovs
     
     - name: "config rofl"
       command: "./autogen.sh chdir={{ path }}/rofl-common" 
