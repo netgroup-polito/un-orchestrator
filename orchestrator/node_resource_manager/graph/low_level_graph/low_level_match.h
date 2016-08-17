@@ -34,7 +34,7 @@ private:
 	unsigned int input_port;
 
 public:
-	Match(match_t type=MATCH_LOCAL);
+	Match(match_t type=MATCH_ON_PORT);
 
 	bool operator==(const Match &other) const;
 
