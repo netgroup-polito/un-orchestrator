@@ -187,7 +187,7 @@ void GraphManager::handleInBandController(LSI *lsi, Controller *controller)
 	lsi0Match1.setEthType(2048 & 0xFFFF);
 	lsi0Match1.setInputPort(translation->second);
 
-	lowlevel::Action lsi0Action(true);
+	lowlevel::Action lsi0Action(lowlevel::LOCAL);
 
 	//Create the rule and add it to the graph
 	//The rule ID is created as follows DEFAULT-GRAPH_ID
@@ -209,7 +209,8 @@ void GraphManager::handleInBandController(LSI *lsi, Controller *controller)
 
 	lowlevel::Match lsi0Match3(true);
 
-	lowlevel::Action lsi0Action1(translation->second);
+	lowlevel::Action lsi0Action1;
+	lsi0Action1.addOutputPort(translation->second);
 
 	//Create the rule and add it to the graph
 	//The rule ID is created as follows DEFAULT-GRAPH_ID
@@ -1328,7 +1329,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 			lowlevel::Match match;
 			unsigned int vlink_local_id = vl->getLocalID();
 			match.setInputPort(vlink_local_id);
-			lowlevel::Action action(false, true);
+			lowlevel::Action action(lowlevel::NORMAL);
 
 			stringstream newRuleID;
 			newRuleID << "INTERNAL-GRAPH" << "-" << internal_group << "_" << graph->getID(); //This guarantees that the ID of the rule is unique
@@ -1382,7 +1383,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 			lowlevel::Match match;
 			unsigned int vlink_local_id = vlink.getLocalID();
 			match.setInputPort(vlink_local_id);
-			lowlevel::Action action(false, true);
+			lowlevel::Action action(lowlevel::NORMAL);
 
 			stringstream newRuleID;
 			newRuleID << "INTERNAL-GRAPH" << "-" << internal_group << "_" << graph->getID(); //This guarantees that the ID of the rule is unique
