@@ -3,22 +3,12 @@
 namespace lowlevel
 {
 
-Action::Action()
-	: type(rofl::openflow::OFPAT_OUTPUT), is_local_port(false), is_normal(false)
+Action::Action(action_t type):type(type)
 {
-
-}
-
-Action::Action(bool is_local_port)
-	: type(rofl::openflow::OFPAT_OUTPUT), is_local_port(is_local_port), is_normal(false)
-{
-
-}
-
-Action::Action(bool is_local_port, bool is_normal)
-		: type(rofl::openflow::OFPAT_OUTPUT), is_local_port(is_local_port), is_normal(is_normal)
-{
-
+	if (type==ACTION_LOCAL)
+		ports_id.push_back(rofl::openflow::OFPP_LOCAL);
+	else if(type==ACTION_NORMAL)
+		ports_id.push_back(rofl::openflow::OFPP_NORMAL);
 }
 
 void Action::addOutputPort(unsigned int port_id)
@@ -47,11 +37,6 @@ bool Action::operator==(const Action &other) const
 	return true;
 }
 
-rofl::openflow::ofp_action_type Action::getActionType()
-{
-	return type;
-}
-
 void Action::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 {
 	using rofl::cindex;
@@ -67,20 +52,10 @@ void Action::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 		switch(OFP_VERSION)
 		{
 			case OFP_10:
-				if(is_local_port)
-					message.set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_LOCAL);
-				else if(is_normal)
-					message.set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_NORMAL);
-				else
 					message.set_actions().add_action_output(cindex(position)).set_port_no(*outputPort);
 				break;
 			case OFP_12:
 			case OFP_13:
-				if(is_local_port)
-					message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_LOCAL);
-				else if(is_normal)
-					message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_NORMAL);
-				else
 					message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(*outputPort);
 				break;
 		}
@@ -94,9 +69,9 @@ void Action::print()
 	{
 		cout << "\t\tAction:" << endl << "\t\t{" << endl;
 
-		if(is_local_port)
+		if(type==ACTION_LOCAL)
 			cout << "\t\t\tOUTPUT: " << "LOCAL" << endl;
-		else if(is_normal)
+		else if(type==ACTION_NORMAL)
 			cout << "\t\t\tOUTPUT: " << "NORMAL" << endl;
 		else
 		{
@@ -158,9 +133,9 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 
 	if(!foundOne)
 	{
-		if(is_local_port)
+		if(type==ACTION_LOCAL)
 			ss << "LOCAL" << " (LOCAL graph)";
-		else if(is_normal)
+		else if(type==ACTION_NORMAL)
 			ss << "NORMAL" << " (INTERNAL graph)";
 		else
 		{

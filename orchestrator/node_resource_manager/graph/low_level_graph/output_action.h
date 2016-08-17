@@ -20,19 +20,13 @@ using namespace std;
 
 namespace lowlevel
 {
+enum action_t {ACTION_LOCAL,ACTION_NORMAL,ACTION_TO_PORT};
 
 class Action
 {
 
 private:
-	rofl::openflow::ofp_action_type type;
-	bool is_local_port;
-	
-	/**
-	*	@brief: it is true if the output port is defined by MAC learning
-	*/
-	bool is_normal;
-
+	action_t type;
 	/**
 	*	The action contains a list of generic actions!
 	**/
@@ -44,10 +38,8 @@ private:
 	list<unsigned int> ports_id;
 
 public:
-	Action();
-	Action(bool is_local_port);
-	Action(bool is_local_port, bool is_normal);
-	rofl::openflow::ofp_action_type getActionType();
+
+	Action(action_t type = ACTION_TO_PORT);
 
 	void addOutputPort(unsigned int port_id);
 
