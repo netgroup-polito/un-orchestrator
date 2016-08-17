@@ -5,27 +5,19 @@ static const char LOG_MODULE_NAME[] = "Low-Level-Match";
 namespace lowlevel
 {
 
-Match::Match() :
-	graph::Match(),isInput_port(false),is_local_port(false)
+Match::Match(match_t type) :
+	graph::Match(), type(type)
 {
-
-}
-
-Match::Match(bool is_local_port) :
-	graph::Match(),isInput_port(false), is_local_port(is_local_port)
-{
+	if(type==MATCH_LOCAL)
+		input_port=rofl::openflow::OFPP_LOCAL;
 
 }
 
 bool Match::operator==(const Match &other) const
 {
 	ULOG_DBG("Matches to be compared:");
-	ULOG_DBG("\tisInputPort %s vs %s ",(isInput_port)?"yes":"no",(other.isInput_port)?"yes":"no");
+	ULOG_DBG("\tisMatchOnLocal %s vs %s ",(type==MATCH_LOCAL)?"yes":"no",(other.type==MATCH_LOCAL)?"yes":"no");
 	ULOG_DBG("\tinput port: %d vs %d",input_port,other.input_port);
-
-	if((isInput_port && !other.isInput_port) ||
-		(!isInput_port && other.isInput_port) )
-		return false;
 
 	if(input_port != other.input_port)
 		return false;
@@ -37,10 +29,8 @@ bool Match::operator==(const Match &other) const
 
 void Match::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 {
-	if(isInput_port)
-		message.set_match().set_in_port(input_port);
-	if(is_local_port)
-		message.set_match().set_in_port(rofl::openflow::OFPP_LOCAL);
+
+	message.set_match().set_in_port(input_port);
 
 	if(eth_src != NULL)
 	{
@@ -174,7 +164,6 @@ void Match::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 void Match::setInputPort(unsigned int input_port)
 {
 	this->input_port = input_port;
-	isInput_port = true;
 }
 
 void Match::setAllCommonFields(graph::Match match)
@@ -187,7 +176,7 @@ void Match::print()
 	if(LOGGING_LEVEL <= ORCH_DEBUG_INFO)
 	{
 		cout << "\t\tmatch:" << endl << "\t\t{" << endl;
-		if(is_local_port)
+		if(type==MATCH_LOCAL)
 			cout << "\t\t\tport: "<< "LOCAL" << endl;
 		else
 			cout << "\t\t\tport: "<< input_port << endl;
@@ -366,7 +355,7 @@ string Match::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 		}
 	}
 
-	if(is_local_port)
+	if(type==MATCH_LOCAL)
 		ss << "LOCAL" << " (LOCAL graph)";
 	else
 	{

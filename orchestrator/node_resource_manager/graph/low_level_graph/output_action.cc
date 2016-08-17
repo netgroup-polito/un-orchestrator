@@ -5,9 +5,9 @@ namespace lowlevel
 
 Action::Action(action_t type):type(type)
 {
-	if (type==LOCAL)
+	if (type==ACTION_LOCAL)
 		ports_id.push_back(rofl::openflow::OFPP_LOCAL);
-	else if(type==NORMAL)
+	else if(type==ACTION_NORMAL)
 		ports_id.push_back(rofl::openflow::OFPP_NORMAL);
 }
 
@@ -69,9 +69,9 @@ void Action::print()
 	{
 		cout << "\t\tAction:" << endl << "\t\t{" << endl;
 
-		if(type==LOCAL)
+		if(type==ACTION_LOCAL)
 			cout << "\t\t\tOUTPUT: " << "LOCAL" << endl;
-		else if(type==NORMAL)
+		else if(type==ACTION_NORMAL)
 			cout << "\t\t\tOUTPUT: " << "NORMAL" << endl;
 		else
 		{
@@ -133,9 +133,9 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 
 	if(!foundOne)
 	{
-		if(type==LOCAL)
+		if(type==ACTION_LOCAL)
 			ss << "LOCAL" << " (LOCAL graph)";
-		else if(type==NORMAL)
+		else if(type==ACTION_NORMAL)
 			ss << "NORMAL" << " (INTERNAL graph)";
 		else
 		{

@@ -20,7 +20,7 @@ using namespace std;
 
 namespace lowlevel
 {
-enum action_t {LOCAL,NORMAL,TO_PORT};
+enum action_t {ACTION_LOCAL,ACTION_NORMAL,ACTION_TO_PORT};
 
 class Action
 {
@@ -39,7 +39,7 @@ private:
 
 public:
 
-	Action(action_t type = TO_PORT);
+	Action(action_t type = ACTION_TO_PORT);
 
 	void addOutputPort(unsigned int port_id);
 
