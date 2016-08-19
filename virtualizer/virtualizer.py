@@ -310,10 +310,18 @@ def processVNFs(nffg, content):
 						LOG.error("Only tcp ports are supported on L4 configuration of VNF of type '%s'", vnfType)
 						raise ClientError("Only tcp ports are supported on L4 configuration of VNF of type "+ vnfType)
 					l4_port = tmp[1]
-					uc = UnifyControl(vnf_tcp_port=int(l4_port), host_tcp_port=tcp_port)
-					unify_port_mapping[instance.id.get_value() + ":" + port_id + "/" + l4_address] = (unOrchestratorIP, tcp_port)
-					unify_control.append(uc)
-					tcp_port = tcp_port + 1
+					if instance.id.get_value() + ":" + port_id + "/" + l4_address in unify_port_mapping:
+						# Mapping already present
+						mapping = unify_port_mapping[instance.id.get_value() + ":" + port_id + "/" + l4_address]
+						mapped_port = mapping[1]
+						LOG.debug("mapping found: %d -> %d", int(l4_port), mapped_port)
+						uc = UnifyControl(vnf_tcp_port=int(l4_port), host_tcp_port=mapped_port)
+						unify_control.append(uc)
+					else:
+						uc = UnifyControl(vnf_tcp_port=int(l4_port), host_tcp_port=tcp_port)
+						unify_port_mapping[instance.id.get_value() + ":" + port_id + "/" + l4_address] = (unOrchestratorIP, tcp_port)
+						unify_control.append(uc)
+						tcp_port = tcp_port + 1
 				'''
 			# just copy the existing l4 addresses
 			elif l4_addresses is not None and instance.get_operation() is None:
