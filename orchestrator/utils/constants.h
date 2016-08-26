@@ -79,6 +79,7 @@
 				#define CONF_STATIC	"STATIC"
 				#define CONF_PPPOE	"PPPOE"
 			#define IP_ADDRESS		"ipv4"
+			#define MAC_ADDRESS		"mac"
 	#define BIG_SWITCH		"big-switch"
 		#define FLOW_RULES		"flow-rules"
 			#define _ID				"id"

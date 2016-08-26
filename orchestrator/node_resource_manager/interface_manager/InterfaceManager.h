@@ -39,6 +39,11 @@ public:
     void setStaticIpAddress(string portName, string ipAddress);
 
     /**
+    *	@brief: set a MAC address
+    */
+    void setMacAddress(string portName, string mac);
+
+    /**
     *	@brief: obtain an IP address from DHCP
     */
     void getIpAddressFromDhcp(string portName);

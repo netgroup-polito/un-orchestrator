@@ -770,7 +770,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 										Object ep_hostStack = ep_value.getObject();
 										hoststack_conf_t configuration;
-										string ipAddress;
+										string ipAddress,macAddress;
 										for(Object::const_iterator eph = ep_hostStack.begin(); eph != ep_hostStack.end(); eph++)
 										{
 											const string& eph_name  = eph->first;
@@ -798,6 +798,11 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,IP_ADDRESS,eph_value.getString().c_str());
 												ipAddress=eph_value.getString();
 											}
+											else if(eph_name == MAC_ADDRESS)
+											{
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,MAC_ADDRESS,eph_value.getString().c_str());
+												macAddress=eph_value.getString();
+											}
 											else
 											{
 												ULOG_WARN("Invalid key \"%s\" inside \"%s\"",eph_name.c_str(),EP_HOSTSTACK);
@@ -805,7 +810,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 										}
 
-										highlevel::EndPointHostStack ep_hs(id, e_name, configuration, ipAddress);
+										highlevel::EndPointHostStack ep_hs(id, e_name, configuration, ipAddress, macAddress);
 										graph.addEndPointHostStack(ep_hs);
 										hostStack_id.push_back(id);
 									}

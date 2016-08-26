@@ -22,6 +22,17 @@ void InterfaceManager::setStaticIpAddress(string portName, string ipAddress)
         ULOG_WARN("Failed to set the ip address to port %s", portName.c_str() );
 }
 
+void InterfaceManager::setMacAddress(string portName, string mac)
+{
+    stringstream cmd_set_mac_address;
+    cmd_set_mac_address << "./node_resource_manager/interface_manager/scripts/set_mac_address.sh" << " " << portName << " " << mac;
+    ULOG_DBG_INFO("Executing command \"%s\"", cmd_set_mac_address.str().c_str());
+    int retVal = system(cmd_set_mac_address.str().c_str());
+    retVal = retVal >> 8;
+    if(retVal == 0)
+        ULOG_WARN("Failed to set the mac address to port %s", portName.c_str() );
+}
+
 void InterfaceManager::getIpAddressFromDhcp(string portName)
 {
     stringstream cmd_set_ip_address;

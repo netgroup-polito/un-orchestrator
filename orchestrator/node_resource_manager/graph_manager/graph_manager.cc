@@ -1152,6 +1152,10 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 			interfaceManager.getIpAddressFromPppoe(hsPortsName[hs->getId()]);
 		else
 			interfaceManager.setStaticIpAddress(hsPortsName[hs->getId()],hs->getIpAddress());
+
+		string macAddress= hs->getMacAddress();
+		if(macAddress!="")
+			interfaceManager.setMacAddress(hsPortsName[hs->getId()],macAddress);
 	}
 
 	return true;

@@ -46,9 +46,14 @@ private:
 	*/
 	string ipAddress;
 
+	/**
+	*	@brief: the mac address of the port (e.g., aa:bb:cc:dd:ee:ff)
+	*/
+	string macAddress;
+
 public:
 
-	EndPointHostStack(string id, string name, hoststack_conf_t configuration, string ipAddress);
+	EndPointHostStack(string id, string name, hoststack_conf_t configuration, string ipAddress, string macAddress);
 
 	/**
 	*	@brief: return the ID of the endpoint
@@ -64,6 +69,11 @@ public:
 	*	@brief: return the ip address (with netmask) of the endpoint
 	*/
 	string getIpAddress();
+
+	/**
+	*	@brief: return the mac address of the endpoint
+	*/
+	string getMacAddress();
 
 	/**
 	*	@brief: return the configuration type

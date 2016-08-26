@@ -3,8 +3,8 @@
 namespace highlevel
 {
 
-EndPointHostStack::EndPointHostStack(string id, string name, hoststack_conf_t configuration, string ipAddress) :
-	id(id), name(name), configuration(configuration), ipAddress(ipAddress)
+EndPointHostStack::EndPointHostStack(string id, string name, hoststack_conf_t configuration, string ipAddress, string macAddress) :
+	id(id), name(name), configuration(configuration), ipAddress(ipAddress), macAddress(macAddress)
 {
 }
 
@@ -36,6 +36,11 @@ string EndPointHostStack::getIpAddress()
 	return ipAddress;
 }
 
+string EndPointHostStack::getMacAddress()
+{
+	return macAddress;
+}
+
 hoststack_conf_t EndPointHostStack::getConfiguration()
 {
 	return configuration;
@@ -62,7 +67,8 @@ Object EndPointHostStack::toJSON()
 			hostStack[CONFIGURATION]=CONF_PPPOE;
 			break;
 	}
-
+	if(macAddress!="")
+		hostStack[MAC_ADDRESS] = macAddress.c_str();
 	EndPointHoststack[EP_HOSTSTACK] = hostStack;
 
 	return EndPointHoststack;
