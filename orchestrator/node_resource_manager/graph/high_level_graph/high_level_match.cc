@@ -209,7 +209,7 @@ Object Match::toJSON()
 {
 	Object match;
 
-	if(type == MATCH_PORT || type == MATCH_ENDPOINT_GRE || type == MATCH_ENDPOINT_INTERNAL || type == MATCH_ENDPOINT_INTERNAL)
+	if(type == MATCH_PORT || type == MATCH_ENDPOINT_GRE || type == MATCH_ENDPOINT_INTERNAL || type == MATCH_ENDPOINT_INTERNAL || type == MATCH_ENDPOINT_HOSTSTACK)
 		match[PORT_IN]  = input_endpoint;
 	else if(type == MATCH_NF)
 	{

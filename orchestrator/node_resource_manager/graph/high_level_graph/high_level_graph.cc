@@ -376,6 +376,11 @@ Object Graph::toJSON()
 		end_points.push_back(e->toJSON());
 	}
 
+	for(list<EndPointHostStack>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end();e++)
+	{
+		end_points.push_back(e->toJSON());
+	}
+
 	for(list<VNFs>::iterator v = vnfs.begin(); v != vnfs.end();v++)
 	{
 		vnf.push_back(v->toJSON());

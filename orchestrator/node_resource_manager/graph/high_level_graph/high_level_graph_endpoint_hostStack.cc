@@ -49,9 +49,19 @@ Object EndPointHostStack::toJSON()
 	EndPointHoststack[_NAME] = name.c_str();
 	EndPointHoststack[EP_TYPE] = EP_HOSTSTACK;
 
-	hostStack[CONFIGURATION] = configuration;
-	if(configuration == STATIC)
-		hostStack[IP_ADDRESS] = ipAddress;
+	switch (configuration)
+	{
+		case DHCP:
+			hostStack[CONFIGURATION]=CONF_DHCP;
+			break;
+		case STATIC:
+			hostStack[CONFIGURATION]=CONF_STATIC;
+			hostStack[IP_ADDRESS] = ipAddress.c_str();
+			break;
+		case PPPOE:
+			hostStack[CONFIGURATION]=CONF_PPPOE;
+			break;
+	}
 
 	EndPointHoststack[EP_HOSTSTACK] = hostStack;
 
