@@ -1,8 +1,7 @@
 #!/bin/bash
 
 #$1 name of the interface
-#$2 configuration type
-#$3 ip address (for static configuration)
+#$2 mac address
 
 if (( $EUID != 0 ))
 then
