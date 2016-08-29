@@ -218,6 +218,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 	row["local_ip"] = cli.getLocalIP();
 	row["connection_mode"] = "out-of-band";
 	row["is_connected"] = true;
+	row["inactivity_probe"] = 1000000;
 
    	first_obj["row"] = row;
 
