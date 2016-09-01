@@ -13,6 +13,7 @@ using namespace std;
 class SwitchPortsAssociation
 {
 friend class GraphManager;
+friend class Libvirt;
 
 private:
 	/**
@@ -21,6 +22,10 @@ private:
 	*		<"name of port on the switch", pair <graph id, network function name>  >
 	*/
 	static map<string, pair <string, string> > associationportgraphnf;
+
+	/**
+	 * network function name, virtio_serial FD
+	 */
 	static map<string, int> associationfd;
 
 	/**
@@ -59,8 +64,8 @@ protected:
 	*	returns -1 inthe case the fd does not exist
 		@param: port	name of the port
 	*/
-	static int getFD(string port);
-	static void setFD(string port, int fd);
+	static int getFD(string nfName);
+	static void setFD(string nfName, int fd);
 #endif
 
 };

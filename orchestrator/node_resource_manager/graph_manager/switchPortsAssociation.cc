@@ -35,14 +35,14 @@ string SwitchPortsAssociation::getNfName(string port)
 	return associationportgraphnf[port].second;
 }
 
-int SwitchPortsAssociation::getFD(string port)
+int SwitchPortsAssociation::getFD(string nfName)
 {
-	if(associationfd.count(port) == 0)
+	if(associationfd.count(nfName) == 0)
 		return -1;
 
-	return associationfd[port];
+	return associationfd[nfName];
 }
-void SwitchPortsAssociation::setFD(string port, int fd)
+void SwitchPortsAssociation::setFD(string nfName, int fd)
 {
-	associationfd[port] = fd;
+	associationfd[nfName] = fd;
 }

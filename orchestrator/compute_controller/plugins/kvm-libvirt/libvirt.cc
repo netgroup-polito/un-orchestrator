@@ -1,7 +1,14 @@
-	#include "libvirt.h"
+#include "libvirt.h"
 #include "libvirt_constants.h"
 
 #include <memory>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
+#ifdef ENABLE_DIRECT_VM2VM
+	#include "../../../node_resource_manager/graph_manager/switchPortsAssociation.h"
+#endif
 
 static const char LOG_MODULE_NAME[] = "KVM-Manager";
 
@@ -447,6 +454,30 @@ bool Libvirt::startNF(StartNFIn sni)
 	}
 
 	UN_LOG(ORCH_DEBUG_INFO, "Boot guest");
+
+#ifdef ENABLE_DIRECT_VM2VM
+
+	struct sockaddr_un addr;
+	int fd = -1;
+
+	fd = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (fd == -1) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "socket error");
+		return false;
+	}
+
+	memset(&addr, 0, sizeof(addr));
+	addr.sun_family = AF_UNIX;
+	strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
+
+	if (::connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "connect error");
+		return false;
+	}
+
+	SwitchPortsAssociation::setFD(nf_name, fd);
+
+#endif
 
 	virDomainFree(dom);
 

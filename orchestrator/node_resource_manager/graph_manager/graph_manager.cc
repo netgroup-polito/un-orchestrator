@@ -2729,49 +2729,12 @@ bool GraphManager::sendToDPDK(string port, string data, string & response)
 	 * inside the libvirt plugin. However, a fast working solution is required
 	 * at this point...
 	 */
-	struct sockaddr_un addr;
+	int fd;
 	char buf[512];
 	char *buf_ptr;
-	int fd = -1;
-	char socket_path[32];
-	//int ret;
 
-	/* check if we already had open a connection with this guest, if not, open
-	 * and saved it
-	 */
-
-	fd = SwitchPortsAssociation::getFD(port);
-
-	if(fd == -1) {
-		string graphID = SwitchPortsAssociation::getGraphID(port);
-		string nfName = SwitchPortsAssociation::getNfName(port);
-
-		if(tenantLSIs.count(graphID) == 0)
-		{
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__,
-					"The graph \"%s\" does not exist", graphID.c_str());
-			return false;
-		}
-
-		snprintf(socket_path, sizeof(socket_path), "/tmp/%s", nfName.c_str());
-
-		fd = socket(AF_UNIX, SOCK_STREAM, 0);
-		if (fd == -1) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "socket error");
-			return false;
-		}
-
-		memset(&addr, 0, sizeof(addr));
-		addr.sun_family = AF_UNIX;
-		strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
-
-		if (connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "connect error");
-			return false;
-		}
-
-		SwitchPortsAssociation::setFD(port, fd);
-	}
+	string nfName = SwitchPortsAssociation::getNfName(port);
+	fd = SwitchPortsAssociation::getFD(nfName);
 
 	strcpy(buf, data.c_str());
 	buf_ptr = &buf[0];
@@ -2794,7 +2757,7 @@ bool GraphManager::sendToDPDK(string port, string data, string & response)
 	//if(ret == -1)
 	//	return false;
 
-	response.assign(buf);
+	//response.assign(buf);
 	return true;
 
 error:
