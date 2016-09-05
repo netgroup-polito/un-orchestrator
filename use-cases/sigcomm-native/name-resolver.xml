@@ -77,17 +77,17 @@
 	</network-function>-->
 	<network-function name="nativeNat" num-ports="2"  summary="Creates a Nat">
 		<!-- Only a native implementation is available for this network function -->
-		<native uri="/root/nativeNat.tar.gz" dependencies="iptables" location="local"/>
+		<native uri="../NFs/native/NAT/nativeNat.tar.gz" dependencies="iptables" location="local"/>
 	</network-function>
 
 	<network-function name="nativeBr" num-ports="5"  summary="Creates a L2 switch">
 		<!-- Only a native implementation is available for this network function -->
-		<native uri="/root/nativeBr.tar.gz" dependencies="iptables" location="local"/>
+		<native uri="../NFs/native/bridge/nativeBr.tar.gz" dependencies="iptables" location="local"/>
 	</network-function>
 
 	<network-function name="nDHCP" num-ports="1"  summary="Creates a DHCP">
 		<!-- Only a native implementation is available for this network function -->
-		<native uri="/root/nativeDHCP.tar.gz" dependencies="iptables" location="local"/>
+		<native uri="../NFs/native/dhcp/nativeDHCP.tar.gz" dependencies="iptables" location="local"/>
 	</network-function>
 
 </network-functions>
