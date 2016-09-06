@@ -214,7 +214,9 @@ since the DPDK library has already been installed together with the vSwitch.
 
 ## Compile the un-orchestrator
 
-We are now ready to compile the un-orchestrator and name resolver. If you intend to enable support for DPDK IVSHMEM-based ports, you'll need to define environment variables pointing to your build of DPDK.
+We are now ready to compile the un-orchestrator. 
+
+Note that, if you intend to enable support for DPDK IVSHMEM-based ports, you have to define environment variables pointing to your build of DPDK. 
 If you are using xDPd (which includes its own DPDK tree and builds it), this would be:
 
 	$ export RTE_SDK=$XDPD_DIR/build/libs/dpdk
