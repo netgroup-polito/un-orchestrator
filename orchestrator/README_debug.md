@@ -68,7 +68,7 @@ The following commands are useful to check the status of the Docker environment
     $ sudo docker exec <container_id> <command>
     ; The container ID can be retrieved through the first command above
     
-    ; Attach the terminal to a container
+    ; Attach a docker container to the terminal
     $ sudo docker exec -it <container_id> bash
     ; The container ID can be retrieved through the ps command above
 
