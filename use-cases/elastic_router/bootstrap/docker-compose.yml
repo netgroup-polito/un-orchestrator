@@ -70,7 +70,7 @@
     ports:
       - 2626:2626
   virtualizer:
-    image: gitlab.testbed.se:5000/virtualizer
+    image: gitlab.testbed.se:5000/virtualizer:patched
     container_name: virtualizer
     links:
       - name-resolver

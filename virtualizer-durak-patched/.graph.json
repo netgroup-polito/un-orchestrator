@@ -1,0 +1,244 @@
+{
+    "forwarding-graph": {
+        "unify-monitoring": " test measure ctrl  measurements {\n    m1 = cpu(vnf = 2);\n    m2 = mem(vnf = 2);\n    }\n    zones {\n    z1 = (AVG(val = m1, max_age = \"5 minute\") &lt; 0.5);\n    z2 = (AVG(val = m2, max_age = \"5 minute\") &gt; 0.5);\n    }\n    actions {z1->z2 = Publish(topic = \"alarms\", message = \"z1 to z2\"); Notify(target = \"alarms\", message = \"z1 to z2\");\n    z2->z1 = Publish(topic = \"alarms\", message = \"z2 to z\");\n    ->z1 = Publish(topic = \"alarms\", message = \"entered z1\");\n    z1-> = Publish(topic = \"alarms\", message = \"left z1\");\n    z1 = Publish(topic = \"alarms\", message = \"in z1\");\n    z2 = Publish(topic = \"alarms\", message = \"in z2\");\n    }",
+        "name": "NF-FG",
+        "big-switch": {
+            "flow-rules": [
+                {
+                    "priority": 10,
+                    "actions": [
+                        {
+                            "output_to_port": "vnf:2:port:0"
+                        }
+                    ],
+                    "id": "10",
+                    "match": {
+                        "dest_mac": "00:00:00:00:00:01",
+                        "ether_type": "0x806",
+                        "port_in": "vnf:1:port:0"
+                    }
+                },
+                {
+                    "priority": 10,
+                    "actions": [
+                        {
+                            "output_to_port": "vnf:1:port:0"
+                        }
+                    ],
+                    "id": "11",
+                    "match": {
+                        "port_in": "vnf:2:port:0"
+                    }
+                },
+                {
+                    "priority": 10,
+                    "actions": [
+                        {
+                            "output_to_port": "vnf:2:port:0"
+                        }
+                    ],
+                    "id": "9",
+                    "match": {
+                        "ether_type": "0x800",
+                        "port_in": "vnf:1:port:0",
+                        "dest_ip": "10.0.10.1"
+                    }
+                },
+                {
+                    "priority": 10,
+                    "actions": [
+                        {
+                            "output_to_port": "endpoint:1"
+                        }
+                    ],
+                    "id": "1",
+                    "match": {
+                        "port_in": "vnf:2:port:1"
+                    }
+                },
+                {
+                    "priority": 10,
+                    "actions": [
+                        {
+                            "output_to_port": "vnf:2:port:1"
+                        }
+                    ],
+                    "id": "2",
+                    "match": {
+                        "port_in": "endpoint:1"
+                    }
+                },
+                {
+                    "priority": 10,
+                    "actions": [
+                        {
+                            "output_to_port": "endpoint:2"
+                        }
+                    ],
+                    "id": "3",
+                    "match": {
+                        "port_in": "vnf:2:port:2"
+                    }
+                },
+                {
+                    "priority": 10,
+                    "actions": [
+                        {
+                            "output_to_port": "vnf:2:port:2"
+                        }
+                    ],
+                    "id": "4",
+                    "match": {
+                        "port_in": "endpoint:2"
+                    }
+                },
+                {
+                    "priority": 10,
+                    "actions": [
+                        {
+                            "output_to_port": "endpoint:3"
+                        }
+                    ],
+                    "id": "5",
+                    "match": {
+                        "port_in": "vnf:2:port:3"
+                    }
+                },
+                {
+                    "priority": 10,
+                    "actions": [
+                        {
+                            "output_to_port": "vnf:2:port:3"
+                        }
+                    ],
+                    "id": "6",
+                    "match": {
+                        "port_in": "endpoint:3"
+                    }
+                },
+                {
+                    "priority": 10,
+                    "actions": [
+                        {
+                            "output_to_port": "endpoint:4"
+                        }
+                    ],
+                    "id": "7",
+                    "match": {
+                        "port_in": "vnf:2:port:4"
+                    }
+                },
+                {
+                    "priority": 10,
+                    "actions": [
+                        {
+                            "output_to_port": "vnf:2:port:4"
+                        }
+                    ],
+                    "id": "8",
+                    "match": {
+                        "port_in": "endpoint:4"
+                    }
+                }
+            ]
+        },
+        "VNFs": [
+            {
+                "ports": [
+                    {
+                        "unify-ip": "10.0.10.100/24",
+                        "id": "port:0"
+                    }
+                ],
+                "unify-control": [
+                    {
+                        "vnf-tcp-port": 5000,
+                        "host-tcp-port": 10000
+                    }
+                ],
+                "id": "1",
+                "unify-env-variables": [
+                    {
+                        "variable": "CFOR=172.17.0.1:9090"
+                    }
+                ],
+                "name": "ctrl"
+            },
+            {
+                "ports": [
+                    {
+                        "unify-ip": "10.0.10.1/24",
+                        "mac": "00:00:00:00:00:01",
+                        "id": "port:0"
+                    },
+                    {
+                        "id": "port:1"
+                    },
+                    {
+                        "id": "port:2"
+                    },
+                    {
+                        "id": "port:3"
+                    },
+                    {
+                        "id": "port:4"
+                    }
+                ],
+                "unify-control": [
+                    {
+                        "vnf-tcp-port": 22,
+                        "host-tcp-port": 10006
+                    }
+                ],
+                "id": "2",
+                "unify-env-variables": [
+                    {
+                        "variable": "CONTROLLER=tcp:10.0.10.100:6633"
+                    },
+                    {
+                        "variable": "OVS_DPID=9900000000000001"
+                    },
+                    {
+                        "variable": "VNF_NAME=ovs1"
+                    }
+                ],
+                "name": "ovs1"
+            }
+        ],
+        "end-points": [
+            {
+                "interface": {
+                    "interface": "veth3un"
+                },
+                "type": "interface",
+                "id": "4",
+                "name": "virtual-sap4"
+            },
+            {
+                "interface": {
+                    "interface": "veth0un"
+                },
+                "type": "interface",
+                "id": "1",
+                "name": "virtual-sap1"
+            },
+            {
+                "interface": {
+                    "interface": "veth2un"
+                },
+                "type": "interface",
+                "id": "3",
+                "name": "virtual-sap3"
+            },
+            {
+                "interface": {
+                    "interface": "veth1un"
+                },
+                "type": "interface",
+                "id": "2",
+                "name": "virtual-sap2"
+            }
+        ],
+        "id": "1"
+    }
+}

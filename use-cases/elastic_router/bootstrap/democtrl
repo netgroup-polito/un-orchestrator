@@ -87,6 +87,7 @@ function start_nffg_gui () {
 echo "starting the nffg gui on TCP:9999. It contacts the un-orchestrator on port TCP:8080"
 cd $CUR/../../../GUI
 python manage.py runserver &>/dev/null &
+NFFG_GUI_PID=$!
 }
 
 function start_veth () {
@@ -124,10 +125,11 @@ docker ps -a -q --filter="name=2_*" |  xargs -r docker rm -f
 sudo ovs-vsctl del-br Bridge1
 sudo ovs-vsctl del-br Bridge2
 sudo rm -rf /etc/doubledecker/ddbroker*
+sudo kill -9 $NFFG_GUI_PID
 }
 
 function start_er () {
-NFFG=/home/unify/un-orchestrator/use-cases/elastic_router/elastic_router_files/nffg_files/er_nffg_virtualizer5_v4.xml
+NFFG=/home/unify/un-orchestrator/use-cases/elastic_router/elastic_router_files/nffg_files/er_nffg_virtualizer5_vdurak.xml
 /usr/bin/curl -i -d "@$NFFG" -X POST http://localhost:9090/edit-config
 }
 
@@ -144,16 +146,17 @@ ip netns exec sap4 tcpreplay -i veth3 -l $LOOPS -K ../traffic/er4.pcap
 function start_ddreplay () {
 echo "starting 4 DD tcp replay"
 
-DDNAME=tcp1 KEYFILE=/etc/doubledecker/public-keys.json DEALER=ipc:///etc/doubledecker/ddbroker ip netns exec sap1 ddtcpreplay -K -i veth0 -l 0 ../traffic/rise-er1.pcap ../traffic/high-er1.pcap ../traffic/fall-er1.pcap ../traffic/low-er1.pcap  &
-DDNAME=tcp2 KEYFILE=/etc/doubledecker/public-keys.json DEALER=ipc:///etc/doubledecker/ddbroker ip netns exec sap2 ddtcpreplay -K -i veth1 -l 0 ../traffic/rise-er2.pcap ../traffic/high-er2.pcap ../traffic/fall-er2.pcap ../traffic/low-er2.pcap  &
-DDNAME=tcp3 KEYFILE=/etc/doubledecker/public-keys.json DEALER=ipc:///etc/doubledecker/ddbroker ip netns exec sap3 ddtcpreplay -K -i veth2 -l 0 ../traffic/rise-er3.pcap ../traffic/high-er3.pcap ../traffic/fall-er3.pcap ../traffic/low-er3.pcap  &
-DDNAME=tcp4 KEYFILE=/etc/doubledecker/public-keys.json DEALER=ipc:///etc/doubledecker/ddbroker ip netns exec sap4 ddtcpreplay -K -i veth3 -l 0 ../traffic/rise-er4.pcap ../traffic/high-er4.pcap ../traffic/fall-er4.pcap ../traffic/low-er4.pcap  
+DDNAME=tcp1 KEYFILE=/etc/doubledecker/public-keys.json DEALER=ipc:///etc/doubledecker/ddbroker ip netns exec sap1 ddtcpreplay  -T nano -K -i veth0 -l 0 ../traffic/rise-er1.pcap ../traffic/high-er1.pcap ../traffic/fall-er1.pcap ../traffic/low-er1.pcap  &
+DDNAME=tcp2 KEYFILE=/etc/doubledecker/public-keys.json DEALER=ipc:///etc/doubledecker/ddbroker ip netns exec sap2 ddtcpreplay -T nano -K -i veth1 -l 0 ../traffic/rise-er2.pcap ../traffic/high-er2.pcap ../traffic/fall-er2.pcap ../traffic/low-er2.pcap  &
+DDNAME=tcp3 KEYFILE=/etc/doubledecker/public-keys.json DEALER=ipc:///etc/doubledecker/ddbroker ip netns exec sap3 ddtcpreplay -T nano -K -i veth2 -l 0 ../traffic/rise-er3.pcap ../traffic/high-er3.pcap ../traffic/fall-er3.pcap ../traffic/low-er3.pcap  &
+DDNAME=tcp4 KEYFILE=/etc/doubledecker/public-keys.json DEALER=ipc:///etc/doubledecker/ddbroker ip netns exec sap4 ddtcpreplay -T nano -K -i veth3 -l 0 ../traffic/rise-er4.pcap ../traffic/high-er4.pcap ../traffic/fall-er4.pcap ../traffic/low-er4.pcap  
 
 #ip netns exec sap1 tcpreplay -i veth0 -l $LOOPS -K ../traffic/er1.pcap &
 #ip netns exec sap2 tcpreplay -i veth1 -l $LOOPS -K ../traffic/er2.pcap &
 #ip netns exec sap3 tcpreplay -i veth2 -l $LOOPS -K ../traffic/er3.pcap &
 #ip netns exec sap4 tcpreplay -i veth3 -l $LOOPS -K ../traffic/er4.pcap 
 }
+
 
 function start_slow_replay () {
 LOOPS=9999
@@ -273,9 +276,6 @@ case $cmd in
  replay-slow)
    start_slow_replay
    stop_replay
-   ;;
- replay-bg)
-   start_replay_bg
    ;;
  stop-replay)
    stop_replay

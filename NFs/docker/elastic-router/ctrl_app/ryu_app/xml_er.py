@@ -11,85 +11,10 @@ import logging
 nffg_log = logging.getLogger(__name__)
 nffg_log.setLevel(logging.DEBUG)
 
-#pool of numbers to pop from
-flow_id_pool = list(range(1000, 9999, 1))
 from random import randint
 
 # fixed universal node id, always pick this one
 NODE_ID = 'UUID11'
-
-# scaled-in version of the NFFG
-# nf_id 1 -> ctrl
-# nf_id 2 -> ovs1
-MEASURE_SCALEIN = (" measurements {"
-    "m1 = cpu(vnf = 1);"
-    "m2 = cpu(vnf = 2);"
-    "m6 = overload.risk.rx(interface = virtual-sap1);"
-    "m7 = overload.risk.rx(interface = virtual-sap2);"
-    "m8 = overload.risk.rx(interface = virtual-sap3);"
-    "m9 = overload.risk.rx(interface = virtual-sap4);"
-    "}"
-    "zones {"
-    """z1 = (AVG(val = m1, max_age = "5 minute") < 0.5);"""
-    """z2 = (AVG(val = m2, max_age = "5 minute") > 0.5);"""
-    """z3 = (AVG(val = m6, max_age = "5 minute") < 0.5);"""
-    """z4 = (AVG(val = m7, max_age = "5 minute") > 0.5);"""
-    """z5 = (AVG(val = m8, max_age = "5 minute") < 0.5);"""
-    """z6 = (AVG(val = m9, max_age = "5 minute") > 0.5);"""
-    "}"
-    "actions {"
-    """z1->z2 = Publish(topic = "alarms", message = "z1 to z2"); Notify(target = "alarms", message = "z1 to z2");"""
-    """z2->z1 = Publish(topic = "alarms", message = "z2 to z");"""
-    """->z1 = Publish(topic = "alarms", message = "entered z1");"""
-    """z1-> = Publish(topic = "alarms", message = "left z1");"""
-    """z1 = Publish(topic = "alarms", message = "in z1");"""
-    """z2 = Publish(topic = "alarms", message = "in z2");"""
-    """->z3 = Publish(topic = "alarms", message = "entered z3");"""
-    """->z4 = Publish(topic = "alarms", message = "entered z4");"""
-    """->z5 = Publish(topic = "alarms", message = "entered z5");"""
-    """->z6 = Publish(topic = "alarms", message = "entered z6");"""
-    "}")
-
-# scaled-out version of the NFFG
-# nf_id 1 -> ctrl
-# nf_id 3,4,5,6 -> ovs1,2,3,4
-MEASURE_SCALEOUT = (" measurements {"
-    "m1 = cpu(vnf = 1);"
-    "m2 = cpu(vnf = 3);"
-    "m3 = cpu(vnf = 4);"
-    "m4 = cpu(vnf = 5);" 
-    "m5 = cpu(vnf = 6);"
-    "m6 = overload.risk.rx(interface = virtual-sap1);"
-    "m7 = overload.risk.rx(interface = virtual-sap2);"
-    "m8 = overload.risk.rx(interface = virtual-sap3);"
-    "m9 = overload.risk.rx(interface = virtual-sap4);"
-    "}"
-    "zones {"
-    """z1 = (AVG(val = m1, max_age = "5 minute") < 0.5);"""
-    """z2 = (AVG(val = m2, max_age = "5 minute") > 0.5);"""
-    """z3 = (AVG(val = m3, max_age = "5 minute") < 0.5);"""
-    """z4 = (AVG(val = m4, max_age = "5 minute") > 0.5);"""
-    """z5 = (AVG(val = m5, max_age = "5 minute") < 0.5);"""
-    """z6 = (AVG(val = m6, max_age = "5 minute") > 0.5);"""
-    """z7 = (AVG(val = m7, max_age = "5 minute") > 0.5);"""
-    """z8 = (AVG(val = m8, max_age = "5 minute") > 0.5);"""
-    """z9 = (AVG(val = m9, max_age = "5 minute") > 0.5);"""
-    "}"
-    "actions {"
-    """z1->z2 = Publish(topic = "alarms", message = "z1 to z2"); Notify(target = "alarms", message = "z1 to z2");"""
-    """z2->z1 = Publish(topic = "alarms", message = "z2 to z");"""
-    """->z1 = Publish(topic = "alarms", message = "entered z1");"""
-    """z1-> = Publish(topic = "alarms", message = "left z1");"""
-    """z1 = Publish(topic = "alarms", message = "in z1");"""
-    """z2 = Publish(topic = "alarms", message = "in z2");"""
-    """->z3 = Publish(topic = "alarms", message = "entered z3");"""
-    """->z4 = Publish(topic = "alarms", message = "entered z4");"""
-    """->z5 = Publish(topic = "alarms", message = "entered z5");"""
-    """->z6 = Publish(topic = "alarms", message = "entered z6");"""
-    """->z7 = Publish(topic = "alarms", message = "entered z7");"""
-    """->z8 = Publish(topic = "alarms", message = "entered z8");"""
-    """->z9 = Publish(topic = "alarms", message = "entered z9");"""
-    "}")
 
 # scaled-in version of the NFFG
 # nf_id 1 -> ctrl
@@ -181,7 +106,7 @@ def get_UN_node(nffg):
     # alternatively, we can look for UUID11 (as done in UN virtualizer.py)
     for un in universal_nodes:
         un_id = un.id.get_value()
-        if un_id == NODE_ID:
+        if NODE_ID in un_id:
             return un
 
     nffg_log.error('Universal node: {0} not found'.format(NODE_ID))
@@ -200,6 +125,7 @@ def get_mapped_port(nffg_xml, vnf_name, int_port):
             for vnf_port, host_port in l4_addresses_list:
                 if vnf_port == str(int_port):
                     return host_port
+        nffg_log.error('port mapping not found for {0} port: {1}'.format(vnf_name, int_port))
 
 def process_nffg(nffg_xml):
 
@@ -300,7 +226,7 @@ def find_ovs(un):
     return ovs_instances
 
 
-def get_next_vnf_id(nffg_xml, add=0):
+def get_next_ovs_id(nffg_xml, add=0):
 
     nffg = get_virtualizer_nffg(nffg_xml)
     un = get_UN_node(nffg)
@@ -308,8 +234,11 @@ def get_next_vnf_id(nffg_xml, add=0):
     vnf_id_list = []
     vnfs = un.NF_instances
     for vnf in vnfs:
-        id = int(vnf.id.get_value())
-        vnf_id_list.append(id)
+        #id = str(vnf.id.get_value())
+        id = str(vnf.name.get_value())
+        if 'ovs' not in id: continue
+        id_int = int(id.split('ovs')[-1])
+        vnf_id_list.append(id_int)
 
     # http://stackoverflow.com/questions/3149440/python-splitting-list-based-on-missing-numbers-in-a-sequence
     # group the sorted list until a value is missing (the deleted vnf id)
@@ -319,7 +248,11 @@ def get_next_vnf_id(nffg_xml, add=0):
     for k, g in groupby(enumerate(sorted_vnf_id_list), lambda (i,x):i-x):
         list.append(map(itemgetter(1), g))
 
-    max_id = max(list[0])
+    if min(list[0]) > 1:
+        max_id = 0
+    else:
+        max_id = max(list[0])
+
     if max_id == 99999999:
         max_id = 0
     next_id_str = str(max_id+1+add)
@@ -528,7 +461,7 @@ def add_measure_to_ovs_vnfs(nffg_xml, direction):
     return nffg.xml()
 
 
-def add_ovs_vnf(nffg_xml, nffg_id, ovs_id, name, vnftype, numports, add_measure=False):
+def add_ovs_vnf(nffg_xml, nffg_id, ovs_id, name, numports, vnftype='ovs', add_measure=False):
 
     mac = str(hex(int(ovs_id))[2:]).zfill(2)
     ovs_mac = '00:00:00:00:00:{0}'.format(mac)
@@ -576,7 +509,9 @@ def add_ovs_vnf(nffg_xml, nffg_id, ovs_id, name, vnftype, numports, add_measure=
     un.NF_instances.add(vnf)
 
     # add control link
-    controller = un.NF_instances.node.__getitem__(str(1)) # controller has always id=1
+    #ctrl_id = 'ctrl' #1
+    ctrl_id = 1
+    controller = un.NF_instances.node.__getitem__(str(ctrl_id)) # controller has always id=1 or ctrl
     controller_port = controller.ports.port.__getitem__(str(1)) # control port has always id=1
     ovs_port = vnf.ports.port.__getitem__(str(1))  # control port has always id=1
 
@@ -601,14 +536,9 @@ def add_ovs_vnf(nffg_xml, nffg_id, ovs_id, name, vnftype, numports, add_measure=
     un.flowtable.add(new_flowentry)
     return nffg.xml()
 
-def add_flowrule_id(id):
-    global flow_id_pool
-    flow_id_pool.append(id)
 
 def get_next_flowrule_id(nffg_xml, add=0):
-    global flow_id_pool
 
-    next_id = flow_id_pool.pop(0)
     next_id = randint(10000, 99999)
     return next_id
 
@@ -650,11 +580,13 @@ def add_flowentry(nffg_xml, port_in, port_out, match=None, priority=10):
         DP_in = un
     else:
         DP_in = un.NF_instances.node.__getitem__(str(port_in.DP.id))
+        #DP_in = un.NF_instances.node.__getitem__(str(port_in.DP.name))
     DP_port_in = DP_in.ports.port.__getitem__(str(port_in.id))
 
     if port_out.port_type == DPPort.SAP:
         DP_out = un
     else:
+        #DP_out = un.NF_instances.node.__getitem__(str(port_out.DP.name))
         DP_out = un.NF_instances.node.__getitem__(str(port_out.DP.id))
     DP_port_out = DP_out.ports.port.__getitem__(str(port_out.id))
 
@@ -686,6 +618,19 @@ def clean_nffg(nffg_xml):
 
     return new_nffg.xml()
 
+def check_vnf_in_nffg(nffg_xml, vnf_name):
+    found = False
+    nffg = get_virtualizer_nffg(nffg_xml)
+    un = get_UN_node(nffg)
+    nf_instances = un.NF_instances
+    for nf in nf_instances:
+        nf_name = nf.name.get_value()
+        nf_type = nf.type.get_value()
+        logging.debug("found NF: {0}".format(nf.name.get_value()))
+        if vnf_name == nf_name:
+            found = True
+            break
+    return found
 
 if __name__ == "__main__":
     xml = open('test.xml').read()

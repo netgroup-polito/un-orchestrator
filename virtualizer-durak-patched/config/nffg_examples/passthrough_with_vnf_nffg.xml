@@ -1,0 +1,118 @@
+<?xml version="1.0" ?>
+<virtualizer>
+	<id>UUID001</id>
+	<name>Single node</name>
+	<nodes>
+		<node>
+			<id>UUID11</id>
+			<name>Universal Node</name>
+			<type>BisBis</type>
+			<ports>
+				<!-- 
+					This information is retrieved from the configuration file of the un-orchestrator 
+				-->
+				<port>
+					<id>1</id>
+					<name>OVS-north external port</name>
+					<port_type>port-sap</port_type>
+					<sap>sap1</sap>
+				</port>
+				<port>
+					<id>2</id>
+					<name>OVS-south external port</name>
+					<port_type>port-sap</port_type>
+					<sap>sap2</sap>
+				</port>
+			</ports>
+			<resources>
+				<!-- 
+					This information is retrieved from the configuration file of the un-orchestrator 
+				-->
+				<cpu>10 VCPU</cpu>
+				<mem>32 GB</mem>
+				<storage>5 TB</storage>
+			</resources>
+			<capabilities>
+				<!-- 
+					This information is retrieved from the name-resolver (i.e., depends on the configuration file
+					of the name-resolver) 
+				-->
+				<supported_NFs>
+					<node>
+						<id>NF1</id>
+						<name>Example VNF</name>
+						<type>example</type>
+						<ports>
+							<port>
+								<id>1</id>
+								<name>VNF port 1</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>2</id>
+								<name>VNF port 2</name>
+								<port_type>port-abstract</port_type>
+							</port>
+						</ports>
+					</node>
+				</supported_NFs>
+			</capabilities>
+			<NF_instances>
+				<!--
+					The "type" must refer to the type of a "supported_NF"
+				-->
+				<node operation="create">
+					<id>NFa</id>
+					<name>The example</name>
+					<type>example</type>
+					<ports>
+						<port>
+							<id>1</id>
+							<name>internal port</name>
+							<port-type>port-abstract</port-type>
+						</port>
+						<port>
+							<id>2</id>
+							<name>external port</name>
+							<port-type>port-abstract</port-type>
+						</port>
+					</ports>
+				</node>
+			</NF_instances>
+			<flowtable>
+				<flowentry operation="create">
+					<id>1</id>
+					<priority>100</priority>
+					<port>../../../ports/port[id=1]</port>
+					<match/>
+					<action/>
+					<out>../../../NF_instances/node[id=NFa]/ports/port[id=1]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>2</id>
+					<priority>100</priority>
+					<port>../../../NF_instances/node[id=NFa]/ports/port[id=2]</port>
+					<match/>
+					<action/>
+					<out>../../../ports/port[id=2]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>3</id>
+					<priority>100</priority>
+					<port>../../../ports/port[id=2]</port>
+					<match/>
+					<action/>
+					<out>../../../NF_instances/node[id=NFa]/ports/port[id=2]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>4</id>
+					<priority>100</priority>
+					<port>../../../NF_instances/node[id=NFa]/ports/port[id=1]</port>
+					<match/>
+					<action/>
+					<out>../../../ports/port[id=1]</out>
+				</flowentry>
+			</flowtable>
+		</node>
+	</nodes>
+</virtualizer>

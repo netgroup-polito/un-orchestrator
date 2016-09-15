@@ -59,6 +59,6 @@ try:
         get_nffg = get_nffg_xml
         send_nffg = send_nffg_xml
 except:
-    from json_er import *
-    get_nffg = get_nffg_json
-    send_nffg = send_nffg_json
+    from xml_er import *
+    get_nffg = get_nffg_xml
+    send_nffg = send_nffg_xml

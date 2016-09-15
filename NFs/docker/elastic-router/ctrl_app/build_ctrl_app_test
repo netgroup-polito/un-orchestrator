@@ -1,0 +1,11 @@
+#!/bin/bash
+#cp ../../../../orchestrator/config/er_nffg_scale_out_intermediate_base.json ./ryu_app/er_nffg_scale_out_intermediate.json
+#cp ../../../../orchestrator/config/er_nffg_scale_in_intermediate_base.json ./ryu_app/er_nffg_scale_in_intermediate.json
+
+# build image locally
+sudo docker build -f Dockerfile -t "gitlab.testbed.se:5000/ctrl"  .
+
+# push to remote repository
+#sudo docker login -u unify -p unify-demo-stress-out -e steven.vanrossem@intec.ugent.be gitlab.testbed.se:5000
+#sudo docker tag ctrl:test gitlab.testbed.se:5000/ctrl:test
+#sudo docker push gitlab.testbed.se:5000/ctrl:test

@@ -49,12 +49,14 @@ class ElasticRouter(app_manager.RyuApp):
 
     # TODO: put globals in separate file
     # cf-or address set from the nnfg as ENV variable
+    un_cf_or_env = '172.17.0.1:8080'
     try:
         cfor_env = os.environ['CFOR']
     except:
-        cfor_env = '172.17.0.1:8080'
+        cfor_env = un_cf_or_env
 
     REST_Cf_Or =  'http://' + cfor_env
+    REST_UN_Cf_Or = 'http://' + un_cf_or_env
 
     # rest api port address set from the nnfg as ENV variable
     try:
@@ -72,7 +74,7 @@ class ElasticRouter(app_manager.RyuApp):
     try:
         host_ip = os.environ['HOST_IP']
     except:
-        #host_ip = '192.168.10.40'
+        #host_ip = 'durak.testbed.se'
         host_ip = 'localhost'
 
     # ip address of host machine
@@ -122,13 +124,29 @@ class ElasticRouter(app_manager.RyuApp):
         if self.DD_enable:
             self.zmq_ = er_ddclient(self.monitorApp, self)
 
-        # parse the nffg from the Cf-Or
-        self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
+        #check if ctrl VNF is in the nffg, otherwise wait and poll for updated nffg
+        found_ctrl = False
+        while not found_ctrl:
+            # parse the nffg from the Cf-Or
+            self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
+            # check if ctrl is a vnf in the nffg
+            found_ctrl = er_nffg.check_vnf_in_nffg(self.nffg, 'ctrl')
+            if not found_ctrl:
+                self.logger.info("vnf name: {0} not found in nffg, polling again via cf-or...".format('ctrl'))
+                time.sleep(1)
+            else:
+                self.logger.info("vnf name: {0} found in nffg".format('ctrl'))
+
 
         # start gui web server to visualize ER topology as seen by ctrl app
         # use this pipe to communicate to the gui_server
         guest_port = self.gui_port
         host_port = er_nffg.get_mapped_port(self.nffg, 'ctrl', guest_port)
+
+        if host_port is None:
+            self.logger.info('mappped gui port not found, trying now with the local UN nffg')
+            un_nffg = er_nffg.get_nffg(self.REST_UN_Cf_Or)
+            host_port = er_nffg.get_mapped_port(un_nffg, 'ctrl', guest_port)
 
         # open zmq bus to send updated nffg's to the gui
         CTX = zmq.Context(1)
@@ -146,6 +164,7 @@ class ElasticRouter(app_manager.RyuApp):
         # clear parsed nffg
         copyfile('gui_server/empty.json', 'gui_server/parsed_nffg.json')
         # start gui web server at port 8888
+        self.logger.info("started gui at port: {0}".format(host_port))
         self.gui_server = web_server(self.host_ip, host_port, guest_port)
 
         # start rest api to easily scale in/out
@@ -267,25 +286,29 @@ class ElasticRouter(app_manager.RyuApp):
         scale_port_dict = {}
 
         # new DP for each scaled port
-        id_add = 0 # constant to make the correct vnf id
+        id_add = 1 # constant to make the correct vnf id
+        id = int(er_nffg.get_next_ovs_id(self.nffg, add=id_add))
         for port_list in scaling_ports:
             # we need to artificially pick the id, because UN does not allow
             # multiple instances of the same vnf type
 
             #id = len(self.DP_instances) + 1
-            id = int(er_nffg.get_next_vnf_id(self.nffg, add=id_add)) - 1 # control vnf id=1, so ovs id is one less...
-            id_nffg = er_nffg.get_next_vnf_id(self.nffg, add=id_add)
-            DPname = 'ovs{0}'.format(id)
-            #control_ip = '10.0.10.{0}/24'.format(id)
+            #id = int(er_nffg.get_next_vnf_id(self.nffg, add=id_add))-1  # control vnf id=1, so ovs id is one less...
+            #id_nffg = er_nffg.get_next_vnf_id(self.nffg, add=id_add)
+            ovs_id = id + id_add - 2
+            DPname = 'ovs{0}'.format(ovs_id)
+
 
             # create new DP, ports will be added later
-            new_DP = DP(DPname, id_nffg, [])
+            new_DP = DP(DPname, id + id_add - 1, [])
+            #new_DP = DP(DPname, ovs_id, [])
             self.DP_instances[new_DP.name] = new_DP
 
             # add external ports/links to new DP
             for i in range(0, len(port_list)):
                 new_ifname = '{0}_eth{1}'.format(DPname,i)
                 old_port = port_list[i]
+				
                 new_port = new_DP.add_port(new_ifname, port_type=DPPort.External, linked_port=old_port.linked_port)
 
                 scale_port_dict[old_port] = new_port
@@ -343,7 +366,11 @@ class ElasticRouter(app_manager.RyuApp):
 
         for new_DP in new_DP_list:
             ovs_id = int(new_DP.id) - 1
-            nffg_intermediate = er_nffg.add_ovs_vnf(nffg_intermediate, new_DP.id, ovs_id, new_DP.name, new_DP.name, len(new_DP.ports))
+            #nffg_id = new_DP.name
+            nffg_id = int(new_DP.id) 
+            #nffg_intermediate = er_nffg.add_ovs_vnf(nffg_intermediate, nffg_id, ovs_id, new_DP.name, vnftype='ovs',
+            #                                        numports=len(new_DP.ports))
+            nffg_intermediate = er_nffg.add_ovs_vnf(nffg_intermediate, nffg_id, ovs_id, new_DP.name, vnftype=new_DP.name, numports=len(new_DP.ports))
 
 
         '''
@@ -386,6 +413,8 @@ class ElasticRouter(app_manager.RyuApp):
         graph_dict = build_graph_list(new_DP_list, 'gui_server/parsed_nffg.json', y_offset=4)
         self.gui_nffg2_sender.send_string('parsed_nffg.json')
 
+        #add the final measure data
+        #nffg_intermediate = er_nffg.add_measure_to_ovs_vnfs(nffg_intermediate, self.scale_dir)
 
         # send via cf-or
         self.nffg = er_nffg.send_nffg(self.REST_Cf_Or, nffg_intermediate)
@@ -444,6 +473,7 @@ class ElasticRouter(app_manager.RyuApp):
         # first delete external incoming flows for all old DPs (scaled out topo)
         ###self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
         for del_VNF in self.VNFs_to_be_deleted:
+            #VNF_id = self.DP_instances[del_VNF].name
             VNF_id = self.DP_instances[del_VNF].id
             self.nffg = er_nffg.delete_VNF_incoming_ext_flows(self.nffg, VNF_id)
 
@@ -453,8 +483,9 @@ class ElasticRouter(app_manager.RyuApp):
         # delete other flows and complete VNF
         # self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
         for del_VNF in self.VNFs_to_be_deleted:
-            VNF_id = self.DP_instances[del_VNF].id
-            self.nffg = er_nffg.delete_VNF(self.nffg, VNF_id)
+            #VNF_id = self.DP_instances[del_VNF].name
+            VNF_id = int(self.DP_instances[del_VNF].id)
+            self.nffg = er_nffg.delete_VNF(self.nffg, str(VNF_id))
 
         #file = open('ER_scale_priorities2.xml', 'w')
         #file.write(self.nffg)
@@ -580,9 +611,17 @@ class ElasticRouter(app_manager.RyuApp):
             ovs_name = DPPort.get_datapath_name(p.name)
             self.logger.info('found OVS name:{0} port: {1}'.format(ovs_name, p.name))
             this_DP = self.DP_instances.get(ovs_name)
-            if not this_DP:
+
+            #wait until orchestrator reports this DP in the nffg
+            while not this_DP:
+                #if not this_DP:
                 self.logger.info('found OVS name:{0} not in DP_instances'.format(ovs_name))
-                continue
+                time.sleep(1)
+                # parse the nffg from the Cf-Or
+                self.nffg = er_nffg.get_nffg(self.REST_Cf_Or)
+                self.parse_nffg(self.nffg)
+                this_DP = self.DP_instances.get(ovs_name)
+                #continue
 
             # set port number assigned by orchestrator to this interface
             port = this_DP.get_port(p.name)

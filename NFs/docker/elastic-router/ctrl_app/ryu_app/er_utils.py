@@ -13,11 +13,11 @@ class DP:
     """
     class to hold the Data Path instances (ovs switches) of the elastic router
     """
-    def __init__(self, nffg_name, nffg_id, ports=[]):
-        # ovs bridge name, name from nffg
+    def __init__(self, nffg_name, ovs_id, ports=[]):
+        # ovs bridge name, name from nffg, same as id in nffg
         self.name = nffg_name
         # ovs id from nffg
-        self.id = nffg_id
+        self.id = ovs_id
         # ovs bridge datapath id in ryu
         self.datapath_id = None
         # ovs bridge datapath object in ryu

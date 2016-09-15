@@ -1,0 +1,376 @@
+<?xml version="1.0" ?>
+<virtualizer>
+	<id>UUID001</id>
+	<name>Single node</name>
+	<nodes>
+		<node>
+			<id>UUID11</id>
+			<name>Universal Node</name>
+			<type>BisBis</type>
+			<ports>
+				<!--
+					This information is retrieved from the configuration file of the un-orchestrator
+				-->
+				<port>
+					<id>1</id>
+					<name>virtual-sap1</name>
+					<port_type>port-sap</port_type>
+					<sap>sap1</sap>
+				</port>
+				<port>
+					<id>2</id>
+					<name>virtual-sap2</name>
+					<port_type>port-sap</port_type>
+					<sap>sap2</sap>
+				</port>
+				<port>
+					<id>3</id>
+					<name>virtual-sap3</name>
+					<port_type>port-sap</port_type>
+					<sap>sap3</sap>
+				</port>
+				<port>
+					<id>4</id>
+					<name>virtual-sap4</name>
+					<port_type>port-sap</port_type>
+					<sap>sap4</sap>
+				</port>
+			</ports>
+			<resources>
+				<!--
+					This information is retrieved from the configuration file of the un-orchestrator
+				-->
+				<cpu>1 VCPU</cpu>
+				<mem>1 GB</mem>
+				<storage>1 GB</storage>
+			</resources>
+			<capabilities>
+				<!--
+					This information is retrieved from the name-resolver (i.e., depends on the configuration file of the name-resolver)
+				-->
+				<supported_NFs>
+					<node>
+						<id>NF1</id>
+						<name>openvswitch in userspace with 1 control port, 4 switch ports, and external ssh login enabled</name>
+						<type>ovs1</type>
+						<ports>
+							<port>
+								<id>1</id>
+								<name>VNF port 1</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>2</id>
+								<name>VNF port 2</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>3</id>
+								<name>VNF port 3</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>4</id>
+								<name>VNF port 4</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>5</id>
+								<name>VNF port 5</name>
+								<port_type>port-abstract</port_type>
+							</port>
+						</ports>
+					</node>
+					<node>
+						<id>NF2</id>
+						<name>control app for elastic router, connects to DoubleDecker</name>
+						<type>ctrl</type>
+						<ports>
+							<port>
+								<id>1</id>
+								<name>VNF port 1</name>
+								<port_type>port-abstract</port_type>
+							</port>
+						</ports>
+					</node>
+				</supported_NFs>
+			</capabilities>
+			<NF_instances>
+				<!--
+					The "type" must refer to the type of a "supported_NF"
+				-->
+				<node operation="create">
+					<id>1</id>
+					<name>ctrl</name>
+					<type>ctrl</type>
+					<ports>
+						<!-- public port for cf-or access and configuration -->
+						<port>
+							<id>0</id>
+							<name>public-cfor-port</name>
+							<port-type>port-sap</port-type>
+							<sap>INTERNET</sap>
+							<!--  INTERNET should translate to an interface in the Docker VNF that connects to Docker0 bridge -->
+							<control>
+								<!--
+								provide controller the orchestrator ip address via environment variable (meta-data) for now
+								at later stage, a configuration interface can be provided at the ctrl app
+								<controller>http://*:8080/cf-or/</controller> 
+								-->
+								<!-- This is the connection point at the orchestrator, filled by escape: -->
+								<!-- 
+									UN orchestrator should translate this to an env variable:
+									"variable": "CFOR=<escape ip>:8889"
+								-->
+								<orchestrator>172.17.0.1:9090</orchestrator>
+							</control>
+							<addresses>
+								<!-- 
+									UN orchestrator should translate this to "unify-control" field:
+									(UN orchestrator should choose the public port as this is not configurable in the virtualizer nffg)
+									"host-tcp-port": 9000,
+									"vnf-tcp-port": 22
+								-->
+								<!-- request public port to be forwarded to VNF port 22 (for ssh login/configuration interface) -->
+								<l4>{'tcp/5000', 'tcp/8888'}</l4>
+								<!-- reply: (UN) orchestrator fills the actual ip address+port -->
+								<!-- <l4>{'tcp/22': ('UN ip', '9000')}</l4> -->
+							</addresses>
+						</port>
+						<port>
+							<id>1</id>
+							<name>control-port</name>
+							<port-type>port-abstract</port-type>
+							<addresses>
+								<!-- 
+									UN orchestrator should translate this to:
+									"unify-ip": "10.0.10.100/24"
+								-->
+								<l3>
+									<id>addr-ctrl</id>
+									<configure>True</configure>
+									<requested>10.0.10.100/24</requested>
+								</l3>
+							</addresses>
+						</port>
+					</ports>
+					<!--
+					<metadata>
+						<key>measure</key>
+						<value>test measure ctrl</value>
+				        </metadata>
+					 
+						use the meta-data as configuration interface to set the orchestrator interface 
+						This can be pre-filled from the SG, or set by the orchestrator
+						<value>http://<escape ip>:8889/</value>
+					
+					<metadata>
+						<key>variable:CFOR</key>
+						<value>http://localhost:9090/</value>
+					</metadata>
+			
+					<metadata>
+						<key>variable:NFFG_FORMAT</key>
+						<value>xml</value>
+					</metadata>
+					-->		
+					<metadata>
+						<key>variable:DD_ENABLE</key>
+						<value>True</value>
+					</metadata>
+					<metadata>
+						<key>variable:HOST_IP</key>
+						<value>durak.testbed.se</value>
+					</metadata>
+				</node>
+				<node operation="create">
+					<id>2</id>
+					<name>ovs1</name>
+					<type>ovs1</type>
+					<ports>
+						<!-- public port to enable ssh login -->
+						<port>
+							<id>0</id>
+							<name>public-port</name>
+							<port-type>port-sap</port-type>
+							<sap>INTERNET</sap>
+							<!--  INTERNET should translate to an interface in the Docker VNF that connects to Docker0 bridge -->
+							<addresses>
+								<!-- 
+									UN orchestrator should translate this to "unify-control" field:
+									"host-tcp-port": 9001,
+									"vnf-tcp-port": 22
+								-->
+								<!-- request public port to be forwarded to VNF port 22 (for ssh access) -->
+								<l4>{'tcp/22'}</l4>
+								<!-- (UN) orchestrator fills the actual ip address+port -->
+								<!-- <l4>{'tcp/22': ('UN ip', '9001')}</l4> -->
+							</addresses>
+						</port>
+						<!-- control port with private ip -->
+						<port>
+							<id>1</id>
+							<name>control-port</name>
+							<port-type>port-abstract</port-type>
+							<addresses>
+								<!-- 
+									UN orchestrator should translate this to:
+									"mac": "00:00:00:00:00:01"
+									"unify-ip": "10.0.10.1/24"
+								-->
+								<l2>00:00:00:00:00:01</l2>
+								<l3>
+									<id>addr-ctrl</id>
+									<configure>True</configure>
+									<requested>10.0.10.1/24</requested>
+									<!-- (UN) orchestrator fills the provided ip -->
+									<!-- <provided>10.0.10.1/24</provided> -->
+								</l3>
+							</addresses>
+						</port>
+						<port>
+							<id>2</id>
+							<name>ovs1_eth0</name>
+							<port-type>port-abstract</port-type>
+						</port>
+						<port>
+							<id>3</id>
+							<name>ovs1_eth1</name>
+							<port-type>port-abstract</port-type>
+						</port>
+						<port>
+							<id>4</id>
+							<name>ovs1_eth2</name>
+							<port-type>port-abstract</port-type>
+						</port>
+						<port>
+							<id>5</id>
+							<name>ovs1_eth3</name>
+							<port-type>port-abstract</port-type>
+						</port>
+					</ports>
+					<!-- 
+						meta-data from SG (can be seen as configuration interface) 
+						UN should translate this to:
+						"unify-env-variables": [ {"variable":"KEY=VALUE"},...]	
+					-->
+
+					<metadata>
+						<key>variable:VNF_NAME</key>
+						<value>ovs1</value>
+					</metadata>
+					<metadata>
+						<key>variable:OVS_DPID</key>
+						<value>9900000000000001</value>
+					</metadata>
+					<metadata>
+						<key>variable:CONTROLLER</key>
+						<value>tcp:10.0.10.100:6633</value>
+					</metadata>
+					<metadata>
+						<key>measure</key>
+						<value>measurements {
+m1 = cpu(vnf = 1);
+m2 = cpu(vnf = 2);
+m6 = overload.risk.rx(interface = virtual-sap1);
+m7 = overload.risk.rx(interface = virtual-sap2);
+m8 = overload.risk.rx(interface = virtual-sap3);
+m9 = overload.risk.rx(interface = virtual-sap4);
+}
+zones {
+z1 = (AVG(val = m1, max_age = "5 minute") &lt; 0.5);
+z2 = (AVG(val = m2, max_age = "5 minute") &gt; 0.5);
+z3 = (AVG(val = m6, max_age = "5 minute") &lt; 0.5);
+z4 = (AVG(val = m7, max_age = "5 minute") &gt; 0.5);
+z5 = (AVG(val = m8, max_age = "5 minute") &lt; 0.5);
+z6 = (AVG(val = m9, max_age = "5 minute") &gt; 0.5);
+
+}
+actions {
+z1->z2 = Publish(topic = "alarms", message = "z1 to z2"); Notify(target = "alarms", message = "z1 to z2");
+z2->z1 = Publish(topic = "alarms", message = "z2 to z");
+->z1 = Publish(topic = "alarms", message = "entered z1");
+z1-> = Publish(topic = "alarms", message = "left z1");
+z1 = Publish(topic = "alarms", message = "in z1");
+z2 = Publish(topic = "alarms", message = "in z2");
+->z3 = Publish(topic = "alarms", message = "entered z3");
+->z4 = Publish(topic = "alarms", message = "entered z4");
+->z5 = Publish(topic = "alarms", message = "entered z5");
+->z6 = Publish(topic = "alarms", message = "entered z6");
+}</value>
+				        </metadata>
+				</node>
+			</NF_instances>
+			<flowtable>
+				<flowentry operation="create">
+					<id>1</id>
+					<priority>10</priority>
+					<port>../../../ports/port[id=1]</port>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=2]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>2</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=2]/ports/port[id=2]</port>
+					<out>../../../ports/port[id=1]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>3</id>
+					<priority>10</priority>
+					<port>../../../ports/port[id=2]</port>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=3]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>4</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=2]/ports/port[id=3]</port>
+					<out>../../../ports/port[id=2]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>5</id>
+					<priority>10</priority>
+					<port>../../../ports/port[id=3]</port>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=4]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>6</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=2]/ports/port[id=4]</port>
+					<out>../../../ports/port[id=3]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>7</id>
+					<priority>10</priority>
+					<port>../../../ports/port[id=4]</port>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=5]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>8</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=2]/ports/port[id=5]</port>
+					<out>../../../ports/port[id=4]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>9</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=1]/ports/port[id=1]</port>
+					<match>ether_type=0x800,dest_ip=10.0.10.1</match>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=1]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>10</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=1]/ports/port[id=1]</port>
+					<match>ether_type=0x806,dest_mac=00:00:00:00:00:01</match>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=1]</out>
+				</flowentry>
+				<flowentry operation="create">
+					<id>11</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=2]/ports/port[id=1]</port>
+					<out>../../../NF_instances/node[id=1]/ports/port[id=1]</out>
+				</flowentry>
+			</flowtable>
+		</node>
+	</nodes> 
+</virtualizer>

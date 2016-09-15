@@ -1,0 +1,416 @@
+<?xml version="1.0" ?>
+<virtualizer>
+	<id>UUID001</id>
+	<name>Single node</name>
+	<nodes>
+		<node>
+			<id>UUID11</id>
+			<name>Universal Node</name>
+			<type>BisBis</type>
+			<ports>
+				<port>
+					<id>1</id>
+					<name>virtual-sap1</name>
+					<port_type>port-sap</port_type>
+					<sap>sap1</sap>
+				</port>
+				<port>
+					<id>2</id>
+					<name>virtual-sap2</name>
+					<port_type>port-sap</port_type>
+					<sap>sap2</sap>
+				</port>
+				<port>
+					<id>3</id>
+					<name>virtual-sap3</name>
+					<port_type>port-sap</port_type>
+					<sap>sap3</sap>
+				</port>
+				<port>
+					<id>4</id>
+					<name>virtual-sap4</name>
+					<port_type>port-sap</port_type>
+					<sap>sap4</sap>
+				</port>
+			</ports>
+			<resources>
+				<cpu>10</cpu>
+				<mem>32 GB</mem>
+				<storage>5 TB</storage>
+			</resources>
+			<NF_instances>
+				<node>
+					<id>1</id>
+					<name>ctrl</name>
+					<type>ctrl</type>
+					<ports>
+						<port>
+							<id>0</id>
+							<name>public-cfor-port</name>
+							<sap>INTERNET</sap>
+							<control>
+								<orchestrator>172.17.0.1:9090</orchestrator>
+							</control>
+							<addresses>
+								<l4>{'tcp/8888': ('127.0.0.1', 10004), 'tcp/5000': ('127.0.0.1', 10003)}</l4>
+							</addresses>
+						</port>
+						<port>
+							<id>1</id>
+							<name>control-port</name>
+							<addresses>
+								<l3>
+									<id>addr-ctrl</id>
+									<configure>True</configure>
+									<requested>10.0.10.100/24</requested>
+									<provided>10.0.10.100/24</provided>
+								</l3>
+							</addresses>
+						</port>
+					</ports>
+				</node>
+				<node>
+					<id>2</id>
+					<name>ovs1</name>
+					<type>ovs1</type>
+					<ports>
+						<port>
+							<id>0</id>
+							<name>public-port</name>
+							<sap>INTERNET</sap>
+							<addresses>
+								<l4>{'tcp/22': ('127.0.0.1', 10005)}</l4>
+							</addresses>
+						</port>
+						<port>
+							<id>1</id>
+							<name>control-port</name>
+							<addresses>
+								<l2>00:00:00:00:00:01</l2>
+								<l3>
+									<id>addr-ctrl</id>
+									<configure>True</configure>
+									<requested>10.0.10.1/24</requested>
+									<provided>10.0.10.1/24</provided>
+								</l3>
+							</addresses>
+						</port>
+						<port>
+							<id>2</id>
+							<name>ovs1_eth0</name>
+						</port>
+						<port>
+							<id>3</id>
+							<name>ovs1_eth1</name>
+						</port>
+						<port>
+							<id>4</id>
+							<name>ovs1_eth2</name>
+						</port>
+						<port>
+							<id>5</id>
+							<name>ovs1_eth3</name>
+						</port>
+					</ports>
+					<metadata>
+						<key>measure</key>
+						<value>measurements {m1 = cpu(vnf = 2);m2 = mem(vnf = 2);m3 = overload.risk.rx(interface = virtual-sap1);m4 = overload.risk.rx(interface = virtual-sap2);m5 = overload.risk.rx(interface = virtual-sap3);m6 = overload.risk.rx(interface = virtual-sap4);}zones {z1 = (AVG(val = m1, max_age = &quot;5 minute&quot;) &lt; 0.5);z2 = (AVG(val = m2, max_age = &quot;5 minute&quot;) &gt; 0.5);z3 = (AVG(val = m3, max_age = &quot;5 minute&quot;) &lt; 0.5);z4 = (AVG(val = m4, max_age = &quot;5 minute&quot;) &gt; 0.5);z5 = (AVG(val = m5, max_age = &quot;5 minute&quot;) &lt; 0.5);z6 = (AVG(val = m6, max_age = &quot;5 minute&quot;) &gt; 0.5);}actions {z1-&gt;z2 = Publish(topic = &quot;alarms&quot;, message = &quot;z1 to z2&quot;); Notify(target = &quot;alarms&quot;, message = &quot;z1 to z2&quot;);z2-&gt;z1 = Publish(topic = &quot;alarms&quot;, message = &quot;z2 to z&quot;);-&gt;z1 = Publish(topic = &quot;alarms&quot;, message = &quot;entered z1&quot;);z1-&gt; = Publish(topic = &quot;alarms&quot;, message = &quot;left z1&quot;);z1 = Publish(topic = &quot;alarms&quot;, message = &quot;in z1&quot;);z2 = Publish(topic = &quot;alarms&quot;, message = &quot;in z2&quot;);-&gt;z3 = Publish(topic = &quot;alarms&quot;, message = &quot;entered z3&quot;);-&gt;z4 = Publish(topic = &quot;alarms&quot;, message = &quot;entered z4&quot;);-&gt;z5 = Publish(topic = &quot;alarms&quot;, message = &quot;entered z5&quot;);-&gt;z6 = Publish(topic = &quot;alarms&quot;, message = &quot;entered z6&quot;);}</value>
+					</metadata>
+					<metadata>
+						<key>variable:CONTROLLER</key>
+						<value>tcp:10.0.10.100:6633</value>
+					</metadata>
+					<metadata>
+						<key>variable:OVS_DPID</key>
+						<value>9900000000000001</value>
+					</metadata>
+					<metadata>
+						<key>variable:VNF_NAME</key>
+						<value>ovs1</value>
+					</metadata>
+				</node>
+			</NF_instances>
+			<capabilities>
+				<supported_NFs>
+					<node>
+						<id>NF1</id>
+						<name>iptables based firewall</name>
+						<type>fw</type>
+						<ports>
+							<port>
+								<id>1</id>
+								<name>VNF port 1</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>2</id>
+								<name>VNF port 2</name>
+								<port_type>port-abstract</port_type>
+							</port>
+						</ports>
+					</node>
+					<node>
+						<id>NF2</id>
+						<name>openvswitch in userspace with 1 control port, 4 switch ports, and external ssh login enabled</name>
+						<type>ovs1</type>
+						<ports>
+							<port>
+								<id>1</id>
+								<name>VNF port 1</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>2</id>
+								<name>VNF port 2</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>3</id>
+								<name>VNF port 3</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>4</id>
+								<name>VNF port 4</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>5</id>
+								<name>VNF port 5</name>
+								<port_type>port-abstract</port_type>
+							</port>
+						</ports>
+					</node>
+					<node>
+						<id>NF3</id>
+						<name>openvswitch in userspace with 1 control port, 4 switch ports, and external ssh login enabled</name>
+						<type>ovs2</type>
+						<ports>
+							<port>
+								<id>1</id>
+								<name>VNF port 1</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>2</id>
+								<name>VNF port 2</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>3</id>
+								<name>VNF port 3</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>4</id>
+								<name>VNF port 4</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>5</id>
+								<name>VNF port 5</name>
+								<port_type>port-abstract</port_type>
+							</port>
+						</ports>
+					</node>
+					<node>
+						<id>NF4</id>
+						<name>Example VNF with several implementations</name>
+						<type>example</type>
+						<ports>
+							<port>
+								<id>1</id>
+								<name>VNF port 1</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>2</id>
+								<name>VNF port 2</name>
+								<port_type>port-abstract</port_type>
+							</port>
+						</ports>
+					</node>
+					<node>
+						<id>NF5</id>
+						<name>openvswitch in userspace with 1 control port, 4 switch ports, and external ssh login enabled</name>
+						<type>ovs3</type>
+						<ports>
+							<port>
+								<id>1</id>
+								<name>VNF port 1</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>2</id>
+								<name>VNF port 2</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>3</id>
+								<name>VNF port 3</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>4</id>
+								<name>VNF port 4</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>5</id>
+								<name>VNF port 5</name>
+								<port_type>port-abstract</port_type>
+							</port>
+						</ports>
+					</node>
+					<node>
+						<id>NF6</id>
+						<name>openvswitch in userspace with 1 control port, 4 switch ports, and external ssh login enabled</name>
+						<type>ovs4</type>
+						<ports>
+							<port>
+								<id>1</id>
+								<name>VNF port 1</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>2</id>
+								<name>VNF port 2</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>3</id>
+								<name>VNF port 3</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>4</id>
+								<name>VNF port 4</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>5</id>
+								<name>VNF port 5</name>
+								<port_type>port-abstract</port_type>
+							</port>
+						</ports>
+					</node>
+					<node>
+						<id>NF7</id>
+						<name>openvswitch in userspace with 1 control port, 4 switch ports, and external ssh login enabled</name>
+						<type>ovs5</type>
+						<ports>
+							<port>
+								<id>1</id>
+								<name>VNF port 1</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>2</id>
+								<name>VNF port 2</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>3</id>
+								<name>VNF port 3</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>4</id>
+								<name>VNF port 4</name>
+								<port_type>port-abstract</port_type>
+							</port>
+							<port>
+								<id>5</id>
+								<name>VNF port 5</name>
+								<port_type>port-abstract</port_type>
+							</port>
+						</ports>
+					</node>
+					<node>
+						<id>NF8</id>
+						<name>control app for elastic router, connects to DoubleDecker</name>
+						<type>ctrl</type>
+						<ports>
+							<port>
+								<id>1</id>
+								<name>VNF port 1</name>
+								<port_type>port-abstract</port_type>
+							</port>
+						</ports>
+					</node>
+				</supported_NFs>
+			</capabilities>
+			<flowtable>
+				<flowentry>
+					<id>1</id>
+					<priority>10</priority>
+					<port>../../../ports/port[id=1]</port>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=2]</out>
+				</flowentry>
+				<flowentry>
+					<id>10</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=1]/ports/port[id=1]</port>
+					<match>ether_type=0x806,dest_mac=00:00:00:00:00:01</match>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=1]</out>
+				</flowentry>
+				<flowentry>
+					<id>11</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=2]/ports/port[id=1]</port>
+					<out>../../../NF_instances/node[id=1]/ports/port[id=1]</out>
+				</flowentry>
+				<flowentry>
+					<id>2</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=2]/ports/port[id=2]</port>
+					<out>../../../ports/port[id=1]</out>
+				</flowentry>
+				<flowentry>
+					<id>3</id>
+					<priority>10</priority>
+					<port>../../../ports/port[id=2]</port>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=3]</out>
+				</flowentry>
+				<flowentry>
+					<id>4</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=2]/ports/port[id=3]</port>
+					<out>../../../ports/port[id=2]</out>
+				</flowentry>
+				<flowentry>
+					<id>5</id>
+					<priority>10</priority>
+					<port>../../../ports/port[id=3]</port>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=4]</out>
+				</flowentry>
+				<flowentry>
+					<id>6</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=2]/ports/port[id=4]</port>
+					<out>../../../ports/port[id=3]</out>
+				</flowentry>
+				<flowentry>
+					<id>7</id>
+					<priority>10</priority>
+					<port>../../../ports/port[id=4]</port>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=5]</out>
+				</flowentry>
+				<flowentry>
+					<id>8</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=2]/ports/port[id=5]</port>
+					<out>../../../ports/port[id=4]</out>
+				</flowentry>
+				<flowentry>
+					<id>9</id>
+					<priority>10</priority>
+					<port>../../../NF_instances/node[id=1]/ports/port[id=1]</port>
+					<match>ether_type=0x800,dest_ip=10.0.10.1</match>
+					<out>../../../NF_instances/node[id=2]/ports/port[id=1]</out>
+				</flowentry>
+			</flowtable>
+		</node>
+	</nodes>
+	<version>2016-02-24; compiled at 2016-03-18  19:56:13</version>
+</virtualizer>
