@@ -14,7 +14,7 @@ cp /vagrant/files/lightdm.conf /etc/lightdm
 #
 # Epoxide
 #
-apt-get install -y emacs git
+apt-get install -y emacs git graphviz
 git clone --depth=1 https://github.com/nemethf/epoxide
 mkdir -p /home/vagrant/.emacs.d
 cp /vagrant/files/init.el /home/vagrant/.emacs.d
@@ -62,12 +62,12 @@ fi
 # RQE
 #
 
-# ...
+docker login -u $username -p $password gitlab.testbed.se:5000
+docker pull gitlab.testbed.se:5000/rqe:latest
 
 #
 # Double Decker
 #
-docker login -u $username -p $password gitlab.testbed.se:5000
 docker pull gitlab.testbed.se:5000/doubledecker:latest
 
 #
