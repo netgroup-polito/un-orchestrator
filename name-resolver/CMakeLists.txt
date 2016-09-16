@@ -83,8 +83,9 @@ ADD_EXECUTABLE(
 	${SOURCES}
 )
 
-ADD_DEPENDENCIES(name-resolver JSON_Spirit)
-
+IF(BUILD_ExternalProjects)
+	ADD_DEPENDENCIES(name-resolver JSON_Spirit)
+ENDIF(BUILD_ExternalProjects)
 
 TARGET_LINK_LIBRARIES( name-resolver
 	pthread

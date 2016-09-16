@@ -67,6 +67,10 @@ The following commands are useful to check the status of the Docker environment
     ; Execute a command in a running container
     $ sudo docker exec <container_id> <command>
     ; The container ID can be retrieved through the first command above
+    
+    ; Attach a docker container to the terminal
+    $ sudo docker exec -it <container_id> bash
+    ; The container ID can be retrieved through the ps command above
 
     ; Kill a container (it will not be shown anymore with `docker ps`)
     $ sudo docker kill <container_id>

@@ -108,7 +108,7 @@ class DoEditConfig:
 				nffg = readGraphFile()
 			else:
 				# in full-content mode the current state of the UN is discarded
-				nffg = NF_FG()
+				nffg = NF_FG(end_points=endpoint_list)
 				with open(constants.GRAPH_XML_FILE, 'w') as f:
 					f.write(base_xml)
 			
@@ -310,10 +310,18 @@ def processVNFs(nffg, content):
 						LOG.error("Only tcp ports are supported on L4 configuration of VNF of type '%s'", vnfType)
 						raise ClientError("Only tcp ports are supported on L4 configuration of VNF of type "+ vnfType)
 					l4_port = tmp[1]
-					uc = UnifyControl(vnf_tcp_port=int(l4_port), host_tcp_port=tcp_port)
-					unify_port_mapping[instance.id.get_value() + ":" + port_id + "/" + l4_address] = (unOrchestratorIP, tcp_port)
-					unify_control.append(uc)
-					tcp_port = tcp_port + 1
+					if instance.id.get_value() + ":" + port_id + "/" + l4_address in unify_port_mapping:
+						# Mapping already present
+						mapping = unify_port_mapping[instance.id.get_value() + ":" + port_id + "/" + l4_address]
+						mapped_port = mapping[1]
+						LOG.debug("mapping found: %d -> %d", int(l4_port), mapped_port)
+						uc = UnifyControl(vnf_tcp_port=int(l4_port), host_tcp_port=mapped_port)
+						unify_control.append(uc)
+					else:
+						uc = UnifyControl(vnf_tcp_port=int(l4_port), host_tcp_port=tcp_port)
+						unify_port_mapping[instance.id.get_value() + ":" + port_id + "/" + l4_address] = (unOrchestratorIP, tcp_port)
+						unify_control.append(uc)
+						tcp_port = tcp_port + 1
 				'''
 			# just copy the existing l4 addresses
 			elif l4_addresses is not None and instance.get_operation() is None:
@@ -404,8 +412,6 @@ def processRules(nffg, content):
 	universal_node = infrastructure.nodes.node[constants.NODE_ID]
 	flowtable = universal_node.flowtable
 
-	endpoint_id = 1
-
 	flowrules = []
 	for flowentry in flowtable:
 		if operation_type == "netconf-like":
@@ -473,19 +479,7 @@ def processRules(nffg, content):
 			if port.name.get_value() not in physicalPortsVirtualization:
 				LOG.error("Physical port "+ port.name.get_value()+" is not present in the UN")
 				raise ClientError("Physical port "+ port.name.get_value()+" is not present in the UN")
-			port_name = physicalPortsVirtualization[port.name.get_value()]
-			# Check if we need to create an endpoint or it has been already created
-			endpoint = None
-			for endp in nffg.end_points:
-				if endp.interface == port_name:
-					endpoint = endp
-					break
-			if endpoint is None:
-				while nffg.getEndPoint(str(endpoint_id)) is not None:
-					endpoint_id += 1
-				endpoint = EndPoint(_id = str(endpoint_id) ,_type = "interface", interface = port_name, name = port.name.get_value())
-				nffg.addEndPoint(endpoint)				
-				endpoint_id += 1
+			endpoint = physicalPortsVirtualization[port.name.get_value()]
 			match.port_in = "endpoint:" + endpoint.id
 		elif tokens[4] == 'NF_instances':
 			#This is a port of the NF. I have to extract the port ID and the type of the NF.
@@ -535,19 +529,7 @@ def processRules(nffg, content):
 			#This is a port of the universal node. We have to extract the ID
 			#Then, I have to retrieve the virtualized port name, and from there
 			#the real name of the port on the universal node
-			port_name = physicalPortsVirtualization[port.name.get_value()]
-			# Check if we need to create an endpoint or it has been already created			
-			endpoint = None
-			for endp in nffg.end_points:
-				if endp.interface == port_name:
-					endpoint = endp
-					break
-			if endpoint is None:
-				while nffg.getEndPoint(str(endpoint_id)) is not None:
-					endpoint_id += 1
-				endpoint = EndPoint(_id = str(endpoint_id) ,_type = "interface", interface = port_name, name = port.name.get_value())
-				nffg.addEndPoint(endpoint)
-				endpoint_id += 1
+			endpoint = physicalPortsVirtualization[port.name.get_value()]
 			flowrule.actions.append(Action(output = "endpoint:" + endpoint.id))
 		elif tokens[4] == 'NF_instances':
 			#This is a port of the NF. I have to extract the port ID and the type of the NF.
@@ -765,9 +747,11 @@ def sendToUniversalNode(nffg):
 		nffg.unify_monitoring = unify_monitoring
 	
 	#Delete endpoints that are not involved in any flowrule
+	"""
 	for endpoint in nffg.end_points[:]:
 		if not nffg.getFlowRulesSendingTrafficToEndPoint(endpoint.id) and not nffg.getFlowRulesSendingTrafficFromEndPoint(endpoint.id):
 			nffg.end_points.remove(endpoint)
+	"""
 			
 	graph_url = unOrchestratorURL + "/NF-FG/%s"
 	
@@ -857,6 +841,8 @@ def virtualizerInit():
 		
 	LOG.info("Initializing the virtualizer...")
 	
+	global endpoint_list
+	
 	if not readConfigurationFile():
 		return False
 
@@ -890,6 +876,7 @@ def virtualizerInit():
 	#virtualizer representation
 	
 	#global physicalPortsVirtualization
+	endpoint_list = []
 
 	ports = root.find('ports')
 	portID = 1
@@ -897,12 +884,15 @@ def virtualizerInit():
 		virtualized = port.find('virtualized')
 		port_description = virtualized.attrib
 		LOG.debug("physicl name: %s - virtualized name: %s - type: %s - sap: %s", port.attrib['name'], port_description['as'],port_description['port-type'],port_description['sap'])
-		physicalPortsVirtualization[port_description['as']] =  port.attrib['name']
+		#physicalPortsVirtualization[port_description['as']] =  port.attrib['name']
+		endpoint = EndPoint(_id = str(portID) ,_type = "interface", interface = port.attrib['name'], name = port_description['as'])
+		endpoint_list.append(endpoint)
+		physicalPortsVirtualization[port_description['as']] =  endpoint
 
 		portObject = Virt_Port(id=str(portID), name=port_description['as'], port_type=port_description['port-type'], sap=port_description['sap'])
 		universal_node.ports.add(portObject)	
 		portID = portID + 1
-	
+			
 	#Save the virtualizer representation on a file
 	try:
 		tmpFile = open(constants.GRAPH_XML_FILE, "w")
@@ -916,8 +906,8 @@ def virtualizerInit():
 		return False
 
 	if operation_type == "netconf-like":
-		#Initizialize the file describing the deployed graph as a json with an empty graph 
-		writeGraphFile(NF_FG(_id=graph_id))
+		#Initizialize the file describing the deployed graph as a json with an empty graph and the endpoints that are read from the portfile once.
+		writeGraphFile(NF_FG(_id=graph_id, end_points=endpoint_list))
 
 	LOG.info("The virtualizer has been initialized")
 	return True
