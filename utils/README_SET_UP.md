@@ -9,10 +9,13 @@ command:
 Then, you have to run the script `deploy.yml` as follows:
 
 	$ cd [un-orchestrator]/utils
-	$ sudo ansible-playbook --ask-sudo-pass -i "localhost," -c local  deploy.yml --extra-vars "cores=1 docker=OFF native=OFF kvm=ON double_decker=OFF gui=OFF"
+	$ sudo ansible-playbook --ask-sudo-pass -i "localhost," -c local  deploy.yml --extra-vars "cores=1 orchestrator=ON name_resolver=OFF db_init=ON docker=OFF native=OFF kvm=ON double_decker=OFF gui=OFF"
 	
 The previous command line includes some parameters that can be personalized before executing it:
 
+  * `orchestrator`: compile the un_orchestrator
+  * `name_resolver`: compile the name resolver
+  * `db_init`: compile the DB init
   * `cores`: number of CPU cores to be used to compile the Universal Node components
   * `docker`: if set to `ON`, enables the Docker execution environment
   * `native`: if set to `ON`, enables the instantiation of native network functions
