@@ -5,7 +5,7 @@
 #Requires to install ansible:
 # sudo apt-get install ansible
 #Run in with the command: 
-# sudo ansible-playbook --ask-sudo-pass -i "localhost," -c local  deploy.yml --extra-vars "cores=1 orchestrator=ON name_resolver=OFF db_init=ON docker=OFF native=OFF kvm=ON double_decker=OFF gui=OFF"
+# sudo ansible-playbook --ask-sudo-pass -i "localhost," -c local  deploy.yml --extra-vars "cores=1 orchestrator=ON name_resolver=OFF db_init=OFF docker=OFF native=OFF kvm=ON double_decker=OFF gui=OFF"
 
 #TODO: install docker if needed
 
