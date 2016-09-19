@@ -235,7 +235,7 @@
       with_items:
       - cmake -D'BUILD_Orchestrator=OFF' -D'BUILD_NameResolver=OFF' -D'BUILD_DBInitializer=ON' -D'BUILD_ExternalProjects=OFF' .
       - make -j{{ cores }}
-     when: compile_db_init == "ON"
+      when: compile_db_init == "ON"
 
     - name: "build name-resolver (with {{ cores }} cores)"
       command: "{{ item }} chdir={{ path }}/un-orchestrator"
