@@ -1,6 +1,10 @@
 #ifndef ADDRESS_VALIDATOR_H_
 #define ADDRESS_VALIDATOR_H_ 1
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+
 #pragma once
 
 #include <string>
