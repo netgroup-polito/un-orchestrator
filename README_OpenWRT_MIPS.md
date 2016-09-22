@@ -5,7 +5,7 @@ This document contains the instructions required to compile the UN for the OpenW
 In this page there is the list of all devices that are supported by OpenWrt, with the reference to a device page.
 https://wiki.openwrt.org/toh/start
 
-# How to cross-compile the un-orchestrator for MIPS architecture
+# How to compile the un-orchestrator for MIPS architecture
 
 In order to cross compile the un-orchestrator, it need to have at least 50 MB of available storage space on the device and it need to follow the following steps.
 
