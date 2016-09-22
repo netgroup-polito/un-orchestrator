@@ -149,7 +149,7 @@ $ make package/un-orchestrator/compile V=99
 
 The compilation may abort due to incorrect configuration options; if it happens you have to select the desired configuration (remember that only native functions can run on Openwrt):
 ```sh
-$ cd build_dir/target-*/un-orchestrator-*:
+$ cd build_dir/target-*/un-orchestrator-*
 $ ccmake .
 ```
 compile the UN:
