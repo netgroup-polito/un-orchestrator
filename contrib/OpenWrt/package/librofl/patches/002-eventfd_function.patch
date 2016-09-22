@@ -1,0 +1,13 @@
+Index: librofl-0.10.9/src/rofl/common/cthread.cpp
+===================================================================
+--- librofl-0.10.9.orig/src/rofl/common/cthread.cpp	2016-09-21 10:10:03.000000000 +0200
++++ librofl-0.10.9/src/rofl/common/cthread.cpp	2016-09-21 11:45:27.603301749 +0200
+@@ -41,7 +41,7 @@
+ 	}
+ 
+ 	// eventfd
+-	event_fd = eventfd(0, EFD_NONBLOCK);
++	event_fd = eventfd(0, 0);
+ 	if (event_fd < 0) {
+ 		throw eSysCall("eSysCall", "eventfd", __FILE__, __PRETTY_FUNCTION__, __LINE__);
+ 	}
