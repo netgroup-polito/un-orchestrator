@@ -3,6 +3,7 @@
 
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
+#include "high_level_element_position.h"
 
 #include <iostream>
 #include <sstream>
@@ -38,6 +39,11 @@ private:
 	*/
 	string interface;
 
+	/**
+	*	@brief: coordinates of the VNF (used and setted by the GUI)
+	*/
+	Position *position = NULL;
+
 public:
 	EndPointInterface(string id, string name, string interface);
 	
@@ -55,6 +61,8 @@ public:
 	*	@brief: return the physical interface corresponding to the endpoint
 	*/
 	string getInterface();
+
+	void setPosition(Position *position);
 
 	~EndPointInterface();
 

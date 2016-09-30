@@ -3,6 +3,7 @@
 
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
+#include "high_level_element_position.h"
 
 #include <iostream>
 #include <sstream>
@@ -42,6 +43,11 @@ private:
 	*/
 	string interface;
 
+	/**
+	*	@brief: coordinates of the VNF (used and setted by the GUI)
+	*/
+	Position *position = NULL;
+
 public:
 
 	EndPointVlan(string id, string name, string vlan_id, string interface);
@@ -49,6 +55,7 @@ public:
 	string getName();
 	string getVlanId();
 	string getInterface();
+	void setPosition(Position *position);
 
 	~EndPointVlan();
 

@@ -42,6 +42,10 @@ string EndPointVlan::getInterface()
 	return interface;
 }
 
+void EndPointVlan::setPosition(Position *position){
+	this->position=position;
+}
+
 Object EndPointVlan::toJSON()
 {
 	Object EndPointVlan, vlan;
@@ -54,7 +58,8 @@ Object EndPointVlan::toJSON()
 	vlan[IF_NAME] = interface.c_str();
 
 	EndPointVlan[VLAN] = vlan;
-
+	if(position!=NULL)
+		EndPointVlan[POSITION] = position->toJSON();
 	return EndPointVlan;
 }
 

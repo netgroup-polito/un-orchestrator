@@ -1,4 +1,5 @@
 #include "graph_parser.h"
+#include "../high_level_graph/high_level_graph_vnf.h"
 
 static const char LOG_MODULE_NAME[] = "Graph-Parser";
 
@@ -8,8 +9,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 	map<string, string> iface_id;
 	//for each endpoint (internal), contains the internal-group id
 	map<string, string > internal_id;
-	//for each endpoint (gre), contains the id
-	map<string, string> gre_id;
+	//for each endpoint (gre), contains the gre informations (local-ip, remote-ip ..)
+	map<string, gre_info_t> gre_id;
 	//for each endpoint (vlan), contains the pair vlan id, interface
 	map<string, pair<string, string> > vlan_id;
 
@@ -50,7 +51,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 				}
 				for(Object::const_iterator fg = forwarding_graph.begin(); fg != forwarding_graph.end(); fg++)
 				{
-					bool e_if = false, e_vlan = false, e_internal = false;
+					bool e_if = false, e_vlan = false, e_internal = false, e_gre=false;
 
 					string id, v_id, node, iface, e_name, ep_id, interface, in_group;
 
@@ -136,6 +137,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 #endif
 								//list of ports of the VNF
 								list<highlevel::vnf_port_t> portS;
+								// coordinates of the vnf (to be displayed by the GUI)
+								highlevel::Position *vnfPosition=NULL;
 
 								//Parse the network function
 								for(Object::const_iterator nf = network_function.begin(); nf != network_function.end(); nf++)
@@ -363,6 +366,40 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													port_descr.configuration.ip_address = p_value.getString();
 #endif
 												}
+												else if(p_name == POSITION)
+												{
+
+													try
+													{
+														p_value.getObject();
+													} catch(std::exception& e)
+													{
+														ULOG_WARN("The content does not respect the JSON syntax: \"%s\" element should be an Object", POSITION);
+														return false;
+													}
+													Object position_Object = p_value.getObject();
+													highlevel::Position *portPosition = new highlevel::Position();
+													//Parse the position object
+													for(Object::const_iterator pos = position_Object.begin(); pos != position_Object.end(); pos++) {
+														const string &pos_name = pos->first;
+														const Value &pos_value = pos->second;
+
+														if (pos_name == X_POSITION) {
+															ULOG_DBG("\"%s\"->\"%s\": \"%d\"", VNFS, X_POSITION, pos_value.getInt());
+															portPosition->setX(pos_value.getInt());
+														}
+														else if (pos_name == Y_POSITION) {
+															ULOG_DBG("\"%s\"->\"%s\": \"%d\"", VNFS, Y_POSITION, pos_value.getInt());
+															portPosition->setY(pos_value.getInt());
+														}
+														else
+														{
+															ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",pos_name.c_str(),VNFS);
+															return false;
+														}
+													}
+													port_descr.position=portPosition;
+												}
 												else
 												{
 													ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",p_name.c_str(),VNF_PORTS);
@@ -394,6 +431,39 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										}
 										ULOG_WARN("Key \"%s\" found. It is ignored in the current implementation of the %s",VNF_GROUPS,MODULE_NAME);
 									}
+									else if(nf_name == POSITION)
+									{
+
+										try
+										{
+											nf_value.getObject();
+										} catch(std::exception& e)
+										{
+											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" element should be an Object", POSITION);
+											return false;
+										}
+										Object position_Object = nf_value.getObject();
+										vnfPosition = new highlevel::Position();
+										//Parse the position object
+										for(Object::const_iterator pos = position_Object.begin(); pos != position_Object.end(); pos++) {
+											const string &pos_name = pos->first;
+											const Value &pos_value = pos->second;
+
+											if (pos_name == X_POSITION) {
+												ULOG_DBG("\"%s\"->\"%s\": \"%d\"", VNFS, X_POSITION, pos_value.getInt());
+												vnfPosition->setX(pos_value.getInt());
+											}
+											else if (pos_name == Y_POSITION) {
+												ULOG_DBG("\"%s\"->\"%s\": \"%d\"", VNFS, Y_POSITION, pos_value.getInt());
+												vnfPosition->setY(pos_value.getInt());
+											}
+											else
+											{
+												ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",pos_name.c_str(),VNFS);
+												return false;
+											}
+										}
+									}
 									else
 									{
 										ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",nf_name.c_str(),VNFS);
@@ -411,6 +481,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 #else
 								highlevel::VNFs vnfs(id, name, groups, vnf_template, portS);
 #endif
+                                if(vnfPosition!=NULL)
+                                	vnfs.setPosition(vnfPosition);
 								graph.addVNF(vnfs);
 								portS.clear();
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
@@ -469,7 +541,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 								//This is a endpoints, with a name, a type, and an interface
 								Object end_points = end_points_array[ep].getObject();
-
+								highlevel::Position *endpointPosition = NULL;
 								//Iterate on the elements of an endpoint
 								for(Object::const_iterator aep = end_points.begin(); aep != end_points.end(); aep++)
 								{
@@ -624,6 +696,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											return false;
 										}
 
+										e_gre=true;
+
 										//In order to get e-d-point ID (it wil be parsed later)
 										Object::const_iterator aep2 = aep;
 										aep2++;
@@ -638,11 +712,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 										}
 
-
 										try
 										{
-											string local_ip, remote_ip, interface, ttl, gre_key;
-											bool safe = false;
+											gre_info_t gre_info;
 
 											bool found_local_ip = false, found_remote_ip = false, found_key = false;
 
@@ -657,31 +729,31 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												{
 													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,LOCAL_IP,epi_value.getString().c_str());
 													found_local_ip = true;
-													local_ip = epi_value.getString();
+													gre_info.local_ip = epi_value.getString();
 												}
 												else if(epi_name == REMOTE_IP)
 												{
 													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,REMOTE_IP,epi_value.getString().c_str());
 													found_remote_ip = true;
-													remote_ip = epi_value.getString();
+													gre_info.remote_ip = epi_value.getString();
 												}
 												else if(epi_name == TTL)
 												{
 													ULOG_DBG_INFO("\"%s\"->\"%s\": \"%s\"",EP_GRE,TTL,epi_value.getString().c_str());
 
-													ttl = epi_value.getString();
+													gre_info.ttl = epi_value.getString();
 												}
 												else if(epi_name == GRE_KEY)
 												{
 													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,GRE_KEY,epi_value.getString().c_str());
 													found_key = true;
-													gre_key = epi_value.getString();
+													gre_info.key = epi_value.getString();
 												}
 												else if(epi_name == SAFE)
 												{
 													ULOG_DBG_INFO("\"%s\"->\"%s\": \"%d\"",EP_GRE,SAFE,epi_value.getBool());
 
-													safe = epi_value.getBool();
+													gre_info.safe = epi_value.getBool();
 												}
 												else
 												{
@@ -696,17 +768,45 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												return false;
 											}
 
-											gre_id[id] = local_ip;
-
-											//Add gre-tunnel end-points
-											highlevel::EndPointGre ep_gre(id, e_name, local_ip, remote_ip, gre_key, ttl, safe);
-
-											graph.addEndPointGre(ep_gre);
+											gre_id[id] = gre_info;
 										}
 										catch(std::exception& e)
 										{
 											ULOG_DBG_INFO("The \"%s\" element does not respect the JSON syntax: \"%s\"", EP_GRE, e.what());
 											return false;
+										}
+									}
+									else if(ep_name == POSITION)
+									{
+
+										try
+										{
+											ep_value.getObject();
+										} catch(std::exception& e)
+										{
+											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" element should be an Object", POSITION);
+											return false;
+										}
+										Object position_Object = ep_value.getObject();
+										endpointPosition = new highlevel::Position();
+										//Parse the position object
+										for(Object::const_iterator pos = position_Object.begin(); pos != position_Object.end(); pos++) {
+											const string &pos_name = pos->first;
+											const Value &pos_value = pos->second;
+
+											if (pos_name == X_POSITION) {
+												ULOG_DBG("\"%s\"->\"%s\": \"%d\"", END_POINTS, X_POSITION, pos_value.getInt());
+												endpointPosition->setX(pos_value.getInt());
+											}
+											else if (pos_name == Y_POSITION) {
+												ULOG_DBG("\"%s\"->\"%s\": \"%d\"", END_POINTS, Y_POSITION, pos_value.getInt());
+												endpointPosition->setY(pos_value.getInt());
+											}
+											else
+											{
+												ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",pos_name.c_str(),END_POINTS);
+												return false;
+											}
 										}
 									}
 									else
@@ -718,6 +818,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								{
 									//FIXME: are we sure that "interface" has been specified?
 									highlevel::EndPointInterface ep_if(id, e_name, interface);
+									if(endpointPosition!=NULL)
+										ep_if.setPosition(endpointPosition);
 									graph.addEndPointInterface(ep_if);
 									e_if = false;
 								}
@@ -725,6 +827,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								else if(e_internal)
 								{
 									highlevel::EndPointInternal ep_internal(id, e_name, in_group);
+									if(endpointPosition!=NULL)
+										ep_internal.setPosition(endpointPosition);
 									graph.addEndPointInternal(ep_internal);
 
 									e_internal = false;
@@ -734,9 +838,22 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								{
 									//FIXME: are we sure that "interface" and "v_id" have been specified?
 									highlevel::EndPointVlan ep_vlan(id, e_name, v_id, interface);
+									if(endpointPosition!=NULL)
+										ep_vlan.setPosition(endpointPosition);
 									graph.addEndPointVlan(ep_vlan);
 									e_vlan = false;
 								}
+									//Add gre-tunnel end-points
+								else if(e_gre)
+								{
+									gre_info_t gre_info = gre_id[id];
+									highlevel::EndPointGre ep_gre(id, e_name, gre_info.local_ip, gre_info.remote_ip, gre_info.key, gre_info.ttl, gre_info.safe);
+									if(endpointPosition!=NULL)
+										ep_gre.setPosition(endpointPosition);
+									graph.addEndPointGre(ep_gre);
+									e_gre = false;
+								}
+
 							}//End iteration on the endpoints
 						}
 						catch(std::exception& e)
@@ -997,7 +1114,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																map<string,string>::iterator it = iface_id.find(epID);
 																map<string,string>::iterator it1 = internal_id.find(epID);
 																map<string,pair<string,string> >::iterator it2 = vlan_id.find(epID);
-																map<string,string>::iterator it3 = gre_id.find(epID);
+																map<string,gre_info_t>::iterator it3 = gre_id.find(epID);
 																if(it != iface_id.end())
 																{
 																	//physical port

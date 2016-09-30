@@ -259,6 +259,8 @@ SET(SOURCES1
 	node_resource_manager/graph/high_level_graph/high_level_graph.cc
 	node_resource_manager/graph/high_level_graph/high_level_match.h
 	node_resource_manager/graph/high_level_graph/high_level_match.cc
+	node_resource_manager/graph/high_level_graph/high_level_element_position.h
+	node_resource_manager/graph/high_level_graph/high_level_element_position.cc
 
 	network_controller/switch_manager/switch_manager.h
 	network_controller/switch_manager/addNFports_in.h

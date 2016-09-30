@@ -105,7 +105,7 @@ unsigned int MatchParser::epPort(string name_port)
 	return nfPort(name_port);
 }
 
-bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, highlevel::Graph &graph)
+bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,gre_info_t> &gre_id, highlevel::Graph &graph)
 {
 	bool foundOne = false;
 	bool foundEndPointID = false, foundProtocolField = false, definedInCurrentGraph = false;
@@ -215,7 +215,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, highlevel::
 					map<string,string>::iterator it = iface_id.find(eP);
 					map<string,string>::iterator it1 = internal_id.find(eP);
 					map<string,pair<string,string> >::iterator it2 = vlan_id.find(eP);
-					map<string,string>::iterator it3 = gre_id.find(eP);
+					map<string,gre_info_t>::iterator it3 = gre_id.find(eP);
 					if(it != iface_id.end())
 					{
 						//physical port
