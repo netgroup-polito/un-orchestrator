@@ -159,7 +159,7 @@ possibilities from the ones listed in this section.
 In order to support the Docker execution environment, follow the instructions
 provided here:
 
-	http://docs.docker.com/installation/
+	http://docs.docker.com/engine/installation/
 
 ### QEMU/KVM/Libvirt
 

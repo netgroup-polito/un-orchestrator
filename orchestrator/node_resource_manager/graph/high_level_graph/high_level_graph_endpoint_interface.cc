@@ -35,6 +35,10 @@ string EndPointInterface::getInterface()
 	return interface;
 }
 
+void EndPointInterface::setPosition(Position *position){
+	this->position=position;
+}
+
 Object EndPointInterface::toJSON()
 {
 	Object EndPointInterface, iface;
@@ -46,7 +50,8 @@ Object EndPointInterface::toJSON()
 	iface[IF_NAME] = interface.c_str();
 
 	EndPointInterface[EP_IFACE] = iface;
-
+	if(position!=NULL)
+		EndPointInterface[POSITION] = position->toJSON();
 	return EndPointInterface;
 }
 

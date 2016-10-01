@@ -149,6 +149,10 @@
 				#define OUT_TO_QUEUE		"output_to_queue"
 				#define DROP 				"drop"
 				#define OUTPUT_TO_CTRL		"output_to_controller"
+	#define POSITION	"gui-position"
+		#define X_POSITION	"x"
+		#define Y_POSITION	"y"
+
 
 /*
 *	Misc

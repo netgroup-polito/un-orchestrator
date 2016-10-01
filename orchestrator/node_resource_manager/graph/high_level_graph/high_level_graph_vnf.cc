@@ -24,7 +24,6 @@ VNFs::VNFs(string id, string name, list<string> groups, string vnf_template, lis
 
 VNFs::~VNFs()
 {
-
 }
 
 bool VNFs::operator==(const VNFs &other) const
@@ -102,6 +101,11 @@ map<unsigned int, port_network_config > VNFs::getPortsID_configuration()
 	return mapping;
 }
 
+
+void VNFs::setPosition(Position *position){
+	this->position=position;
+}
+
 Object VNFs::toJSON()
 {
 	Object vnf;
@@ -134,9 +138,14 @@ Object VNFs::toJSON()
 		if(p->configuration.trusted)
 			pp[PORT_TRUSTED] = p->configuration.trusted;
 
+		if(p->position!=NULL)
+			pp[POSITION] = p->position->toJSON();
+
 		portS.push_back(pp);
 	}
 	vnf[VNF_PORTS] = portS;
+	if(position!=NULL)
+		vnf[POSITION] = position->toJSON();
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	for(list<port_mapping_t>::iterator c = control_ports.begin(); c != control_ports.end(); c++)

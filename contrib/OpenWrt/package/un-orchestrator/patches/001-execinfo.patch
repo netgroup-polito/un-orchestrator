@@ -1,0 +1,12 @@
+Index: un-orchestrator-1.0.0/orchestrator/node_orchestrator.cc
+===================================================================
+--- un-orchestrator-1.0.0.orig/orchestrator/node_orchestrator.cc	2016-09-21 12:55:12.000000000 +0200
++++ un-orchestrator-1.0.0/orchestrator/node_orchestrator.cc	2016-09-21 15:38:15.063778898 +0200
+@@ -24,7 +24,6 @@
+ #include <INIReader.h>
+ 
+ #include <signal.h>
+-#include <execinfo.h>
+ #include <sys/types.h>
+ #include <ucontext.h>
+ #ifdef __x86_64__

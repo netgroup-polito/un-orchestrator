@@ -57,6 +57,10 @@ bool EndPointGre::isSafe()
 	return is_safe;
 }
 
+void EndPointGre::setPosition(Position *position){
+	this->position=position;
+}
+
 Object EndPointGre::toJSON()
 {
 	Object EndPointGre, iface;
@@ -73,7 +77,8 @@ Object EndPointGre::toJSON()
 	iface[SAFE] = is_safe;
 
 	EndPointGre[EP_GRE] = iface;
-
+	if(position!=NULL)
+		EndPointGre[POSITION] = position->toJSON();
 	return EndPointGre;
 }
 

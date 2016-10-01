@@ -3,6 +3,7 @@
 
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
+#include "high_level_element_position.h"
 
 #include <iostream>
 #include <sstream>
@@ -38,12 +39,18 @@ private:
 	*/
 	string group;
 
+	/**
+	*	@brief: coordinates of the VNF (used and setted by the GUI)
+	*/
+	Position *position = NULL;
+
 public:
 
 	EndPointInternal(string id, string name, string group);
 	string getId();
 	string getName();
 	string getGroup();
+	void setPosition(Position *position);
 
 	~EndPointInternal();
 

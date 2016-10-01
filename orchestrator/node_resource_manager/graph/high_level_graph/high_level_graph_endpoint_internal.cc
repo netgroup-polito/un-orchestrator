@@ -37,6 +37,10 @@ string EndPointInternal::getGroup()
 	return group;
 }
 
+void EndPointInternal::setPosition(Position *position){
+	this->position=position;
+}
+
 Object EndPointInternal::toJSON()
 {
 	Object EndPointInternal, internal;
@@ -48,7 +52,8 @@ Object EndPointInternal::toJSON()
 	internal[INTERNAL_GROUP] = group;
 
 	EndPointInternal[EP_INTERNAL] = internal;
-
+	if(position!=NULL)
+		EndPointInternal[POSITION] = position->toJSON();
 	return EndPointInternal;
 }
 

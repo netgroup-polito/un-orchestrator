@@ -18,6 +18,15 @@
 using namespace json_spirit;
 using namespace std;
 
+typedef struct
+{
+	string local_ip;
+	string remote_ip;
+	string key;
+	string ttl;
+	bool safe=false;
+}gre_info_t;
+
 class MatchParser
 {
 
@@ -32,7 +41,7 @@ protected:
 	static string epName(string name_port);
 	static unsigned int epPort(string name_port);
 
-	static bool parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string > &internal_id, map<string,pair<string,string> > &vlan_id, map<string,string> &gre_id, list<string> &hoststack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses);
+	static bool parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string > &internal_id, map<string,pair<string,string> > &vlan_id, map<string,gre_info_t> &gre_id, list<string> &hoststack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses);
 
 public:
 	static string graphID(string name_port);

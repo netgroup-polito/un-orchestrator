@@ -5,6 +5,7 @@
 #include "../../../utils/constants.h"
 
 #include "nf_port_configuration.h"
+#include "high_level_element_position.h"
 
 #include <iostream>
 #include <sstream>
@@ -39,6 +40,7 @@ typedef struct
 	string id;
 	string name;
 	port_network_config_t configuration;
+	Position *position=NULL;
 }vnf_port_t;
 
 class VNFs
@@ -68,6 +70,11 @@ private:
 	*	@brief: the list of ports  of the VNF
 	*/
 	list<vnf_port_t> ports;
+
+	/**
+	*	@brief: coordinates of the VNF (used and setted by the GUI)
+	*/
+	Position *position = NULL;
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	/**
@@ -127,6 +134,8 @@ public:
 	*			ports of the VNF
 	*/
 	map<unsigned int, port_network_config > getPortsID_configuration();
+
+	void setPosition(Position *position);
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	/*

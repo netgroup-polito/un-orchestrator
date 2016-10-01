@@ -3,6 +3,7 @@
 
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
+#include "high_level_element_position.h"
 
 #include <iostream>
 #include <sstream>
@@ -57,6 +58,11 @@ private:
 	*/
 	bool is_safe;
 
+	/**
+	*	@brief: coordinates of the VNF (used and setted by the GUI)
+	*/
+	Position *position = NULL;
+
 public:
 
 	EndPointGre(string id, string name, string local_ip, string remote_ip, string gre_key, string ttl, bool is_safe);
@@ -95,6 +101,8 @@ public:
 	*	@brief: return true in case secure GRE is required for this endpoint
 	*/	
 	bool isSafe();
+
+	void setPosition(Position *position);
 
 	~EndPointGre();
 

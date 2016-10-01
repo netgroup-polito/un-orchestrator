@@ -5,7 +5,7 @@
 #Requires to install ansible:
 # sudo apt-get install ansible
 #Run in with the command: 
-# sudo ansible-playbook --ask-sudo-pass -i "localhost," -c local  deploy.yml --extra-vars "cores=1 docker=OFF native=OFF kvm=ON double_decker=OFF gui=OFF"
+# sudo ansible-playbook --ask-sudo-pass -i "localhost," -c local  deploy.yml --extra-vars "cores=1 orchestrator=ON name_resolver=OFF db_init=OFF docker=OFF native=OFF kvm=ON double_decker=OFF gui=OFF"
 
 #TODO: install docker if needed
 
@@ -16,6 +16,9 @@
     enable_docker: '{{ docker }}'
     enable_native: '{{ native }}'
     enable_gui: '{{ gui }}'
+    compile_name_resolver: '{{ name_resolver }}'
+    compile_db_init: '{{ db_init }}'
+    compile_orchestrator: '{{ orchestrator }}'
   
   tasks:
     - name: "updates apt"
@@ -168,14 +171,6 @@
       - make -j{{ cores }}
       - make install
 
-    - name: "unzip inih"
-      unarchive: src={{ path }}/un-orchestrator/contrib/inih.zip dest={{ path }} copy=no
-      
-    - name: "build inih"
-      shell: "{{ item }} chdir={{ path }}/inih"
-      with_items:
-      - cp -r * ../un-orchestrator/orchestrator/node_resource_manager/database_manager/SQLite
-
     - name: "fetch OVS"
       get_url: url="http://openvswitch.org/releases/openvswitch-2.4.0.tar.gz" dest={{ path }}
       
@@ -236,19 +231,22 @@
       when: enable_gui == "ON"
 
     - name: "build database initializer (with {{ cores }} cores)"
-      command: "{{ item }} chdir={{ path }}/un-orchestrator/db_initializer"
+      command: "{{ item }} chdir={{ path }}/un-orchestrator"
       with_items:
-      - cmake .
+      - cmake -D'BUILD_Orchestrator=OFF' -D'BUILD_NameResolver=OFF' -D'BUILD_DBInitializer=ON' -D'BUILD_ExternalProjects=OFF' .
       - make -j{{ cores }}
+      when: compile_db_init == "ON"
 
     - name: "build name-resolver (with {{ cores }} cores)"
-      command: "{{ item }} chdir={{ path }}/un-orchestrator/name-resolver"
+      command: "{{ item }} chdir={{ path }}/un-orchestrator"
       with_items:
-      - cmake .
+      - cmake -D'BUILD_Orchestrator=OFF' -D'BUILD_NameResolver=ON' -D'BUILD_DBInitializer=OFF' -D'BUILD_ExternalProjects=OFF' .
       - make -j{{ cores }}
+      when: compile_name_resolver == "ON"
 
     - name: "build orchestrator (with {{ cores }} cores)"
-      command: "{{ item }} chdir={{ path }}/un-orchestrator/orchestrator"
+      command: "{{ item }} chdir={{ path }}/un-orchestrator"
       with_items:
-      - cmake  -D'ENABLE_KVM={{ enable_kvm }}' -D'ENABLE_DOCKER={{ enable_docker}}' -D'ENABLE_DOUBLE_DECKER_CONNECTION={{ dd }}' -D'ENABLE_NATIVE={{ enable_native }}' .
+      - cmake  -D'BUILD_Orchestrator=ON' -D'BUILD_NameResolver=OFF' -D'BUILD_DBInitializer=OFF' -D'BUILD_ExternalProjects=OFF' -D'ENABLE_KVM={{ enable_kvm }}' -D'ENABLE_DOCKER={{ enable_docker}}' -D'ENABLE_DOUBLE_DECKER_CONNECTION={{ dd }}' -D'ENABLE_NATIVE={{ enable_native }}' .
       - make -j{{ cores }}
+      when: compile_orchestrator == "ON"
