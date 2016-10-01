@@ -46,6 +46,10 @@ hoststack_conf_t EndPointHostStack::getConfiguration()
 	return configuration;
 }
 
+void EndPointHostStack::setPosition(Position *position){
+	this->position=position;
+}
+
 Object EndPointHostStack::toJSON()
 {
 	Object EndPointHoststack, hostStack;
@@ -70,7 +74,8 @@ Object EndPointHostStack::toJSON()
 	if(macAddress!="")
 		hostStack[MAC_ADDRESS] = macAddress.c_str();
 	EndPointHoststack[EP_HOSTSTACK] = hostStack;
-
+	if(position!=NULL)
+		EndPointHoststack[POSITION] = position->toJSON();
 	return EndPointHoststack;
 }
 

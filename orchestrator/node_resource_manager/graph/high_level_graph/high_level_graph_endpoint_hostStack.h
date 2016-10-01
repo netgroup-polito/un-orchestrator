@@ -3,6 +3,7 @@
 
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
+#include "high_level_element_position.h"
 
 #include <iostream>
 #include <sstream>
@@ -51,6 +52,11 @@ private:
 	*/
 	string macAddress;
 
+	/**
+	*	@brief: coordinates of the endpoint (used and setted by the GUI)
+	*/
+	Position *position = NULL;
+
 public:
 
 	EndPointHostStack(string id, string name, hoststack_conf_t configuration, string ipAddress, string macAddress);
@@ -79,6 +85,8 @@ public:
 	*	@brief: return the configuration type
 	*/
 	hoststack_conf_t getConfiguration();
+
+	void setPosition(Position *position);
 
 	~EndPointHostStack();
 

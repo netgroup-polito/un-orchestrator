@@ -882,6 +882,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										}
 
 										highlevel::EndPointHostStack ep_hs(id, e_name, configuration, ipAddress, macAddress);
+										if(endpointPosition!=NULL)
+											ep_hs.setPosition(endpointPosition);
 										graph.addEndPointHostStack(ep_hs);
 										hostStack_id.push_back(id);
 									}
