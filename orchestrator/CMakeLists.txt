@@ -100,6 +100,16 @@ OPTION(
 	OFF
 )
 
+
+OPTION(
+		ENABLE_IMOLA_COMPILATION
+		"Turn on to support the compilation on imola5"
+		OFF
+)
+IF(ENABLE_IMOLA_COMPILATION)
+	ADD_DEFINITIONS(-DENABLE_IMOLA_COMPILATION)
+ENDIF(ENABLE_IMOLA_COMPILATION)
+
 #################################################################################################################
 
 OPTION(
