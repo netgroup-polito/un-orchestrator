@@ -15,7 +15,7 @@ uint64_t dnumber = 1;
 
 //gnumber: progressive number assigned to gre ports
 //hsnumber: progressive number assigned to hoststack ports
-int pnumber = 1, nfnumber = 0, gnumber = 0, hsnumber=0;
+int pnumber = 1, nfnumber = 0, gnumber = 1, hsnumber=0;
 
 /* Transaction ID */
 static int tid = 0;
@@ -32,6 +32,8 @@ map<uint64_t, list<string> > port_l;
 map<uint64_t, list<string> > gre_endpoint_l;
 /*switch id, list of hoststack endpoint (ID)*/
 map<uint64_t, list<string> > hoststack_endpoint_l;
+// switch id, (gre port id, gre port name)
+map<uint64_t, map<string, string> > gre_endpoints_name;
 /*switch id, list of virtual link name*/
 map<uint64_t, list<string> > vport_l;
 /*switch id, list of ports uuid*/
@@ -534,9 +536,11 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 
 			add_endpoint(dnumber, local_ip, remote_ip, key, port_name, ifac, s, is_safe);
 
-			gre_endpoints_ports[id] = rnumber-1;
 
+			gre_endpoints_ports[id] = rnumber-1;
+			gre_endpoints_name[dnumber][id] = string(port_name);
 			gre_endpoint_l[dnumber].push_back(id);
+
 		}
 	}
 
@@ -1081,6 +1085,21 @@ void commands::add_endpoint(uint64_t dpi, char local_ip[BUF_SIZE], char remote_i
 {
 	ULOG_DBG_INFO("add_endpoint(local ip=%s,remote ip=%s,key=%s,port name=%s,iface=%s)",local_ip,remote_ip,key,port_name,ifac);
 
+#ifdef ENABLE_IMOLA_COMPILATION //workaround to create gre tunnel in an other way
+	//create a tunnel port
+	stringstream cmd_tunnel_port;
+	cmd_tunnel_port << getenv("un_script_path") << CREATE_IP_LINK_TUNNEL << " " << port_name << " " << local_ip << " " << remote_ip << " " << key;
+	ULOG_DBG_INFO("Executing command \"%s\"", cmd_tunnel_port.str().c_str());
+
+	int retVal = system(cmd_tunnel_port.str().c_str());
+	retVal = retVal >> 8;
+	if(retVal == 0) {
+		ULOG_WARN("Failed to create tunnel port");
+		throw OVSDBManagerException();
+	}
+	// add the new port to ovs
+#endif
+
 	ssize_t nwritten;
 
 	char read_buf[BUFFER_SIZE] = "";
@@ -1110,17 +1129,17 @@ void commands::add_endpoint(uint64_t dpi, char local_ip[BUF_SIZE], char remote_i
 
 	/*Insert an Interface*/
 	row["name"] = port_name;
-	//test if gre tunnel required is safe or unsafe
-	if(strcmp(is_safe, "true") == 0)
-		row["type"] = "ipsec_gre";
-	else
-		row["type"] = "gre";
-
 	row["admin_state"] = "up";
 	row["link_state"] = "up";
 	row["ofport"] = rnumber;
 	row["ofport_request"] = rnumber;
 
+#ifndef ENABLE_IMOLA_COMPILATION
+	//test if gre tunnel required is safe or unsafe
+	if(strcmp(is_safe, "true") == 0)
+		row["type"] = "ipsec_gre";
+	else
+		row["type"] = "gre";
 	/*Add options local_ip, remote_ip and key*/
 	peer.push_back("map");
 
@@ -1160,7 +1179,8 @@ void commands::add_endpoint(uint64_t dpi, char local_ip[BUF_SIZE], char remote_i
 
 	peer.push_back(peer1);
 
-    	row["options"] = peer;
+    row["options"] = peer;
+#endif
 
 	first_obj["row"] = row;
 
@@ -1532,6 +1552,24 @@ void commands::cmd_editconfig_lsi_delete(uint64_t dpi, int s)
 
 	//disconnect socket
 	cmd_disconnect(s);
+
+#ifdef ENABLE_IMOLA_COMPILATION
+	//destroy a tunnel ports attached to removed Bridge
+
+	//map of [gre id - gre name] of a given switch id
+	map<string,string> gre_map = gre_endpoints_name[dpi];
+	//iterate on all the gre tunnels that are part of this bridge
+	for(map<string,string>::iterator gre_info = gre_map.begin(); gre_info != gre_map.end(); gre_info++){
+		stringstream cmd_tunnel_port;
+		cmd_tunnel_port << getenv("un_script_path") << DESTROY_IP_LINK_TUNNEL << " " << gre_info->second ;
+		ULOG_DBG_INFO("Executing command \"%s\"", cmd_tunnel_port.str().c_str());
+
+		system(cmd_tunnel_port.str().c_str());
+	}
+	gport_uuid.erase(dpi);
+	gre_endpoint_l.erase(dpi);
+	gre_endpoints_name.erase(dpi);
+#endif
 }
 
 AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi, int socketNumber)
@@ -1588,6 +1626,7 @@ AddEndpointOut *commands::cmd_editconfig_endpoint(AddEndpointIn aepi, int s)
 	//create endpoint
 	add_endpoint(aepi.getDpid(), local_ip, remote_ip, key, port_name, ifac, s, safe);
 
+	gre_endpoints_name[aepi.getDpid()][id]=string(port_name);
 	gre_endpoint_l[aepi.getDpid()].push_back(id);
 
 	apf = new AddEndpointOut(aepi.getEPname(), rnumber-1);
@@ -1808,8 +1847,8 @@ void commands::cmd_editconfig_endpoint_delete(DestroyEndpointIn depi, int s){
 
 //	map<string, unsigned int> ports;
 
-	string ep_name = depi.getEPname();
-	ULOG_DBG_INFO("endpoint_delete(name=%s)",ep_name.c_str());
+	string gre_id = depi.getEPname();
+	ULOG_DBG_INFO("endpoint_delete(name=%s)",gre_id.c_str());
 
 	Object root, first_obj, second_obj, row;
 	Array params, iface, iface1, iface2, where, port1, port2, i_array;
@@ -1823,7 +1862,7 @@ void commands::cmd_editconfig_endpoint_delete(DestroyEndpointIn depi, int s){
 	//connect socket
 	s = cmd_connect();
 
-	if(ep_name.compare("") != 0){
+	if(gre_id.compare("") != 0){
 
 		root["method"] = "transact";
 
@@ -1857,7 +1896,7 @@ void commands::cmd_editconfig_endpoint_delete(DestroyEndpointIn depi, int s){
 		//iterate on all the gre tunnels that are part of this bridge
 		for(list<string>::iterator u = ep_l.begin(); u != ep_l.end(); u++){
 			string s = (*u);
-			if(s.compare(ep_name) == 0){
+			if(s.compare(gre_id) == 0){
 				gport_uuid[depi.getDpid()].remove((*uu));
 				ep_l.erase(u);
 				gre_endpoint_l[depi.getDpid()] = ep_l;
@@ -1977,6 +2016,15 @@ void commands::cmd_editconfig_endpoint_delete(DestroyEndpointIn depi, int s){
 		tid++;
 
 		cmd_disconnect(s);
+
+#ifdef ENABLE_IMOLA_COMPILATION
+		//destroy a tunnel port
+		stringstream cmd_tunnel_port;
+		cmd_tunnel_port << getenv("un_script_path") << DESTROY_IP_LINK_TUNNEL << " " << gre_endpoints_name[depi.getDpid()][gre_id] ;
+		ULOG_DBG_INFO("Executing command \"%s\"", cmd_tunnel_port.str().c_str());
+		system(cmd_tunnel_port.str().c_str());
+		gre_endpoints_name[depi.getDpid()].erase(gre_id);
+#endif
 	}
 }
 

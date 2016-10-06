@@ -6,6 +6,8 @@
 */
 #define ACTIVATE_INTERFACE			"./network_controller/switch_manager/plugins/ovs-ovsdb/scripts/activate_interface.sh"
 #define CREATE_VETH_PAIR			"./network_controller/switch_manager/plugins/ovs-ovsdb/scripts/create_veth_pair.sh"
+#define CREATE_IP_LINK_TUNNEL       "./network_controller/switch_manager/plugins/ovs-ovsdb/scripts/create_ip_link_tunnel.sh"
+#define DESTROY_IP_LINK_TUNNEL       "./network_controller/switch_manager/plugins/ovs-ovsdb/scripts/destroy_ip_link_tunnel.sh"
 #ifdef ENABLE_OVSDB_DPDK
 	#define PREP_USVHOST_PORT			"./network_controller/switch_manager/plugins/ovs-ovsdb/scripts/prep_usvhost.sh"
 #endif
