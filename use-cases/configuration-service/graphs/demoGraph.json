@@ -1,0 +1,350 @@
+{
+  "forwarding-graph": {
+    "id": "bootLanGraph",
+    "name": "lan graph",
+    "VNFs": [
+      {
+        "id": "dhcp",
+        "name": "dhcp_config",
+        "gui-position" : {
+        	"x":367,
+        	"y":367
+        },
+        "ports": [
+          {
+        "gui-position" : {
+        	"x":118,
+        	"y":0
+        },
+            "id": "inout:0",
+            "name": "management",
+	    	"mac": "52:54:00:fc:92:6e",
+            "trusted": true
+          },
+	  	{
+        "gui-position" : {
+        	"x":129,
+        	"y":60
+        },
+            "id": "inout:1",
+            "name": "lan"
+          }
+        ]
+      },
+      {
+        "id": "nat",
+        "name": "nat_config",
+        "gui-position" : {
+        	"x":786,
+        	"y":358
+        },
+        "ports": [
+          {
+        "gui-position" : {
+        	"x":23,
+        	"y":0
+        },
+            "id": "inout:0",
+            "name": "management",
+	    	"mac": "52:54:00:3e:28:86",
+            "trusted": true
+          },
+          {
+        "gui-position" : {
+        	"x":10,
+        	"y":60
+        },
+            "id": "inout:1",
+            "name": "lan"
+          },
+          {
+        "gui-position" : {
+        	"x":125,
+        	"y":60
+        },
+            "id": "inout:2",
+            "name": "wan"
+          }
+        ]
+      },
+      {
+        "id": "sw-lan",
+        "name": "switch",
+        "gui-position" : {
+        	"x":579,
+        	"y":648
+        },
+        "ports": [
+          {
+        "gui-position" : {
+        	"x":0,
+        	"y":2
+        },
+            "id": "inout:1",
+            "name": "to-dhcp"
+          },
+          {
+        "gui-position" : {
+        	"x":75,
+        	"y":60
+        },
+            "id": "inout:2",
+            "name": "to-if"
+          },
+          {
+        "gui-position" : {
+        	"x":138,
+        	"y":0
+        },
+            "id": "inout:3",
+            "name": "to-nat"
+          }
+        ]
+      },
+      {
+        "id": "sw-mng",
+        "name": "switch",
+        "gui-position" : {
+        	"x":587,
+        	"y":136
+        },
+        "ports": [
+          {
+        "gui-position" : {
+        	"x":25,
+        	"y":60
+        },
+            "id": "inout:1",
+            "name": "to-dhcp"
+          },
+          {
+        "gui-position" : {
+        	"x":85,
+        	"y":0
+        },
+            "id": "inout:2",
+            "name": "to-mng"
+          },
+          {
+        "gui-position" : {
+        	"x":125,
+        	"y":60
+        },
+            "id": "inout:3",
+            "name": "to-nat"
+          }
+        ]
+      }
+    ],
+    "end-points": [
+      {
+        "gui-position" : {
+        	"x":672,
+        	"y":36
+        },
+        "id": "int-mng",
+        "name": "internal-mng",
+        "type": "internal",
+        "internal": {
+        	 "internal-group":"1"
+        }
+      },
+      {
+        "gui-position" : {
+        	"x":650,
+        	"y":880
+        },
+        "id": "if1",
+        "name": "interface",
+        "type": "interface",
+        "interface": {
+        	 "if-name": "wlan0"
+        }
+      },
+      {
+        "gui-position" : {
+        	"x":964,
+        	"y":585
+        },
+        "id": "if-wan",
+        "name": "interface",
+        "type": "interface",
+        "interface": {
+        	 "if-name": "eth0"
+        }
+      }
+    ],
+    "big-switch": {
+      "flow-rules": [
+        {
+          "id": "1",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:sw-lan:inout:1"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:dhcp:inout:1"
+            }
+          ]
+        },
+        {
+          "id": "2",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:dhcp:inout:1"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:sw-lan:inout:1"
+            }
+          ]
+        },
+        {
+          "id": "3",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:sw-lan:inout:2"
+          },
+          "actions": [
+            {
+              "output_to_port": "endpoint:if1"
+            }
+          ]
+        },
+        {
+          "id": "4",
+          "priority": 1,
+          "match": {
+            "port_in": "endpoint:if1"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:sw-lan:inout:2"
+            }
+          ]
+        },
+        {
+          "id": "5",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:sw-lan:inout:3"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:nat:inout:1"
+            }
+          ]
+        },
+        {
+          "id": "6",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:nat:inout:1"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:sw-lan:inout:3"
+            }
+          ]
+        },
+        {
+          "id": "7",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:nat:inout:0"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:sw-mng:inout:3"
+            }
+          ]
+        },
+        {
+          "id": "8",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:sw-mng:inout:3"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:nat:inout:0"
+            }
+          ]
+        },
+	{
+          "id": "9",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:dhcp:inout:0"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:sw-mng:inout:1"
+            }
+          ]
+        },
+        {
+          "id": "10",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:sw-mng:inout:1"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:dhcp:inout:0"
+            }
+          ]
+        },
+        {
+          "id": "11",
+          "priority": 1,
+          "match": {
+            "port_in": "endpoint:int-mng"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:sw-mng:inout:2"
+            }
+          ]
+        },
+        {
+          "id": "12",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:sw-mng:inout:2"
+          },
+          "actions": [
+            {
+              "output_to_port": "endpoint:int-mng"
+            }
+          ]
+        },
+		{
+          "id": "13",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:nat:inout:2"
+          },
+          "actions": [
+            {
+              "output_to_port": "endpoint:if-wan"
+            }
+          ]
+        },
+        {
+          "id": "14",
+          "priority": 1,
+          "match": {
+            "port_in": "endpoint:if-wan"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:nat:inout:2"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

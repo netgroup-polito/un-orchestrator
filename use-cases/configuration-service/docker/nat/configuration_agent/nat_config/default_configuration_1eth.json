@@ -1,0 +1,13 @@
+{
+	"config-nat:interfaces": {
+		"ifEntry": [
+			{
+				"name": "eth0",
+				"address": "10.0.0.30",
+				"configurationType": "static",
+				"type": "lan",
+				"default_gw": ""
+			}
+		]
+	}
+}

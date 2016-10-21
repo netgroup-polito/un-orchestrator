@@ -1,0 +1,20 @@
+{
+	"config-nat:interfaces": {
+		"ifEntry": [
+			{
+				"name": "eth1",
+				"configurationType": "static",
+				"type": "lan",
+				"address": "192.168.1.1",
+				"default_gw": "12.0.0.1"
+			},
+			{
+				"name": "eth2",
+				"address": "12.0.0.2",
+				"configurationType": "static",
+				"type": "wan",
+				"default_gw": "12.0.0.1"
+			}
+		]
+	}
+}

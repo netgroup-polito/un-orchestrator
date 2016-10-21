@@ -1,0 +1,103 @@
+module config-dhcp-server { 
+	namespace "http://netgroup.ipv6.polito.it/dhcp"; 
+	prefix "dhcp";
+	import ietf-inet-types { 
+		prefix inet; 
+	} 
+	description "DHCP Server configuration"; 
+	container server { 
+		description "name='Server'";
+		container globalIpPool { 
+		description "name='Global IP pool'";
+			container gatewayIp { 
+				description "name='Gateway IP'";
+				leaf gatewayIp { 
+					description "name='IP Address'";
+					type inet:ipv4-address; 
+				} 
+				leaf gatewayMask { 
+					description "tooltip='name='Netmask', Gateway IP Address Mask'"; 
+					type inet:ipv4-address; 
+				} 
+			} 
+			container sections { 
+				description "name='Pools'";
+				list section { 
+					description "name='Pool'";
+					key "sectionStartIp"; 
+					leaf sectionStartIp { 
+						description "name='Pool start IP', tooltip='IP Address'"; 
+						type inet:ipv4-address; 
+						mandatory "true"; 
+					} 
+					leaf sectionEndIp { 
+						description "name='Pool end IP', tooltip='IP Address'";  
+						type inet:ipv4-address; 
+						mandatory "false"; 
+					} 
+				} 
+			} 
+			leaf defaultLeaseTime { 
+				description "name='Default lease time', tooltip='Specifies the lease time in seconds, option code is 51.'"; 
+				type string; 
+			} 
+			leaf maxLeaseTime { 
+				description "name='Max lease time', tooltip='Specifies the lease time in seconds, option code is 51.'"; 
+				type string;
+			} 
+			leaf domainNameServer { 
+				description "name='DNS IP', tooltip='Specifies the domain name server, option code is 5.'"; 
+				type inet:ip-address; 
+			} 
+			leaf domainName { 
+				description "name='DNS name', tooltip='Specifies the domain name, option code is 15.'";type string;
+			}
+		}
+		list clients {
+			key "mac_address";
+			leaf mac_address {
+				description "name='MAC Address'";
+				type string;
+			}
+			leaf ip {
+				description "name='IP Address'";
+				type string;
+			}
+		}
+	}
+	container interfaces { 
+		description "Interfaces list";
+		list ifEntry { 
+			description "name='Iface'";
+			key "name"; 
+			leaf name { 
+				description "name='Name'";
+				type string; 
+			} 
+			leaf address { 
+				description "name='IP Address'";
+				type inet:ip-address; 
+			} 
+			leaf configurationType { 
+				description "name='Configuration type'";
+				type enumeration { 
+					enum dhcp; 
+					enum static; 
+					enum not_defined;
+				} 
+			} 
+			leaf type { 
+				description "name='Interface type'";
+				type enumeration { 
+					enum dhcp; 
+					enum config; 
+					enum not_defined;
+				} 
+			}
+			leaf default_gw { 
+				description "name='Default GW'";
+				type string; 
+			}
+		} 
+	} 
+}

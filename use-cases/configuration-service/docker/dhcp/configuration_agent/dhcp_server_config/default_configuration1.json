@@ -1,0 +1,33 @@
+{
+	"config-dhcp-server:server":{
+		"globalIpPool": {
+			"gatewayIp":{
+				"gatewayIp": "10.168.0.1",
+				"gatewayMask": "255.255.255.0"
+			},
+			"sections": {
+				"section": [{
+					"sectionStartIp": "10.168.0.50",
+					"sectionEndIp": "10.168.0.253"
+				}]
+			},
+			"defaultLeaseTime": "100",
+			"maxLeaseTime": "1000",
+			"domainNameServer": "8.8.8.8",
+			"domainName": "polito.it"
+		},
+		"clients": []
+	},
+	"config-dhcp-server:interfaces": {
+		"ifEntry": [{
+			"name": "eth1",
+			"address": "192.168.0.4",
+			"configurationType": "static",
+			"type": "dhcp",
+			"default_gw": "192.168.0.1"
+		}]
+	}
+
+
+
+}

@@ -1,0 +1,131 @@
+{
+  "forwarding-graph": {
+    "id": "00000002",
+    "name": "double decker graph",
+    "VNFs": [
+      {
+        "id": "dhcp",
+        "name": "dhcp_lan",
+        "ports": [
+          {
+            "id": "inout:0",
+            "name": "data-port"
+          }
+        ]
+      },
+      {
+        "id": "switch",
+        "name": "switch",
+        "ports": [
+          {
+            "id": "inout:0",
+            "name": "data-port"
+          },
+          {
+            "id": "inout:1",
+            "name": "data-port"
+          },
+          {
+            "id": "inout:2",
+            "name": "data-port"
+          }
+        ]
+      }
+    ],
+    "end-points": [
+      {
+        "id": "hs",
+        "name": "control",
+        "type": "host-stack",
+        "host-stack": {
+        	 "configuration": "static",
+        	 "ipv4": "10.0.0.2/24"
+        }
+      },
+      {
+        "id": "internal",
+        "name": "int",
+        "type": "internal",
+        "internal": {
+        	 "internal-group":"1"
+        }
+      }
+    ],
+    "big-switch": {
+      "flow-rules": [
+        {
+          "id": "1",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:switch:inout:0"
+          },
+          "actions": [
+            {
+              "output_to_port": "endpoint:hs"
+            }
+          ]
+        },
+        {
+          "id": "2",
+          "priority": 1,
+          "match": {
+            "port_in": "endpoint:hs"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:switch:inout:0"
+            }
+          ]
+        },
+        {
+          "id": "3",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:switch:inout:1"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:dhcp:inout:0"
+            }
+          ]
+        },
+        {
+          "id": "4",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:dhcp:inout:0"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:switch:inout:1"
+            }
+          ]
+        },
+        {
+          "id": "5",
+          "priority": 1,
+          "match": {
+            "port_in": "vnf:switch:inout:2"
+          },
+          "actions": [
+            {
+              "output_to_port": "endpoint:internal"
+            }
+          ]
+        },
+        {
+          "id": "6",
+          "priority": 1,
+          "match": {
+            "port_in": "endpoint:internal"
+          },
+          "actions": [
+            {
+              "output_to_port": "vnf:switch:inout:2"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
