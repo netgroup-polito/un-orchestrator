@@ -377,7 +377,7 @@ void GraphTranslator::handleMatchOnEndpointInternalLSI0(highlevel::Graph *graph,
 	list<OutputAction*> outputActions = action->getOutputActions();
 	for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 	{
-		assert((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION || (*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE || (*outputAction)->getType() == ACTION_ON_ENDPOINT_HOSTSTACK); //other action types are not implemented
+		assert((*outputAction)->getType() != ACTION_ON_PORT); //other action types are implemented
 
 		if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
 		{
@@ -407,6 +407,17 @@ void GraphTranslator::handleMatchOnEndpointInternalLSI0(highlevel::Graph *graph,
 			}
 			assert(vlink != tenantVirtualLinks.end());
 			lsi0Action.addOutputPort(vlink->getRemoteID());
+		}
+		else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL)
+		{
+			ULOG_DBG("Match on internal end point \"%s\", action is on internal end point \"%s\"",ss.str().c_str(),(*outputAction)->toString().c_str());
+
+			//Translate the action
+			map<string, unsigned int> internalLSIsConnectionsOfEndpoint = internalLSIsConnections[(*outputAction)->toString()];
+			unsigned int port_to_be_used = internalLSIsConnectionsOfEndpoint[graph->getID()];
+
+			lsi0Action.addOutputPort(port_to_be_used);
+
 		}
 		else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE)
 		{
