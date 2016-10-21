@@ -70,6 +70,8 @@ Object EndPointHostStack::toJSON()
 		case PPPOE:
 			hostStack[CONFIGURATION]=CONF_PPPOE;
 			break;
+		default:
+			break;
 	}
 	if(macAddress!="")
 		hostStack[MAC_ADDRESS] = macAddress.c_str();

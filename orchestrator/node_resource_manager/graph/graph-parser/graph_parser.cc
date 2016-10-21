@@ -840,7 +840,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										}
 
 										Object ep_hostStack = ep_value.getObject();
-										hoststack_conf_t configuration;
+										hoststack_conf_t configuration=NONE;
 										string ipAddress,macAddress;
 										for(Object::const_iterator eph = ep_hostStack.begin(); eph != ep_hostStack.end(); eph++)
 										{
@@ -881,6 +881,11 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 										}
 
+										if(configuration==NONE)
+										{
+											ULOG_WARN("Keywork \"%s\" must be present inside \"%s\"",CONFIGURATION, EP_HOSTSTACK);
+											return false;
+										}
 										highlevel::EndPointHostStack ep_hs(id, e_name, configuration, ipAddress, macAddress);
 										if(endpointPosition!=NULL)
 											ep_hs.setPosition(endpointPosition);
