@@ -1403,7 +1403,7 @@ void commands::add_endpoint(uint64_t dpi, char local_ip[BUF_SIZE], char remote_i
 
 void commands::cmd_editconfig_lsi_delete(uint64_t dpi, int s)
 {
-	ULOG_DBG_INFO("Deleting LSI with DPI '%u' switch '%s'",dpi, switch_id[dpi].c_str());
+	ULOG_DBG_INFO("Deleting LSI with DPI '%" PRIu64 "' switch '%s'",dpi, switch_id[dpi].c_str());
 
 	ssize_t nwritten = 0;
 
