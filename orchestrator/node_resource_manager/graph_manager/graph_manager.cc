@@ -76,20 +76,19 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 	list<highlevel::VNFs> dummy_network_functions;
 	map<string, map<unsigned int, PortType> > dummy_nfs_ports_type;
 	list<highlevel::EndPointGre> dummy_gre_endpoints;
+	list<highlevel::EndPointHostStack> dummy_hoststack_endpoints;
 	vector<VLink> dummy_virtual_links;
 
 	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), controllerPort, phyPorts, dummy_network_functions,
-	dummy_gre_endpoints,dummy_virtual_links,dummy_nfs_ports_type);
+	dummy_gre_endpoints,dummy_virtual_links,dummy_nfs_ports_type, dummy_hoststack_endpoints);
 
 	try
 	{
 		//Create a new LSI, which is the LSI-0 of the node
-		map<string, vector<string> > gre_endpoints;
-		assert(lsi->getEndpointsPorts().size() == 0);
+		assert(lsi->getGreEndpointsPorts().size() == 0);
 		map<string,nf_t>  nf_types;
 		map<string,list<nf_port_info> > netFunctionsPortsInfo;
-
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort,lsi->getPhysicalPortsName(),nf_types,netFunctionsPortsInfo,gre_endpoints,lsi->getVirtualLinksRemoteLSI(), this->un_address, this->ipsec_certificate);
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort,lsi->getPhysicalPortsName(),lsi->getHostackEndpointID(), nf_types,netFunctionsPortsInfo,lsi->getGreEndpointsDescription(),lsi->getVirtualLinksRemoteLSI(), this->un_address, this->ipsec_certificate);
 
 		CreateLsiOut *clo = switchManager.createLsi(cli);
 
@@ -114,7 +113,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 			throw GraphManagerException();
 		}
 
-		map<string, unsigned int> epsports = clo->getEndpointsPorts();
+		map<string, unsigned int> epsports = clo->getGreEndpointsPorts();
 		if(!epsports.empty())
 		{
 			ULOG_ERR("Non required endpoints ports have been attached to the lsi-0");
@@ -187,7 +186,7 @@ void GraphManager::handleInBandController(LSI *lsi, Controller *controller)
 	lsi0Match1.setEthType(2048 & 0xFFFF);
 	lsi0Match1.setInputPort(translation->second);
 
-	lowlevel::Action lsi0Action(true);
+	lowlevel::Action lsi0Action(lowlevel::ACTION_LOCAL);
 
 	//Create the rule and add it to the graph
 	//The rule ID is created as follows DEFAULT-GRAPH_ID
@@ -207,9 +206,10 @@ void GraphManager::handleInBandController(LSI *lsi, Controller *controller)
 
 	i++;
 
-	lowlevel::Match lsi0Match3(true);
+	lowlevel::Match lsi0Match3(lowlevel::MATCH_LOCAL);
 
-	lowlevel::Action lsi0Action1(translation->second);
+	lowlevel::Action lsi0Action1;
+	lsi0Action1.addOutputPort(translation->second);
 
 	//Create the rule and add it to the graph
 	//The rule ID is created as follows DEFAULT-GRAPH_ID
@@ -475,6 +475,7 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 	list<highlevel::EndPointInternal> endPointsInternal = graph->getEndPointsInternal();
 	list<highlevel::EndPointGre> endPointsGre = graph->getEndPointsGre();
 	list<highlevel::EndPointVlan> endPointsVlan = graph->getEndPointsVlan();
+	list<highlevel::EndPointHostStack> endPointsHoststack = graph->getEndPointsHostStack();
 
 	string graphID = graph->getID();
 
@@ -495,6 +496,12 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 		}
 	}
 
+	// TODO: check the validity of hoststack endpoints.
+	for(list<highlevel::EndPointHostStack>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end(); e++)
+	{
+
+	}
+
 	/**
 	*	No check is required for an internal endpoint
 	*/
@@ -504,6 +511,8 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 		string group = i->getGroup();
 		ULOG_DBG_INFO("* group: %s",group.c_str());
 	}
+
+	ULOG_DBG_INFO("The command requires %d 'hoststack' endpoints",endPointsHoststack.size());
 
 	/**
 	*	No check is required for a GRE endpoint
@@ -580,6 +589,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*		5) create the OpenFlow controller for the internal LSIs (if it does not exist yet)
 	*		6) create the internal LSI (if it does not exist yet), with the proper vlinks and download the rules in internal-LSI
 	*		7) download the rules in LSI-0, tenant-LSI
+	*		8) assigne ip address to host-stack endpoint
 	*/
 
 	/**
@@ -659,23 +669,25 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*/
 	ULOG_DBG_INFO("3) Create the LSI");
 
-
 	list<highlevel::VNFs> network_functions = graph->getVNFs();
 	list<highlevel::EndPointInternal> endpointsInternal = graph->getEndPointsInternal();
 	list<highlevel::EndPointGre> endpointsGre = graph->getEndPointsGre();
+	list<highlevel::EndPointHostStack> endpointsHoststack = graph->getEndPointsHostStack();
+
 
 	vector<set<string> > vlVector = identifyVirtualLinksRequired(graph);
 	set<string> vlNFs = vlVector[0];
 	set<string> vlPhyPorts = vlVector[1];
 	set<string> vlEndPointsGre = vlVector[2];
 	set<string> vlEndPointsInternal = vlVector[3];
+	set<string> vlEndPointsHoststack = vlVector[4];
 
 	/**
 	*	A virtual link can be used in two direction, hence it can be shared between a NF port and a physical port.
 	*	In principle a virtual link could also be shared between a NF port and an endpoint but, for simplicity, we
 	*	use separated virtual links in case of endpoint.
 	*/
-	unsigned int toUp = vlNFs.size() + vlEndPointsGre.size();
+	unsigned int toUp = vlNFs.size() + vlEndPointsGre.size() + vlEndPointsHoststack.size();
 	unsigned int toDown = vlPhyPorts.size() + vlEndPointsInternal.size();
 	unsigned int numberOfVLrequired = (toUp > toDown)? toUp : toDown;
 
@@ -686,7 +698,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		virtual_links.push_back(VLink(dpid0));
 
 	//The tenant-LSI is not connected to physical ports, but just the LSI-0
-	//through virtual links, to network functions through virtual ports, and to gre tunnels through proper ports
+	//through virtual links, to network functions through virtual ports, and to gre tunnels and hoststack endpoint through proper ports
 	set<string> dummyPhyPorts;
 
 	//Check the types of the VNFs ports
@@ -731,39 +743,14 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 	//Prepare the structure representing the new tenant-LSI
 	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), controllerPort, dummyPhyPorts, network_functions,
-		endpointsGre,virtual_links,nfs_ports_type);
+		endpointsGre,virtual_links,nfs_ports_type,endpointsHoststack);
 
 	CreateLsiOut *clo = NULL;
 	try
 	{
 		//Create a new tenant-LSI
-		map<string, vector<string> > description_gre_endpoints;
-		list<highlevel::EndPointGre> endpoints_gre = lsi->getEndpointsPorts();
-		ULOG_DBG_INFO("%d Gre endpoints must be created",endpoints_gre.size());
-		if(endpoints_gre.size() != 0)
-		{
-			vector<string> v_ep(5);
-			string iface;
-			for(list<highlevel::EndPointGre>::iterator e = endpoints_gre.begin(); e != endpoints_gre.end(); e++)
-			{
-				iface.assign(e->getId());
-				v_ep[0].assign(e->getGreKey());
-				v_ep[1].assign(e->getLocalIp());
-				v_ep[2].assign(e->getRemoteIp());
-				v_ep[3].assign(un_interface);
-				if(e->isSafe())
-					v_ep[4].assign("true");
-				else
-					v_ep[4].assign("false");
-				description_gre_endpoints[iface] = v_ep;
 
-				ULOG_DBG_INFO("\tkey: %s - local IP: %s - remote IP: %s - iface: %s",(e->getGreKey()).c_str(),(e->getLocalIp()).c_str(),(e->getRemoteIp()).c_str(),iface.c_str());
-			}
-		}
-
-		assert(description_gre_endpoints.size() == endpoints_gre.size());
-
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(), nf_types, lsi->getNetworkFunctionsPortsInfo(), description_gre_endpoints, lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), this->ipsec_certificate);
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(), lsi->getHostackEndpointID(), nf_types, lsi->getNetworkFunctionsPortsInfo(), lsi->getGreEndpointsDescription(), lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), this->ipsec_certificate);
 
 		clo = switchManager.createLsi(cli);
 
@@ -789,12 +776,34 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 			}
 		}
 
-		map<string,unsigned int > epsports = clo->getEndpointsPorts();
+		map<string,unsigned int > epsports = clo->getGreEndpointsPorts();
 		for(map<string,unsigned int >::iterator ep = epsports.begin(); ep != epsports.end(); ep++)
 		{
-			if(!lsi->setEndpointPortID(ep->first,ep->second))
+			if(!lsi->setGreEndpointPortID(ep->first, ep->second))
 			{
 				ULOG_ERR("A non-required gre end point port \"%s\" has been attached to the tenant-lsi",ep->first.c_str());
+				delete(clo);
+				throw GraphManagerException();
+			}
+		}
+
+		map<string,unsigned int > hoststackEPsports = clo->getHoststackEndpointPorts();
+		for(map<string,unsigned int >::iterator hs = hoststackEPsports.begin(); hs != hoststackEPsports.end(); hs++)
+		{
+			if(!lsi->setHoststackEndpointPortID(hs->first, hs->second))
+			{
+				ULOG_ERR("A non-required hoststack end point port \"%s\" has been attached to the tenant-lsi",hs->first.c_str());
+				delete(clo);
+				throw GraphManagerException();
+			}
+		}
+
+		map<string,string> hoststackEPsPortName = clo->getHoststackPortsName();
+		for(map<string,string >::iterator hs = hoststackEPsPortName.begin(); hs != hoststackEPsPortName.end(); hs++)
+		{
+			if(!lsi->setHoststackEndpointPortName(hs->first, hs->second))
+			{
+				ULOG_ERR("A non-required hoststack end point port \"%s\" has been attached to the tenant-lsi",hs->first.c_str());
 				delete(clo);
 				throw GraphManagerException();
 			}
@@ -836,7 +845,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 	map<string,unsigned int> lsi_ports = lsi->getPhysicalPorts();
 	set<string> nfs = lsi->getNetworkFunctionsId();
-	list<highlevel::EndPointGre > eps = lsi->getEndpointsPorts();
+	list<highlevel::EndPointGre > eps = lsi->getGreEndpointsPorts();
 	vector<VLink> vls = lsi->getVirtualLinks();
 
 	//The following code just prints information on the VNFs that are part of the graph
@@ -928,16 +937,15 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 		//associate the vlinks to the gre end points
 		ULOG_DBG_INFO("Gre endpoint is virtual link ID (up):");
-		map<string, uint64_t> endpoints_vlinks;
+		map<string, uint64_t> gre_endpoints_vlinks;
 
 		for(set<string>::iterator ep = vlEndPointsGre.begin(); ep != vlEndPointsGre.end(); ep++, vlToUp++)
 		{
-			//TODO: rename to add the word "gre" :)
-			endpoints_vlinks[*ep] = vlToUp->getID();
+			gre_endpoints_vlinks[*ep] = vlToUp->getID();
 			ULOG_DBG_INFO("\t\t%s -> %x",(*ep).c_str(),vlToUp->getID());
-		}
+		}			
 
-		lsi->setEndPointsGreVLinks(endpoints_vlinks);
+		lsi->setEndPointsGreVLinks(gre_endpoints_vlinks);
 
 		//associate the vlinks to the internal end points
 		ULOG_DBG_INFO("Internal end point is virtual link ID (down):");
@@ -949,6 +957,18 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 			ULOG_DBG_INFO("\t\t%s -> %x",(*ep).c_str(),vlToDown->getID());
 		}
 		lsi->setEndPointsVLinks(endpoints_internal_vlinks);
+
+		//associate the vlinks to the hoststack end points
+		ULOG_DBG_INFO("Hoststack endpoint is virtual link ID (up):");
+		map<string, uint64_t> endpoints_hoststack_vlinks;
+
+		for(set<string>::iterator ep = vlEndPointsHoststack.begin(); ep != vlEndPointsHoststack.end(); ep++, vlToUp++)
+		{
+			endpoints_hoststack_vlinks[*ep] = vlToUp->getID();
+			ULOG_DBG_INFO("\t\t%s -> %x",(*ep).c_str(),vlToUp->getID());
+		}
+
+		lsi->setEndPointsHoststackVLinks(endpoints_hoststack_vlinks);
 	}
 
 	/**
@@ -1121,6 +1141,23 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		ULOG_ERR("%s",e.what());
 		throw GraphManagerException();
 	}
+
+	// 8) assigne ip address to host-stack endpoint
+	map<string,string> hsPortsName = lsi->getHoststackEndpointPortName();
+	for(list<highlevel::EndPointHostStack>::iterator hs = endpointsHoststack.begin(); hs!=endpointsHoststack.end();hs++)
+	{
+		if (hs->getConfiguration()==DHCP)
+			interfaceManager.getIpAddressFromDhcp(hsPortsName[hs->getId()]);
+		else if (hs->getConfiguration()==PPPOE)
+			interfaceManager.getIpAddressFromPppoe(hsPortsName[hs->getId()]);
+		else
+			interfaceManager.setStaticIpAddress(hsPortsName[hs->getId()],hs->getIpAddress());
+
+		string macAddress= hs->getMacAddress();
+		if(macAddress!="")
+			interfaceManager.setMacAddress(hsPortsName[hs->getId()],macAddress);
+	}
+
 	return true;
 }
 
@@ -1202,20 +1239,25 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 			set<string> dummyPhyPorts;
 			list<highlevel::VNFs> dummyNetworkFunctions;
 			list<highlevel::EndPointGre> dummyEndpointsGre;
-			map<string, vector<string> > endpoints;//[ivanofrancesco] unused? It's gre endpoints FIXME
+			list<highlevel::EndPointHostStack> dummyEndpointHoststack;
 			map<string, map<unsigned int, PortType> > dummyNfsPortsType;
 
 			//Prepare the structure representing the new internal-LSI
-			LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), controllerPort, dummyPhyPorts, dummyNetworkFunctions,
-				dummyEndpointsGre,virtual_links,dummyNfsPortsType);
+			LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS),
+							   controllerPort, dummyPhyPorts, dummyNetworkFunctions,
+							   dummyEndpointsGre, virtual_links,
+							   dummyNfsPortsType,
+							   dummyEndpointHoststack);
 
 			CreateLsiOut *clo = NULL;
 			try
 			{
 				map<string, nf_t> dummyNfsPortsTypeForCli;
 				//Create a new internal-LSI
-				CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(), dummyNfsPortsTypeForCli, lsi->getNetworkFunctionsPortsInfo(), endpoints, lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), this->ipsec_certificate);
 
+				CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(),
+								lsi->getHostackEndpointID() , dummyNfsPortsTypeForCli, lsi->getNetworkFunctionsPortsInfo(), lsi->getGreEndpointsDescription(), lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), this->ipsec_certificate);
+				
 				clo = switchManager.createLsi(cli);
 
 				lsi->setDpid(clo->getDpid());
@@ -1244,7 +1286,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 					throw GraphManagerException();
 				}
 
-				map<string,unsigned int > epsports = clo->getEndpointsPorts();//FIXME this is gre endpoint
+				map<string,unsigned int > epsports = clo->getGreEndpointsPorts();//FIXME this is gre endpoint
 				if(epsports.size() > 0)
 				{
 					ULOG_ERR("A non-required gre-tunnel endpoint has been attached to the internal-lsi");
@@ -1328,7 +1370,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 			lowlevel::Match match;
 			unsigned int vlink_local_id = vl->getLocalID();
 			match.setInputPort(vlink_local_id);
-			lowlevel::Action action(false, true);
+			lowlevel::Action action(lowlevel::ACTION_NORMAL);
 
 			stringstream newRuleID;
 			newRuleID << "INTERNAL-GRAPH" << "-" << internal_group << "_" << graph->getID(); //This guarantees that the ID of the rule is unique
@@ -1382,7 +1424,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 			lowlevel::Match match;
 			unsigned int vlink_local_id = vlink.getLocalID();
 			match.setInputPort(vlink_local_id);
-			lowlevel::Action action(false, true);
+			lowlevel::Action action(lowlevel::ACTION_NORMAL);
 
 			stringstream newRuleID;
 			newRuleID << "INTERNAL-GRAPH" << "-" << internal_group << "_" << graph->getID(); //This guarantees that the ID of the rule is unique
@@ -1410,33 +1452,38 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newGraph)
 	*/
 
 	highlevel::Graph *diff_to_add = NULL;
+	highlevel::Graph *diff_to_del = NULL;
 	try
 	{
 		diff_to_add = updateGraph_add(graphID,newGraph);
+		diff_to_del = updateGraph_remove(graphID,newGraph);
 	}
 	catch(GraphManagerException e)
 	{
-		delete(diff_to_add);
-		diff_to_add = NULL;
-		return false;
-	}
-
-	if(!updateGraph_remove(graphID,newGraph))
-	{
-		delete(diff_to_add);
-		diff_to_add = NULL;
+		if(diff_to_add!=NULL)
+		{
+			delete(diff_to_add);
+			diff_to_add = NULL;
+		}
+		if(diff_to_del!=NULL)
+		{
+			delete(diff_to_del);
+			diff_to_del = NULL;
+		}
 		return false;
 	}
 
 	if(!updateGraph_add_rules(graphID,diff_to_add))
 	{
 		delete(diff_to_add);
-		diff_to_add = NULL;
+		delete(diff_to_del);
 		return false;
 	}
 
-	printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
+	delete(diff_to_add);
+	delete(diff_to_del);
 
+	printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
 	return true;
 }
 
@@ -1481,9 +1528,6 @@ bool GraphManager::updateGraph_add_rules(string graphID, highlevel::Graph *diff)
 		return false;
 	}
 
-	delete(diff);
-	diff = NULL;
-
 	return true;
 }
 
@@ -1496,6 +1540,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	*		- environment variables
 	*		- control connections
 	*	- internal endpoints not supported
+	*	- hoststack endpoints not supported
 	**/
 
 	ULOG_INFO("Updating the graph '%s' with new 'pieces'...",graphID.c_str());
@@ -1818,27 +1863,26 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	{
 #ifdef VSWITCH_IMPLEMENTATION_OVSDB
 		//fill the vector related to the endpoint params [gre key, local-ip, remote-ip, interface, isSafe]
-		vector<string> ep_param(5);
+		vector<string> ep_param(4);
 		ep_param[0] = ep->getLocalIp();
 		ep_param[1] = ep->getGreKey();
 		ep_param[2] = ep->getRemoteIp();
-		ep_param[3] = un_interface;
 		if(ep->isSafe())
-			ep_param[4] = "true";
+			ep_param[3] = "true";
 		else
-			ep_param[4] = "false";
+			ep_param[3] = "false";
 
 		ULOG_DBG_INFO("\t%s",(ep->getId()).c_str());
 
 		AddEndpointOut *aepo = NULL;
 		try
 		{
-			lsi->addEndpoint(*ep);
+			lsi->addGreEndpoint(*ep);
 			AddEndpointIn aepi(dpid,ep->getId(),ep_param);
 
 			aepo = switchManager.addEndpoint(aepi);
 
-			if(!lsi->setEndpointPortID(aepo->getEPname(), aepo->getEPid()))
+			if(!lsi->setGreEndpointPortID(aepo->getEPname(), aepo->getEPid()))
 			{
 				ULOG_ERR("A non-required gre endpoint \"%s\" has been attached to the tenant-lsi",ep->getId().c_str());
 				lsi->removeEndpoint(ep->getId());
@@ -1872,8 +1916,21 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	for(list<highlevel::EndPointInternal>::iterator ep = tmp_internal_endpoints.begin(); ep != tmp_internal_endpoints.end(); ep++)
 	{
 		//TODO: implement the creation of new internal endpoints
-		assert(0 && "The creation of new internal endpoint in the update is not supported yet!");
 		ULOG_DBG_INFO("The creation of new internal endpoint in the update is not supported yet!");
+		assert(0);
+	}
+
+	/**
+	*	3-e) condider the hoststack endpoints
+	*/
+	list<highlevel::EndPointHostStack> tmp_hoststack_endpoint = diff->getEndPointsHostStack();
+	ULOG_DBG_INFO("3-d) considering the new hoststack endpoints (%d)",tmp_hoststack_endpoint.size());
+
+	for(list<highlevel::EndPointHostStack>::iterator ep = tmp_hoststack_endpoint.begin(); ep != tmp_hoststack_endpoint.end(); ep++)
+	{
+		//TODO: implement the creation of new hoststack endpoint,
+		ULOG_DBG_INFO("The creation of new hoststack endpoint in the update is not supported yet!");
+		assert(0);
 	}
 
 	/**
@@ -1993,7 +2050,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	return diff;
 }
 
-bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph)
+highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph)
 {
 	ULOG_INFO("Updating the graph '%s' by removing parts...",graphID.c_str());
 
@@ -2023,6 +2080,7 @@ bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph
 	*		- environment variables
 	*		- control connections
 	*	- internal endpoints not supported
+	*	- hoststack endpoints not supported
 	**/
 
 	/**
@@ -2067,7 +2125,7 @@ bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph
 
 	ULOG_DBG_INFO("2) Removing the flow rules");
 	Controller *lsi0Controller = graphInfoLSI0.getController();
-
+/* vecchia
 	list<highlevel::Rule> rulesToBeRemoved = diff->getRules();
 	for(list<highlevel::Rule>::iterator rule = rulesToBeRemoved.begin(); rule != rulesToBeRemoved.end(); rule++)
 	{
@@ -2084,6 +2142,29 @@ bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph
 		ULOG_DBG_INFO("Removing the flow from the tenant-LSI graph");
 		Controller *tenantController = graphInfo.getController();
 		tenantController->removeRuleFromID(ruleID);
+	}*/
+
+	list<highlevel::Rule> rulesToBeRemoved = diff->getRules();
+	for(list<highlevel::Rule>::iterator rule = rulesToBeRemoved.begin(); rule != rulesToBeRemoved.end(); rule++)
+	{
+		string generalRuleID = rule->getRuleID();
+		ULOG_DBG_INFO("Removing the flow rule with id '%s'",generalRuleID.c_str());
+
+		// Considering the LSI-0
+		list<string> rulesIDLSI0 = getRulesIDForLSI0(*rule,graph->getID());
+		for(list<string>::iterator ruleID = rulesIDLSI0.begin(); ruleID!=rulesIDLSI0.end(); ruleID++)
+		{
+			lsi0Controller->removeRuleFromID(*ruleID);
+			graphLSI0lowLevel.removeRuleFromID(*ruleID);
+		}
+
+		// Considering the tenant-LSI
+		ULOG_DBG_INFO("Removing the flow from the tenant-LSI graph");
+		Controller *tenantController = graphInfo.getController();
+		list<string> rulesIDLSITenant = getRulesIDForLSITenant(*rule);
+		for(list<string>::iterator ruleID = rulesIDLSITenant.begin(); ruleID !=rulesIDLSITenant.end(); ruleID++)
+			tenantController->removeRuleFromID(*ruleID);
+
 	}
 
 	/**
@@ -2093,7 +2174,7 @@ bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph
 
 	ULOG_DBG_INFO("3) Removing the virtual links");
 
-	assert(removeRuleInfo.size() == rulesToBeRemoved.size());
+	assert(removeRuleInfo.size() >= rulesToBeRemoved.size());
 	for(list<RuleRemovedInfo>::iterator tbr = removeRuleInfo.begin(); tbr != removeRuleInfo.end(); tbr++)
 		removeUselessVlinks(*tbr,graph,lsi);
 
@@ -2165,7 +2246,7 @@ bool GraphManager::updateGraph_remove(string graphID, highlevel::Graph *newGraph
 
 	//TODO: , phy ports- add an error in case internal endpoints have to be removed
 
-	return true;
+	return diff;
 }
 
 void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *graph, LSI *lsi)
@@ -2198,19 +2279,23 @@ void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *gr
 			highlevel::Action *a = again->getAction();
 			highlevel::Match m = again->getMatch();
 
-			if(a->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION && (m.matchOnEndPointInternal() || m.matchOnPort() ))
+			list<OutputAction*> outputActions = a->getOutputActions();
+			for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 			{
-				//The network function port can still be used in an action, but the match should be on something not requiring the vlink: another VNF port or a gre tunnel
-
-				stringstream nf_port;
-				nf_port << ((highlevel::ActionNetworkFunction*)a)->getInfo() << "_" << ((highlevel::ActionNetworkFunction*)a)->getPort();
-				string nf_port_string = nf_port.str();
-
-				if(nf_port_string == rri.nf_port)
+				if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION && (m.matchOnEndPointInternal() || m.matchOnPort() ))
 				{
-					//The action is on the same VNF port of the removed one, hence the vlink must not be removed
-					ULOG_DBG_INFO("The vlink cannot be removed, since there are other actions expressed on the NF port '%s'",rri.nf_port.c_str());
-					return;
+					//The network function port can still be used in an action, but the match should be on something not requiring the vlink: another VNF port or a gre tunnel
+
+					stringstream nf_port;
+					nf_port << ((ActionNetworkFunction*)(*outputAction))->getInfo() << "_" << ((ActionNetworkFunction*)(*outputAction))->getPort();
+					string nf_port_string = nf_port.str();
+
+					if(nf_port_string == rri.nf_port)
+					{
+						//The action is on the same VNF port of the removed one, hence the vlink must not be removed
+						ULOG_DBG_INFO("The vlink cannot be removed, since there are other actions expressed on the NF port '%s'",rri.nf_port.c_str());
+						return;
+					}
 				}
 			}
 		}//end of again iterator on the rules of the graph
@@ -2277,15 +2362,18 @@ void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *gr
 			highlevel::Action *a = again->getAction();
 			highlevel::Match m = again->getMatch();
 
-			if(a->getType() == highlevel::ACTION_ON_ENDPOINT_GRE && (m.matchOnEndPointInternal() || m.matchOnPort()))
+			list<OutputAction*> outputActions = a->getOutputActions();
+			for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 			{
-				if(((highlevel::ActionEndPointGre*)a)->toString() == rri.endpointGre)
+				if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE && (m.matchOnEndPointInternal() || m.matchOnPort()))
 				{
-					//The action is on the same gre endpoint of the removed one, hence the vlink must not be removed
-					return;
+					if(((ActionEndpointGre*)(*outputAction))->toString() == rri.endpointGre)
+					{
+						//The action is on the same gre endpoint of the removed one, hence the vlink must not be removed
+						return;
+					}
 				}
 			}
-
 		}//end of again iterator on the rules of the graph
 
 		ULOG_DBG_INFO("Virtual link no longer required for the gre endpoint: %s",rri.endpointGre.c_str());
@@ -2345,12 +2433,16 @@ void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *gr
 			highlevel::Action *a = again->getAction();
 			highlevel::Match m = again->getMatch();
 
-			if(a->getType() == highlevel::ACTION_ON_PORT && (m.matchOnEndPointGre() || m.matchOnNF()))
+			list<OutputAction*> outputActions = a->getOutputActions();
+			for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 			{
-				if(((highlevel::ActionPort*)a)->getInfo() == rri.port)
+				if((*outputAction)->getType() == ACTION_ON_PORT && (m.matchOnEndPointGre() || m.matchOnNF()))
 				{
-					//The action are the same, hence no vlink must be removed
-					return;
+					if(((ActionPort*)(*outputAction))->getInfo() == rri.port)
+					{
+						//The action are the same, hence no vlink must be removed
+						return;
+					}
 				}
 			}
 
@@ -2414,15 +2506,18 @@ void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *gr
 			highlevel::Action *a = again->getAction();
 			highlevel::Match m = again->getMatch();
 
-			if(a->getType() == highlevel::ACTION_ON_ENDPOINT_INTERNAL  && (m.matchOnEndPointGre() || m.matchOnNF()))
+			list<OutputAction*> outputActions = a->getOutputActions();
+			for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 			{
-				if(((highlevel::ActionEndPointInternal*)a)->toString() == rri.endpointInternal)
+				if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL  && (m.matchOnEndPointGre() || m.matchOnNF()))
 				{
-					//The action is on the same endpoint of the removed one, hence the vlink must not be removed
-					return;
+					if(((ActionEndpointInternal*)(*outputAction))->toString() == rri.endpointInternal)
+					{
+						//The action is on the same endpoint of the removed one, hence the vlink must not be removed
+						return;
+					}
 				}
 			}
-
 		}//end of again iterator on the rules of the graph
 
 		ULOG_DBG_INFO("Virtual link no longer required for the internal endpoint: %s",rri.endpointInternal.c_str());
@@ -2471,71 +2566,91 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 	set<string> endPointsGre;
 	set<string> phyPorts;
 	set<string> endPointsInternal;
+	set<string> endPointsHoststack;
 
 	//The number of virtual link depends on the rules, and not on the VNF ports / endpoints of the graph
 	list<highlevel::Rule> rules = graph->getRules();
 
 	for(list<highlevel::Rule>::iterator rule = rules.begin(); rule != rules.end(); rule++)
 	{
-		highlevel::Action *action = rule->getAction();
+		list<OutputAction*> outputActions = rule->getAction()->getOutputActions();
 		highlevel::Match match = rule->getMatch();
-		if(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION)
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 		{
-			//we are considering rules as
-			//	- match: internal-25 - action: output to VNF firewall port 1
-			//	- match: interface eth0 - action: output to VNF firewall port 1
-			//Each different VNF port that is in an action matching an internal endpoint or an interface endpoint requires a different virtual link
-			if(match.matchOnPort() || match.matchOnEndPointInternal())
+			if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
 			{
-				highlevel::ActionNetworkFunction *action_nf = (highlevel::ActionNetworkFunction*)action;
-				stringstream ss;
-				ss << action->getInfo() << "_" << action_nf->getPort();
-				NFs.insert(ss.str()); //the set avoids duplications
+				//we are considering rules as
+				//	- match: internal-25 - action: output to VNF firewall port 1
+				//	- match: interface eth0 - action: output to VNF firewall port 1
+				//Each different VNF port that is in an action matching an internal endpoint or an interface endpoint requires a different virtual link
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					ActionNetworkFunction *action_nf = (ActionNetworkFunction*)(*outputAction);
+					stringstream ss;
+					ss << (*outputAction)->getInfo() << "_" << action_nf->getPort();
+					NFs.insert(ss.str()); //the set avoids duplications
+				}
+
+				// gre -> VNF does not require any virtual link
+				// VNF -> VNF does not require any virtual link
 			}
-
-			// gre -> VNF does not require any virtual link
-			// VNF -> VNF does not require any virtual link
-		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE)
-		{
-			//we are considering rules as
-			//	- match: internal-25 - action: output to gre tunnel with key 1
-			//	- match: interface eth0 - action: output to gre tunnel with key 1
-			//Each different gre tunnel (i.e., tunnel with a different key) that is in an action matching
-			//an internal endpoint or an interface endpoint requires a different virtual link
-
-			if(match.matchOnPort() || match.matchOnEndPointInternal())
+			else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE)
 			{
-				highlevel::ActionEndPointGre *action_ep = (highlevel::ActionEndPointGre*)action;
-				endPointsGre.insert(action_ep->toString());
+				//we are considering rules as
+				//	- match: internal-25 - action: output to gre tunnel with key 1
+				//	- match: interface eth0 - action: output to gre tunnel with key 1
+				//Each different gre tunnel (i.e., tunnel with a different key) that is in an action matching
+				//an internal endpoint or an interface endpoint requires a different virtual link
+
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					ActionEndpointGre *action_ep = (ActionEndpointGre*)(*outputAction);
+					endPointsGre.insert(action_ep->toString());
+				}
+
+				// gre -> gre does not require any virtual link
+				// VNF -> gre does not require any virtual link
+				// VNF -> VNF does not require any virtual link
 			}
-
-			// gre -> gre does not require any virtual link
-			// VNF -> gre does not require any virtual link
-			// VNF -> VNF does not require any virtual link
-		}
-		else if(action->getType() == highlevel::ACTION_ON_PORT)
-		{
-			//we are considering rules as
-			//	- match: gre tunnel with key 1 - action: output to interface eth0
-			//	- match: VNF firewall port 1 - action: output to interface eth0
-			//Each different interface requires a different virtual link
-			if(match.matchOnNF() || match.matchOnEndPointGre())
-				phyPorts.insert(action->getInfo());
-
-			// interface -> interface does not require any virtual link
-			// internal endpoint -> interface does not require any virtual link
-		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_INTERNAL)
-		{
-			if(!match.matchOnPort() && !match.matchOnEndPointInternal())
+			else if((*outputAction)->getType() == ACTION_ON_PORT)
 			{
-				highlevel::ActionEndPointInternal *action_ep = (highlevel::ActionEndPointInternal*)action;
-				endPointsInternal.insert(action_ep->toString());
-			}
+				//we are considering rules as
+				//	- match: gre tunnel with key 1 - action: output to interface eth0
+				//	- match: VNF firewall port 1 - action: output to interface eth0
+				//	- match: Hoststack port - action: output to interface eth0
+				//Each different interface requires a different virtual link
+				if(match.matchOnNF() || match.matchOnEndPointGre() || match.matchOnEndPointHoststack())
+					phyPorts.insert((*outputAction)->getInfo());
 
-			// internal endpoint -> internal endpoint does not require any virtual link
-			// interface -> internal endpoint does not require any virtual link
+				// interface -> interface does not require any virtual link
+				// internal endpoint -> interface does not require any virtual link
+			}
+			else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL)
+			{
+				if(!match.matchOnPort() && !match.matchOnEndPointInternal())
+				{
+					ActionEndpointInternal *action_ep = (ActionEndpointInternal*)(*outputAction);
+					endPointsInternal.insert(action_ep->toString());
+				}
+
+				// internal endpoint -> internal endpoint does not require any virtual link
+				// interface -> internal endpoint does not require any virtual link
+			}
+			else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_HOSTSTACK)
+			{
+				//we are considering rules as
+				//	- match: internal-25 - action: output to hoststack endpoint
+				//	- match: interface eth0 - action: output to hoststack endpoint
+
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					ActionEndPointHostStack *action_ep = (ActionEndPointHostStack*)(*outputAction);
+					endPointsHoststack.insert(action_ep->toString());
+				}
+
+				// VNF -> hoststackEP does not require any virtual link
+				// hoststackEP -> VNF does not require any virtual link
+			}
 		}
 	}
 
@@ -2563,7 +2678,13 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 		for(set<string>::iterator e = endPointsInternal.begin(); e != endPointsInternal.end(); e++)
 			ULOG_DBG_INFO("\t%s",(*e).c_str());
 	}
-
+	if(endPointsHoststack.size() != 0)
+	{
+		ULOG_DBG_INFO("Hoststack endpoint requiring a virtual link:");
+		for(set<string>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end(); e++)
+			ULOG_DBG_INFO("\t%s",(*e).c_str());
+	}
+	
 	vector<set<string> > retval;
 	vector<set<string> >::iterator rv;
 
@@ -2575,10 +2696,12 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 	retval.insert(rv,endPointsGre);
 	rv = retval.end();
 	retval.insert(rv,endPointsInternal);
-
+	rv = retval.end();
+	retval.insert(rv,endPointsHoststack);
 	return retval;
 }
 
+// TODO: implement support for hoststack endpoint
 vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph *newPiece, LSI *lsi)
 {
 	set<string> NFs;
@@ -2591,51 +2714,56 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 	{
 		highlevel::Action *action = rule->getAction();
 		highlevel::Match match = rule->getMatch();
-		if(action->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION)
-		{
-			if(match.matchOnPort() || match.matchOnEndPointInternal())
-			{
-				highlevel::ActionNetworkFunction *action_nf = (highlevel::ActionNetworkFunction*)action;
 
-				//Check if a vlink is required for this network function port
-				map<string, uint64_t> nfs_vlinks = lsi->getNFsVlinks();
-				stringstream ss;
-				ss << action->getInfo() << "_" << action_nf->getPort();
-				if(nfs_vlinks.count(ss.str()) == 0)
-					NFs.insert(ss.str());
-			}
-		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_GRE)
+		list<OutputAction*> outputActions = action->getOutputActions();
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 		{
-			if(match.matchOnPort() || match.matchOnEndPointInternal())
+			if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
 			{
-				//check if a vlink is required for this gre-tunnel endpoint
-				map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsGreVlinks();
-				highlevel::ActionEndPointGre *action_ep = (highlevel::ActionEndPointGre*)action;
-				if(endpoints_vlinks.count(action_ep->toString()) == 0)
-					endPointsGre.insert(action_ep->toString());
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					ActionNetworkFunction *action_nf = (ActionNetworkFunction*)(*outputAction);
+
+					//Check if a vlink is required for this network function port
+					map<string, uint64_t> nfs_vlinks = lsi->getNFsVlinks();
+					stringstream ss;
+					ss << (*outputAction)->getInfo() << "_" << action_nf->getPort();
+					if(nfs_vlinks.count(ss.str()) == 0)
+						NFs.insert(ss.str());
+				}
 			}
-		}
-		else if(action->getType() == highlevel::ACTION_ON_PORT)
-		{
-			if(match.matchOnNF() || match.matchOnEndPointGre())
+			else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_GRE)
 			{
-				//check if a vlink is required for this physical port (i.e., interface endpoint)
-				map<string, uint64_t> ports_vlinks = lsi->getPortsVlinks();
-				highlevel::ActionPort *action_port = (highlevel::ActionPort*)action;
-				if(ports_vlinks.count(action_port->getInfo()) == 0)
-					phyPorts.insert(action_port->getInfo());
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					//check if a vlink is required for this gre-tunnel endpoint
+					map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsGreVlinks();
+					ActionEndpointGre *action_ep = (ActionEndpointGre*)(*outputAction);
+					if(endpoints_vlinks.count(action_ep->toString()) == 0)
+						endPointsGre.insert(action_ep->toString());
+				}
 			}
-		}
-		else if(action->getType() == highlevel::ACTION_ON_ENDPOINT_INTERNAL)
-		{
-			if(!match.matchOnPort() && !match.matchOnEndPointInternal())
+			else if((*outputAction)->getType() == ACTION_ON_PORT)
 			{
-				//check if a vlink is required for this internal endpoint
-				map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsVlinks();
-				highlevel::ActionEndPointInternal *action_ep = (highlevel::ActionEndPointInternal*)action;
-				if(endpoints_vlinks.count(action_ep->toString()) == 0)
-					endPointsInternal.insert(action_ep->toString());
+				if(match.matchOnNF() || match.matchOnEndPointGre())
+				{
+					//check if a vlink is required for this physical port (i.e., interface endpoint)
+					map<string, uint64_t> ports_vlinks = lsi->getPortsVlinks();
+					ActionPort *action_port = (ActionPort*)(*outputAction);
+					if(ports_vlinks.count(action_port->getInfo()) == 0)
+						phyPorts.insert(action_port->getInfo());
+				}
+			}
+			else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL)
+			{
+				if(!match.matchOnPort() && !match.matchOnEndPointInternal())
+				{
+					//check if a vlink is required for this internal endpoint
+					map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsVlinks();
+					ActionEndpointInternal *action_ep = (ActionEndpointInternal*)(*outputAction);
+					if(endpoints_vlinks.count(action_ep->toString()) == 0)
+						endPointsInternal.insert(action_ep->toString());
+				}
 			}
 		}
 	}
@@ -2726,5 +2854,71 @@ void GraphManager::printInfo(bool completed)
 	}
 
 	ULOG_INFO("");
+}
+
+list<string> GraphManager::getRulesIDForLSI0(highlevel::Rule rule, string graphID)
+{
+	list<string> rulesID;
+
+	stringstream ss;
+	ss << graphID << "_" << rule.getRuleID();
+	string startingRuleID = ss.str();
+
+	list<OutputAction*> outputActions = rule.getAction()->getOutputActions();
+	highlevel::Match match = rule.getMatch();
+
+	int vlinkUsed=0;
+	if(match.matchOnEndPointGre() || match.matchOnNF())
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
+		{
+			output_action_t actionType = (*outputAction)->getType();
+			if(actionType == ACTION_ON_PORT || actionType == ACTION_ON_ENDPOINT_INTERNAL)
+				vlinkUsed++;
+		}
+
+	if(vlinkUsed<2)
+		rulesID.push_back(startingRuleID);
+	else
+		for(int n=0; n<vlinkUsed; n++)
+		{
+			stringstream newRuleID;
+			newRuleID << startingRuleID << "_split" << (n+1);
+			rulesID.push_back(newRuleID.str());
+		}
+
+	return rulesID;
+}
+
+list<string> GraphManager::getRulesIDForLSITenant(highlevel::Rule rule)
+{
+	list<string> rulesID;
+
+	stringstream ss;
+	ss << rule.getRuleID();
+	string startingRuleID = ss.str();
+
+	list<OutputAction*> outputActions = rule.getAction()->getOutputActions();
+	highlevel::Match match = rule.getMatch();
+
+	int vlinkUsed=0;
+	if(match.matchOnPort() || match.matchOnEndPointInternal())
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
+		{
+			output_action_t actionType = (*outputAction)->getType();
+			if(actionType == ACTION_ON_NETWORK_FUNCTION || actionType == ACTION_ON_ENDPOINT_GRE)
+				vlinkUsed++;
+		}
+
+	if(vlinkUsed<2)
+		rulesID.push_back(startingRuleID);
+	else
+		for(int n=0; n<vlinkUsed; n++)
+		{
+			stringstream newRuleID;
+			newRuleID << startingRuleID << "_split" << (n+1);
+			rulesID.push_back(newRuleID.str());
+		}
+
+	return rulesID;
 }
 

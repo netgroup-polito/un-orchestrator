@@ -13,7 +13,13 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 	map<string, gre_info_t> gre_id;
 	//for each endpoint (vlan), contains the pair vlan id, interface
 	map<string, pair<string, string> > vlan_id;
-
+	//contains the id of hoststack endpoints
+	list<string> hostStack_id;
+	//The following two data structures are used for managing trusted/untrusted VNF ports
+	//for each VNF id, contains the pair port id, trusted/untrusted
+	map<string, map<string, bool> > trusted_ports;
+	//for each VNF id, contains the pair port id, mac address
+	map<string, map<string, string> > trusted_ports_mac_addresses;
 
 	/**
 	*	The graph is defined according to this schema:
@@ -319,6 +325,8 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											Object port = ports_array[ports].getObject();
 
 											highlevel::vnf_port_t port_descr;
+											port_descr.configuration.trusted = false; //by default the port is not trusted
+											
 											//Parse the port
 											for(Object::const_iterator p = port.begin(); p != port.end(); p++)
 											{
@@ -366,6 +374,11 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													port_descr.configuration.ip_address = p_value.getString();
 #endif
 												}
+												else if(p_name == PORT_TRUSTED)
+												{
+													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNF_PORTS,PORT_MAC,(p_value.getBool())? "true" : "false");
+													port_descr.configuration.trusted = p_value.getBool();
+												}
 												else if(p_name == POSITION)
 												{
 
@@ -405,6 +418,12 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",p_name.c_str(),VNF_PORTS);
 													return false;
 												}
+											}
+
+											if(port_descr.configuration.trusted && port_descr.configuration.mac_address == "")
+											{
+												ULOG_WARN("A 'trusted' VNF port must be associated with a MAC address");
+												return false;
 											}
 
 											//Each VNF port has its own configuration if provided
@@ -481,15 +500,31 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 #else
 								highlevel::VNFs vnfs(id, name, groups, vnf_template, portS);
 #endif
-                                if(vnfPosition!=NULL)
-                                	vnfs.setPosition(vnfPosition);
+
+								//update information on the trusted status of VNF ports
+								for(list<highlevel::vnf_port_t>::iterator port = portS.begin(); port != portS.end(); port++)
+								{
+									map<string, bool> trusted_port_vnf = trusted_ports[id];
+									trusted_port_vnf[port->id] = port->configuration.trusted;
+									trusted_ports[id] = trusted_port_vnf;
+									
+									map<string,string> trusted_ports_mac_addresses_vnf = trusted_ports_mac_addresses[id];
+									trusted_ports_mac_addresses_vnf[port->id] = port->configuration.mac_address;
+									trusted_ports_mac_addresses[id] = trusted_ports_mac_addresses_vnf;
+									
+									ULOG_DBG("VNF \"%s\" - port \"%s\" - \"%s\"",id.c_str(),port->id.c_str(),(port->configuration.trusted)? "trusted":"untrusted");
+								}
+
+								if(vnfPosition!=NULL)
+									vnfs.setPosition(vnfPosition);
+
 								graph.addVNF(vnfs);
 								portS.clear();
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 								controlPorts.clear();
 								environmentVariables.clear();
 #endif
-							}
+							}// end iteration on VNFs
 						}
 						catch(std::exception& e)
 						{
@@ -682,7 +717,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 										}
 
-										vlan_id[id] = make_pair(v_id, interface);
+										vlan_id[id] = make_pair(v_id, interface); //it maps: endpoint id - (vlan id, physical interface)
 										ULOG_DBG("\"%s\"->\"%s\":\"%s\"",id.c_str(),vlan_id[id].first.c_str(),vlan_id[id].second.c_str());
 									}
 									else if(ep_name == EP_GRE)
@@ -695,6 +730,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Object", EP_GRE);
 											return false;
 										}
+
 
 										e_gre=true;
 
@@ -776,9 +812,83 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											return false;
 										}
 									}
-									else if(ep_name == POSITION)
+									else if(ep_name == EP_HOSTSTACK)
 									{
 
+										try
+										{
+											ep_value.getObject();
+										} catch(std::exception& e)
+										{
+											ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Object", EP_HOSTSTACK);
+											return false;
+										}
+
+
+										//In order to get end-point ID (it wil be parsed later, but i need it now)
+										Object::const_iterator aep2 = aep;
+										aep2++;
+										for(; aep2 != end_points.end(); aep2++)
+										{
+											const string& ep2_name  = aep2->first;
+											const Value&  ep2_value = aep2->second;
+											if(ep2_name == _ID)
+											{
+												id = ep2_value.getString();
+												break;
+											}
+										}
+
+										Object ep_hostStack = ep_value.getObject();
+										hoststack_conf_t configuration;
+										string ipAddress,macAddress;
+										for(Object::const_iterator eph = ep_hostStack.begin(); eph != ep_hostStack.end(); eph++)
+										{
+											const string& eph_name  = eph->first;
+											const Value&  eph_value = eph->second;
+
+
+											if(eph_name == CONFIGURATION)
+											{
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,CONFIGURATION,eph_value.getString().c_str());
+												string confTemp = eph_value.getString();
+												if(strcmp(confTemp.c_str(),CONF_DHCP)==0)
+													configuration=DHCP;
+												else if(strcmp(confTemp.c_str(),CONF_STATIC)==0)
+													configuration=STATIC;
+												else if(strcmp(confTemp.c_str(),CONF_PPPOE)==0)
+													configuration=PPPOE;
+												else
+												{
+													ULOG_WARN("Invalid value \"%s\" for key \"%s\" inside \"%s\"",confTemp.c_str(),eph_name.c_str(),EP_HOSTSTACK);
+													return false;
+												}
+											}
+											else if(eph_name == IP_ADDRESS)
+											{
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,IP_ADDRESS,eph_value.getString().c_str());
+												ipAddress=eph_value.getString();
+											}
+											else if(eph_name == MAC_ADDRESS)
+											{
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,MAC_ADDRESS,eph_value.getString().c_str());
+												macAddress=eph_value.getString();
+											}
+											else
+											{
+												ULOG_WARN("Invalid key \"%s\" inside \"%s\"",eph_name.c_str(),EP_HOSTSTACK);
+												return false;
+											}
+										}
+
+										highlevel::EndPointHostStack ep_hs(id, e_name, configuration, ipAddress, macAddress);
+										if(endpointPosition!=NULL)
+											ep_hs.setPosition(endpointPosition);
+										graph.addEndPointHostStack(ep_hs);
+										hostStack_id.push_back(id);
+									}
+									else if(ep_name == POSITION)
+									{
 										try
 										{
 											ep_value.getObject();
@@ -915,8 +1025,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 							{
 								//This is a rule, with a match, an action, and an ID
 								Object flow_rule = flow_rules_array[fr].getObject();
-								highlevel::Action *action = NULL;
+								highlevel::Action *action = new highlevel::Action();
 								list<GenericAction*> genericActions;
+								list<OutputAction*> outputActions;
 								highlevel::Match match;
 								string ruleID;
 								uint64_t priority = 0;
@@ -951,7 +1062,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									{
 										try{
 											foundMatch = true;
-											if(!MatchParser::parseMatch(fr_value.getObject(),match,(*action)/*,nfs_ports_found*/,iface_id,internal_id,vlan_id,gre_id,graph))
+											if(!MatchParser::parseMatch(fr_value.getObject(),match,(*action),iface_id,internal_id,vlan_id,gre_id,hostStack_id,trusted_ports,trusted_ports_mac_addresses))
 											{
 												return false;
 											}
@@ -1066,11 +1177,6 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															i++;
 														}
 
-														if(foundOneOutputToPort)
-														{
-															ULOG_DBG_INFO("Only one between keys \"%s\", \"%s\" and \"%s\" are allowed in \"%s\"",PORT_IN,VNF,ENDPOINT,ACTIONS);
-															return false;
-														}
 														foundOneOutputToPort = true;
 
 														if(p_type == VNF_PORT_TYPE)
@@ -1097,14 +1203,14 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															/*nf port starts from 0 - here we want that they start from 1*/
 															port++;
 
-															action = new highlevel::ActionNetworkFunction(id, string(port_in_name_tmp), port);
+															action->addOutputAction(new ActionNetworkFunction(id, string(port_in_name_tmp), port));
 														}
-														//end-points port type
+														//endpoints port type
 														else if(p_type == EP_PORT_TYPE)
 														{
 															//This is an output action referred to an endpoint
 
-															bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false;
+															bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false, hostStack_found=false;
 
 															char *s_a_value = new char[BUFFER_SIZE];
 															strcpy(s_a_value, (char *)a_value.getString().c_str());
@@ -1115,6 +1221,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																map<string,string>::iterator it1 = internal_id.find(epID);
 																map<string,pair<string,string> >::iterator it2 = vlan_id.find(epID);
 																map<string,gre_info_t>::iterator it3 = gre_id.find(epID);
+																list<string>::iterator it4 = hostStack_id.begin();
+																for(;*it4!=epID && it4!=hostStack_id.end();it4++);
+
 																if(it != iface_id.end())
 																{
 																	//physical port
@@ -1137,11 +1246,15 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																	//gre
 																	gre_found = true;
 																}
+																else if(it4 != hostStack_id.end())
+																{
+																	hostStack_found = true;
+																}
 															}
 															//physical endpoint
 															if(iface_found)
 															{
-																	action = new highlevel::ActionPort(realName, string(s_a_value));
+																action->addOutputAction(new ActionPort(realName, string(s_a_value)));
 															}
 															else if(internal_found)
 															{
@@ -1150,7 +1263,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																	ULOG_DBG_INFO("Internal endpoint \"%s\" is not valid. It must have the \"%s\" attribute",value.getString().c_str(), INTERNAL_GROUP);
 																	return false;
 																}
-																action = new highlevel::ActionEndPointInternal(internal_group, string(s_a_value));
+																action->addOutputAction(new ActionEndpointInternal(internal_group, string(s_a_value)));
 															}
 															//vlan endpoint
 															else if(vlan_found)
@@ -1163,7 +1276,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																sscanf(vlan_id[epID].first.c_str(),"%u",&vlanID);
 
 																/*add "output_port" action*/
-																action = new highlevel::ActionPort(vlan_id[epID].second, string(s_a_value));
+																action->addOutputAction(new ActionPort(vlan_id[epID].second, string(s_a_value)));
 																/*add "push_vlan" action*/
 																GenericAction *ga = new VlanAction(actionType,string(s_a_value),vlanID);
 																action->addGenericAction(ga);
@@ -1171,7 +1284,11 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															//gre-tunnel endpoint
 															else if(gre_found)
 															{
-																action = new highlevel::ActionEndPointGre(epID, string(s_a_value));
+																action->addOutputAction(new ActionEndpointGre(epID, string(s_a_value)));
+															}
+															else if(hostStack_found)
+															{
+																action->addOutputAction(new ActionEndPointHostStack(epID, string(s_a_value)));
 															}
 														}
 													}//End action == output_to_port

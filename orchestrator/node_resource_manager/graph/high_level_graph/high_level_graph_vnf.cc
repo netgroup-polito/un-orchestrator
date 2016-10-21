@@ -134,8 +134,13 @@ Object VNFs::toJSON()
 		if(strlen(p->configuration.ip_address.c_str()) != 0)
 			pp[PORT_IP] = p->configuration.ip_address.c_str();
 #endif
+
+		if(p->configuration.trusted)
+			pp[PORT_TRUSTED] = p->configuration.trusted;
+
 		if(p->position!=NULL)
 			pp[POSITION] = p->position->toJSON();
+
 		portS.push_back(pp);
 	}
 	vnf[VNF_PORTS] = portS;

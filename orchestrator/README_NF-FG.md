@@ -280,7 +280,7 @@ Json description of the graph:
 			}
 	  	}
 	}
-		
+
 ## Matches
 
 Within the `match` element of the NF-FG description, the following fields are allowed
@@ -338,7 +338,7 @@ Within the `action` element of the NF-FG description, the following elements can
 	`pop_vlan`
   
 Note that multiple actions can be specified in the same `flowrule`, and that `output_to_port` 
-should appear **one and only one** in each `flowrule`.
+can appear more than one in each `flowrule`.
   
 As an example, the following NF-FG tags all the packets coming from interface `firewall:inout:1` 
 (belonging to the `firewall` VNF) and forwards them to the `network-monitor` VNF, by means of its 
@@ -456,6 +456,7 @@ The NF-FG specification supports several types of endpoints:
 	`vlan`
 	`gre-tunnel`
 	`internal`
+	`host-stack`
 
 ### Endpoint type: `interface`
 
@@ -745,7 +746,7 @@ provided to the `internal` endpoint and vice versa.
 		  {
 		    "id": "inout:0",
 		    "name": "data-port"
-		  }        
+		  }
 		]
 	      }
 	    ],
@@ -834,6 +835,83 @@ the `LSI-0` with a number of links that is equal to twice the number of times th
 by graphs. This graph is not connected to any VNF; moreover, unlike standardard graphs defined through the NF-FG, 
 it implements the traditional L2 forwarding, hence it forwards packets based on the destianation MAC address.
 
+### Endpoint type: `host-stack`
+
+It rapresents an endpoint connected to the TCP/IP stack of the host running the UN, and must be associated with an IP address.
+The `host-stack` endpoint is defined as follows:
+
+	{
+		"id": "00000001",
+		"name": "egress",
+		"type": "host-stack",
+		"host-stack":
+		{
+			"configuration": "DHCP"
+		}
+	}
+
+Three type of `configuration` are allowed: `static`, `dhcp` and `pppoe`.
+In case of `static` configuration, the IP address and the netmask must be specified through the `ipv4` field.
+
+The following example shows a graph with two endpoints of type `host-stack` and `interface` connected together.
+All the incoming traffic from eth0 reachs the tcp-ip stack of the host, if the packets match the host-stack IP.
+Vice versa the traffic sent through the host-stack port is provided to eth0.
+
+	{
+		"forwarding-graph":
+		{
+			"id": "00000001",
+			"name": "Forwarding graph",
+			"end-points": [
+			{
+				"id": "00000001",
+				"name": "ingress",
+				"type": "host-stack",
+				"host-stack": {
+					"configuration": "STATIC",
+					"ipv4": "10.0.0.1/24"
+				}
+			},
+			{
+				"id": "00000002",
+				"name": "egress",
+				"type": "interface",
+				"interface": {
+					"if-name": "eth0"
+				}
+			}
+			]
+			"big-switch": {
+				"flow-rules": [
+				{
+					"id": "00000001",
+					"priority": 1,
+					"match": {
+						"port_in": "endpoint:00000001"
+					},
+					"actions": [
+					{
+						"output_to_port": "endpoint:00000002"
+					}
+					]
+				},
+				{
+					"id": "00000002",
+					"priority": 1,
+					"match": {
+						"port_in": "endpoint:00000002"
+					},
+					"actions": [
+					{
+						"output_to_port": "endpoint:00000001"
+					}
+					]
+				}
+			}
+		}
+	}
+
+
 ## Configuration
 
 A simple configuration mechanism is supported by the NF-FG formalism. In particular, it is possibile to:
@@ -873,6 +951,28 @@ following example:
   	]
   
 Given this NF-FG, the un-orchestrator properly configures the VNF ports as specified by the graph itself.
+
+A VNF interface associated with a MAC address can be specified as `trusted`, like in the following example:
+
+	"VNFs": [
+	{
+		"id": "00000001",
+	   	"name": "firewall",
+    	"ports": [
+    	{
+       		"id": "inout:0",
+       		"name": "data-port",
+       		"mac": "aa:bb:cc:dd:ee:ff",
+       		"trusted": true
+    	}
+		]
+  	}
+  	]
+
+In this case, the un-orchestrator forces all the packets arriving from such an interface to have the specified 
+MAC address, by rewriting the source ethernet address field. In fact, altough the NIC is associated with the 
+required address, it may happen that the VNF explicitly generates different MAC address, e.g., to implement some
+form of attack.
 
 ### Setting environment variables to the VNF
 

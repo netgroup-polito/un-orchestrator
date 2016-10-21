@@ -6,6 +6,7 @@
 #include "virtual_link.h"
 #include "../../compute_controller/description.h"
 #include "../graph/high_level_graph/high_level_graph_endpoint_gre.h"
+#include "../graph/high_level_graph/high_level_graph_endpoint_hostStack.h"
 #include "../graph/high_level_graph/high_level_graph_vnf.h"
 
 #include <map>
@@ -131,22 +132,49 @@ private:
 	*/
 	map<string, uint64_t> endpoints_gre_vlinks;
 
+	/**
+	*	@brief: the map is <endpoint name, vlink id>
+	*		An endpoint generates a vlink if it is defined in the action part of a rule
+	*/
+	map<string, uint64_t> endpoints_hoststack_vlinks;
+
+	/**
+	*	@brief: list of hoststack endpoints connected to the LSI
+	*/
+	list<highlevel::EndPointHostStack> hoststack_endpoints_port;
+
+
+	/**
+	*	@brief: map of hoststack endpoint id & port id on the switch
+	*/
+	map<string,unsigned int> hoststack_endpoints_port_id;
+
+	/**
+	*	@brief: map of hoststack endpoint id & port name on the switch
+	*/
+	map<string,string> hoststack_endpoints_port_name;
+
 public:
 
 	LSI(string controllerAddress, unsigned controllerPort, set<string> physical_ports, list<highlevel::VNFs> network_functions,
-		list<highlevel::EndPointGre> gre_endpoints_ports, vector<VLink> virtual_links, map<string, map<unsigned int, PortType> > nfs_ports_type);
+		list<highlevel::EndPointGre> gre_endpoints_ports, vector<VLink> virtual_links, map<string, map<unsigned int, PortType> > nfs_ports_type,
+            list<highlevel::EndPointHostStack> hoststack_endpoints_port);
 
 	string getControllerAddress();
 	unsigned getControllerPort();
 
-	list<highlevel::EndPointGre> getEndpointsPorts();
+	list<highlevel::EndPointGre> getGreEndpointsPorts();
 
 	map<string,unsigned int > getEndpointsPortsId();
 
 	uint64_t getDpid();
 
 	list<string> getPhysicalPortsName();
+	list<string> getHostackEndpointID();
+	map<string, vector<string> > getGreEndpointsDescription();
 	map<string,unsigned int> getPhysicalPorts();
+	map<string,unsigned int> getHoststackEndpointPortID();
+	map<string,string> getHoststackEndpointPortName();
 
 	set<string> getNetworkFunctionsId();
 	map<string,unsigned int> getNetworkFunctionsPorts(string nf_id);
@@ -162,6 +190,7 @@ public:
 	map<string, uint64_t> getPortsVlinks();
 	map<string, uint64_t> getEndPointsVlinks(); //TODO: rename in getEndPointsInternalVlinks
 	map<string, uint64_t> getEndPointsGreVlinks();
+	map<string, uint64_t> getEndPointsHoststackVlinks();
 
 	//FIXME: public is not a good choice
 	void setNFsVLinks(map<string, uint64_t> nfs_vlinks);
@@ -177,14 +206,17 @@ public:
 	void removeEndPointvlink(string endpoint);
 	void setEndPointsGreVLinks(map<string, uint64_t> gre_endpoints_vlinks);
 	void addEndpointGrevlink(string endpoint, uint64_t vlinkID);
+	void setEndPointsHoststackVLinks(map<string, uint64_t> hoststack_endpoints_vlinks);
 	void removeEndPointGrevlink(string endpoint);
 
 protected:
 	void setDpid(uint64_t dpid);
 	bool setPhysicalPortID(string port, uint64_t id);
+	bool setHoststackEndpointPortID(string hs, uint64_t id);
+	bool setHoststackEndpointPortName(string hs, string name);
 	bool setNfSwitchPortsID(string nf_id, map<string, unsigned int>);
 	void setVLinkIDs(unsigned int position, unsigned int localID, unsigned int remoteID);
-	bool setEndpointPortID(string ep, uint64_t id);
+	bool setGreEndpointPortID(string ep, uint64_t id);
 
 	void setNetworkFunctionsPortsNameOnSwitch(string nf_id, map<string, unsigned int> names);
 
@@ -194,7 +226,7 @@ protected:
 	bool addNF(string id, list< unsigned int> ports, const map<unsigned int, PortType>& nf_ports_type);
 	void removeNF(string nf_id);
 
-	void addEndpoint(highlevel::EndPointGre);
+	void addGreEndpoint(highlevel::EndPointGre);
 	void removeEndpoint(string ep);
 };
 

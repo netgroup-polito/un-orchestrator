@@ -222,10 +222,25 @@ SET(SOURCES1
 
 	node_resource_manager/graph/match.h
 	node_resource_manager/graph/match.cc
+
 	node_resource_manager/graph/generic_actions/generic_action.h
 	node_resource_manager/graph/generic_actions/generic_action.cc
 	node_resource_manager/graph/generic_actions/vlan_action.h
 	node_resource_manager/graph/generic_actions/vlan_action.cc
+	node_resource_manager/graph/generic_actions/eth_action.h
+	node_resource_manager/graph/generic_actions/eth_action.cc
+	node_resource_manager/graph/output_actions/output_action.h
+	node_resource_manager/graph/output_actions/output_action.cc
+	node_resource_manager/graph/output_actions/action_port.h
+	node_resource_manager/graph/output_actions/action_port.cc
+	node_resource_manager/graph/output_actions/action_network_function.h
+	node_resource_manager/graph/output_actions/action_network_function.cc
+	node_resource_manager/graph/output_actions/action_endpoint_internal.h
+	node_resource_manager/graph/output_actions/action_endpoint_internal.cc
+	node_resource_manager/graph/output_actions/action_endpoint_gre.h
+	node_resource_manager/graph/output_actions/action_endpoint_gre.cc
+	node_resource_manager/graph/output_actions/action_endpoint_hostStack.h
+	node_resource_manager/graph/output_actions/action_endpoint_hostStack.cc
 
 	node_resource_manager/graph/graph-parser/graph_parser.h
 	node_resource_manager/graph/graph-parser/graph_parser.cc
@@ -243,16 +258,8 @@ SET(SOURCES1
 	node_resource_manager/graph/low_level_graph/rule.h
 	node_resource_manager/graph/low_level_graph/rule.cc
 
-	node_resource_manager/graph/high_level_graph/high_level_output_action.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action.cc
-	node_resource_manager/graph/high_level_graph/high_level_output_action_nf.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action_nf.cc
-	node_resource_manager/graph/high_level_graph/high_level_output_action_port.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action_port.cc
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_gre.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_gre.cc
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_internal.h
-	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint_internal.cc
+	node_resource_manager/graph/high_level_graph/high_level_action.h
+	node_resource_manager/graph/high_level_graph/high_level_action.cc
 	node_resource_manager/graph/high_level_graph/high_level_rule.h
 	node_resource_manager/graph/high_level_graph/high_level_rule.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_interface.cc
@@ -263,6 +270,8 @@ SET(SOURCES1
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_internal.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_vlan.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_vlan.h
+	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_hostStack.cc
+	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_hostStack.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_vnf.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_vnf.h
 	node_resource_manager/graph/high_level_graph/high_level_graph.h
@@ -306,6 +315,9 @@ SET(SOURCES1
 
 	node_resource_manager/security_manager/security_manager.cc
 	node_resource_manager/security_manager/security_manager.h
+
+	node_resource_manager/interface_manager/InterfaceManager.cc
+	node_resource_manager/interface_manager/InterfaceManager.h
 
 	utils/logger.h
 	utils/logger.c

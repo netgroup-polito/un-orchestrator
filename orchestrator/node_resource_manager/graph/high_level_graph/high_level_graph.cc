@@ -151,6 +151,37 @@ void Graph::removeEndPointVlan(EndPointVlan endpoint)
 	assert(0);
 }
 
+bool Graph::addEndPointHostStack(EndPointHostStack endpoint)
+{
+	for(list<EndPointHostStack>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end(); e++)
+	{
+		if(*e == endpoint)
+			return false;
+	}
+
+	endPointsHoststack.push_back(endpoint);
+
+	return true;
+}
+
+list<EndPointHostStack> Graph::getEndPointsHostStack()
+{
+	return endPointsHoststack;
+}
+
+void Graph::removeEndPointHoststack(EndPointHostStack endpoint)
+{
+	for(list<EndPointHostStack>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end(); e++)
+	{
+		if(*e == endpoint)
+		{
+			endPointsHoststack.erase(e);
+			return;
+		}
+	}
+	assert(0);
+}
+
 void Graph::addVNF(VNFs vnf)
 {
 	for(list<VNFs>::iterator v = vnfs.begin(); v != vnfs.end(); v++)
@@ -221,9 +252,9 @@ Rule Graph::getRuleFromID(string ID)
 	return *r;
 }
 
-RuleRemovedInfo Graph::removeRuleFromID(string ID)
+list<RuleRemovedInfo> Graph::removeRuleFromID(string ID)
 {
-	RuleRemovedInfo rri;
+	list<RuleRemovedInfo> rriList;
 
 	for(list<Rule>::iterator r = rules.begin(); r != rules.end(); r++)
 	{
@@ -231,47 +262,54 @@ RuleRemovedInfo Graph::removeRuleFromID(string ID)
 		{
 			Match match = r->getMatch();
 			Action *action = r->getAction();
-			action_t actionType = action->getType();
 
-			if(actionType == ACTION_ON_PORT)
+			list<OutputAction*> outputActions = action->getOutputActions();
+			for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 			{
-				//Removed an action on a port. It is possible that a vlink must be removed
-				rri.port = ((ActionPort*)action)->getInfo();
-				rri.isNFport = false;
-				rri.isPort = true;
-				rri.isEndpointInternal = false;
-				rri.isEndpointGre = false;
-			}
-			else if(actionType == ACTION_ON_NETWORK_FUNCTION)
-			{
-				//Removed an action on a NF. It is possible that a vlink must be removed
-				stringstream nf_port;
-				nf_port << ((ActionNetworkFunction*)action)->getInfo() << "_" << ((ActionNetworkFunction*)action)->getPort();
-				rri.nf_port = nf_port.str();
-				rri.isNFport = true;
-				rri.isPort = false;
-				rri.isEndpointInternal = false;
-				rri.isEndpointGre = false;
-			}
-			else if(actionType == ACTION_ON_ENDPOINT_GRE)
-			{
-				//Removed an action on an endpoint gre
-				rri.endpointGre = action->toString();
+				RuleRemovedInfo rri;
+				output_action_t actionType = (*outputAction)->getType();
+				if(actionType == ACTION_ON_PORT)
+				{
+					//Removed an action on a port. It is possible that a vlink must be removed
+					rri.port = ((ActionPort*)(*outputAction))->getInfo();
+					rri.isNFport = false;
+					rri.isPort = true;
+					rri.isEndpointInternal = false;
+					rri.isEndpointGre = false;
+				}
+				else if(actionType == ACTION_ON_NETWORK_FUNCTION)
+				{
+					//Removed an action on a NF. It is possible that a vlink must be removed
+					stringstream nf_port;
+					nf_port << ((ActionNetworkFunction*)(*outputAction))->getInfo() << "_" << ((ActionNetworkFunction*)(*outputAction))->getPort();
+					rri.nf_port = nf_port.str();
+					rri.isNFport = true;
+					rri.isPort = false;
+					rri.isEndpointInternal = false;
+					rri.isEndpointGre = false;
+				}
+				else if(actionType == ACTION_ON_ENDPOINT_GRE)
+				{
+					//Removed an action on an endpoint gre
+					rri.endpointGre = (*outputAction)->toString();
 
-				rri.isNFport = false;
-				rri.isPort = false;
-				rri.isEndpointInternal = false;
-				rri.isEndpointGre = true;
-			}
-			else if(actionType == ACTION_ON_ENDPOINT_INTERNAL)
-			{
-				//Removed an action on an endpoint internal
-				rri.endpointInternal = action->toString();
+					rri.isNFport = false;
+					rri.isPort = false;
+					rri.isEndpointInternal = false;
+					rri.isEndpointGre = true;
+				}
+				else if(actionType == ACTION_ON_ENDPOINT_INTERNAL)
+				{
+					//Removed an action on an endpoint internal
+					rri.endpointInternal = (*outputAction)->toString();
 
-				rri.isNFport = false;
-				rri.isPort = false;
-				rri.isEndpointInternal = true;
-				rri.isEndpointGre = false;
+					rri.isNFport = false;
+					rri.isPort = false;
+					rri.isEndpointInternal = true;
+					rri.isEndpointGre = false;
+				}
+
+				rriList.push_back(rri);
 			}
 
 			//finally, remove the rule!
@@ -281,14 +319,14 @@ RuleRemovedInfo Graph::removeRuleFromID(string ID)
 			for(list<Rule>::iterator print = rules.begin(); print != rules.end(); print++)
 				ULOG_DBG("\t%s",print->getRuleID().c_str());
 
-			return rri;
+			return rriList;
 		}//end if(r->getRuleID() == ID)
 	}
 
 	assert(0);
 
 	//Just for the compiler
-	return rri;
+	return rriList;
 }
 
 int Graph::getNumberOfRules()
@@ -338,6 +376,11 @@ Object Graph::toJSON()
 		end_points.push_back(e->toJSON());
 	}
 
+	for(list<EndPointHostStack>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end();e++)
+	{
+		end_points.push_back(e->toJSON());
+	}
+
 	for(list<VNFs>::iterator v = vnfs.begin(); v != vnfs.end();v++)
 	{
 		vnf.push_back(v->toJSON());
@@ -376,7 +419,6 @@ bool Graph::stillUsedVNF(VNFs vnf)
 		Match match = r->getMatch();
 		Action *action = r->getAction();
 
-		action_t actionType = action->getType();
 		bool matchOnNF = match.matchOnNF();
 
 		if(matchOnNF)
@@ -386,11 +428,15 @@ bool Graph::stillUsedVNF(VNFs vnf)
 				return true;
 		}
 
-		if(actionType == ACTION_ON_NETWORK_FUNCTION)
+		list<OutputAction*> outputActions = action->getOutputActions();
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 		{
-			if(((ActionNetworkFunction*)action)->getInfo() == vnf.getName())
-				//The VNF is still used into the graph
-				return true;
+			if((*outputAction)->getType() == ACTION_ON_NETWORK_FUNCTION)
+			{
+				if(((ActionNetworkFunction*)(*outputAction))->getInfo() == vnf.getName())
+					//The VNF is still used into the graph
+					return true;
+			}
 		}
 	}
 
@@ -440,7 +486,6 @@ bool Graph::stillUsedEndpointInterface(EndPointInterface endpoint)
 		Match match = r->getMatch();
 		Action *action = r->getAction();
 
-		action_t actionType = action->getType();
 		bool matchOnPort = match.matchOnPort();
 
 		if(matchOnPort)
@@ -450,11 +495,15 @@ bool Graph::stillUsedEndpointInterface(EndPointInterface endpoint)
 				return true;
 		}
 
-		if(actionType == ACTION_ON_PORT)
+		list<OutputAction*> outputActions = action->getOutputActions();
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 		{
-			if(((ActionPort*)action)->getInfo() == endpoint.getInterface())
-				//The endpoint is still used into the graph
-				return true;
+			if((*outputAction)->getType() == ACTION_ON_PORT)
+			{
+				if(((ActionPort*)(*outputAction))->getInfo() == endpoint.getInterface())
+					//The endpoint is still used into the graph
+					return true;
+			}
 		}
 	}
 
@@ -463,24 +512,6 @@ bool Graph::stillUsedEndpointInterface(EndPointInterface endpoint)
 	return false;
 }
 
-string Graph::getEndpointInvolved(string flowID)
-{
-	highlevel::Rule r = getRuleFromID(flowID);
-	highlevel::Match m = r.getMatch();
-	highlevel::Action *a = r.getAction();
-
-	if(a->getType() == highlevel::ACTION_ON_ENDPOINT_INTERNAL)
-		return a->toString();
-
-	if(m.matchOnEndPointInternal())
-	{
-		stringstream ss;
-		ss << m.getInputEndpoint();
-		return ss.str();
-	}
-
-	return "";
-}
 
 list<highlevel::Rule> Graph::calculateDiffRules(Graph *other)
 {
@@ -754,8 +785,9 @@ list<RuleRemovedInfo> Graph::removeGraphFromGraph(highlevel::Graph *other)
 	list<highlevel::Rule> oldRules = other->getRules();
 	for(list<highlevel::Rule>::iterator rule = oldRules.begin(); rule != oldRules.end(); rule++)
 	{
-		RuleRemovedInfo rule_removed_info = removeRuleFromID(rule->getRuleID());
-		toberemoved.push_back(rule_removed_info);
+		list<RuleRemovedInfo> rule_removed_info = removeRuleFromID(rule->getRuleID());
+		for(list<RuleRemovedInfo>::iterator rri = rule_removed_info.begin(); rri!=rule_removed_info.end(); rri++)
+			toberemoved.push_back(*rri);
 	}
 
 	//Update the interface endpoints
@@ -851,13 +883,16 @@ bool Graph::endpointIsUsedInAction(string endpoint)
 	for(list<Rule>::iterator r = rules.begin(); r != rules.end(); r++)
 	{
 		Action *action = r->getAction();
-		action_t actionType = action->getType();
 
-		if(actionType == ACTION_ON_ENDPOINT_INTERNAL)
+		list<OutputAction*> outputActions = action->getOutputActions();
+		for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 		{
-			if(action->toString() == endpoint)
-				//The port is used in an action
-				return true;
+			if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL)
+			{
+				if((*outputAction)->toString() == endpoint)
+					//The port is used in an action
+					return true;
+			}
 		}
 	}
 	return false;

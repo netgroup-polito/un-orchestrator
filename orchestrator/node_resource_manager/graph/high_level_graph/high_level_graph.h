@@ -12,10 +12,9 @@
 #include "high_level_graph_endpoint_internal.h"
 #include "high_level_graph_endpoint_gre.h"
 #include "high_level_graph_endpoint_vlan.h"
+#include "high_level_graph_endpoint_hostStack.h"
 #include "high_level_graph_vnf.h"
 #include "high_level_rule.h"
-#include "high_level_output_action_nf.h"
-#include "high_level_output_action_port.h"
 #include "../../graph_manager/rule_removed_info.h"
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
@@ -71,6 +70,11 @@ private:
 	*	@brief: List of "vlan" endpoints
 	*/
 	list<EndPointVlan> endPointsVlan;
+
+	/**
+	*	@brief: List of "hoststack" endpoint
+	*/
+	list<EndPointHostStack> endPointsHoststack;
 
 	/**
 	*	@brief: List of VNFs describing the graph
@@ -230,6 +234,21 @@ public:
 	void removeEndPointVlan(EndPointVlan endpoint);
 
 	/**
+	*	@brief: Add a new "hoststack" endpoint to the graph
+	*/
+	bool addEndPointHostStack(EndPointHostStack endpoint);
+
+	/**
+	*	@brief: Return a list of "hoststack" endpoints of the graph
+	*/
+	list<EndPointHostStack> getEndPointsHostStack();
+
+	/**
+	*	@brief: Remove an endpoint "hoststack" from the graph
+	*/
+	void removeEndPointHoststack(EndPointHostStack endpoint);
+
+	/**
 	*	Functions to manage the VNFs
 	*/
 
@@ -282,7 +301,7 @@ public:
 	*
 	*	@param:	ID	Identifier of the rule to be removed
 	*/
-	RuleRemovedInfo removeRuleFromID(string ID);
+	list<RuleRemovedInfo> removeRuleFromID(string ID);
 
 	/**
 	*	Functions to get the description of the graph

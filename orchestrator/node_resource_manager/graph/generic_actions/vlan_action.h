@@ -31,7 +31,7 @@ public:
 	VlanAction(vlan_action_t type, string vlan_endpoint, uint16_t label = 0);
 	~VlanAction();
 
-	void toJSON(Object &json);
+	void toJSON(Array &json);
 
 	/**
 	*	@brief: insert the generic action into a flowmod message

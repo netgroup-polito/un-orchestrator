@@ -30,6 +30,7 @@ namespace highlevel
 *		"id": "inout:0",
 *		"name": "data-port"
 *		"mac": "aa:bb:cc:dd:ee:ff",
+*		"trusted": true,
 *		"unify-ip": "192.168.0.1"
 *	}
 *

@@ -44,6 +44,11 @@ private:
 	list<string> physicalPortsName;
 
 	/**
+	*	@brief: list of hostStack endpoint (id) to be connected to the lsi
+	*/
+	list<string> hoststackEndpointID;
+
+	/**
 	*	@brief: map of network functions name, network functions type
 	*/
 	map<string,nf_t>  nf_types;
@@ -55,7 +60,7 @@ private:
 	set<string> networkFunctionsName;
 
 	/**
-	*	@brief: list of endpoints ports to be connected to the lsi
+	*	@brief: list of gre endpoints ports to be connected to the lsi
 	*/
 	map<string,vector<string> > endpointsPortsName;
 
@@ -83,15 +88,15 @@ protected:
 
 	//FIXME: endpoints mean "endpoint gre"
 
-	CreateLsiIn(string controllerAddress, unsigned controllerPort, list<string> physicalPortsName, map<string,nf_t>  nf_types, map<string,list<struct nf_port_info> > netFunctionsPortsInfo, map<string,vector<string> > endpointsPortsName, list<uint64_t> vlinksRemoteLsi, string local_ip, string ipsec_certificate)
+	CreateLsiIn(string controllerAddress, unsigned controllerPort, list<string> physicalPortsName, list<string> hoststackEndpointID, map<string,nf_t>  nf_types, map<string,list<struct nf_port_info> > netFunctionsPortsInfo, map<string,vector<string> > endpointsPortsName, list<uint64_t> vlinksRemoteLsi, string local_ip, string ipsec_certificate)
 		: controllerAddress(controllerAddress), controllerPort(controllerPort),
 		physicalPortsName(physicalPortsName.begin(),physicalPortsName.end()),
+		  hoststackEndpointID(hoststackEndpointID.begin(),hoststackEndpointID.end()),
 		nf_types(nf_types.begin(),nf_types.end()),
 		endpointsPortsName(endpointsPortsName.begin(),endpointsPortsName.end()),
 		netFunctionsPortsInfo(netFunctionsPortsInfo.begin(),netFunctionsPortsInfo.end()),
 		vlinksRemoteLsi(vlinksRemoteLsi.begin(),vlinksRemoteLsi.end()),
-		local_ip(local_ip),
-		ipsec_certificate(ipsec_certificate)
+		local_ip(local_ip), ipsec_certificate(ipsec_certificate)
 	{
 		map<string,nf_t>::iterator it = nf_types.begin();
 		for(; it != nf_types.end(); it++)
@@ -113,6 +118,11 @@ public:
 	list<string> getPhysicalPortsName()
 	{
 		return physicalPortsName;
+	}
+
+	list<string> getHoststackEndpointID()
+	{
+		return hoststackEndpointID;
 	}
 
 	map<string,nf_t> getNetworkFunctionsType()

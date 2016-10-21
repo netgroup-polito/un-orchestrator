@@ -3,35 +3,38 @@
 namespace lowlevel
 {
 
-Action::Action(unsigned int port_id)
-	: type(rofl::openflow::OFPAT_OUTPUT), port_id(port_id), is_local_port(false), is_normal(false)
+Action::Action(action_t type):type(type)
 {
-
+	if (type==ACTION_LOCAL)
+		ports_id.push_back(rofl::openflow::OFPP_LOCAL);
+	else if(type==ACTION_NORMAL)
+		ports_id.push_back(rofl::openflow::OFPP_NORMAL);
 }
 
-Action::Action(bool is_local_port)
-	: type(rofl::openflow::OFPAT_OUTPUT), is_local_port(is_local_port), is_normal(false)
+void Action::addOutputPort(unsigned int port_id)
 {
-
-}
-
-Action::Action(bool is_local_port, bool is_normal)
-		: type(rofl::openflow::OFPAT_OUTPUT), is_local_port(is_local_port), is_normal(is_normal)
-{
-
+	ports_id.push_back(port_id);
 }
 
 bool Action::operator==(const Action &other) const
 {
-	if((type == other.type) && (port_id == other.port_id))
-		return true;
-
-	return false;
-}
-
-rofl::openflow::ofp_action_type Action::getActionType()
-{
-	return type;
+	if((type != other.type) || (ports_id.size() != other.ports_id.size()))
+		return false;
+	for(list<unsigned int>::const_iterator port_id = this->ports_id.begin(); port_id != this->ports_id.end(); port_id++)
+	{
+		bool found = false;
+		for(list<unsigned int>::const_iterator port_id_other = other.ports_id.begin(); port_id_other != other.ports_id.end(); port_id_other++)
+		{
+			if(*port_id==*port_id_other)
+			{
+				found=true;
+				break;
+			}
+		}
+		if(!found)
+			return false;
+	}
+	return true;
 }
 
 void Action::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
@@ -43,26 +46,20 @@ void Action::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
 		(*ga)->fillFlowmodMessage(message,&position);
 
-	//Now we can consider the output action
-	switch(OFP_VERSION)
+	//Now we can consider the output actions
+	for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
 	{
-		case OFP_10:
-			if(is_local_port)
-				message.set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_LOCAL);
-			else if(is_normal)
-				message.set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_NORMAL);
-			else
-				message.set_actions().add_action_output(cindex(position)).set_port_no(port_id);
-			break;
-		case OFP_12:
-		case OFP_13:
-			if(is_local_port)
-				message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_LOCAL);
-			else if(is_normal)
-				message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(rofl::openflow::OFPP_NORMAL);
-			else
-				message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(port_id);
-			break;
+		switch(OFP_VERSION)
+		{
+			case OFP_10:
+					message.set_actions().add_action_output(cindex(position)).set_port_no(*outputPort);
+				break;
+			case OFP_12:
+			case OFP_13:
+					message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(position)).set_port_no(*outputPort);
+				break;
+		}
+		position++;
 	}
 }
 
@@ -71,12 +68,16 @@ void Action::print()
 	if(LOGGING_LEVEL <= ORCH_DEBUG_INFO)
 	{
 		cout << "\t\tAction:" << endl << "\t\t{" << endl;
-		if(is_local_port)
+
+		if(type==ACTION_LOCAL)
 			cout << "\t\t\tOUTPUT: " << "LOCAL" << endl;
-		else if(is_normal)
+		else if(type==ACTION_NORMAL)
 			cout << "\t\t\tOUTPUT: " << "NORMAL" << endl;
 		else
-			cout << "\t\t\tOUTPUT: " << port_id << endl;
+		{
+			for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
+				cout << "\t\t\tOUTPUT: " << *outputPort << endl;
+		}
 		for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
 			(*ga)->print();
 		cout << "\t\t}" << endl;
@@ -88,43 +89,64 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 	stringstream ss;
 
 	ss << "output to ";
+	bool foundOne=false;
 
 	map<string,unsigned int> pysicalPorts = lsi0->getPhysicalPorts();
 	for(map<string,unsigned int>::iterator it = pysicalPorts.begin(); it != pysicalPorts.end(); it++)
 	{
-		if(it->second == port_id)
+		for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
 		{
-			ss << it->first;
-			return ss.str();
+			if(it->second == *outputPort)
+			{
+				if(foundOne)
+					ss << ", output to ";
+				else
+					foundOne=true;
+				ss << it->first;
+				break;
+			}
 		}
 	}
+	if(foundOne)
+		return ss.str();
 
 	//The port corresponds to a virtual link... we search the corresponding graph
-
 	for(map<string,LSI *>::iterator it = lsis.begin(); it != lsis.end(); it++)
 	{
 		vector<VLink> vlinks = it->second->getVirtualLinks();
 		for(vector<VLink>::iterator vl = vlinks.begin(); vl != vlinks.end(); vl++)
 		{
-			if(vl->getRemoteID() == port_id)
+			for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
 			{
-				ss << port_id << " (graph: " << it->first << ")";
-				goto conclude;
+				if(vl->getRemoteID() == *outputPort)
+				{
+					if(foundOne)
+						ss << ", output to ";
+					else
+						foundOne=true;
+					ss << *outputPort;
+					break;
+				}
 			}
 		}
 	}
 
-	if(is_local_port)
-		ss << "LOCAL" << " (LOCAL graph)";
-	else if(is_normal)
-		ss << "NORMAL" << " (INTERNAL graph)";
-	else
+	if(!foundOne)
 	{
-		//The code could be here only when a SIGINT is received and all the graph are going to be removed
-		ss << port_id << " (unknown graph)";
+		if(type==ACTION_LOCAL)
+			ss << "LOCAL" << " (LOCAL graph)";
+		else if(type==ACTION_NORMAL)
+			ss << "NORMAL" << " (INTERNAL graph)";
+		else
+		{
+			//The code could be here only when a SIGINT is received and all the graph are going to be removed
+			for(list<unsigned int>::iterator outputPort = ports_id.begin(); outputPort != ports_id.end(); outputPort++)
+			{
+				ss << *outputPort << ", ";
+			}
+			ss<<" (unknown graph)";
+		}
 	}
-
-conclude:
 
 	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
 		ss << (*ga)->prettyPrint();

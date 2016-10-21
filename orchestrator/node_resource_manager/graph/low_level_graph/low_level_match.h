@@ -25,19 +25,16 @@ using namespace std;
 
 namespace lowlevel
 {
+enum match_t {MATCH_LOCAL,MATCH_ON_PORT};
 
 class Match : public graph::Match
 {
 private:
-
-	bool isInput_port;
+	match_t type;
 	unsigned int input_port;
-	bool is_local_port;
 
 public:
-	Match();
-
-	Match(bool is_local_port);
+	Match(match_t type=MATCH_ON_PORT);
 
 	bool operator==(const Match &other) const;
 

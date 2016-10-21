@@ -40,7 +40,7 @@ private:
 	string group;
 
 	/**
-	*	@brief: coordinates of the VNF (used and setted by the GUI)
+	*	@brief: coordinates of the endpoint (used and setted by the GUI)
 	*/
 	Position *position = NULL;
 

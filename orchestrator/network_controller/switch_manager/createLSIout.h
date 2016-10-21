@@ -57,7 +57,7 @@ private:
 	/**
 	*	@brief: map of endpoint name, identifier on the lsi //FIXME: this is actually endpoints gre
 	*/
-	map<string,unsigned int >  endpoints_ports;
+	map<string,unsigned int >  gre_endpoints_ports;
 
 	/**
 	*	@brief: map of network functions id, list of ports names on the vSwitch that are associated with such a network function.
@@ -119,6 +119,16 @@ private:
 	*/
 	map<string, map<string, unsigned int> > nf_ports_name_and_id;
 
+	/**
+	* @brief: list of hostStack_endpoint ID, identifier on the lsi
+	*/
+	map<string,unsigned int> hoststack_endpoint_ports;
+
+	/**
+	* @brief: list of hostStack_endpoint ID, port name on the switch (e.g. 000001 - hsport3)
+	*/
+	map<string,string> hoststackPortsName;
+
 protected:
 
 	uint64_t getDpid()
@@ -131,14 +141,19 @@ protected:
 		return physical_ports;
 	}
 
+	map<string,unsigned int> getHoststackEndpointPorts()
+	{
+		return hoststack_endpoint_ports;
+	}
+
 	map<string,map<string, unsigned int> > getNetworkFunctionsPorts()
 	{
 		return network_functions_ports;
 	}
 
-	map<string,unsigned int > getEndpointsPorts()
+	map<string,unsigned int > getGreEndpointsPorts()
 	{
-		return endpoints_ports;
+		return gre_endpoints_ports;
 	}
 
 	map<string, list<string> > getNetworkFunctionsPortsNameOnSwitch()
@@ -156,10 +171,15 @@ protected:
 		return nf_ports_name_and_id;
 	}
 
+	map<string, string> getHoststackPortsName()
+	{
+		return hoststackPortsName;
+	}
+
 public:
 
-	CreateLsiOut(uint64_t dpid, map<string,unsigned int> physical_ports, map<string,map<string, unsigned int> >  network_functions_ports, map<string,unsigned int> endpoints_ports, map<string,list<string> > nf_ports_name_on_switch, list<pair<unsigned int, unsigned int> > virtual_links, map<string, map<string, unsigned int> > nf_ports_name_and_id)
-		: dpid(dpid), physical_ports(physical_ports.begin(),physical_ports.end()),network_functions_ports(network_functions_ports.begin(),network_functions_ports.end()), endpoints_ports(endpoints_ports.begin(),endpoints_ports.end()),nf_ports_name_on_switch(nf_ports_name_on_switch.begin(),nf_ports_name_on_switch.end()), virtual_links(virtual_links.begin(),virtual_links.end()), nf_ports_name_and_id(nf_ports_name_and_id.begin(), nf_ports_name_and_id.end())
+	CreateLsiOut(uint64_t dpid, map<string,unsigned int> physical_ports, map<string,map<string, unsigned int> >  network_functions_ports, map<string,unsigned int> endpoints_ports, map<string,list<string> > nf_ports_name_on_switch, list<pair<unsigned int, unsigned int> > virtual_links, map<string, map<string, unsigned int> > nf_ports_name_and_id, map<string,unsigned int> hoststack_endpoint_ports, map<string,string> hoststackPortsName)
+		: dpid(dpid), physical_ports(physical_ports.begin(),physical_ports.end()),network_functions_ports(network_functions_ports.begin(),network_functions_ports.end()), gre_endpoints_ports(endpoints_ports.begin(),endpoints_ports.end()),nf_ports_name_on_switch(nf_ports_name_on_switch.begin(),nf_ports_name_on_switch.end()), virtual_links(virtual_links.begin(),virtual_links.end()), nf_ports_name_and_id(nf_ports_name_and_id.begin(), nf_ports_name_and_id.end()), hoststack_endpoint_ports(hoststack_endpoint_ports.begin(),hoststack_endpoint_ports.end()), hoststackPortsName(hoststackPortsName.begin(),hoststackPortsName.end())
 	{}
 
 };

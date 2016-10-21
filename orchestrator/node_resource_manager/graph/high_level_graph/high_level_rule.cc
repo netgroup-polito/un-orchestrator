@@ -40,13 +40,11 @@ Action *Rule::getAction()
 Object Rule::toJSON()
 {
 	Object rule;
-	Array actions;
 
 	rule[_ID] = ruleID.c_str();
 	rule[PRIORITY] = priority;
 	rule[MATCH] = match.toJSON();
-	actions.push_back(action->toJSON());
-	rule[ACTIONS] = actions;
+	rule[ACTIONS] = action->toJSON();
 
 	return rule;
 }
