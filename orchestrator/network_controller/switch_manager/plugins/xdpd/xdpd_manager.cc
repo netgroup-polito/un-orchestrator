@@ -646,7 +646,12 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 
 	dpdiWirelessInterfaces[dpid] = wirelessList;
 
-	CreateLsiOut *clo = new CreateLsiOut(dpid,physical_ports,network_functions_ports, endpoints_ports, out_nf_ports_name_on_switch, virtual_links, out_nf_ports_name_and_id);
+	// TODO: implement support for host-stack endpoint
+	map<string,unsigned int> dummy_hoststack_endpoints_ports;
+	map<string,string> dummy_hoststackPortsName;
+	
+	CreateLsiOut *clo = new CreateLsiOut(dpid,physical_ports,network_functions_ports, endpoints_ports, out_nf_ports_name_on_switch, virtual_links, out_nf_ports_name_and_id, dummy_hoststack_endpoints_ports, dummy_hoststackPortsName);
+
 	return clo;
 }
 bool XDPDManager::findCommand(Object message, string expected)
