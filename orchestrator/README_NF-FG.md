@@ -911,6 +911,87 @@ Vice versa the traffic sent through the host-stack port is provided to eth0.
 		}
 	}
 
+## Elements Position
+It is possible to specify the coordinates for each element of the graph   (`endpoint`, `vnf port`, `vnf`) in order to force them to be drawn in a specific position in the GUI.
+
+The syntax of the `gui-element` object is the following:
+
+	"gui-position": {
+	 "x": 630,
+	 "y": 242
+	}
+where `x` and `y` are the coordinates of the current element.
+You can see  an exemple of usage in the successive graph.
+
+	{
+	  "forwarding-graph": {
+	    "id": "1",
+	    "name": "simple graph",
+	    "end-points": [
+	      {
+	        "id": "1",
+	        "name": "hsport",
+	        "type": "host-stack",
+	        "host-stack": {
+	          "configuration": "DHCP"
+	        },
+	        "gui-position": {
+	          "x": 630,
+	          "y": 242
+	        }
+	      }
+	    ],
+	    "VNFs": [
+	      {
+	        "vnf_template": "dhcp.json",
+	        "id": "1",
+	        "name": "dhcp",
+	        "ports": [
+	          {
+	            "id": "inout:0",
+	            "name": "data-port",
+	            "gui-position": {
+	              "x": 77,
+	              "y": 60
+	            }
+	          }
+	        ],
+	        "gui-position": {
+	          "x": 556,
+	          "y": 53
+	        }
+	      }
+	    ],
+	    "big-switch": {
+	      "flow-rules": [
+	        {
+	          "id": "1",
+	          "priority": 1,
+	          "match": {
+	            "port_in": "endpoint:1"
+	          },
+	          "actions": [
+	            {
+	              "output_to_port": "vnf:1:inout:0"
+	            }
+	          ]
+	        },
+	        {
+	          "id": "2",
+	          "priority": 1,
+	          "match": {
+	            "port_in": "vnf:1:inout:0"
+	          },
+	          "actions": [
+	            {
+	              "output_to_port": "endpoint:1"
+	            }
+	          ]
+	        }
+	      ]
+	    }
+	  }
+	}
 
 ## Configuration
 
@@ -1048,3 +1129,4 @@ arrives on the UN (by means of the control port) and directed to the TCP port 20
 VNF on its own TCP port 80. 
 Note that multiple port forwardings may be set up for a VNF; however, a single port connected to, e.g., 
 `Docker0`, is created, regardless of the number of port forwardings required.
+
