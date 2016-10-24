@@ -1,0 +1,83 @@
+{
+  "frog-domain:informations": {
+    "name": "netgear1",
+    "management-address": "10.0.0.5:8080",
+    "type": "netgear",
+    "frog-network-manager:informations": {
+      "openconfig-interfaces:interfaces": {
+        "openconfig-interfaces:interface": [
+          {
+            "name": "br-lan",
+            "frog-interface-type": "core",
+            "state": {
+              "admin-status": "UP",
+              "oper-status": "UP"
+            },
+            "config": {
+              "type": "ethernetCsmacd",
+              "enabled": true
+            },
+            "openconfig-interfaces:subinterfaces": {
+              "openconfig-interfaces:subinterface": [
+                {
+                  "config": {
+                    "name": "br-lan",
+                    "description": "something",
+                    "enabled": true
+                  },
+                  "capabilities": {
+                    "gre": true
+                  }
+                }
+              ]
+            },
+            "openconfig-if-ethernet:ethernet": {
+              "frog-neighbor:neighbor": [
+                {
+                  "domain-name": "isp",
+                  "domain-type": "IP"
+                }
+              ]
+            }
+          },
+          {
+            "name": "wlan0",
+            "frog-interface-type": "access",
+            "config": {
+              "type": "ethernetCsmacd",
+              "enabled": true
+            },
+            "openconfig-if-ethernet:ethernet": {}
+          },
+          {
+            "name": "eth0.3",
+            "frog-interface-type": "access",
+            "config": {
+              "type": "ethernetCsmacd",
+              "enabled": true
+            },
+            "openconfig-if-ethernet:ethernet": {}
+          },
+          {
+            "name": "eth0.4",
+            "frog-interface-type": "access",
+            "config": {
+              "type": "ethernetCsmacd",
+              "enabled": true
+            },
+            "openconfig-if-ethernet:ethernet": {}
+          },
+          {
+            "name": "eth0.5",
+            "frog-interface-type": "access",
+            "config": {
+              "type": "ethernetCsmacd",
+              "enabled": true
+            },
+            "openconfig-if-ethernet:ethernet": {}
+          }
+        ]
+      }
+    }
+  }
+}

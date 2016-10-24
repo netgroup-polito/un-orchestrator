@@ -1,0 +1,51 @@
+{
+  "frog-domain:informations": {
+    "name": "UN2",
+    "type": "UN",
+    "management-address": "10.0.0.2:8080",
+    "frog-network-manager:informations": {
+      "openconfig-interfaces:interfaces": {
+        "openconfig-interfaces:interface": [
+          {
+            "name": "eth0",
+            "frog-interface-type": "core",
+            "openconfig-interfaces:subinterfaces": {
+              "openconfig-interfaces:subinterface": [
+                {
+                  "config": {
+                    "name": "eth0",
+                    "enabled": true
+                  },
+                  "capabilities": {
+                    "gre": true
+                  }
+                }
+              ]
+            },
+            "config": {
+              "type": "ethernetCsmacd",
+              "enabled": true
+            },
+            "openconfig-if-ethernet:ethernet": {
+              "frog-neighbor:neighbor": [
+                {
+                  "domain-name": "isp",
+                  "domain-type": "IP"
+                }
+              ]
+            }
+          },
+          {
+            "name": "wlan0",
+            "frog-interface-type": "access",
+            "config": {
+              "type": "ethernetCsmacd",
+              "enabled": true
+            },
+            "openconfig-if-ethernet:ethernet": {}
+          }
+        ]
+      }
+    }
+  }
+}

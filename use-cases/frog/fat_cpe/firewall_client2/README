@@ -1,0 +1,51 @@
+This is a firewall based on iptables.
+
+To change the configuration of the firewall, edit the file start.sh
+
+###############################################################################
+
+Reqiured libraries:
+
+* Docker and LXC
+     http://docs.docker.com/installation/
+     apt-get install lxc -y
+     echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker.io
+     service docker restart
+     
+* Ubuntu docker image
+     sudo docker pull ubuntu:latest
+
+* Private registry (in the following, the document assumes that the registry is
+     running at localhost:5000)
+
+###############################################################################
+
+Create the Docker image which contains this NF, and push it to the repository
+
+* sudo docker build --tag="localhost:5000/firewall-client" .
+* sudo docker push localhost:5000/firewall-client
+
+###############################################################################
+
+Run the container:
+
+* in interactive mode
+
+	docker run -i -t --lxc-conf="lxc.network.type=phys" --lxc-conf="lxc.network.link=vEth0" \
+		--lxc-conf="lxc.network.name=eth0" --lxc-conf="lxc.network.flags=up" \
+		--lxc-conf="lxc.network.type=phys" --lxc-conf="lxc.network.link=vEth1" \
+		--lxc-conf="lxc.network.name=eth1" --lxc-conf="lxc.network.flags=up" --networking="false" \  
+		--privileged="true" localhost:5000/iptables /bin/bash
+
+	./start.sh
+
+* in background mode
+
+	docker run -d --lxc-conf="lxc.network.type=phys" --lxc-conf="lxc.network.link=vEth0" \
+		--lxc-conf="lxc.network.name=eth0" --lxc-conf="lxc.network.flags=up" \
+		--lxc-conf="lxc.network.type=phys" --lxc-conf="lxc.network.link=vEth1" \
+		--lxc-conf="lxc.network.name=eth1" --lxc-conf="lxc.network.flags=up" --networking="false" \  
+		--privileged="true" localhost:5000/iptables
+		
+In both the cases, vEth0 and vEth1 are vEth interfaces available in the host.
+
