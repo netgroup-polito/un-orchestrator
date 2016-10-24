@@ -56,12 +56,12 @@ possibilities listed in this section.
 
 At first, download the Open vSwitch source code from:
 
-    http://openvswitch.org/releases/openvswitch-2.4.0.tar.gz
+    http://openvswitch.org/releases/openvswitch-2.6.0.tar.gz
 
 Then execute the following commands:
 
-    $ tar -xf openvswitch-2.4.0.tar.gz
-    $ cd openvswitch-2.4.0
+    $ tar -xf openvswitch-2.6.0.tar.gz
+    $ cd openvswitch-2.6.0
     $ ./configure --prefix=/ --datarootdir=/usr/share --with-linux=/lib/modules/$(uname -r)/build
     $ make
     $ sudo make install
