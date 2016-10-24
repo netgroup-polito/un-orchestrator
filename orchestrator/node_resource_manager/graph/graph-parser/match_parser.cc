@@ -240,7 +240,7 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 					map<string,pair<string,string> >::iterator it2 = vlan_id.find(eP); //check if the endpoint has a vlan ID associated (in this case, the endpoint is a vlan endpoint)
 					map<string,gre_info_t>::iterator it3 = gre_id.find(eP);
 					list<string>::iterator it4 = hostStack_id.begin();
-					for(;*it4!=eP && it4!=hostStack_id.end();it4++);
+					for(;*(it4)!=eP && it4!=hostStack_id.end();it4++);
 					if(it != iface_id.end())
 					{
 						//physical port

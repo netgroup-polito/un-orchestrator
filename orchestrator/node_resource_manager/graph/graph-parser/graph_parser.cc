@@ -1227,7 +1227,7 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																map<string,pair<string,string> >::iterator it2 = vlan_id.find(epID);
 																map<string,gre_info_t>::iterator it3 = gre_id.find(epID);
 																list<string>::iterator it4 = hostStack_id.begin();
-																for(;*it4!=epID && it4!=hostStack_id.end();it4++);
+																for(;*(it4)!=epID && it4!=hostStack_id.end();it4++);
 
 																if(it != iface_id.end())
 																{
