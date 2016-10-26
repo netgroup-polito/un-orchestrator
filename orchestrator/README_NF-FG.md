@@ -911,17 +911,17 @@ Vice versa the traffic sent through the host-stack port is provided to eth0.
 		}
 	}
 
-## Elements Position
-It is possible to specify the coordinates for each element of the graph   (`endpoint`, `vnf port`, `vnf`) in order to force them to be drawn in a specific position in the GUI.
+## Elements position
+The NF-FG formalism allows to specify the coordinates for some elements of the NF-FG (`endpoint`, `vnf port`, `vnf`), in order to force them to be drawn in a specific position in the GUI.
 
-The syntax of the `gui-element` object is the following:
+The syntax of the `gui-position` element object is the following:
 
 	"gui-position": {
 	 "x": 630,
 	 "y": 242
 	}
 where `x` and `y` are the coordinates of the current element.
-You can see  an exemple of usage in the successive graph.
+An example of NF-FG that specifies the coordinates for the elements is the following:
 
 	{
 	  "forwarding-graph": {
