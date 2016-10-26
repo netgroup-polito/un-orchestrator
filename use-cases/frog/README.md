@@ -2,7 +2,8 @@ Frog use case
 ===================
 
 This README details the FROG use case; this use cases, in addition to the Universal Node, also requires a [service layer](https://github.com/netgroup-polito/frog4-service-layer) and the [global orchestrator](https://github.com/netgroup-polito/frog4-orchestrator). In this folder you can find all the configuration files and VNFs required.
-The scenario is composed by four components:
+
+The scenario is composed by four network nodes:
 > - **Fat CPE**:  a CPE with NFV capabilities;
 > - **Slim CPE**:  a resource-constraint CPE (it doesn't run VNF);
 > - **Generic server**: it contains the service layer, the global orchestrator and the DD broker;
