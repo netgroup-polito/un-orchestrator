@@ -243,6 +243,7 @@ SET(SOURCES1
 	node_resource_manager/graph/output_actions/action_endpoint_hostStack.cc
 
 	node_resource_manager/graph/graph-parser/graph_parser_utils.h
+	node_resource_manager/graph/graph-parser/graph_parser_utils.cc
 	node_resource_manager/graph/graph-parser/graph_parser.h
 	node_resource_manager/graph/graph-parser/graph_parser.cc
 	node_resource_manager/graph/graph-parser/match_parser.h

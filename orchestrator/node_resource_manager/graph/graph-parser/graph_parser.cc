@@ -1229,11 +1229,11 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 															ULOG_DBG("\"%s\"->\"%s\": \"%s\"",ACTIONS,VNF,vnf_id.c_str());
 
-															string id = MatchParser::nfId(vnf_id);
+															string id = GraphParserUtils::nfId(vnf_id);
 															char *tmp_vnf_id = new char[BUFFER_SIZE];
 															strcpy(tmp_vnf_id, (char *)vnf_id.c_str());
-															unsigned int port = MatchParser::nfPort(string(tmp_vnf_id));
-															bool is_port = MatchParser::nfIsPort(string(tmp_vnf_id));
+															unsigned int port = GraphParserUtils::nfPort(string(tmp_vnf_id));
+															bool is_port = GraphParserUtils::nfIsPort(string(tmp_vnf_id));
 
 															if(id == "" || !is_port)
 															{
@@ -1256,7 +1256,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 															char *s_a_value = new char[BUFFER_SIZE];
 															strcpy(s_a_value, (char *)a_value.getString().c_str());
-															string epID = MatchParser::epName(a_value.getString());
+															string epID = GraphParserUtils::epName(a_value.getString());
 															if(epID != "")
 															{
 																map<string,string>::iterator it = iface_id.find(epID);

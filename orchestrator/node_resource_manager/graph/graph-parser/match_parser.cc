@@ -5,106 +5,6 @@
 
 static const char LOG_MODULE_NAME[] = "Match-Parser";
 
-string MatchParser::graphID(string name_port)
-{
-	return nfId(name_port);
-}
-
-string MatchParser::nfId(string id_port)
-{
-	char delimiter[] = ":";
-	char tmp[BUFFER_SIZE];
-	strcpy(tmp,id_port.c_str());
-	char *pnt=strtok(tmp, delimiter);
-	while( pnt!= NULL )
-	{
-		return string(pnt);
-	}
-
-	return "";
-}
-
-unsigned int MatchParser::nfPort(string name_port)
-{
-	char delimiter[] = ":";
-	char tmp[BUFFER_SIZE];
-	strcpy(tmp,name_port.c_str());
-	char *pnt=strtok((char*)/*name_port.c_str()*/tmp, delimiter);
-	unsigned int port = 0;
-
-	int i = 0;
-	while( pnt!= NULL )
-	{
-		switch(i)
-		{
-			case 1:
-				sscanf(pnt,"%u",&port);
-				return port;
-			break;
-		}
-
-		pnt = strtok( NULL, delimiter );
-		i++;
-	}
-
-	return port;
-}
-
-bool MatchParser::nfIsPort(string name_port)
-{
-	char delimiter[] = ":";
-	char tmp[BUFFER_SIZE];
-	strcpy(tmp,name_port.c_str());
-	char *pnt=strtok((char*)/*name_port.c_str()*/tmp, delimiter);
-	unsigned int port = 0;
-
-	int i = 0;
-	while( pnt!= NULL )
-	{
-		switch(i)
-		{
-			case 1:
-				sscanf(pnt,"%u",&port);
-				return true;
-			break;
-		}
-
-		pnt = strtok( NULL, delimiter );
-		i++;
-	}
-
-	return false;
-}
-
-string MatchParser::epName(string name_port)
-{
-	char delimiter[] = ":";
-	char tmp[BUFFER_SIZE];
-	strcpy(tmp,name_port.c_str());
-	char *pnt=strtok((char*)/*name_port.c_str()*/tmp, delimiter);
-
-	int i = 0;
-	while( pnt!= NULL )
-	{
-		switch(i)
-		{
-			case 1:
-				return pnt;
-			break;
-		}
-
-		pnt = strtok( NULL, delimiter );
-		i++;
-	}
-
-	return "";
-}
-
-unsigned int MatchParser::epPort(string name_port)
-{
-	return nfPort(name_port);
-}
-
 void MatchParser::parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,gre_info_t> &gre_id, list<string> &hostStack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses)
 {
 	bool foundOne = false;
@@ -198,11 +98,11 @@ void MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			{
 				string vnf_and_port_id(vnf_id_tmp, strlen(vnf_id_tmp));
 
-				string vnf_id = nfId(vnf_and_port_id);
+				string vnf_id = GraphParserUtils::nfId(vnf_and_port_id);
 				char *tmp_vnf_name = new char[BUFFER_SIZE];
 				strcpy(tmp_vnf_name, (char *)vnf_and_port_id.c_str());
-				unsigned int port_id = nfPort(string(tmp_vnf_name));
-				bool is_port = nfIsPort(string(tmp_vnf_name));
+				unsigned int port_id = GraphParserUtils::nfPort(string(tmp_vnf_name));
+				bool is_port = GraphParserUtils::nfIsPort(string(tmp_vnf_name));
 
 				if(vnf_id == "" || !is_port)
 				{
@@ -235,7 +135,7 @@ void MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 				bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false, hoststack_found=false;
 				char *s_value = new char[BUFFER_SIZE];
 				strcpy(s_value, (char *)value.getString().c_str());
-				string eP = epName(value.getString());
+				string eP = GraphParserUtils::epName(value.getString());
 				if(eP != ""){
 					map<string,string>::iterator it = iface_id.find(eP);
 					map<string,string>::iterator it1 = internal_id.find(eP);
