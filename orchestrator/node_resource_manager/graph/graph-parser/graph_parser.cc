@@ -3,7 +3,7 @@
 
 static const char LOG_MODULE_NAME[] = "Graph-Parser";
 
-bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph, GraphManager *gm)
+void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph, GraphManager *gm)
 {
 	//for each endpoint (interface), contains the id
 	map<string, string> iface_id;
@@ -52,8 +52,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 					forwarding_graph = value.getObject();
 				} catch(std::exception& e)
 				{
-					ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Object", FORWARDING_GRAPH);
-					return false;
+					string error = string("The content does not respect the JSON syntax: ") + FORWARDING_GRAPH + " should be an Object";
+					ULOG_WARN(error.c_str());
+					throw new GraphParserException(std::move(error));
 				}
 				for(Object::const_iterator fg = forwarding_graph.begin(); fg != forwarding_graph.end(); fg++)
 				{
@@ -89,8 +90,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								fg_value.getArray();
 							} catch(std::exception& e)
 							{
-								ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Array", VNFS);
-								return false;
+								string error = string("The content does not respect the JSON syntax: ") + VNFS + " should be an Array";
+								ULOG_WARN(error.c_str());
+								throw new GraphParserException(std::move(error));
 							}
 
 							const Array& vnfs_array = fg_value.getArray();
@@ -109,8 +111,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									vnfs_array[vnf].getObject();
 								} catch(std::exception& e)
 								{
-									ULOG_WARN("The content does not respect the JSON syntax: \"%s\" element should be an Object", VNFS);
-									return false;
+									string error = string("The content does not respect the JSON syntax: element of ") + VNFS + " should be an Object";
+									ULOG_WARN(error.c_str());
+									throw new GraphParserException(std::move(error));
 								}
 
 								/**
@@ -170,8 +173,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 										if(usedVNFID.count(nf_value.getString()) != 0)
 										{
-											ULOG_WARN("Found two VNFs with the same ID: \"%s\". This is not valid.",(nf_value.getString()).c_str());
-											return false;
+											string error = string("Found two VNFs with the same ID: ") + (nf_value.getString()).c_str() + ". This is not valid.";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 										usedVNFID.insert(nf_value.getString());
 										//store value of VNF id
@@ -187,8 +191,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											nf_value.getArray();
 										} catch(std::exception& e)
 										{
-											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Array", UNIFY_CONTROL);
-											return false;
+											string error = string("The content does not respect the JSON syntax: ") + UNIFY_CONTROL + " should be an Array";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 
 										const Array& control_array = nf_value.getArray();
@@ -200,8 +205,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												control_array[ctrl].getObject();
 											} catch(std::exception& e)
 											{
-												ULOG_WARN("The content does not respect the JSON syntax: element of \"%s\" should be an Object", UNIFY_CONTROL);
-												return false;
+												string error = string("The content does not respect the JSON syntax: element of ") + UNIFY_CONTROL + " should be an Object";
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
 											}
 
 											//This is a VNF control port, with an host TCP port and a vnf VNF port
@@ -254,8 +260,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											nf_value.getArray();
 										} catch(std::exception& e)
 										{
-											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Array", UNIFY_CONTROL);
-											return false;
+											string error = string("The content does not respect the JSON syntax: ") + UNIFY_ENV_VARIABLES + " should be an Array";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 
 										const Array& env_variables_array = nf_value.getArray();
@@ -267,8 +274,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												env_variables_array[env_var].getObject();
 											} catch(std::exception& e)
 											{
-												ULOG_WARN("The content does not respect the JSON syntax: element of \"%s\" should be an Object", UNIFY_CONTROL);
-												return false;
+												string error = string("The content does not respect the JSON syntax: element of ") + UNIFY_ENV_VARIABLES + " should be an Object";
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
 											}
 
 											//This is an envirnment variable
@@ -289,8 +297,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												}
 												else
 												{
-													ULOG_WARN("Invalid key \"%s\" in an element of \"%s\"",ev_name.c_str(),UNIFY_ENV_VARIABLES);
-													return false;
+													string error = string("Invalid key ") + ev_name.c_str() + " in an element of " + UNIFY_ENV_VARIABLES;
+													ULOG_WARN(error.c_str());
+													throw new GraphParserException(std::move(error));
 												}
 											}
 											environmentVariables.push_back(theEnvVar.str());
@@ -304,8 +313,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											nf_value.getArray();
 										} catch(std::exception& e)
 										{
-											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Array", VNF_PORTS);
-											return false;
+											string error = string("The content does not respect the JSON syntax: ") + VNF_PORTS + " should be an Array";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 
 										const Array& ports_array = nf_value.getArray();
@@ -317,8 +327,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												ports_array[ports].getObject();
 											} catch(std::exception& e)
 											{
-												ULOG_WARN("The content does not respect the JSON syntax: \"%s\" element should be an Object", VNF_PORTS);
-												return false;
+												string error = string("The content does not respect the JSON syntax: element of ") + VNF_PORTS + " should be an Object";
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
 											}
 
 											//This is a VNF port, with an ID and a name
@@ -354,13 +365,15 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNF_PORTS,PORT_MAC,p_value.getString().c_str());
 													if(!AddressValidator::validateMac(p_value.getString().c_str()))
 													{
-														ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\". Please specify a correct MAC address.",PORT_MAC,p_value.getString().c_str());
-														return false;
+														string error = string("Key ") + PORT_MAC + " with wrong value: " + p_value.getString().c_str() + ". Please specify a correct MAC address.";
+														ULOG_WARN(error.c_str());
+														throw new GraphParserException(std::move(error));
 													}
 													if(!AddressValidator::isUnicastMac(p_value.getString().c_str()))
 													{
-														ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\". Multicast address cannot be assigned to VNF ports.",PORT_MAC,p_value.getString().c_str());
-														return false;
+														string error = string("Key ") + PORT_MAC + " with wrong value: " + p_value.getString().c_str() + ". Multicast address cannot be assigned to VNF ports.";
+														ULOG_WARN(error.c_str());
+														throw new GraphParserException(std::move(error));
 													}
 													port_descr.configuration.mac_address = p_value.getString();
 												}
@@ -387,8 +400,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 														p_value.getObject();
 													} catch(std::exception& e)
 													{
-														ULOG_WARN("The content does not respect the JSON syntax: \"%s\" element should be an Object", POSITION);
-														return false;
+														string error = string("The content does not respect the JSON syntax: ") + POSITION + " element should be an Object";
+														ULOG_WARN(error.c_str());
+														throw new GraphParserException(std::move(error));
 													}
 													Object position_Object = p_value.getObject();
 													highlevel::Position *portPosition = new highlevel::Position();
@@ -407,23 +421,26 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 														}
 														else
 														{
-															ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",pos_name.c_str(),VNFS);
-															return false;
+															string error = string("Invalid key ") + pos_name.c_str() + " in an Object: " + POSITION;
+															ULOG_WARN(error.c_str());
+															throw new GraphParserException(std::move(error));
 														}
 													}
 													port_descr.position=portPosition;
 												}
 												else
 												{
-													ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",p_name.c_str(),VNF_PORTS);
-													return false;
+													string error = string("Invalid key ") + p_name.c_str() + " in a PORT of " + VNF_PORTS;
+													ULOG_WARN(error.c_str());
+													throw new GraphParserException(std::move(error));
 												}
 											}
 
 											if(port_descr.configuration.trusted && port_descr.configuration.mac_address == "")
 											{
-												ULOG_WARN("A 'trusted' VNF port must be associated with a MAC address");
-												return false;
+												string error = "A 'trusted' VNF port must be associated with a MAC address";
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
 											}
 
 											//Each VNF port has its own configuration if provided
@@ -438,8 +455,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											nf_value.getArray();
 										} catch(std::exception& e)
 										{
-											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" element should be an Object", VNFS);
-											return false;
+											string error = string("The content does not respect the JSON syntax: ") + VNF_GROUPS + " should be an Array";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 										const Array& myGroups_Array = nf_value.getArray();
 										for(unsigned int i = 0; i<myGroups_Array.size();i++)
@@ -458,8 +476,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											nf_value.getObject();
 										} catch(std::exception& e)
 										{
-											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" element should be an Object", POSITION);
-											return false;
+											string error = string("The content does not respect the JSON syntax: ") + POSITION + " should be an Object";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 										Object position_Object = nf_value.getObject();
 										vnfPosition = new highlevel::Position();
@@ -478,21 +497,24 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 											else
 											{
-												ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",pos_name.c_str(),VNFS);
-												return false;
+												string error = string("Invalid key ") + pos_name.c_str() + " in an Object: " + POSITION;
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
 											}
 										}
 									}
 									else
 									{
-										ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",nf_name.c_str(),VNFS);
-										return false;
+										string error = string("Invalid key ") + nf_name.c_str() + " in a VNF of " + VNFS;
+										ULOG_WARN(error.c_str());
+										throw new GraphParserException(std::move(error));
 									}
 								}
 								if(!foundName)
 								{
-									ULOG_WARN("Key \"%s\" not found in an element of \"%s\"",_NAME,VNFS);
-									return false;
+									string error = string("Key ") + _NAME + " not found in an element of " + VNFS;
+									ULOG_WARN(error.c_str());
+									throw new GraphParserException(std::move(error));
 								}
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
@@ -528,8 +550,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 						}
 						catch(std::exception& e)
 						{
-							ULOG_DBG_INFO("The \"%s\" element does not respect the JSON syntax: \"%s\"", VNFS, e.what());
-							return false;
+								string error = string("The ") + VNFS + " element does not respect the JSON syntax: " + e.what();
+								ULOG_WARN(error.c_str());
+								throw new GraphParserException(error);
 						}
 					}
 					//Identify the end-points
@@ -542,8 +565,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								fg_value.getArray();
 							} catch(std::exception& e)
 							{
-								ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Array", END_POINTS);
-								return false;
+								string error = string("The content does not respect the JSON syntax: ") + END_POINTS + " should be an Array";
+								ULOG_WARN(error.c_str());
+								throw new GraphParserException(std::move(error));
 							}
 
 							/**
@@ -570,8 +594,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									end_points_array[ep].getObject();
 								} catch(std::exception& e)
 								{
-									ULOG_WARN("The content does not respect the JSON syntax: \"%s\" element should be an Object", END_POINTS);
-									return false;
+									string error = string("The content does not respect the JSON syntax: element of ") + END_POINTS + " should be an Object";
+									ULOG_WARN(error.c_str());
+									throw new GraphParserException(std::move(error));
 								}
 
 								//This is a endpoints, with a name, a type, and an interface
@@ -589,8 +614,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										//Two endpoints cannot have the same ID
 										if(usedEndpointID.count(id) != 0)
 										{
-											ULOG_WARN("Found two endpoints with the same ID: \"%s\". This is not valid.",id.c_str());
-											return false;
+											string error = string("Found two endpoints with the same ID: ") + id.c_str() + ". This is not valid.";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 										usedEndpointID.insert(id);
 									}
@@ -612,8 +638,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											ep_value.getObject();
 										} catch(std::exception& e)
 										{
-											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Object", EP_IFACE);
-											return false;
+											string error = string("The content does not respect the JSON syntax: ") + EP_IFACE + " should be an Object";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 
 										Object ep_iface = ep_value.getObject();
@@ -639,8 +666,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 											else
 											{
-												ULOG_WARN("Invalid key \"%s\" inside \"%s\"",epi_name.c_str(),EP_IFACE);
-												return false;
+												string error = string("Invalid key ") + epi_name.c_str() + " inside " + EP_IFACE;
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
 											}
 										}
 									}
@@ -652,8 +680,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											ep_value.getObject();
 										} catch(std::exception& e)
 										{
-											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Object", VLAN);
-											return false;
+											string error = string("The content does not respect the JSON syntax: ") + EP_INTERNAL + " should be an Object";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 
 										Object ep_internal = ep_value.getObject();
@@ -687,8 +716,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											ep_value.getObject();
 										} catch(std::exception& e)
 										{
-											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Object", VLAN);
-											return false;
+											string error = string("The content does not respect the JSON syntax: ") + VLAN + " should be an Object";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 
 										Object ep_vlan = ep_value.getObject();
@@ -727,8 +757,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											ep_value.getObject();
 										} catch(std::exception& e)
 										{
-											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Object", EP_GRE);
-											return false;
+											string error = string("The content does not respect the JSON syntax: ") + EP_GRE + " should be an Object";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 
 
@@ -748,69 +779,64 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 										}
 
-										try
+										gre_info_t gre_info;
+
+										bool found_local_ip = false, found_remote_ip = false, found_key = false;
+
+										ep_gre=ep_value.getObject();
+
+										for(Object::const_iterator epi = ep_gre.begin(); epi != ep_gre.end(); epi++)
 										{
-											gre_info_t gre_info;
+											const string& epi_name  = epi->first;
+											const Value&  epi_value = epi->second;
 
-											bool found_local_ip = false, found_remote_ip = false, found_key = false;
-
-											ep_gre=ep_value.getObject();
-
-											for(Object::const_iterator epi = ep_gre.begin(); epi != ep_gre.end(); epi++)
+											if(epi_name == LOCAL_IP)
 											{
-												const string& epi_name  = epi->first;
-												const Value&  epi_value = epi->second;
-
-												if(epi_name == LOCAL_IP)
-												{
-													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,LOCAL_IP,epi_value.getString().c_str());
-													found_local_ip = true;
-													gre_info.local_ip = epi_value.getString();
-												}
-												else if(epi_name == REMOTE_IP)
-												{
-													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,REMOTE_IP,epi_value.getString().c_str());
-													found_remote_ip = true;
-													gre_info.remote_ip = epi_value.getString();
-												}
-												else if(epi_name == TTL)
-												{
-													ULOG_DBG_INFO("\"%s\"->\"%s\": \"%s\"",EP_GRE,TTL,epi_value.getString().c_str());
-
-													gre_info.ttl = epi_value.getString();
-												}
-												else if(epi_name == GRE_KEY)
-												{
-													ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,GRE_KEY,epi_value.getString().c_str());
-													found_key = true;
-													gre_info.key = epi_value.getString();
-												}
-												else if(epi_name == SAFE)
-												{
-													ULOG_DBG_INFO("\"%s\"->\"%s\": \"%d\"",EP_GRE,SAFE,epi_value.getBool());
-
-													gre_info.safe = epi_value.getBool();
-												}
-												else
-												{
-													ULOG_WARN("Invalid key \"%s\" inside \"%s\"",epi_name.c_str(),EP_GRE);
-													return false;
-												}
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,LOCAL_IP,epi_value.getString().c_str());
+												found_local_ip = true;
+												gre_info.local_ip = epi_value.getString();
 											}
-
-											if(!found_local_ip || !found_remote_ip || !found_key)
+											else if(epi_name == REMOTE_IP)
 											{
-												ULOG_WARN("Key \"%s\", or  Key \"%s\", or Key \"%s\" not found in \"%s\"",LOCAL_IP,REMOTE_IP,GRE_KEY,EP_GRE);
-												return false;
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,REMOTE_IP,epi_value.getString().c_str());
+												found_remote_ip = true;
+												gre_info.remote_ip = epi_value.getString();
 											}
+											else if(epi_name == TTL)
+											{
+												ULOG_DBG_INFO("\"%s\"->\"%s\": \"%s\"",EP_GRE,TTL,epi_value.getString().c_str());
 
-											gre_id[id] = gre_info;
+												gre_info.ttl = epi_value.getString();
+											}
+											else if(epi_name == GRE_KEY)
+											{
+												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_GRE,GRE_KEY,epi_value.getString().c_str());
+												found_key = true;
+												gre_info.key = epi_value.getString();
+											}
+											else if(epi_name == SAFE)
+											{
+												ULOG_DBG_INFO("\"%s\"->\"%s\": \"%d\"",EP_GRE,SAFE,epi_value.getBool());
+
+												gre_info.safe = epi_value.getBool();
+											}
+											else
+											{
+												string error = string("Invalid key ") + epi_name.c_str() + " inside " + EP_GRE;
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
+											}
 										}
-										catch(std::exception& e)
+
+										if(!found_local_ip || !found_remote_ip || !found_key)
 										{
-											ULOG_DBG_INFO("The \"%s\" element does not respect the JSON syntax: \"%s\"", EP_GRE, e.what());
-											return false;
+											string error = string("Key ") + LOCAL_IP + ", or  Key " + REMOTE_IP + ", or Key " + GRE_KEY + " not found in " + EP_GRE;
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
+
+										gre_id[id] = gre_info;
+
 									}
 									else if(ep_name == EP_HOSTSTACK)
 									{
@@ -820,8 +846,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											ep_value.getObject();
 										} catch(std::exception& e)
 										{
-											ULOG_DBG_INFO("The content does not respect the JSON syntax: \"%s\" should be an Object", EP_HOSTSTACK);
-											return false;
+											string error = string("The content does not respect the JSON syntax: ") + EP_HOSTSTACK + " should be an Object";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 
 
@@ -860,8 +887,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													configuration=PPPOE;
 												else
 												{
-													ULOG_WARN("Invalid value \"%s\" for key \"%s\" inside \"%s\"",confTemp.c_str(),eph_name.c_str(),EP_HOSTSTACK);
-													return false;
+													string error = string("Invalid value ") + confTemp.c_str() + " for key " + eph_name.c_str() + " inside " + EP_HOSTSTACK;
+													ULOG_WARN(error.c_str());
+													throw new GraphParserException(std::move(error));
 												}
 											}
 											else if(eph_name == IP_ADDRESS)
@@ -876,15 +904,17 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 											else
 											{
-												ULOG_WARN("Invalid key \"%s\" inside \"%s\"",eph_name.c_str(),EP_HOSTSTACK);
-												return false;
+												string error = string("Invalid key ") + eph_name.c_str() + " inside " + EP_HOSTSTACK;
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
 											}
 										}
 
 										if(configuration==NONE)
 										{
-											ULOG_WARN("Keywork \"%s\" must be present inside \"%s\"",CONFIGURATION, EP_HOSTSTACK);
-											return false;
+											string error = string("Keywork ") + CONFIGURATION + " must be present inside " + EP_HOSTSTACK;
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 										highlevel::EndPointHostStack ep_hs(id, e_name, configuration, ipAddress, macAddress);
 										if(endpointPosition!=NULL)
@@ -899,8 +929,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											ep_value.getObject();
 										} catch(std::exception& e)
 										{
-											ULOG_WARN("The content does not respect the JSON syntax: \"%s\" element should be an Object", POSITION);
-											return false;
+											string error = string("The content does not respect the JSON syntax: ") + POSITION + " should be an Object";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
 										}
 										Object position_Object = ep_value.getObject();
 										endpointPosition = new highlevel::Position();
@@ -919,8 +950,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 											else
 											{
-												ULOG_WARN("Invalid key \"%s\" in a VNF of \"%s\"",pos_name.c_str(),END_POINTS);
-												return false;
+												string error = string("Invalid key ") + pos_name.c_str() + " inside " + POSITION;
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
 											}
 										}
 									}
@@ -973,8 +1005,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 						}
 						catch(std::exception& e)
 						{
-							ULOG_DBG_INFO("The \"%s\" element does not respect the JSON syntax: \"%s\"", END_POINTS, e.what());
-							return false;
+							string error = string("The ") + END_POINTS + " element does not respect the JSON syntax: " + e.what();
+							ULOG_WARN(error.c_str());
+							throw new GraphParserException(error);
 						}
 					}//End if(fg_name == END_POINTS)
 					//Identify the big-switch
@@ -985,8 +1018,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 							fg_value.getObject();
 						} catch(std::exception& e)
 						{
-							ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Object", BIG_SWITCH);
-							return false;
+							string error = string("The content does not respect the JSON syntax: ") + BIG_SWITCH + " should be an Object";
+							ULOG_WARN(error.c_str());
+							throw new GraphParserException(std::move(error));
 						}
 
 						big_switch = fg_value.getObject();
@@ -995,8 +1029,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 					}
 					else
 					{
-						ULOG_WARN("Invalid key \"%s\" in \"%s\"",fg_name.c_str(),FORWARDING_GRAPH);
-						return false;
+						string error = string("Invalid key ") + fg_name.c_str() + " inside " + FORWARDING_GRAPH;
+						ULOG_WARN(error.c_str());
+						throw new GraphParserException(std::move(error));
 					}
 
 				}// End iteration on the elements of "forwarding-graph"
@@ -1019,8 +1054,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								bs_value.getArray();
 							} catch(std::exception& e)
 							{
-								ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Array", FLOW_RULES);
-								return false;
+								string error = string("The content does not respect the JSON syntax: ") + FLOW_RULES + " should be an Array";
+								ULOG_WARN(error.c_str());
+								throw new GraphParserException(std::move(error));
 							}
 
 							const Array& flow_rules_array = bs_value.getArray();
@@ -1067,14 +1103,12 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									{
 										try{
 											foundMatch = true;
-											if(!MatchParser::parseMatch(fr_value.getObject(),match,(*action),iface_id,internal_id,vlan_id,gre_id,hostStack_id,trusted_ports,trusted_ports_mac_addresses))
-											{
-												return false;
-											}
+											MatchParser::parseMatch(fr_value.getObject(),match,(*action),iface_id,internal_id,vlan_id,gre_id,hostStack_id,trusted_ports,trusted_ports_mac_addresses);
 										} catch(std::exception& e)
 										{
-											ULOG_WARN("The content does not respect the JSON syntax: \"%s\"", MATCH);
-											return false;
+											string error = string("The ") + MATCH + " element does not respect the JSON syntax: " + e.what();
+											ULOG_WARN(error.c_str());
+											throw new MatchParserException(error);
 										}
 									}
 									else if(fr_name == ACTIONS)
@@ -1086,8 +1120,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												fr_value.getArray();
 											} catch(std::exception& e)
 											{
-												ULOG_WARN("The content does not respect the JSON syntax: \"%s\" should be an Array", ACTIONS);
-												return false;
+												string error = string("The content does not respect the JSON syntax: ") + ACTIONS + " should be an Array";
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
 											}
 
 											const Array& actions_array = fr_value.getArray();
@@ -1105,17 +1140,18 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													actions_array[ac].getObject();
 												} catch(std::exception& e)
 												{
-													ULOG_WARN("The content does not respect the JSON syntax: \"%s\" element should be an Object", ACTIONS);
-													return false;
+													string error = string("The content does not respect the JSON syntax: element of ") + ACTIONS + " should be an Object";
+													ULOG_WARN(error.c_str());
+													throw new GraphParserException(std::move(error));
 												}
 
 												//A specific action of the array can have a single keyword inside
 												Object theAction = actions_array[ac].getObject();
-												assert(theAction.size() == 1);
 												if(theAction.size() != 1)
 												{
-													ULOG_DBG_INFO("Too many keywords in an element of \"%s\"",ACTIONS);
-													return false;
+													string error = string("Too many keywords in an element of ") + ACTIONS;
+													ULOG_WARN(error.c_str());
+													throw new GraphParserException(std::move(error));
 												}
 
 												for(Object::const_iterator a = theAction.begin(); a != theAction.end(); a++)
@@ -1201,8 +1237,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 															if(id == "" || !is_port)
 															{
-																ULOG_DBG_INFO("Network function \"%s\" is not valid. It must be in the form \"id:port\"",vnf_id.c_str());
-																return false;
+																string error = string("Network function ") + vnf_id.c_str() + " is not valid. It must be in the form \"id:port\"";
+																ULOG_WARN(error.c_str());
+																throw new GraphParserException(std::move(error));
 															}
 
 															/*nf port starts from 0 - here we want that they start from 1*/
@@ -1265,8 +1302,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															{
 																if(internal_group == "")
 																{
-																	ULOG_DBG_INFO("Internal endpoint \"%s\" is not valid. It must have the \"%s\" attribute",value.getString().c_str(), INTERNAL_GROUP);
-																	return false;
+																	string error = string("Internal endpoint ") + value.getString().c_str() + " is not valid. It must have attribute " + INTERNAL_GROUP;
+																	ULOG_WARN(error.c_str());
+																	throw new GraphParserException(std::move(error));
 																}
 																action->addOutputAction(new ActionEndpointInternal(internal_group, string(s_a_value)));
 															}
@@ -1423,8 +1461,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													}
 													else
 													{
-														ULOG_WARN("Invalid key \"%s\" in \"%s\"",a_name.c_str(),ACTIONS);
-														return false;
+														string error = string("Invalid key ") + a_name.c_str() + " inside " + ACTIONS;
+														ULOG_WARN(error.c_str());
+														throw new GraphParserException(std::move(error));
 													}
 												}//end iteration on the keywords of an action element (remember that a single keywork is allowed in each element)
 
@@ -1433,8 +1472,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											if(!foundOneOutputToPort)
 											{
 												//"output_to_port" is a mandatory action
-												ULOG_WARN("Key \"%s\" not found in \"%s\"",OUTPUT,ACTIONS);
-												return false;
+												string error = string("Key ") + OUTPUT + " not found in " + ACTIONS;
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
 											}
 											assert(action != NULL);
 											for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
@@ -1442,29 +1482,33 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										}//end of try
 										catch(std::exception& e)
 										{
-											ULOG_DBG_INFO("The \"%s\" element does not respect the JSON syntax: \"%s\"", ACTIONS, e.what());
-											return false;
+											string error = string("The ") + ACTIONS + " element does not respect the JSON syntax: " + e.what();
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(error);
 										}
 									}//end if(fr_name == ACTION)
 									else
 									{
-										ULOG_WARN("Invalid key \"%s\" in a rule of \"%s\"",name.c_str(),FLOW_RULES);
-										return false;
+										string error = string("Invalid key ") + name.c_str() + " in a rule of " + FLOW_RULES;
+										ULOG_WARN(error.c_str());
+										throw new GraphParserException(std::move(error));
 									}
 								}
 
 								if(!foundAction || !foundMatch || !foundID)
 								{
-									ULOG_WARN("Key \"%s\", or key \"%s\", or key \"%s\", or all of them not found in an elmenet of \"%s\"",_ID,MATCH,ACTIONS,FLOW_RULES);
-									return false;
+									string error = string("Key ") + _ID + ", or  Key " + MATCH + ", or Key " + ACTIONS + " or all of them not found in an elmenet of " + FLOW_RULES;
+									ULOG_WARN(error.c_str());
+									throw new GraphParserException(std::move(error));
 								}
 
 								highlevel::Rule rule(match,action,ruleID,priority);
 
 								if(!graph.addRule(rule))
 								{
-									ULOG_DBG_INFO("The graph has at least two rules with the same ID: %s",ruleID.c_str());
-									return false;
+									string error = string("The graph has at least two rules with the same ID: ") + ruleID.c_str() + ". This is not valid.";
+									ULOG_WARN(error.c_str());
+									throw new GraphParserException(std::move(error));
 								}
 
 								list<GenericAction*> gaList = action->getGenericActions();
@@ -1476,9 +1520,9 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										{
 											if(!match.checkVlanPresence())
 											{
-												ULOG_WARN("A POP_VLAN action without specific match on vlan ID has been specified...");
-												ULOG_WARN("The corresponding rule can not work");
-												return false;
+												string error = "A POP_VLAN action without specific match on vlan ID has been specified... The corresponding rule can not work";
+												ULOG_WARN(error.c_str());
+												throw new GraphParserException(std::move(error));
 											}
 										}
 									}
@@ -1511,42 +1555,48 @@ bool GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 						}
 						catch(std::exception& e)
 						{
-							ULOG_DBG_INFO("The \"%s\" element does not respect the JSON syntax: \"%s\"", FLOW_RULES, e.what());
-							return false;
+							string error = string("The ") + FLOW_RULES + " element does not respect the JSON syntax: " + e.what();
+							ULOG_WARN(error.c_str());
+							throw new GraphParserException(error);
 						}
 					}// end  if (fg_name == FLOW_RULES)
 					else
 					{
-						ULOG_WARN("Invalid key: %s",bs_name.c_str());
-						return false;
+						string error = string("Invalid key ") + bs_name.c_str() + " inside " + BIG_SWITCH;
+						ULOG_WARN(error.c_str());
+						throw new GraphParserException(std::move(error));
 					}
 				}//End iteration on the elements inside "big-switch"
 
 				if(foundBigSwitch && !foundFlowRules)
 				{
-					ULOG_WARN("Key \"%s\" not found in \"%s\"",FLOW_RULES,BIG_SWITCH);
-					return false;
+					string error = string("Key ") + FLOW_RULES + " not found in " + BIG_SWITCH;
+					ULOG_WARN(error.c_str());
+					throw new GraphParserException(std::move(error));
 				}
 
 
 			}//End if(name == FORWARDING_GRAPH)
 			else
 			{
-				ULOG_WARN("Invalid key: %s",name.c_str());
-				return false;
+				string error = string("Invalid key ") + name.c_str() + " inside ROOT";
+				ULOG_WARN(error.c_str());
+				throw new GraphParserException(std::move(error));
 			}
 		}
 		if(!foundFlowGraph)
 		{
-			ULOG_WARN("Key \"%s\" not found",FORWARDING_GRAPH);
-			return false;
+			string error = string("Key ") + FORWARDING_GRAPH + " not found";
+			ULOG_WARN(error.c_str());
+			throw new GraphParserException(std::move(error));
 		}
 	}catch(std::exception& e)
 	{
-		ULOG_WARN("The content does not respect the JSON syntax: %s",e.what());
-		return false;
+		string error = string("The content does not respect the JSON syntax: ") + e.what();
+		ULOG_WARN(error.c_str());
+		throw new GraphParserException(error);
 	}
 
-	return true;
+	return;
 }
 

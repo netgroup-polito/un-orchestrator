@@ -470,10 +470,15 @@ int RestServer::createGraphFromFile(const string &graphID, string toBeCreated) {
 
 	highlevel::Graph *graph = new highlevel::Graph(graphID);
 
-	if (!parseGraphFromFile(toBeCreated, *graph, true)) {
-		ULOG_INFO("Malformed content");
+	try
+	{
+		parseGraphFromFile(toBeCreated, *graph, true);
+	}catch(GraphParserException*)
+	{
+		ULOG_ERR("Malformed contentt");
 		return 0;
 	}
+	
 
 	graph->print();
 	try {
@@ -492,19 +497,21 @@ int RestServer::createGraphFromFile(const string &graphID, string toBeCreated) {
 	return 1;
 }
 
-bool RestServer::parseGraphFromFile(string toBeCreated, highlevel::Graph &graph,
+void RestServer::parseGraphFromFile(string toBeCreated, highlevel::Graph &graph,
 		bool newGraph) //startup. cambiare nome alla funzione
 		{
 	Value value;
 	read(toBeCreated, value);
-	return GraphParser::parseGraph(value, graph, newGraph, gm);
+	GraphParser::parseGraph(value, graph, newGraph, gm);
+	return;
 }
 
-bool RestServer::parsePutBody(struct connection_info_struct &con_info,
+void RestServer::parsePutBody(struct connection_info_struct &con_info,
 		highlevel::Graph &graph, bool newGraph) {
 	Value value;
 	read(con_info.message, value);
-	return GraphParser::parseGraph(value, graph, newGraph, gm);
+	GraphParser::parseGraph(value, graph, newGraph, gm);
+	return;
 }
 
 /*
@@ -1079,9 +1086,27 @@ int RestServer::deployNewGraph(struct MHD_Connection *connection, struct connect
 	bool newGraph = true;
 
 	// Check whether the body is well formed
-	if (!parsePutBody(*con_info, *graph, newGraph)) {
+	try
+	{
+		parsePutBody(*con_info, *graph, newGraph);
+	}catch(GraphParserException* e)
+	{
 		ULOG_INFO("Malformed content");
-		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
+		Object json;
+		json["module"]=e->getModule();
+		json["message"]=e->what();
+		stringstream ssj;
+		write_formatted(json, ssj);
+		string sssj = ssj.str();
+		char *aux = (char*) malloc(sizeof(char) * (sssj.length() + 1));
+		strcpy(aux, sssj.c_str());
+		response = MHD_create_response_from_buffer(strlen(aux), (void*) aux,
+				MHD_RESPMEM_PERSISTENT);
+		MHD_add_response_header(response, "Content-Type", JSON_C_TYPE);
+		MHD_add_response_header(response, "Cache-Control", NO_CACHE);
+		ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
+		MHD_destroy_response(response);
+		return ret;
 	}
 
 	graph->print();

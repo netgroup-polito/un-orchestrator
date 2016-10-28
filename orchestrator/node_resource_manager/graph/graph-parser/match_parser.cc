@@ -105,7 +105,7 @@ unsigned int MatchParser::epPort(string name_port)
 	return nfPort(name_port);
 }
 
-bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,gre_info_t> &gre_id, list<string> &hostStack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses)
+void MatchParser::parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,gre_info_t> &gre_id, list<string> &hostStack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses)
 {
 	bool foundOne = false;
 	bool foundEndPointID = false, foundProtocolField = false, definedInCurrentGraph = false;
@@ -121,8 +121,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,PORT_IN,value.getString().c_str());
 			if(foundOne)
 			{
-				ULOG_DBG_INFO("Only one between keys \"%s\", \"%s\" and \"%s\" are allowed in \"%s\"",PORT_IN,VNF,ENDPOINT,MATCH);
-				return false;
+				string error = string("Only one between keys \"") + PORT_IN + "\", \"" + VNF + "\" and \"" + ENDPOINT + "\" are allowed in \"" + MATCH + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 
 			foundOne = true;
@@ -205,8 +206,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 
 				if(vnf_id == "" || !is_port)
 				{
-					ULOG_DBG_INFO("Network function \"%s\" is not valid. It must be in the form \"name:port\"",vnf_id_tmp);
-					return false;
+					string error = string("Network function \"") + vnf_id_tmp + "\" is not valid. It must be in the form \"name:port\"";
+					ULOG_WARN(error.c_str());
+					throw new MatchParserException(std::move(error));
 				}
 				/*nf port starts from 0 - here we want that the ID starts from 1*/
 				port_id++;
@@ -280,8 +282,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 					//unsigned int endPoint = epPort(string(endpoint_internal));
 					if(/*endPoint == 0*/internal_group == "")
 					{
-						ULOG_DBG_INFO("Internal endpoint \"%s\" is not valid. It must have the \"%s\" attribute",value.getString().c_str(), INTERNAL_GROUP);
-						return false;
+						string error = string("Internal endpoint \"") + value.getString().c_str() + "\" is not valid. It must have the \""+INTERNAL_GROUP+"\" attribute";
+						ULOG_WARN(error.c_str());
+						throw new MatchParserException(std::move(error));
 					}
 
 					match.setEndPointInternal(/*graph_id,endPoint*/internal_group);
@@ -294,8 +297,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 
 					if((sscanf(v_id.c_str(),"%" SCNd32,&vlanID) != 1) && (vlanID > 4094))
 					{
-						ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",VLAN_ID,value.getString().c_str());
-						return false;
+						string error = string("Key \"") + VLAN_ID + "\" with wrong value \"" + value.getString().c_str() + "\"";
+						ULOG_WARN(error.c_str());
+						throw new MatchParserException(std::move(error));
 					}
 
 					//The match on a vlan endpoint requires to
@@ -339,8 +343,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint32_t ethType;
 			if((sscanf(value.getString().c_str(),"%" SCNi32,&ethType) != 1) || (ethType > 65535))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ETH_TYPE,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ETH_TYPE + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setEthType(ethType & 0xFFFF);
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,ETH_TYPE,value.getString().c_str(),ethType);
@@ -358,8 +363,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 				uint32_t vlanID;
 				if((sscanf(value.getString().c_str(),"%" SCNi32,&vlanID) != 1) && (vlanID > 4094))
 				{
-					ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",VLAN_ID,value.getString().c_str());
-					return false;
+					string error = string("Key \"") + VLAN_ID + "\" with wrong value \"" + value.getString().c_str() + "\"";
+					ULOG_WARN(error.c_str());
+					throw new MatchParserException(std::move(error));
 				}
 				match.setVlanID(vlanID & 0xFFFF);
 			}
@@ -378,8 +384,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,ETH_SRC,value.getString().c_str());
 			if(!AddressValidator::validateMac(value.getString().c_str()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ETH_SRC,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ETH_SRC + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setEthSrc((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -389,8 +396,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,ETH_SRC_MASK,value.getString().c_str());
 			if(!AddressValidator::validateMac(value.getString().c_str()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ETH_SRC_MASK,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ETH_SRC_MASK + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setEthSrcMask((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -400,8 +408,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,ETH_DST,value.getString().c_str());
 			if(!AddressValidator::validateMac(value.getString().c_str()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ETH_DST,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ETH_DST + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setEthDst((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -411,8 +420,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,ETH_DST_MASK,value.getString().c_str());
 			if(!AddressValidator::validateMac(value.getString().c_str()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ETH_DST_MASK,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ETH_DST_MASK + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setEthDstMask((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -423,8 +433,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint16_t vlanPCP;
 			if((sscanf(value.getString().c_str(),"%" SCNd16,&vlanPCP) != 1) || (vlanPCP > 255) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",VLAN_PCP,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + VLAN_PCP + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			ULOG_DBG("\"%s\"->\"%s\": \"%x\"",MATCH,VLAN_PCP,vlanPCP);
 			match.setVlanPCP(vlanPCP & 0xFF);
@@ -436,8 +447,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint16_t ipDSCP;
 			if((sscanf(value.getString().c_str(),"%" SCNd16,&ipDSCP) != 1) || (ipDSCP > 255) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",IP_DSCP,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + IP_DSCP + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIpDSCP(ipDSCP & 0xFF);
 		}
@@ -447,8 +459,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint16_t ipECN;
 			if((sscanf(value.getString().c_str(),"%" SCNd16,&ipECN) != 1) || (ipECN > 255) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",IP_ECN,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + IP_ECN + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIpECN(ipECN & 0xFF);
 			foundProtocolField = true;
@@ -462,8 +475,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 				ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,IP_SRC,value.getString().c_str());
 				if(!AddressValidator::validateIpv6(value.getString()))
 				{
-					ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",IP_SRC,value.getString().c_str());
-					return false;
+					string error = string("Key \"") + IP_SRC + "\" with wrong value \"" + value.getString().c_str() + "\"";
+					ULOG_WARN(error.c_str());
+					throw new MatchParserException(std::move(error));
 				}
 				match.setIpv6Src((char*)value.getString().c_str());
 				foundProtocolField = true;
@@ -472,8 +486,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 				ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,IP_SRC,value.getString().c_str());
 				if(!AddressValidator::validateIpv4(value.getString()))
 				{
-					ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",IP_SRC,value.getString().c_str());
-					return false;
+					string error = string("Key \"") + IP_SRC + "\" with wrong value \"" + value.getString().c_str() + "\"";
+					ULOG_WARN(error.c_str());
+					throw new MatchParserException(std::move(error));
 				}
 				match.setIpv4Src((char*)value.getString().c_str());
 				foundProtocolField = true;
@@ -484,8 +499,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,IPv4_SRC_MASK,value.getString().c_str());
 			if(!AddressValidator::validateIpv4Netmask(value.getString()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",IPv4_SRC_MASK,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + IPv4_SRC_MASK + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIpv4SrcMask((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -499,8 +515,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 				ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,IP_DST,value.getString().c_str());
 				if(!AddressValidator::validateIpv6(value.getString()))
 				{
-					ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",IP_DST,value.getString().c_str());
-					return false;
+					string error = string("Key \"") + IP_DST + "\" with wrong value \"" + value.getString().c_str() + "\"";
+					ULOG_WARN(error.c_str());
+					throw new MatchParserException(std::move(error));
 				}
 				match.setIpv6Dst((char*)value.getString().c_str());
 				foundProtocolField = true;
@@ -508,8 +525,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 				ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,IP_SRC,value.getString().c_str());
 				if(!AddressValidator::validateIpv4(value.getString()))
 				{
-					ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",IP_SRC,value.getString().c_str());
-					return false;
+					string error = string("Key \"") + IP_SRC + "\" with wrong value \"" + value.getString().c_str() + "\"";
+					ULOG_WARN(error.c_str());
+					throw new MatchParserException(std::move(error));
 				}
 				match.setIpv4Dst((char*)value.getString().c_str());
 				foundProtocolField = true;
@@ -520,8 +538,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,IPv4_DST_MASK,value.getString().c_str());
 			if(!AddressValidator::validateIpv4Netmask(value.getString()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",IPv4_DST_MASK,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + IPv4_DST_MASK + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIpv4DstMask((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -540,8 +559,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint32_t transportSrcPort;
 			if((sscanf(value.getString().c_str(),"%" SCNd32,&transportSrcPort) != 1) || (transportSrcPort > 65535))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",PORT_SRC,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + PORT_SRC + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setTransportSrcPort(transportSrcPort & 0xFFFF);
 			foundProtocolField = true;
@@ -552,8 +572,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint32_t transportSrcPort;
 			if((sscanf(value.getString().c_str(),"%" SCNd32,&transportSrcPort) != 1) || (transportSrcPort > 65535))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",SCTP_SRC,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + SCTP_SRC + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setTransportSrcPort(transportSrcPort & 0xFFFF);
 			foundProtocolField = true;
@@ -564,8 +585,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint32_t transportDstPort;
 			if((sscanf(value.getString().c_str(),"%" SCNd32,&transportDstPort) != 1)  || (transportDstPort > 65535))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",PORT_DST,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + PORT_DST + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setTransportDstPort(transportDstPort & 0xFFFF);
 			foundProtocolField = true;
@@ -576,8 +598,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint32_t transportDstPort;
 			if((sscanf(value.getString().c_str(),"%" SCNd32,&transportDstPort) != 1)  || (transportDstPort > 65535))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",SCTP_DST,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + SCTP_DST + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setTransportDstPort(transportDstPort & 0xFFFF);
 			foundProtocolField = true;
@@ -588,8 +611,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint16_t icmpv4Type;
 			if((sscanf(value.getString().c_str(),"%" SCNd16,&icmpv4Type) != 1) || (icmpv4Type > 255) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ICMPv4_TYPE,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ICMPv4_TYPE + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIcmpv4Type(icmpv4Type & 0xFF);
 			foundProtocolField = true;
@@ -600,8 +624,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint16_t icmpv4Code;
 			if((sscanf(value.getString().c_str(),"%" SCNd16,&icmpv4Code) != 1) || (icmpv4Code > 255) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ICMPv4_CODE,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ICMPv4_CODE + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIcmpv4Code(icmpv4Code & 0xFF);
 			foundProtocolField = true;
@@ -612,8 +637,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint32_t arpOpCode;
 			if((sscanf(value.getString().c_str(),"%" SCNd32,&arpOpCode) != 1) || (arpOpCode > 65535) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ARP_OPCODE,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ARP_OPCODE + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setArpOpCode(arpOpCode & 0xFFFF);
 			foundProtocolField = true;
@@ -624,8 +650,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			//This is an IPv4 adddress
 			if(!AddressValidator::validateIpv4(value.getString()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ARP_SPA,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ARP_SPA + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setArpSpa((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -636,8 +663,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			//This is an IPv4 mask
 			if(!AddressValidator::validateIpv4Netmask(value.getString()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ARP_SPA_MASK,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ARP_SPA_MASK + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setArpSpaMask((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -648,8 +676,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			//This is an IPv4 adddress
 			if(!AddressValidator::validateIpv4(value.getString()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ARP_TPA,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ARP_TPA + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setArpTpa((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -660,8 +689,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			//This is an IPv4 mask
 			if(!AddressValidator::validateIpv4Netmask(value.getString()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ARP_TPA_MASK,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ARP_TPA_MASK + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setArpTpaMask((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -672,8 +702,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,ARP_SHA,value.getString().c_str());
 			if(!AddressValidator::validateMac(value.getString().c_str()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ARP_SHA,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ARP_SHA + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setArpSha((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -684,8 +715,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,ARP_THA,value.getString().c_str());
 			if(!AddressValidator::validateMac(value.getString().c_str()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ARP_THA,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ARP_THA + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setArpTha((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -695,8 +727,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,IPv6_SRC_MASK,value.getString().c_str());
 			if(!AddressValidator::validateIpv6(value.getString()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",IPv6_SRC_MASK,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + IPv6_SRC_MASK + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIpv6SrcMask((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -706,8 +739,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			ULOG_DBG("\"%s\"->\"%s\": \"%s\"",MATCH,IPv6_DST_MASK,value.getString().c_str());
 			if(!AddressValidator::validateIpv6(value.getString()))
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",IPv6_DST_MASK,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + IPv6_DST_MASK + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIpv6DstMask((char*)value.getString().c_str());
 			foundProtocolField = true;
@@ -718,8 +752,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint64_t ipv6FLabel;
 			if((sscanf(value.getString().c_str(),"%" SCNd64,&ipv6FLabel) != 1) || (ipv6FLabel > 4294967295UL) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ARP_OPCODE,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + IPv6_FLABEL + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIpv6Flabel(ipv6FLabel & 0xFFFFFFFF);
 			foundProtocolField = true;
@@ -751,8 +786,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint16_t icmpv6Type;
 			if((sscanf(value.getString().c_str(),"%" SCNd16,&icmpv6Type) != 1) || (icmpv6Type > 255) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ICMPv6_TYPE,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ICMPv6_TYPE + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIcmpv6Type(icmpv6Type & 0xFF);
 			foundProtocolField = true;
@@ -763,8 +799,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint16_t icmpv6Code;
 			if((sscanf(value.getString().c_str(),"%" SCNd16,&icmpv6Code) != 1) || (icmpv6Code > 255) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",ICMPv6_CODE,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + ICMPv6_CODE + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIcmpv6Code(icmpv6Code & 0xFF);
 			foundProtocolField = true;
@@ -775,8 +812,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint64_t mplsLabel;
 			if((sscanf(value.getString().c_str(),"%" SCNd64,&mplsLabel) != 1) || (mplsLabel > 1048575) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",MPLS_LABEL,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + MPLS_LABEL + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setMplsLabel(mplsLabel & 0xFFFFFFFF);
 			foundProtocolField = true;
@@ -787,8 +825,9 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint16_t mplsTC;
 			if((sscanf(value.getString().c_str(),"%" SCNd16,&mplsTC) != 1) || (mplsTC > 255) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",MPLS_TC,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + MPLS_TC + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setMplsTC(mplsTC & 0xFF);
 			foundProtocolField = true;
@@ -799,32 +838,36 @@ bool MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			uint16_t ipProto;
 			if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
 			{
-				ULOG_DBG_INFO("Key \"%s\" with wrong value \"%s\"",PROTOCOL,value.getString().c_str());
-				return false;
+				string error = string("Key \"") + PROTOCOL + "\" with wrong value \"" + value.getString().c_str() + "\"";
+				ULOG_WARN(error.c_str());
+				throw new MatchParserException(std::move(error));
 			}
 			match.setIpProto(ipProto & 0xFF);
 			foundProtocolField = true;
 		}
 		else
 		{
-			ULOG_DBG_INFO("Invalid key: %s",name.c_str());
-			return false;
+			string error = string("Invalid key: ") + name.c_str();
+			ULOG_WARN(error.c_str());
+			throw new MatchParserException(std::move(error));
 		}
 	}
 
 	if(!foundOne)
 	{
-		ULOG_DBG_INFO("Neither Key \"%s\", nor key \"%s\" found in \"%s\"",PORT,_ID,MATCH);
-		return false;
+		string error = string("Neither Key \"") + PORT + "\", nor key \"" + _ID+ "\" found in \"" + MATCH + "\"";
+		ULOG_WARN(error.c_str());
+		throw new MatchParserException(std::move(error));
 	}
 
 	if(foundProtocolField && foundEndPointID && definedInCurrentGraph)
 	{
-		ULOG_DBG_INFO("A \"%s\" specifying an \"%s\" (defined in the current graph) and at least a protocol field was found. This is not supported.",MATCH,ENDPOINT);
-		return false;
+		string error = string("A \"") + MATCH + "\" specifying an \"" + ENDPOINT + "\" (defined in the current graph) and at least a protocol field was found. This is not supported.";
+		ULOG_WARN(error.c_str());
+		throw new MatchParserException(std::move(error));
 	}
 
-	return true;
+	return;
 }
 
 

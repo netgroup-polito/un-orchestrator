@@ -11,9 +11,10 @@
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
 
-#include "../../graph_manager/graph_manager.h"
-
+#include "graph_parser_utils.h"
 #include "match_parser.h"
+
+#include "../../graph_manager/graph_manager.h"
 
 using namespace json_spirit;
 using namespace std;
@@ -24,7 +25,7 @@ class GraphParser
 friend class RestServer;
 
 protected:
-	static bool parseGraph(Value value, highlevel::Graph &graph, bool newGraph, GraphManager *gm);
+	static void parseGraph(Value value, highlevel::Graph &graph, bool newGraph, GraphManager *gm);
 };
 
 #endif //GRAPH_PARSER_H_

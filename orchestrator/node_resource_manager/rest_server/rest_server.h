@@ -84,14 +84,14 @@ private:
 	static bool parseUserCreationForm(Value value, char **pwd, char **group);
 
 	static int doPut(struct MHD_Connection *connection, const char *url, void **con_cls);
-	static bool parsePutBody(struct connection_info_struct &con_info,highlevel::Graph &graph, bool newGraph);
+	static void parsePutBody(struct connection_info_struct &con_info,highlevel::Graph &graph, bool newGraph);
 
 	static int createUser(char *user, struct MHD_Connection *connection, connection_info_struct *con_info);
 
 	static int doDelete(struct MHD_Connection *connection,const char *url, void **con_cls);
 
 	static int createGraphFromFile(const string &graphID, string toBeCreated);
-	static bool parseGraphFromFile(string toBeCreated,highlevel::Graph &graph, bool newGraph);
+	static void parseGraphFromFile(string toBeCreated,highlevel::Graph &graph, bool newGraph);
 
 	static bool readGraphFromFile(const string &nffgResourceName, string &nffgFileName);
 
