@@ -1,5 +1,10 @@
 # Universal Node Repository Summary
 
+## Live playground
+
+For who is interested to play with this software without having to install everything, a live playground is available [here](https://github.com/netgroup-polito/un-orchestrator/wiki/Live-Playground).
+
+
 ## Building status
 
 [![Build Status](https://api.travis-ci.org/netgroup-polito/un-orchestrator.png)](https://travis-ci.org/netgroup-polito/un-orchestrator)
