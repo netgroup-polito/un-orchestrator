@@ -91,7 +91,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 
 		}
 
-		ReadBytes= sock_recv(socket, DataBuffer, sizeof(DataBuffer), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
+		ReadBytes= sock_recv(socket, DataBuffer, sizeof(DataBuffer), MSG_WAITALL, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
 		if (ReadBytes == sockFAILURE)
 		{
 			ULOG_ERR("Error reading data: %s", ErrBuf);
