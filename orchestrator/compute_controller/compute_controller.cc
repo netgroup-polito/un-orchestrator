@@ -36,7 +36,7 @@ void ComputeController::setCoreMask(uint64_t core_mask)
 		ULOG_DBG_INFO("Mask of an available core: \"%d\"",cores[i]);
 }
 
-nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_name, string vnf_repo_ip, int vnf_repo_port,string vnf_image_path)
+nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string vnf_template, string vnf_repo_ip, int vnf_repo_port)
 {
 	try
  	{
@@ -56,7 +56,6 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 
 		Hints.ai_family= AF_INET;
 		Hints.ai_socktype= SOCK_STREAM;
-        ULOG_ERR("VNF_IMAGE_PATH : %s", vnf_image_path.c_str());
 		ostringstream oss;
 		oss << vnf_repo_port;
 
@@ -67,7 +66,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 		}
 
 		stringstream tmp;
-		tmp << "GET " << VNF_REPOSITORY_BASE_URL << nf_name << "/ HTTP/1.1\r\n";
+		tmp << "GET " << VNF_REPOSITORY_BASE_URL << vnf_template << "/ HTTP/1.1\r\n";
 		tmp << "Host: :" << vnf_repo_ip << ":" << vnf_repo_port << "\r\n";
 		tmp << "Connection: close\r\n";
 		tmp << "Accept: */*\r\n\r\n";
@@ -138,7 +137,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
             ULOG_ERR("FAILED TO PARSE");
 			return NFManager_SERVER_ERROR;
 		}
-        addImplementation(temp,nf_id,vnf_image_path);
+        addImplementation(temp,nf_id);
 
     }
 	catch (std::exception& e)
@@ -248,16 +247,38 @@ void ComputeController::checkSupportedDescriptions() {
 
 
 
-bool ComputeController::addImplementation(Template& temp, string nf_id,string vnf_image_path){
-    map<unsigned int, PortType> port_types; // port_id -> port_type
-    list<Description*> possibleDescriptions;
-    //stringstream ss;
-    //ss << "wget " << temp.getURI() << " -P " << vnf_image_path;
-    //system(ss.str().c_str());
+bool ComputeController::addImplementation(Template& temp, string nf_id){
+  map<unsigned int, PortType> port_types; // port_id -> port_type
+  list<Description*> possibleDescriptions;
+  stringstream command;
+  stringstream pathImage;
+  unsigned char hash_token[HASH_SIZE];
+  char hash_uri [BUFFER_SIZE] ;
+  char tmp[HASH_SIZE] ;
+
+
+
+  SHA256((const unsigned char*)temp.getURI().c_str(), strlen(temp.getURI().c_str()), hash_token);
+
+  for (int i = 0; i < HASH_SIZE; i++) {
+      sprintf(tmp, "%.2x", hash_token[i]);
+      strcat(hash_uri, tmp);
+  }
+
+
+
+ command << getenv("un_script_path") << PULL_NF << " " << temp.getName() << " " << temp.getURI() << " " << hash_uri << " " << VNF_IMAGES_PATH;
+ int retVal = system(command.str().c_str());
+ retVal = retVal >> 8;
+
+ if(retVal == 0)
+   return false;
+
+ pathImage << VNF_IMAGES_PATH << "/" << temp.getName() << "_" << hash_uri << "_tmp";
+
     for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
         int begin, end;
         (*port).splitPortsRangeInInt(begin, end);
-        ULOG_DBG_INFO("begin:  %d, end : %d", begin,end);
         if (temp.getVnfType() == "dpdk") {
             #ifdef ENABLE_DPDK_PROCESSES
                 for(int i = begin;i<=end;i++){
@@ -270,9 +291,7 @@ bool ComputeController::addImplementation(Template& temp, string nf_id,string vn
                 for(int i = begin;i<=end;i++){
                     port_types.insert(map<unsigned int, PortType>::value_type(i+1, VETH_PORT));
                 }
-                ULOG_DBG_INFO("Native: number of ports %d", port_types.size());
-
-                possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp.getVnfType(),temp.getURI()/*vnf_image_path+"nativeDHCP.tar.gz"*/,port_types)));
+                possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp.getVnfType(),pathImage.str(),port_types)));
             #endif
         }
 

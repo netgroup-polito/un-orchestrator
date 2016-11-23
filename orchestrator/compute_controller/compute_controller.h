@@ -21,7 +21,7 @@
 #include <json_spirit/json_spirit.h>
 #include <json_spirit/value.h>
 #include <json_spirit/writer.h>
-
+#include <openssl/sha.h>
 #include "nfs_manager.h"
 
 #ifdef ENABLE_DPDK_PROCESSES
@@ -41,6 +41,7 @@
 using namespace std;
 using namespace json_spirit;
 
+#define VNF_IMAGES_PATH             "NFimages"
 #define NAME_RESOLVER_ADDRESS		"localhost"
 #define NAME_RESOLVER_PORT			"2626"
 #define NAME_RESOLVER_BASE_URL		"/nfs/"
@@ -49,6 +50,12 @@ using namespace json_spirit;
 #define CODE_POSITION				9
 #define CODE_METHOD_NOT_ALLLOWED	"405"
 #define CODE_OK						"200"
+
+/**
+*	@brief: paths of the bash scripts used to manage native functions
+*/
+
+#define PULL_NF		"./compute_controller/template/scripts/retrieveImage.sh"
 
 class Implementation;
 
@@ -92,7 +99,7 @@ private:
 	*	@param: vnf     Path where vnf images should be saved
 	*/
 
-	bool addImplementation(Template& temp, string nf_id,string vnf_image_path);
+	bool addImplementation(Template& temp, string nf_id);
 	/**
 	*	@brief: calculate the core mask for a DPDK NF
 	*
@@ -131,7 +138,7 @@ public:
 	*
 	*	@param:	nf	Name of a network function
 	*/
-	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name, string vnf_repo_ip, int vnf_repo_port, string vnf_image_path);
+	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name, string vnf_repo_ip, int vnf_repo_port);
 
 	/**
 	*	@brief: For each NF, select an implementation. Currently, if a Docker implementation

@@ -10,7 +10,7 @@ void GraphManager::mutexInit()
 	pthread_mutex_init(&graph_manager_mutex, NULL);
 }
 
-GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_address,bool orchestrator_in_band,string un_interface,string ipsec_certificate, string vnf_repo_ip, int vnf_repo_port, string vnf_image_path) :
+GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_address,bool orchestrator_in_band,string un_interface,string ipsec_certificate, string vnf_repo_ip, int vnf_repo_port) :
 	un_address(un_address), orchestrator_in_band(orchestrator_in_band), un_interface(un_interface), ipsec_certificate(ipsec_certificate), vnfRepoIP(vnf_repo_ip), switchManager()
 {
 	//TODO: this code can be simplified. Why don't providing the set<string> to the switch manager?
@@ -32,7 +32,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 	nextControllerPort++;
 	pthread_mutex_unlock(&graph_manager_mutex);
 	vnfRepoPort = vnf_repo_port;
-    vnfImagePath = vnf_image_path;
+
 	ULOG_INFO("Checking the available physical interfaces...");
 	try
 	{
@@ -538,7 +538,7 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 			ULOG_DBG_INFO("\t* NF with id \"%s\" is already part of the graph; it is not retrieved again",nf->getId().c_str());
 			continue;
 		}
-		nf_manager_ret_t retVal = computeController->retrieveDescription(nf->getId(),nf->getName(), vnfRepoIP, vnfRepoPort,vnfImagePath);
+		nf_manager_ret_t retVal = computeController->retrieveDescription(nf->getId(),nf->getVnfTemplate(), vnfRepoIP, vnfRepoPort);
 		if(retVal == NFManager_NO_NF)
 		{
 			ULOG_WARN("NF \"%s\" cannot be retrieved",nf->getName().c_str());

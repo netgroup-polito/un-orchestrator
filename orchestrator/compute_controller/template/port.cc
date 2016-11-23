@@ -1,9 +1,8 @@
 #include "port.h"
 #include <sstream>
-#include "../../utils/logger.h"
+
 Port::Port() {}
 
-static const char LOG_MODULE_NAME[] = "Port-Manager";
 
 void Port::setPortsRange(string portsRange){
     this->portsRange = portsRange;

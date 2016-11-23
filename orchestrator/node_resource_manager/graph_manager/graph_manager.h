@@ -249,7 +249,7 @@ public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF
 	//(plus other fields)
 
-	GraphManager(int core_mask,set<string> physical_ports,string un_address,bool control,string un_interface,string ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_image_path);
+	GraphManager(int core_mask,set<string> physical_ports,string un_address,bool control,string un_interface,string ipsec_certificate, string vnf_repo_ip, int vnf_repo_port);
 	~GraphManager();
 
 	/**

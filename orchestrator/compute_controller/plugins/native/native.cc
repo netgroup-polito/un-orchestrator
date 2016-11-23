@@ -183,7 +183,7 @@ bool Native::startNF(StartNFIn sni) {
 	uri << uri_script;
 
 	std::stringstream command;
-	command << getenv("un_script_path") << PULL_AND_RUN_NATIVE_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << n_ports;
+    command << getenv("un_script_path") << RUN_NATIVE_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << n_ports;
 
 	//create the names of the ports
 	for(std::map<unsigned int, std::string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)
