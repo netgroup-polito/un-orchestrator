@@ -56,7 +56,7 @@ SQLiteManager *dbm = NULL;
 *	Private prototypes
 */
 bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file);
-bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth,  map<string,string> &boot_graphs, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate, string &name_resolver_ip, int *name_resolver_port);
+bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth,  map<string,string> &boot_graphs, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate, string &vnf_repo_ip, int *vnf_repo_port, string& vnf_image_path);
 
 bool usage(void);
 void printUniversalNodeInfo();
@@ -176,8 +176,9 @@ int main(int argc, char *argv[])
 	char *un_address = new char[BUFFER_SIZE], *t_un_address = NULL;
 	char *ipsec_certificate = new char[BUFFER_SIZE], *t_ipsec_certificate = NULL;
 
-	string name_resolver_ip;
-	int name_resolver_port;
+	string vnf_repo_ip;
+	int vnf_repo_port;
+	string vnf_image_path;
 
 	string s_un_address;
 	string s_ipsec_certificate;
@@ -190,7 +191,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if(!parse_config_file(config_file_name,&t_rest_port,&t_cli_auth,boot_graphs,physical_ports,&t_descr_file_name,&t_client_name,&t_broker_address,&t_key_path,&t_orchestrator_in_band,&t_un_interface,&t_un_address,&t_ipsec_certificate, name_resolver_ip, &name_resolver_port))
+	if(!parse_config_file(config_file_name,&t_rest_port,&t_cli_auth,boot_graphs,physical_ports,&t_descr_file_name,&t_client_name,&t_broker_address,&t_key_path,&t_orchestrator_in_band,&t_un_interface,&t_un_address,&t_ipsec_certificate, vnf_repo_ip, &vnf_repo_port,vnf_image_path))
 	{
 		ULOG_ERR( "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
@@ -266,7 +267,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	if(!RestServer::init(dbm,cli_auth,boot_graphs,core_mask,physical_ports,s_un_address,orchestrator_in_band,un_interface,ipsec_certificate, name_resolver_ip, name_resolver_port))
+	if(!RestServer::init(dbm,cli_auth,boot_graphs,core_mask,physical_ports,s_un_address,orchestrator_in_band,un_interface,ipsec_certificate, vnf_repo_ip, vnf_repo_port,vnf_image_path))
 	{
 		ULOG_ERR( "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
@@ -395,7 +396,7 @@ static struct option lgopts[] = {
 	return true;
 }
 
-bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, map<string,string> &boot_graphs, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate, string &name_resolver_ip, int *name_resolver_port)
+bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, map<string,string> &boot_graphs, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate, string &vnf_repo_ip, int *vnf_repo_port,string& vnf_image_path)
 {
 	*rest_port = REST_PORT;
 
@@ -536,9 +537,13 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, m
 	strcpy(temp_ipsec_certificate, (char *)reader.Get("GRE over IPsec", "certificate", "UNKNOWN").c_str());
 	*ipsec_certificate = temp_ipsec_certificate;
 
-	name_resolver_ip = reader.Get("Name resolver", "ip_address", "localhost");
+	vnf_repo_ip = reader.Get("VNF repository", "ip_address", "localhost");
 
-	*name_resolver_port = (int) reader.GetInteger("Name resolver", "port", 2626);
+	*vnf_repo_port = (int) reader.GetInteger("VNF repository", "port", 2626);
+
+	vnf_image_path = reader.Get("VNF repository", "image_path", "UNKNOWN");
+
+
 
 	/* Path of the script file*/
 	char script_path[64];

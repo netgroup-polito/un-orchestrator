@@ -308,6 +308,14 @@ SET(SOURCES1
 	compute_controller/startNF_in.h
 	compute_controller/stopNF_in.h
 
+	compute_controller/template/template.h
+	compute_controller/template/template.cc
+	compute_controller/template/port.h
+	compute_controller/template/port.cc
+	compute_controller/template/template_parser.h
+	compute_controller/template/template_parser.cc
+	
+
 	node_resource_manager/rest_server/rest_server.h
 	node_resource_manager/rest_server/rest_server.cc
 
@@ -319,7 +327,7 @@ SET(SOURCES1
 	node_resource_manager/security_manager/security_manager.h
 
 	node_resource_manager/interface_manager/InterfaceManager.cc
-	node_resource_manager/interface_manager/InterfaceManager.h
+	node_resource_manager/interface_manager/InterfaceManager.h	
 
 	utils/logger.h
 	utils/logger.c

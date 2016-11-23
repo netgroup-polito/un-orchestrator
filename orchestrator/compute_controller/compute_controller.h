@@ -17,7 +17,7 @@
 #include "../utils/constants.h"
 #include "../utils/sockutils.h"
 #include "nf.h"
-
+#include "template/template.h"
 #include <json_spirit/json_spirit.h>
 #include <json_spirit/value.h>
 #include <json_spirit/writer.h>
@@ -45,7 +45,7 @@ using namespace json_spirit;
 #define NAME_RESOLVER_PORT			"2626"
 #define NAME_RESOLVER_BASE_URL		"/nfs/"
 #define NAME_RESOLVER_DIGEST_URL	"digest/"
-
+#define VNF_REPOSITORY_BASE_URL     "/v1/VNF/"
 #define CODE_POSITION				9
 #define CODE_METHOD_NOT_ALLLOWED	"405"
 #define CODE_OK						"200"
@@ -85,13 +85,14 @@ private:
 	uint64_t lsiID;
 
 	/**
-	*	@brief: parse the JSON answer received from the name translator database
+	*	@brief: add an implementation after the answer from VNF-Repository has been parsed
 	*
-	*	@param:	answer	Answer to be parsed
+	*	@param:	temp	Template filled with data parsed
 	*	@param:	nf		Name of the network function whose description must be in the asnwer
+	*	@param: vnf     Path where vnf images should be saved
 	*/
-	bool parseAnswer(string answer, string nf_name, string nf_id);
 
+	bool addImplementation(Template& temp, string nf_id,string vnf_image_path);
 	/**
 	*	@brief: calculate the core mask for a DPDK NF
 	*
@@ -130,7 +131,7 @@ public:
 	*
 	*	@param:	nf	Name of a network function
 	*/
-	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name, string name_resolver_ip, int name_resolver_port);
+	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name, string vnf_repo_ip, int vnf_repo_port, string vnf_image_path);
 
 	/**
 	*	@brief: For each NF, select an implementation. Currently, if a Docker implementation

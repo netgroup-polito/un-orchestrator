@@ -1,4 +1,6 @@
 #include "compute_controller.h"
+#include "template/template_parser.h"
+
 
 static const char LOG_MODULE_NAME[] = "Compute-Controller";
 
@@ -34,12 +36,12 @@ void ComputeController::setCoreMask(uint64_t core_mask)
 		ULOG_DBG_INFO("Mask of an available core: \"%d\"",cores[i]);
 }
 
-nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_name, string name_resolver_ip, int name_resolver_port)
+nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_name, string vnf_repo_ip, int vnf_repo_port,string vnf_image_path)
 {
 	try
  	{
  		string translation;
-
+        Template temp;
  		ULOG_DBG_INFO("Considering the NF with id \"%s\"",nf_id.c_str());
 
 		char ErrBuf[BUFFER_SIZE];
@@ -54,19 +56,19 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 
 		Hints.ai_family= AF_INET;
 		Hints.ai_socktype= SOCK_STREAM;
-
+        ULOG_ERR("VNF_IMAGE_PATH : %s", vnf_image_path.c_str());
 		ostringstream oss;
-		oss << name_resolver_port;
+		oss << vnf_repo_port;
 
-		if (sock_initaddress (name_resolver_ip.c_str(), oss.str().c_str(), &Hints, &AddrInfo, ErrBuf, sizeof(ErrBuf)) == sockFAILURE)
+		if (sock_initaddress (vnf_repo_ip.c_str(), oss.str().c_str(), &Hints, &AddrInfo, ErrBuf, sizeof(ErrBuf)) == sockFAILURE)
 		{
-			ULOG_ERR("Error resolving given address/port (%s/%d): %s",  name_resolver_ip.c_str(), name_resolver_port, ErrBuf);
+			ULOG_ERR("Error resolving given address/port (%s/%d): %s",  vnf_repo_ip.c_str(), vnf_repo_port, ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
 
 		stringstream tmp;
-		tmp << "GET " << NAME_RESOLVER_BASE_URL << nf_name << " HTTP/1.1\r\n";
-		tmp << "Host: :" << name_resolver_ip << ":" << name_resolver_port << "\r\n";
+		tmp << "GET " << VNF_REPOSITORY_BASE_URL << nf_name << "/ HTTP/1.1\r\n";
+		tmp << "Host: :" << vnf_repo_ip << ":" << vnf_repo_port << "\r\n";
 		tmp << "Connection: close\r\n";
 		tmp << "Accept: */*\r\n\r\n";
 		string message = tmp.str();
@@ -78,7 +80,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 		if ( (socket= sock_open(AddrInfo, 0, 0,  ErrBuf, sizeof(ErrBuf))) == sockFAILURE)
 		{
 			// AddrInfo is no longer required
-			ULOG_ERR("Cannot contact the name resolver at \"%s:%d\"", name_resolver_ip.c_str(), name_resolver_port);
+			ULOG_ERR("Cannot contact the vnf repository at \"%s:%d\"", vnf_repo_ip.c_str(), vnf_repo_port);
 			ULOG_ERR("%s", ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
@@ -90,7 +92,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 			return NFManager_SERVER_ERROR;
 
 		}
-
+		sleep(1);
 		ReadBytes= sock_recv(socket, DataBuffer, sizeof(DataBuffer), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
 		if (ReadBytes == sockFAILURE)
 		{
@@ -102,9 +104,8 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 		// Warning: this can originate a buffer overflow
 		DataBuffer[ReadBytes]= 0;
 
-		ULOG_DBG_INFO("Data received: ");
+		ULOG_DBG_INFO("Data received %d: " , ReadBytes);
 		ULOG_DBG_INFO("%s",DataBuffer);
-
 		shutdown(socket,SHUT_WR);
 		sock_close(socket,ErrBuf,sizeof(ErrBuf));
 
@@ -130,12 +131,16 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 
 		translation.assign(&DataBuffer[i]);
 
-		if(!parseAnswer(translation,nf_name,nf_id))
+
+		if(!Template_Parser::parse(temp,translation))
 		{
 			//ERROR IN THE SERVER
+            ULOG_ERR("FAILED TO PARSE");
 			return NFManager_SERVER_ERROR;
 		}
- 	}
+        addImplementation(temp,nf_id,vnf_image_path);
+
+    }
 	catch (std::exception& e)
 	{
 		ULOG_ERR("Exception: %s",e.what());
@@ -145,322 +150,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string nf_
 	return NFManager_OK;
 }
 
-bool ComputeController::parseAnswer(string answer, string nf_name, string nf_id)
-{
-	try
-	{
-		Value value;
-		read(answer, value);
-		Object obj = value.getObject();
 
-		bool foundName = false;
-		bool foundImplementations = false;
-
-		list<Description*> possibleDescriptions;
-		string nf_received_name;
-
-		bool foundNports = false;
-		unsigned int numports = 0;
-		bool foundTextDescription = false;
-
-		//A first sacan of the json is done in order to read the number of ports of the VNF.
-		for( Object::const_iterator i = obj.begin(); i != obj.end(); ++i )
-		{
-	 	    const string& name  = i->first;
-		    const Value&  value = i->second;
-			if(name == "nports")
-		    {
-				foundNports = true;
-		    	numports = value.getInt();
-		    	break;
-		    }
-		}
-		if(!foundNports)
-		{
-			ULOG_WARN("Key \"num-ports\" not found in the answer");
-			return false;
-		}
-
-		//Now let's do a second scan in order to retrieve all the other information received from
-		//the name-resolver
-		for( Object::const_iterator i = obj.begin(); i != obj.end(); ++i )
-		{
-	 	    const string& name  = i->first;
-		    const Value&  value = i->second;
-
-		    if(name == "name")
-		    {
-		    	foundName = true;
-		    	nf_received_name = value.getString();
-		    	if(nf_received_name != nf_name)
-		    	{
-			    	ULOG_WARN("Required NF \"%s\", received info for NF \"%s\"",nf_name.c_str(),nf_received_name.c_str());
-					return false;
-		    	}
-		    }
-		    else if(name == "nports")
-		    {
-		    	//Information already retrieved
-		    	continue;
-		    }
-		    else if(name == "summary")
-		    {
-				foundTextDescription = true;
-				//XXX: the content of this field is ignored
-		    }
-		    else if(name == "implementations")
-		    {
-		    	foundImplementations = true;
-		    	const Array& impl_array = value.getArray();
-		    	if(impl_array.size() == 0)
-		    	{
-			    	ULOG_WARN("Key \"implementations\" without descriptions");
-					return false;
-		    	}
-
-				bool foundPorts = false; //Mandatory only in case of KVM
-				bool next = false;
-		    	//Iterate on the implementations
-		    	for( unsigned int impl = 0; impl < impl_array.size(); ++impl)
-				{
-					//This is an implementation, with a type and an URI
-					Object implementation = impl_array[impl].getObject();
-					bool foundURI = false;
-					bool foundType = false;
-					bool foundCores = false;
-					bool foundLocation = false;
-					bool foundDependencies = false;
-
-					string type;
-			    	string uri;
-					string cores;
-					string location;
-					string dependencies;
-					std::map<unsigned int, PortType> port_types; // port_id -> port_type
-					std::map<unsigned int, string> port_mac; // port_id -> port_mac
-					std::map<unsigned int, string> port_ip; // port_id -> port_ip
-
-					for( Object::const_iterator impl_el = implementation.begin(); impl_el != implementation.end(); ++impl_el )
-					{
-				 	    const string& el_name  = impl_el->first;
-						const Value&  el_value = impl_el->second;
-
-						if(el_name == "type")
-						{
-							foundType = true;
-							type = el_value.getString();
-							if(!NFType::isValid(type))
-							{
-								ULOG_DBG_INFO("Invalid implementation type \"%s\". Skip it.", type.c_str());
-								//return false;
-								next = true;
-								break;
-							}
-						}
-						else if(el_name == "uri")
-						{
-							foundURI = true;
-							uri = el_value.getString();
-						}
-						else if(el_name == "cores")
-						{
-							foundCores = true;
-							cores = el_value.getString();
-						}
-						else if(el_name == "location")
-						{
-							foundLocation = true;
-							location = el_value.getString();
-						}
-						else if(el_name == "ports")
-						{
-							foundPorts = true;
-
-					    	const Array& ports_array = el_value.getArray();
-
-					    	if (ports_array.size() == 0)
-					    	{
-						    	ULOG_WARN("Empty ports list in implementation");
-								return false;
-					    	}
-					    	for( unsigned int p = 0; p < ports_array.size(); ++p)
-							{
-								Object port = ports_array[p].getObject();
-								int port_id = -1;
-								PortType port_type = UNDEFINED_PORT;
-
-								for( Object::const_iterator port_el = port.begin(); port_el != port.end(); ++port_el )
-								{
-							 	    const string& pel_name  = port_el->first;
-									const Value&  pel_value = port_el->second;
-									if (pel_name == "id") {
-										port_id = pel_value.getInt();
-									}
-									else if (pel_name == "type") {
-										port_type = portTypeFromString(pel_value.getString());
-										if (port_type == INVALID_PORT) {
-											ULOG_WARN("Invalid port type \"%s\" for implementation port", pel_value.getString().c_str());
-											return false;
-										}
-									}
-									else {
-										ULOG_WARN("Invalid key \"%s\" within an implementation port", pel_name.c_str());
-										return false;
-									}
-								}
-								if (port_id == -1) {
-									ULOG_WARN("Missing port \"ïd\" attribute for implementation");
-									return false;
-								}
-								if (port_type == UNDEFINED_PORT) {
-									ULOG_WARN("Missing port \"type\" attribute for implementation");
-									return false;
-								}
-								ULOG_DBG_INFO(" Port %d id=%d type=%s", p, port_id, portTypeToString(port_type).c_str());
-
-								port_types.insert(std::map<unsigned int, PortType>::value_type(port_id, port_type));
-							}
-						}
-						else if(el_name == "dependencies")
-						{
-							foundDependencies = true;
-							dependencies = el_value.getString();
-						}
-						else
-						{
-							ULOG_WARN("Invalid key \"%s\" within an implementation", el_name.c_str());
-							return false;
-						}
-					}
-
-					if(next)
-					{
-						//The current network function is of a type not supported by the orchestrator
-						next = false;
-						continue;
-					}
-
-					if(!foundURI || !foundType)
-					{
-						ULOG_WARN("Key \"uri\", key \"type\", or both are not found into an implementation description");
-						return false;
-					}
-
-
-					//The port types are not specified in the message coming from the name-resolver.
-					//We set the port type as follows:
-					//	* VETH_PORT in case of Docker container or Native functions
-					//	* DPDKR_PORT in case of DPDK process
-
-
-					if(type == "dpdk")
-					{
-#ifdef ENABLE_DPDK_PROCESSES
-						if(!foundCores || !foundLocation)
-						{
-							ULOG_WARN("Description of a NF of type \"%s\" received without the \"cores\" attribute, \"location\" attribute, or both",type.c_str());
-							return false;
-						}
-
-						assert(!foundPorts);
-
-						for(unsigned int i = 0; i < numports; i++)
-							port_types.insert(std::map<unsigned int, PortType>::value_type(i+1, DPDKR_PORT));
-
-						possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(type,uri,cores,location,port_types)));
-#endif
-						continue;
-					}
-					else if(type == "native")
-					{
-#ifdef ENABLE_NATIVE
-						assert(!foundPorts);
-						if(!foundLocation || !foundDependencies)
-						{
-							ULOG_WARN("Description of a NF of type \"%s\" received without the \"dependencies\" attribute, \"location\" attribute, or both",type.c_str());
-							return false;
-						}
-						std::stringstream stream(dependencies);
-						std::string s;
-						std::list<std::string>* dep_list = new std::list<std::string>;
-						while(stream >> s){
-							dep_list->push_back(s);
-						}
-
-						for(unsigned int i = 0; i < numports; i++)
-							port_types.insert(std::map<unsigned int, PortType>::value_type(i+1, VETH_PORT));
-
-						possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(type,uri,location,dep_list,port_types)));
-#endif
-						continue;
-					}
-					else if(foundCores || foundLocation || foundDependencies)
-					{
-						ULOG_WARN("Description of a NF of type \"%s\" received with a wrong attribute (\"cores\", \"location\" or \"dependencies\")",type.c_str());
-						return false;
-					}
-
-					if(!foundPorts)
-					{
-						if(type == "docker")
-						{
-							for(unsigned int i = 0; i < numports; i++)
-								port_types.insert(std::map<unsigned int, PortType>::value_type(i+1, VETH_PORT));
-						}
-						else
-						{
-							assert(type == "kvm");
-							//In case of KVM, the port type must be specified by the name-resolver.
-							assert(0 && "Probably there is a BUG in the name resover!");
-							ULOG_WARN("Description of a NF of type \"%s\" received without the element \"ports\"",type.c_str());
-							return false;
-						}
-					}
-
-					Description* descr = new Description(type, uri, port_types);
-					possibleDescriptions.push_back(descr);
-				}
-		    } //end if(name == "implementations")
-		    else
-			{
-				ULOG_WARN("Invalid key \"%s\"",name.c_str());
-				return false;
-			}
-		}//end iteration on the answer
-
-		if(!foundName || !foundImplementations || !foundTextDescription		)
-		{
-			ULOG_WARN("Key \"name\", and/or key \"implementations\", and/or key \"description\" not found in the answer");
-			return false;
-		}
-
-		NF *new_nf = new NF(nf_name);
-		assert(possibleDescriptions.size() != 0);
-
-		if(possibleDescriptions.size() == 0)
-		{
-			ULOG_WARN("Cannot find a supported implementation for the network function \"%s\"",nf_name.c_str());
-			return false;
-		}
-
-		for(list<Description*>::iterator impl = possibleDescriptions.begin(); impl != possibleDescriptions.end(); impl++)
-			new_nf->addDescription(*impl);
-
-		nfs[nf_id] = new_nf;
-
-	}
-	catch (std::runtime_error& e) {
-		ULOG_WARN("JSON parse error: %s", e.what());
-		return false;
-	}
-	catch(...)
-	{
-		ULOG_WARN("The content does not respect the JSON syntax");
-		return false;
-	}
-
-	return true;
-}
 
 void ComputeController::checkSupportedDescriptions() {
 
@@ -529,12 +219,12 @@ void ComputeController::checkSupportedDescriptions() {
 					NFsManager *nativeManager = NULL;
 					try{
 						nativeManager = new Native();
-						if(nativeManager->isSupported(**descr)){
+						//if(nativeManager->isSupported(**descr)){
 							(*descr)->setSupported(true);
-							ULOG_DBG_INFO("Native description of NF \"%s\" is supported.",(current->getName()).c_str());
-						} else {
-							ULOG_DBG_INFO("Native description of NF \"%s\" is not supported.",(current->getName()).c_str());
-						}
+							//ULOG_DBG_INFO("Native description of NF \"%s\" is supported.",(current->getName()).c_str());
+						//} else {
+							//ULOG_DBG_INFO("Native description of NF \"%s\" is not supported.",(current->getName()).c_str());
+						//}
 						delete nativeManager;
 					} catch (exception& e) {
 						ULOG_DBG_INFO("exception %s has been thrown", e.what());
@@ -552,6 +242,72 @@ void ComputeController::checkSupportedDescriptions() {
 		}
 
 	}
+
+}
+
+
+
+
+bool ComputeController::addImplementation(Template& temp, string nf_id,string vnf_image_path){
+    map<unsigned int, PortType> port_types; // port_id -> port_type
+    list<Description*> possibleDescriptions;
+    //stringstream ss;
+    //ss << "wget " << temp.getURI() << " -P " << vnf_image_path;
+    //system(ss.str().c_str());
+    for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
+        int begin, end;
+        (*port).splitPortsRangeInInt(begin, end);
+        ULOG_DBG_INFO("begin:  %d, end : %d", begin,end);
+        if (temp.getVnfType() == "dpdk") {
+            #ifdef ENABLE_DPDK_PROCESSES
+                for(int i = begin;i<=end;i++){
+                    port_types.insert(map<unsigned int, PortType>::value_type(i+1, DPDKR_PORT));
+                }
+                possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp.getVnfType(),temp.getURI(),temp.getCores(),port_types)));
+            #endif
+        } else if (temp.getVnfType() == "native") {
+            #ifdef ENABLE_NATIVE
+                for(int i = begin;i<=end;i++){
+                    port_types.insert(map<unsigned int, PortType>::value_type(i+1, VETH_PORT));
+                }
+                ULOG_DBG_INFO("Native: number of ports %d", port_types.size());
+
+                possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp.getVnfType(),temp.getURI()/*vnf_image_path+"nativeDHCP.tar.gz"*/,port_types)));
+            #endif
+        }
+
+        if (temp.getVnfType() == "docker") {
+            for(int i = begin;i<=end;i++){
+                port_types.insert(map<unsigned int, PortType>::value_type(i+1, VETH_PORT));
+            }
+            Description *descr = new Description(temp.getVnfType(), temp.getURI(), port_types);
+            possibleDescriptions.push_back(descr);
+        }
+        if (temp.getVnfType() == "virtual-machine-kvm") {
+            for(int i = begin;i<=end;i++){
+                port_types.insert(map<unsigned int, PortType>::value_type(i, portTypeFromString((*port).getTechnology())));
+            }
+            Description *descr = new Description(temp.getVnfType(), temp.getURI(), port_types);
+            possibleDescriptions.push_back(descr);
+        }
+
+        //insert other implementations
+
+    }
+    NF *new_nf = new NF(temp.getName());
+    assert(possibleDescriptions.size() != 0);
+
+    if(possibleDescriptions.size() == 0)
+    {
+        ULOG_WARN("Cannot find a supported implementation for the network function \"%s\"",temp.getName().c_str());
+        return false;
+    }
+
+    for(list<Description*>::iterator impl = possibleDescriptions.begin(); impl != possibleDescriptions.end(); impl++)
+        new_nf->addDescription(*impl);
+
+    nfs[nf_id] = new_nf;
+    return true;
 
 }
 

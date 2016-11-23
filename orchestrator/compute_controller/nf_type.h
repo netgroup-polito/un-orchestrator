@@ -29,7 +29,7 @@ public:
 #endif
 #ifdef ENABLE_KVM
 		if(type == KVM)
-			return string("kvm");
+			return string("virtual-machine-kvm");
 #endif
 #ifdef ENABLE_NATIVE
 		if(type == NATIVE)
@@ -53,7 +53,7 @@ public:
 			return true;
 #endif
 #ifdef ENABLE_KVM
-		if(type == "kvm")
+		if(type == "virtual-machine-kvm")
 			return true;
 #endif
 #ifdef ENABLE_NATIVE

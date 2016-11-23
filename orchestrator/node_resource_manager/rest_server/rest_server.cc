@@ -10,12 +10,12 @@ SecurityManager *secmanager = NULL;
 
 bool client_auth = false;
 
-bool RestServer::init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs,int core_mask,set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string name_resolver_ip, int name_resolver_port)
+bool RestServer::init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs,int core_mask,set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string vnf_repo_ip, int vnf_repo_port, string vnf_image_path)
 {
 
 	try
 	{
-		gm = new GraphManager(core_mask,physical_ports,un_address,orchestrator_in_band,string(un_interface),string(ipsec_certificate), name_resolver_ip, name_resolver_port);
+		gm = new GraphManager(core_mask,physical_ports,un_address,orchestrator_in_band,string(un_interface),string(ipsec_certificate), vnf_repo_ip, vnf_repo_port, vnf_image_path);
 
 	} catch (...) {
 		return false;
