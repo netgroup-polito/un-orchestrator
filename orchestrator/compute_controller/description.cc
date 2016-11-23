@@ -29,7 +29,7 @@ Description::Description(string type, string uri, std::map<unsigned int, PortTyp
 	}
 #endif
 #ifdef ENABLE_KVM
-	else if(type == "kvm")
+	else if(type == "virtual-machine-kvm")
 	{
 		this->type = KVM;
 		return;

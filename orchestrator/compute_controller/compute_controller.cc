@@ -252,7 +252,7 @@ bool ComputeController::addImplementation(Template& temp, string nf_id){
   list<Description*> possibleDescriptions;
   stringstream command;
   stringstream pathImage;
-  unsigned char hash_token[HASH_SIZE];
+  unsigned char hash_token[BUFFER_SIZE];
   char hash_uri [BUFFER_SIZE] ;
   char tmp[HASH_SIZE] ;
 
@@ -266,8 +266,9 @@ bool ComputeController::addImplementation(Template& temp, string nf_id){
   }
 
 
+    ULOG_DBG_INFO("jash %s", hash_uri);
 
- command << getenv("un_script_path") << PULL_NF << " " << temp.getName() << " " << temp.getURI() << " " << hash_uri << " " << VNF_IMAGES_PATH;
+    command << getenv("un_script_path") << PULL_NF << " " << temp.getName() << " " << temp.getURI() << " " << hash_uri << " " << VNF_IMAGES_PATH;
  int retVal = system(command.str().c_str());
  retVal = retVal >> 8;
 
