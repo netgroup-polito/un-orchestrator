@@ -210,7 +210,7 @@ public:
 	/**
 	*	@brief: get the full identifier of the endpoint within the graph defining it (the match must be on a graph endpoint)
 	*/
-	char *getInputEndpoint();
+	string getInputEndpoint();
 
 	/**
 	*	@brief: check if a match on vlan (id number or ANY) exists

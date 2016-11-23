@@ -170,7 +170,7 @@ unsigned int Match::getEndPointInternal()
 	return endpointInternalGroup;
 }
 
-char *Match::getInputEndpoint()
+string Match::getInputEndpoint()
 {
 	assert(type == MATCH_ENDPOINT_GRE);
 
@@ -197,7 +197,7 @@ char *Match::getInputEndpoint()
 		i++;
 	}
 
-	return (char *)str.c_str();
+	return str;
 }
 
 bool Match::checkVlanPresence()
