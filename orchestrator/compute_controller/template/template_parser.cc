@@ -105,6 +105,7 @@ bool Template_Parser::parsePort(Template& temp, Object obj) {
                     ULOG_WARN("Invalid port type \"%s\" for implementation port", pel_value.getString().c_str());
                     return false;
                 }
+                port.setTechnology(pel_value.getString());
             }
 
         }

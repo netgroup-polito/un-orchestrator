@@ -38,20 +38,10 @@ bool Dpdk::startNF(StartNFIn sni)
 	string uri_image = description->getURI();
 
 	stringstream uri;
-
-	try {
-		DPDKDescription& dpdkDescr = dynamic_cast<DPDKDescription&>(*description);
-		if(dpdkDescr.getLocation() == "local")
-			uri << "file://";
-	} catch (exception& e) {
-		ULOG_DBG_INFO("exception %s", e.what());
-		return false;
-	}
-
 	uri << uri_image;
 
 	stringstream command;
-	command << getenv("un_script_path") << PULL_AND_RUN_DPDK_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << coreMask <<  " " << NUM_MEMORY_CHANNELS << " " << n_ports;
+	command << getenv("un_script_path") << RUN_DPDK_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << coreMask <<  " " << NUM_MEMORY_CHANNELS << " " << n_ports;
 
 	for(map<unsigned int, string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)
 		command << " "  << pn->second;

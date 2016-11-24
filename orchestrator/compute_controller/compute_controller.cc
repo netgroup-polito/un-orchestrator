@@ -285,7 +285,7 @@ bool ComputeController::addImplementation(Template& temp, string nf_id){
                 for(int i = begin;i<=end;i++){
                     port_types.insert(map<unsigned int, PortType>::value_type(i+1, DPDKR_PORT));
                 }
-                possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp.getVnfType(),temp.getURI(),temp.getCores(),port_types)));
+                possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp.getVnfType(),pathImage.str(),temp.getCores(),port_types)));
             #endif
         } else if (temp.getVnfType() == "native") {
             #ifdef ENABLE_NATIVE
@@ -300,14 +300,14 @@ bool ComputeController::addImplementation(Template& temp, string nf_id){
             for(int i = begin;i<=end;i++){
                 port_types.insert(map<unsigned int, PortType>::value_type(i+1, VETH_PORT));
             }
-            Description *descr = new Description(temp.getVnfType(), temp.getURI(), port_types);
+            Description *descr = new Description(temp.getVnfType(), pathImage.str(), port_types);
             possibleDescriptions.push_back(descr);
         }
         if (temp.getVnfType() == "virtual-machine-kvm") {
             for(int i = begin;i<=end;i++){
                 port_types.insert(map<unsigned int, PortType>::value_type(i, portTypeFromString((*port).getTechnology())));
             }
-            Description *descr = new Description(temp.getVnfType(), temp.getURI(), port_types);
+            Description *descr = new Description(temp.getVnfType(), pathImage.str(), port_types);
             possibleDescriptions.push_back(descr);
         }
 
