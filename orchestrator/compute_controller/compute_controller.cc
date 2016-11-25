@@ -218,12 +218,12 @@ void ComputeController::checkSupportedDescriptions() {
 					NFsManager *nativeManager = NULL;
 					try{
 						nativeManager = new Native();
-						//if(nativeManager->isSupported(**descr)){
+						if(nativeManager->isSupported(**descr)){ //segmentation fault
 							(*descr)->setSupported(true);
-							//ULOG_DBG_INFO("Native description of NF \"%s\" is supported.",(current->getName()).c_str());
-						//} else {
-							//ULOG_DBG_INFO("Native description of NF \"%s\" is not supported.",(current->getName()).c_str());
-						//}
+							ULOG_DBG_INFO("Native description of NF \"%s\" is supported.",(current->getName()).c_str());
+						} else {
+							ULOG_DBG_INFO("Native description of NF \"%s\" is not supported.",(current->getName()).c_str());
+						}
 						delete nativeManager;
 					} catch (exception& e) {
 						ULOG_DBG_INFO("exception %s has been thrown", e.what());
@@ -255,42 +255,41 @@ bool ComputeController::addImplementation(Template& temp, string nf_id){
   unsigned char hash_token[BUFFER_SIZE];
   char hash_uri [BUFFER_SIZE] ;
   char tmp[HASH_SIZE] ;
+    if(temp.getURIType() == "remote") {
+        SHA256((const unsigned char *) temp.getURI().c_str(), strlen(temp.getURI().c_str()), hash_token);
 
+        for (int i = 0; i < HASH_SIZE; i++) {
+            sprintf(tmp, "%.2x", hash_token[i]);
+            strcat(hash_uri, tmp);
+        }
 
+        ULOG_DBG_INFO("hash %s", hash_uri);
+        command << getenv("un_script_path") << PULL_NF << " " << temp.getName() << " " << temp.getURI() << " "
+                << hash_uri << " " << VNF_IMAGES_PATH;
+        int retVal = system(command.str().c_str());
+        retVal = retVal >> 8;
 
-  SHA256((const unsigned char*)temp.getURI().c_str(), strlen(temp.getURI().c_str()), hash_token);
+        if (retVal == 0)
+            return false;
 
-  for (int i = 0; i < HASH_SIZE; i++) {
-      sprintf(tmp, "%.2x", hash_token[i]);
-      strcat(hash_uri, tmp);
-  }
-
-
-    ULOG_DBG_INFO("jash %s", hash_uri);
-
-    command << getenv("un_script_path") << PULL_NF << " " << temp.getName() << " " << temp.getURI() << " " << hash_uri << " " << VNF_IMAGES_PATH;
- int retVal = system(command.str().c_str());
- retVal = retVal >> 8;
-
- if(retVal == 0)
-   return false;
-
- pathImage << VNF_IMAGES_PATH << "/" << temp.getName() << "_" << hash_uri << "_tmp";
-
+        pathImage << VNF_IMAGES_PATH << "/" << temp.getName() << "_" << hash_uri << "_tmp";
+    }
+    else if(temp.getURIType() == "local")
+        pathImage << temp.getURI();
     for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
         int begin, end;
         (*port).splitPortsRangeInInt(begin, end);
         if (temp.getVnfType() == "dpdk") {
             #ifdef ENABLE_DPDK_PROCESSES
                 for(int i = begin;i<=end;i++){
-                    port_types.insert(map<unsigned int, PortType>::value_type(i+1, DPDKR_PORT));
+                    port_types.insert(map<unsigned int, PortType>::value_type(i, DPDKR_PORT));
                 }
                 possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp.getVnfType(),pathImage.str(),temp.getCores(),port_types)));
             #endif
         } else if (temp.getVnfType() == "native") {
             #ifdef ENABLE_NATIVE
                 for(int i = begin;i<=end;i++){
-                    port_types.insert(map<unsigned int, PortType>::value_type(i+1, VETH_PORT));
+                    port_types.insert(map<unsigned int, PortType>::value_type(i, VETH_PORT));
                 }
                 possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp.getVnfType(),pathImage.str(),port_types)));
             #endif
@@ -298,7 +297,7 @@ bool ComputeController::addImplementation(Template& temp, string nf_id){
 
         if (temp.getVnfType() == "docker") {
             for(int i = begin;i<=end;i++){
-                port_types.insert(map<unsigned int, PortType>::value_type(i+1, VETH_PORT));
+                port_types.insert(map<unsigned int, PortType>::value_type(i, VETH_PORT));
             }
             Description *descr = new Description(temp.getVnfType(), pathImage.str(), port_types);
             possibleDescriptions.push_back(descr);

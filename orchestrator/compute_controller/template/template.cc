@@ -21,13 +21,16 @@ void Template::setURI(string uri) {
     this->uri = uri;
 }
 
+void Template::setURIType(string uriType) {
+    this->uriType = uriType;
+}
+
 void Template::setVnfType(string type) {
     this->vnfType = type;
 }
 
 void Template::addPort(Port port) {
     this->ports.push_back(port);
-    //this->port_types.insert(std::map<unsigned int, PortType>::value_type(port_id, port_type));
 }
 
 bool Template::getExpandable() {
@@ -56,6 +59,10 @@ void Template::setCores(int cores) {
 
 int Template::getCores() {
     return this->cores;
+}
+
+string Template::getURIType() {
+    return this->uriType;
 }
 
 

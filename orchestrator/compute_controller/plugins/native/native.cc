@@ -129,14 +129,14 @@ bool Native::updateNF(UpdateNFIn uni)
 
 	std::stringstream uri;
 
-	try {
-		//NativeDescription& nativeDescr = dynamic_cast<NativeDescription&>(*description);
-		/*if(nativeDescr.getLocation() == "local")
-			uri << "file://";*/
+	/*try {
+		NativeDescription& nativeDescr = dynamic_cast<NativeDescription&>(*description);
+		if(nativeDescr.getLocation() == "local")
+			uri << "file://";
 	} catch (exception& e) {
 		ULOG_DBG_INFO("exception %s", e.what());
 		return false;
-	}
+	}*/
 
 	std::string uri_script = description->getURI();
 	uri << uri_script;
@@ -171,14 +171,14 @@ bool Native::startNF(StartNFIn sni) {
 
 	std::stringstream uri;
 
-	try {
-		//NativeDescription& nativeDescr = dynamic_cast<NativeDescription&>(*description);
-		//if(nativeDescr.getLocation() == "local")
-			//uri << "file://";
+	/*try {
+		NativeDescription& nativeDescr = dynamic_cast<NativeDescription&>(*description);
+		if(nativeDescr.getLocation() == "local")
+			uri << "file://";
 	} catch (exception& e) {
 		ULOG_DBG_INFO("exception %s", e.what());
 		return false;
-	}
+	}*/
 	std::string uri_script = description->getURI();
 	uri << uri_script;
 

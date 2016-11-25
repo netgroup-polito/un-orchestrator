@@ -10,9 +10,10 @@ private:
     string name;
     bool expandable;
     string uri;
+    string uriType;
     string vnfType;
     list<Port> ports;
-    //map<unsigned int, PortType> port_types;
+    //map<unsigned int, PortType> port_types;string uriType;
     int cores;
 
 public:
@@ -26,10 +27,12 @@ public:
     string getURI();
     void setVnfType(string type);
     string getVnfType();
-    void addPort(Port port/*unsigned int id,PortType port_type*/);
+    void addPort(Port port);
     list<Port>& getPorts();
     void setCores(int cores);
     int getCores();
+    string getURIType();
+    void setURIType(string uriType);
 
 
 };
