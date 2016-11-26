@@ -5,18 +5,29 @@ bool operator==(const nf_port_info& lhs, const nf_port_info& rhs)
     return (lhs.port_name.compare(rhs.port_name) == 0) && (lhs.port_type == rhs.port_type);
 }
 
+
+
 Description::Description(nf_t type, string uri, std::map<unsigned int, PortType>& port_types) :
-	type(type), uri(uri), port_types(port_types)
+        type(type), uri(uri), port_types(port_types)
 {
-	supported = false;
+    supported = false;
 }
 
 Description::Description(string type, string uri, std::map<unsigned int, PortType>& port_types) :
-	 uri(uri) , port_types(port_types)
+		 uri(uri), port_types(port_types)
 {
 	supported = false;
+    this->type=stringToType(type);
 
-	if(type == "dpdk")
+    return;
+}
+
+Description::Description(string type, string uri,string nf_name,string uri_type ,std::map<unsigned int, PortType>& port_types) :
+	 uri(uri) ,nf_name(nf_name),uri_type(uri_type), port_types(port_types)
+{
+	supported = false;
+    this->type = stringToType(type);
+	/*if(type == "dpdk")
 	{
 		this->type = DPDK;
 		return;
@@ -45,7 +56,7 @@ Description::Description(string type, string uri, std::map<unsigned int, PortTyp
 
 	//[+] Add here other implementations for the execution environment
 
-	assert(0);
+	assert(0);*/
 	return;
 }
 
@@ -59,6 +70,14 @@ nf_t Description::getType() const
 string Description::getURI() const
 {
 	return uri;
+}
+
+string Description::getURIType() const {
+	return uri_type;
+}
+
+string Description::getName() const {
+	return nf_name;
 }
 
 bool Description::isSupported() {
@@ -90,6 +109,8 @@ PortType portTypeFromString(const std::string& s)
 	return INVALID_PORT;
 }
 
+
+
 std::string portTypeToString(PortType t)
 {
 	switch (t) {
@@ -115,4 +136,35 @@ std::string portTypeToString(PortType t)
 		break;
 	}
 	return "INVALID";
+}
+
+
+
+nf_t stringToType(const std::string& type){
+
+    if(!type.compare("dpdk"))
+    {
+        return DPDK;
+    }
+
+    else if(!type.compare("docker"))
+    {
+        return DOCKER;
+    }
+
+    else if(!type.compare("virtual-machine-kvm"))
+    {
+        return KVM;
+    }
+
+    else if(!type.compare("native"))
+    {
+        return NATIVE;
+    }
+
+
+    //[+] Add here other implementations for the execution environment
+
+    assert(0);
+
 }

@@ -104,8 +104,8 @@ Native::Native(){
 bool Native::isSupported(Description& descr) {
 	try{
 		NativeDescription& nativeDescr = dynamic_cast<NativeDescription&>(descr);
-		std::list<std::string> *requirements = nativeDescr.getRequirements();
-		for(std::list<std::string>::iterator i = requirements->begin(); i != requirements->end(); i++){
+		std::list<std::string> requirements = nativeDescr.getRequirements();
+		for(std::list<std::string>::iterator i = requirements.begin(); i != requirements.end(); i++){
 
 			if(capabilities->find(*i) == capabilities->end()){
 				//not found

@@ -12,7 +12,7 @@
 #4 directory images							
 
 
-archive_file=`echo "$1_$3_tmp"`
+archive_file=`echo "$1_$3"`
 
 if (( $EUID != 0 )) 
 then

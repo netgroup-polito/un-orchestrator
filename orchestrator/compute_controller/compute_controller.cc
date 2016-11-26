@@ -220,7 +220,7 @@ void ComputeController::checkSupportedDescriptions() {
 						nativeManager = new Native();
 						if(nativeManager->isSupported(**descr)){ //segmentation fault
 							(*descr)->setSupported(true);
-							ULOG_DBG_INFO("Native description of NF \"%s\" is supported.",(current->getName()).c_str());
+							 ULOG_DBG_INFO("Native description of NF \"%s\" is supported.",(current->getName()).c_str());
 						} else {
 							ULOG_DBG_INFO("Native description of NF \"%s\" is not supported.",(current->getName()).c_str());
 						}
@@ -252,30 +252,34 @@ bool ComputeController::addImplementation(Template& temp, string nf_id){
   list<Description*> possibleDescriptions;
   stringstream command;
   stringstream pathImage;
-  unsigned char hash_token[BUFFER_SIZE];
+  unsigned char hash_token[HASH_SIZE];
   char hash_uri [BUFFER_SIZE] ;
   char tmp[HASH_SIZE] ;
     if(temp.getURIType() == "remote") {
+        strcpy(tmp, "");
+        strcpy(hash_uri, "");
         SHA256((const unsigned char *) temp.getURI().c_str(), strlen(temp.getURI().c_str()), hash_token);
 
         for (int i = 0; i < HASH_SIZE; i++) {
             sprintf(tmp, "%.2x", hash_token[i]);
             strcat(hash_uri, tmp);
         }
-
+        ULOG_DBG_INFO("uri %s",temp.getURI().c_str());
         ULOG_DBG_INFO("hash %s", hash_uri);
         command << getenv("un_script_path") << PULL_NF << " " << temp.getName() << " " << temp.getURI() << " "
                 << hash_uri << " " << VNF_IMAGES_PATH;
+        ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
         int retVal = system(command.str().c_str());
         retVal = retVal >> 8;
 
         if (retVal == 0)
             return false;
 
-        pathImage << VNF_IMAGES_PATH << "/" << temp.getName() << "_" << hash_uri << "_tmp";
+        pathImage << VNF_IMAGES_PATH << "/" << temp.getName() << "_" << hash_uri ;
     }
-    else if(temp.getURIType() == "local")
+    else if(temp.getURIType() == "local" || temp.getURIType() == "docker-pull")
         pathImage << temp.getURI();
+
     for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
         int begin, end;
         (*port).splitPortsRangeInInt(begin, end);
@@ -299,7 +303,7 @@ bool ComputeController::addImplementation(Template& temp, string nf_id){
             for(int i = begin;i<=end;i++){
                 port_types.insert(map<unsigned int, PortType>::value_type(i, VETH_PORT));
             }
-            Description *descr = new Description(temp.getVnfType(), pathImage.str(), port_types);
+            Description *descr = new Description(temp.getVnfType(), pathImage.str(),temp.getName(),temp.getURIType(), port_types);
             possibleDescriptions.push_back(descr);
         }
         if (temp.getVnfType() == "virtual-machine-kvm") {

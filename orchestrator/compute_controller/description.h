@@ -32,7 +32,7 @@ enum PortType {
 
 PortType portTypeFromString(const std::string& s);
 std::string portTypeToString(PortType t);
-
+nf_t stringToType(const std::string& type);
 struct nf_port_info
 {
 	string port_name;
@@ -47,15 +47,20 @@ class Description
 private:
 	nf_t type;
 	string uri;
+	string nf_name;
+	string uri_type;
 	bool supported;
 	std::map<unsigned int, PortType> port_types;
 
 public:
 	Description(nf_t type, string uri, std::map<unsigned int, PortType>& port_types);
 	Description(string type, string uri, std::map<unsigned int, PortType>& port_types);
+	Description(string type, string uri,string nf_name,string uri_type, std::map<unsigned int, PortType>& port_types);//usefull for docker
 	virtual ~Description();
 
 	string getURI() const;
+	string getURIType() const;
+	string getName() const;
 	nf_t getType() const;
 	void setSupported(bool supported);
 	bool isSupported();

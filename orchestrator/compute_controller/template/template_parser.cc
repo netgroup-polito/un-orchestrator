@@ -15,7 +15,7 @@ bool Template_Parser::parse(Template &temp, string answer) {
         bool foundURI = false;
         bool foundCores = false;
         bool validPortType = false;
-        bool foundTypeURI = false;
+       // bool foundTypeURI = false;
         for( Object::const_iterator i = obj.begin(); i != obj.end(); ++i )
         {
             const string& name  = i->first;
@@ -46,9 +46,9 @@ bool Template_Parser::parse(Template &temp, string answer) {
                 temp.setVnfType(value.getString());
                 foundImplementations = true;
             }
-            else if(name == "type"){
+            else if(name == "uri-type"){
                 temp.setURIType(value.getString());
-                foundTypeURI = true;
+                //foundTypeURI = true;
             }
             else if(name == "CPUrequirements")
             {
@@ -70,7 +70,7 @@ bool Template_Parser::parse(Template &temp, string answer) {
             }
         }//end iteration on the answer
 
-        if(!foundName || !foundImplementations || !foundURI || !foundPorts || !validPortType || !foundTypeURI)
+        if(!foundName || !foundImplementations || !foundURI || !foundPorts || !validPortType /*|| !foundTypeURI*/)
         {
             ULOG_WARN("Key \"name\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"typeURI\" and/or key \"ports\" and/or valid ports has been found in the answer ");
             return false;

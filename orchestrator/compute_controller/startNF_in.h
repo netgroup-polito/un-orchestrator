@@ -66,16 +66,18 @@ private:
 	uint64_t coreMask;
 
 protected:
+
+
 	StartNFIn(uint64_t lsiID, string nf_id, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration,
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-	list<port_mapping_t > controlPorts, list<string> environmentVariables,
+			list<port_mapping_t > controlPorts, list<string> environmentVariables,
 #endif
-		uint64_t coreMask = 0x0)
+			  uint64_t coreMask = 0x0)
 			: lsiID(lsiID), nf_id(nf_id), namesOfPortsOnTheSwitch(namesOfPortsOnTheSwitch), portsConfiguration(portsConfiguration),
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 			controlPorts(controlPorts), environmentVariables(environmentVariables),
 #endif
-			coreMask(coreMask)
+			  coreMask(coreMask)
 	{
 	}
 
@@ -90,6 +92,8 @@ public:
 	{
 		return nf_id;
 	}
+
+
 
 	const map<unsigned int, string>& getNamesOfPortsOnTheSwitch() const
 	{
