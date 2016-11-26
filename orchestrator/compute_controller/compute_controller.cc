@@ -280,43 +280,57 @@ bool ComputeController::addImplementation(Template& temp, string nf_id){
     else if(temp.getURIType() == "local" || temp.getURIType() == "docker-pull")
         pathImage << temp.getURI();
 
-    for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
-        int begin, end;
-        (*port).splitPortsRangeInInt(begin, end);
-        if (temp.getVnfType() == "dpdk") {
-            #ifdef ENABLE_DPDK_PROCESSES
+
+    if (temp.getVnfType() == "dpdk") {
+        #ifdef ENABLE_DPDK_PROCESSES
+            for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
+                int begin, end;
+                (*port).splitPortsRangeInInt(begin, end);
                 for(int i = begin;i<=end;i++){
                     port_types.insert(map<unsigned int, PortType>::value_type(i, DPDKR_PORT));
                 }
-                possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp.getVnfType(),pathImage.str(),temp.getCores(),port_types)));
-            #endif
-        } else if (temp.getVnfType() == "native") {
-            #ifdef ENABLE_NATIVE
-                for(int i = begin;i<=end;i++){
-                    port_types.insert(map<unsigned int, PortType>::value_type(i, VETH_PORT));
-                }
-                possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp.getVnfType(),pathImage.str(),port_types)));
-            #endif
-        }
+            }
+            possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp.getVnfType(),pathImage.str(),temp.getCores(),port_types)));
+        #endif
+    } else if (temp.getVnfType() == "native") {
+        #ifdef ENABLE_NATIVE
+            for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
+                    int begin, end;
+                    (*port).splitPortsRangeInInt(begin, end);
+                    for(int i = begin;i<=end;i++){
+                        port_types.insert(map<unsigned int, PortType>::value_type(i, VETH_PORT));
+                    }
+            }
+            possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp.getVnfType(),pathImage.str(),port_types)));
+        #endif
+    }
 
-        if (temp.getVnfType() == "docker") {
-            for(int i = begin;i<=end;i++){
-                port_types.insert(map<unsigned int, PortType>::value_type(i, VETH_PORT));
+    if (temp.getVnfType() == "docker") {
+        for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
+            int begin, end;
+            (*port).splitPortsRangeInInt(begin, end);
+            for (int i = begin; i <= end; i++) {
+                port_types.insert(map<unsigned int, PortType> ::value_type(i, VETH_PORT));
             }
-            Description *descr = new Description(temp.getVnfType(), pathImage.str(),temp.getName(),temp.getURIType(), port_types);
-            possibleDescriptions.push_back(descr);
         }
-        if (temp.getVnfType() == "virtual-machine-kvm") {
-            for(int i = begin;i<=end;i++){
-                port_types.insert(map<unsigned int, PortType>::value_type(i, portTypeFromString((*port).getTechnology())));
+        Description *descr = new Description(temp.getVnfType(), pathImage.str(),temp.getName(),temp.getURIType(), port_types);
+        possibleDescriptions.push_back(descr);
+    }
+    if (temp.getVnfType() == "virtual-machine-kvm") {
+        for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
+            int begin, end;
+            (*port).splitPortsRangeInInt(begin, end);
+            for (int i = begin; i <= end; i++) {
+                port_types.insert(map <unsigned int, PortType> ::value_type(i, portTypeFromString((*port).getTechnology())));
             }
-            Description *descr = new Description(temp.getVnfType(), pathImage.str(), port_types);
-            possibleDescriptions.push_back(descr);
         }
+        Description *descr = new Description(temp.getVnfType(), pathImage.str(), port_types);
+        possibleDescriptions.push_back(descr);
+    }
 
         //insert other implementations
 
-    }
+
     NF *new_nf = new NF(temp.getName());
     assert(possibleDescriptions.size() != 0);
 
