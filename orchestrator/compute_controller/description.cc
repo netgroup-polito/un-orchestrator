@@ -27,36 +27,6 @@ Description::Description(string type, string uri,string nf_name,string uri_type 
 {
 	supported = false;
     this->type = stringToType(type);
-	/*if(type == "dpdk")
-	{
-		this->type = DPDK;
-		return;
-	}
-#ifdef ENABLE_DOCKER
-	else if(type == "docker")
-	{
-		this->type = DOCKER;
-		return;
-	}
-#endif
-#ifdef ENABLE_KVM
-	else if(type == "virtual-machine-kvm")
-	{
-		this->type = KVM;
-		return;
-	}
-#endif
-#ifdef ENABLE_NATIVE
-	else if(type == "native")
-	{
-		this->type = NATIVE;
-		return;
-	}
-#endif
-
-	//[+] Add here other implementations for the execution environment
-
-	assert(0);*/
 	return;
 }
 
@@ -70,6 +40,10 @@ nf_t Description::getType() const
 string Description::getURI() const
 {
 	return uri;
+}
+
+void Description::setURI(string uri) {
+	this->uri=uri;
 }
 
 string Description::getURIType() const {

@@ -3,96 +3,124 @@
 
 static const char LOG_MODULE_NAME[] = "Template-Parser";
 
-bool Template_Parser::parse(Template &temp, string answer) {
+bool Template_Parser::parse(std::list<Template>& templates, string answer,bool checkVnfTemplate) {
+    bool return_value = false;
     try
     {
         Value json;
+
+        Object obj;
         read(answer, json);
-        Object obj = json.getObject();
-        bool foundPorts = true;
-        bool foundName = false;
-        bool foundImplementations = false;
-        bool foundURI = false;
-        bool foundCores = false;
-        bool validPortType = false;
-       // bool foundTypeURI = false;
-        for( Object::const_iterator i = obj.begin(); i != obj.end(); ++i )
-        {
-            const string& name  = i->first;
-            const Value&  value = i->second;
 
-            if(name == "name")
-            {
-                foundName = true;
-                temp.setName(value.getString()) ;
-            }
-            else if(name == "expandable")
-            {
-                temp.setExpandable(value.getBool());
-
-            }
-            else if(name == "uri")
-            {
-                temp.setURI(value.getString());
-                foundURI = true;
-            }
-            else if(name == "vnf-type")
-            {
-                if(!NFType::isValid(value.getString()))
-                {
-                    ULOG_DBG_INFO("Invalid implementation type \"%s\". Skip it.", value.getString().c_str());
-                    break;
-                }
-                temp.setVnfType(value.getString());
-                foundImplementations = true;
-            }
-            else if(name == "uri-type"){
-                temp.setURIType(value.getString());
-                //foundTypeURI = true;
-            }
-            else if(name == "CPUrequirements")
-            {
-                foundCores = Template_Parser::parseCoreNumbers(temp,value.getObject());
-            }
-            else if(name == "ports"){
-                foundPorts = true;
-                const Array& ports_array = value.getArray();
-                if (ports_array.size() == 0)
-                {
-                    ULOG_WARN("Empty ports list in implementation");
-                    return false;
-                }
-                for( unsigned int i = 0; i < ports_array.size(); ++i)
-                {
-                    Object port = ports_array[i].getObject();
-                    validPortType=parsePort(temp,port);
-                }
-            }
-        }//end iteration on the answer
-
-        if(!foundName || !foundImplementations || !foundURI || !foundPorts || !validPortType /*|| !foundTypeURI*/)
-        {
-            ULOG_WARN("Key \"name\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"typeURI\" and/or key \"ports\" and/or valid ports has been found in the answer ");
-            return false;
+        if(checkVnfTemplate) {
+            Template temp;
+            obj = json.getObject();
+            return_value = setTemplateFromJson(temp,obj);
+            templates.push_back(temp);
         }
-        if(!foundCores && temp.getName() == "dpdk"){
-            ULOG_WARN("Core numbers have not been found in the template for implementation dpdk");
-            return false;
-        }
+        else {
 
+            const Array& temps = json.getArray();
+            for( unsigned int i = 0; i < temps.size(); ++i)
+            {
+                Template temp;
+                Object t = temps[i].getObject();
+                return_value = setTemplateFromJson(temp,t);
+               // if(!return_value)
+                    //return false;
+                templates.push_back(temp);
+            }
+        }
     }
     catch (std::runtime_error& e) {
         ULOG_WARN("JSON parse error: %s", e.what());
         return false;
     }
-    catch(...)
+   // catch(...)
+    //{
+    //    ULOG_WARN("The content does not respect the JSON syntax");
+    //    return false;
+    //}
+
+    return return_value;
+
+}
+
+bool Template_Parser::setTemplateFromJson(Template &temp,Object obj){
+
+    bool foundPorts = false;
+    bool foundName = false;
+    bool foundImplementations = false;
+    bool foundURI = false;
+    bool foundCores = false;
+    bool validPortType = false;
+    bool foundTypeURI = false;
+    for( Object::const_iterator i = obj.begin(); i != obj.end(); ++i )
     {
-        ULOG_WARN("The content does not respect the JSON syntax");
-        return false;
+        const string& name  = i->first;
+        const Value&  value = i->second;
+
+        if(name == "name")
+        {
+            foundName = true;
+            temp.setName(value.getString()) ;
+        }
+        else if(name == "expandable")
+        {
+            temp.setExpandable(value.getBool());
+
+        }
+        else if(name == "uri")
+        {
+            temp.setURI(value.getString());
+            foundURI = true;
+        }
+        else if(name == "vnf-type")
+        {
+            if(!NFType::isValid(value.getString()))
+            {
+                ULOG_DBG_INFO("Invalid implementation type \"%s\". Skip it.", value.getString().c_str());
+                break;
+            }
+            temp.setVnfType(value.getString());
+            foundImplementations = true;
+        }
+        else if(name == "uri-type"){
+            temp.setURIType(value.getString());
+            foundTypeURI = true;
+        }
+        else if(name == "CPUrequirements")
+        {
+            foundCores = Template_Parser::parseCoreNumbers(temp,value.getObject());
+        }
+        else if(name == "ports"){
+            foundPorts = true;
+            const Array& ports_array = value.getArray();
+            if (ports_array.size() == 0)
+            {
+                ULOG_WARN("Empty ports list in implementation");
+                return false;
+            }
+            for( unsigned int i = 0; i < ports_array.size(); ++i)
+            {
+                Object port = ports_array[i].getObject();
+                validPortType=parsePort(temp,port);
+            }
+        }
+    }//end iteration on the answer
+
+    if(!foundName || !foundImplementations || !foundURI || !foundPorts || !validPortType || !foundTypeURI)
+    {
+        ULOG_WARN("Key \"name\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"typeURI\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
+        throw new std::string("Key \"name\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"typeURI\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
+        //return false;
     }
-
+    if(!foundCores && temp.getName() == "dpdk"){
+        ULOG_WARN("Core numbers have not been found in the template for implementation dpdk");
+        throw new std::string("Core numbers have not been found in the template for implementation dpdk");
+        //return false;
+    }
     return true;
-
 }
 
 bool Template_Parser::parsePort(Template& temp, Object obj) {
@@ -114,10 +142,7 @@ bool Template_Parser::parsePort(Template& temp, Object obj) {
             }
 
         }
-        /*if (port_type == UNDEFINED_PORT) {
-            ULOG_WARN("Missing port \"type\" attribute for implementation");
-            return false;
-        }*/
+
         ULOG_DBG_INFO(" Port  range=%s type=%s",  port.getPortsRange().c_str(),port.getTechnology().c_str());
 
         temp.addPort(port);

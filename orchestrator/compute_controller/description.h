@@ -57,7 +57,7 @@ public:
 	Description(string type, string uri, std::map<unsigned int, PortType>& port_types);
 	Description(string type, string uri,string nf_name,string uri_type, std::map<unsigned int, PortType>& port_types);//usefull for docker
 	virtual ~Description();
-
+	void setURI(string uri);
 	string getURI() const;
 	string getURIType() const;
 	string getName() const;

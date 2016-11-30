@@ -36,12 +36,12 @@ void ComputeController::setCoreMask(uint64_t core_mask)
 		ULOG_DBG_INFO("Mask of an available core: \"%d\"",cores[i]);
 }
 
-nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string vnf_template, string vnf_repo_ip, int vnf_repo_port)
+nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string vnf_template,bool checkVnfTemplate, string vnf_repo_ip, int vnf_repo_port)
 {
 	try
  	{
  		string translation;
-        Template temp;
+        list<Template> templates;
  		ULOG_DBG_INFO("Considering the NF with id \"%s\"",nf_id.c_str());
 
 		char ErrBuf[BUFFER_SIZE];
@@ -66,7 +66,11 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string vnf
 		}
 
 		stringstream tmp;
-		tmp << "GET " << VNF_REPOSITORY_BASE_URL << vnf_template << "/ HTTP/1.1\r\n";
+        if(checkVnfTemplate)
+		    tmp << "GET " << VNF_REPOSITORY_BASE_URL << vnf_template << "/ HTTP/1.1\r\n";
+        else
+           // tmp << "GET " << VNF_REPOSITORY_BASE_URL << vnf_template << "/ HTTP/1.1\r\n"  URL NUOVA
+            ;
 		tmp << "Host: :" << vnf_repo_ip << ":" << vnf_repo_port << "\r\n";
 		tmp << "Connection: close\r\n";
 		tmp << "Accept: */*\r\n\r\n";
@@ -131,13 +135,14 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string vnf
 		translation.assign(&DataBuffer[i]);
 
 
-		if(!Template_Parser::parse(temp,translation))
+		if(!Template_Parser::parse(templates,translation,checkVnfTemplate))
 		{
 			//ERROR IN THE SERVER
             ULOG_ERR("FAILED TO PARSE");
 			return NFManager_SERVER_ERROR;
 		}
-        addImplementation(temp,nf_id);
+
+        addImplementations(templates,nf_id);
 
     }
 	catch (std::exception& e)
@@ -247,96 +252,71 @@ void ComputeController::checkSupportedDescriptions() {
 
 
 
-bool ComputeController::addImplementation(Template& temp, string nf_id){
+bool ComputeController::addImplementations(list<Template>& templates, string nf_id){ //TODO modificare
   map<unsigned int, PortType> port_types; // port_id -> port_type
   list<Description*> possibleDescriptions;
-  stringstream command;
-  stringstream pathImage;
-  unsigned char hash_token[HASH_SIZE];
-  char hash_uri [BUFFER_SIZE] ;
-  char tmp[HASH_SIZE] ;
-    if(temp.getURIType() == "remote") {
-        strcpy(tmp, "");
-        strcpy(hash_uri, "");
-        SHA256((const unsigned char *) temp.getURI().c_str(), strlen(temp.getURI().c_str()), hash_token);
+  string name ;
+    for(list<Template>::iterator temp = templates.begin(); temp != templates.end(); temp++){
+        name = temp->getName();
 
-        for (int i = 0; i < HASH_SIZE; i++) {
-            sprintf(tmp, "%.2x", hash_token[i]);
-            strcat(hash_uri, tmp);
-        }
-        ULOG_DBG_INFO("uri %s",temp.getURI().c_str());
-        ULOG_DBG_INFO("hash %s", hash_uri);
-        command << getenv("un_script_path") << PULL_NF << " " << temp.getName() << " " << temp.getURI() << " "
-                << hash_uri << " " << VNF_IMAGES_PATH;
-        ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
-        int retVal = system(command.str().c_str());
-        retVal = retVal >> 8;
-
-        if (retVal == 0)
-            return false;
-
-        pathImage << VNF_IMAGES_PATH << "/" << temp.getName() << "_" << hash_uri ;
-    }
-    else if(temp.getURIType() == "local" || temp.getURIType() == "docker-pull")
-        pathImage << temp.getURI();
-
-
-    if (temp.getVnfType() == "dpdk") {
-        #ifdef ENABLE_DPDK_PROCESSES
-            for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
+        if (temp->getVnfType() == "dpdk") {
+            #ifdef ENABLE_DPDK_PROCESSES
+            for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
                 int begin, end;
-                (*port).splitPortsRangeInInt(begin, end);
+                port->splitPortsRangeInInt(begin, end);
                 for(int i = begin;i<=end;i++){
                     port_types.insert(map<unsigned int, PortType>::value_type(i, DPDKR_PORT));
                 }
             }
-            possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp.getVnfType(),pathImage.str(),temp.getCores(),port_types)));
-        #endif
-    } else if (temp.getVnfType() == "native") {
-        #ifdef ENABLE_NATIVE
-            for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
+            possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp->getVnfType(),temp->getURI(),temp->getName(),temp->getURIType(),port_types)));
+            #endif
+        } else if (temp->getVnfType() == "native") {
+            #ifdef ENABLE_NATIVE
+            for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
                     int begin, end;
-                    (*port).splitPortsRangeInInt(begin, end);
+                    port->splitPortsRangeInInt(begin, end);
                     for(int i = begin;i<=end;i++){
                         port_types.insert(map<unsigned int, PortType>::value_type(i, VETH_PORT));
                     }
             }
-            possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp.getVnfType(),pathImage.str(),port_types)));
-        #endif
-    }
+            possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp->getVnfType(),temp->getURI(),temp->getName(),temp->getURIType(),port_types)));
+            #endif
+        }
 
-    if (temp.getVnfType() == "docker") {
-        for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
-            int begin, end;
-            (*port).splitPortsRangeInInt(begin, end);
-            for (int i = begin; i <= end; i++) {
-                port_types.insert(map<unsigned int, PortType> ::value_type(i, VETH_PORT));
+        if (temp->getVnfType() == "docker") {
+            for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
+                int begin, end;
+                port->splitPortsRangeInInt(begin, end);
+                for (int i = begin; i <= end; i++) {
+                    port_types.insert(map<unsigned int, PortType> ::value_type(i, VETH_PORT));
+                }
             }
+            Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getName(),temp->getURIType(), port_types);
+            possibleDescriptions.push_back(descr);
         }
-        Description *descr = new Description(temp.getVnfType(), pathImage.str(),temp.getName(),temp.getURIType(), port_types);
-        possibleDescriptions.push_back(descr);
-    }
-    if (temp.getVnfType() == "virtual-machine-kvm") {
-        for(list<Port>::iterator port = temp.getPorts().begin(); port != temp.getPorts().end(); port++) {
-            int begin, end;
-            (*port).splitPortsRangeInInt(begin, end);
-            for (int i = begin; i <= end; i++) {
-                port_types.insert(map <unsigned int, PortType> ::value_type(i, portTypeFromString((*port).getTechnology())));
+        if (temp->getVnfType() == "virtual-machine-kvm") {
+            for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
+                int begin, end;
+                port->splitPortsRangeInInt(begin, end);
+                for (int i = begin; i <= end; i++) {
+                    port_types.insert(map <unsigned int, PortType> ::value_type(i, portTypeFromString(port->getTechnology())));
+                }
             }
+            Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getName(),temp->getURIType(), port_types);
+            possibleDescriptions.push_back(descr);
         }
-        Description *descr = new Description(temp.getVnfType(), pathImage.str(), port_types);
-        possibleDescriptions.push_back(descr);
-    }
 
         //insert other implementations
 
+    }
 
-    NF *new_nf = new NF(temp.getName());
+
+    NF *new_nf = new NF(name);
     assert(possibleDescriptions.size() != 0);
 
     if(possibleDescriptions.size() == 0)
     {
-        ULOG_WARN("Cannot find a supported implementation for the network function \"%s\"",temp.getName().c_str());
+        ULOG_WARN("Cannot find a supported implementation for the network function \"%s\"",name.c_str());
         return false;
     }
 
@@ -346,6 +326,42 @@ bool ComputeController::addImplementation(Template& temp, string nf_id){
     nfs[nf_id] = new_nf;
     return true;
 
+}
+
+
+bool ComputeController::downloadImage(Description * description) {
+    stringstream command;
+    stringstream pathImage;
+    unsigned char hash_token[HASH_SIZE];
+    char hash_uri [BUFFER_SIZE] ;
+    char tmp[HASH_SIZE] ;
+    if(description->getURIType() == "remote") {
+        strcpy(tmp, "");
+        strcpy(hash_uri, "");
+        SHA256((const unsigned char *) description->getURI().c_str(), strlen(description->getURI().c_str()), hash_token);
+
+        for (int i = 0; i < HASH_SIZE; i++) {
+            sprintf(tmp, "%.2x", hash_token[i]);
+            strcat(hash_uri, tmp);
+        }
+        ULOG_DBG_INFO("uri %s",description->getURI().c_str());
+        ULOG_DBG_INFO("hash %s", hash_uri);
+        command << getenv("un_script_path") << PULL_NF << " " << description->getName() << " " << description->getURI() << " "
+                << hash_uri << " " << VNF_IMAGES_PATH;
+        ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
+        int retVal = system(command.str().c_str());
+        retVal = retVal >> 8;
+
+        if (retVal == 0)
+            return false;
+
+        pathImage << VNF_IMAGES_PATH << "/" << description->getName() << "_" << hash_uri ;
+        description->setURI(pathImage.str());
+    }
+    //else if(uri_type == "local" || uri_type == "docker-pull")
+       // pathImage = uri;
+
+    return true;
 }
 
 NFsManager* ComputeController::selectNFImplementation(list<Description*> descriptions) {
@@ -373,7 +389,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("Docker description has been selected.");
-
+                assert(downloadImage(*descr));
 				return dockerManager;
 
 			}
@@ -389,7 +405,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("DPDK description has been selected.");
-
+                assert(downloadImage(*descr));
 				return dpdkManager;
 
 			}
@@ -405,7 +421,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("KVM description has been selected.");
-
+                assert(downloadImage(*descr));
 				return libvirtManager;
 
 			}
@@ -424,7 +440,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 					selected = true;
 					ULOG_DBG_INFO("Native description has been selected.");
-
+                    assert(downloadImage(*descr));
 					return nativeManager;
 
 				} catch (exception& e) {

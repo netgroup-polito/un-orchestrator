@@ -11,10 +11,8 @@ using namespace std;
 class Template_Parser{
 
 public:
-    static bool parse(Template& temp,string data);
-   /* bool getNameFromJSON(string& name);
-    bool getExpandableFromJSON(bool& expandable);
-    bool getUriFromJSON(string& u);*/
-    static bool parsePort(Template& temp,Object port /*oggetto porta da parsare*/);
+    static bool setTemplateFromJson(Template & temp,Object obj);
+    static bool parse(std::list<Template>& templates,string data,bool checkVnfTemplate);
+    static bool parsePort(Template& temp,Object port);
     static bool parseCoreNumbers(Template& temp,Object CPUrequirements);
 };

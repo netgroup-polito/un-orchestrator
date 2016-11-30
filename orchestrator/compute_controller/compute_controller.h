@@ -92,14 +92,21 @@ private:
 	uint64_t lsiID;
 
 	/**
-	*	@brief: add an implementation after the answer from VNF-Repository has been parsed
+	*	@brief: add  implementations after the answer from VNF-Repository has been parsed
 	*
-	*	@param:	temp	Template filled with data parsed
-	*	@param:	nf		Name of the network function whose description must be in the asnwer
-	*	@param: vnf     Path where vnf images should be saved
+	*	@param:	templates	Templates filled with data parsed
+	*	@param:	nf_id		Name of the network function whose description must be in the asnwer
+	*
 	*/
 
-	bool addImplementation(Template& temp, string nf_id);
+	bool addImplementations(std::list<Template>& templates, string nf_id);
+    /**
+	*	@brief: download image for specific NF
+	*
+	*	@param:	desc Description of NF
+	*/
+
+    bool downloadImage(Description * desc);
 	/**
 	*	@brief: calculate the core mask for a DPDK NF
 	*
@@ -138,7 +145,7 @@ public:
 	*
 	*	@param:	nf	Name of a network function
 	*/
-	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name, string vnf_repo_ip, int vnf_repo_port);
+	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name,bool checkVnfTemplate, string vnf_repo_ip, int vnf_repo_port);
 
 	/**
 	*	@brief: For each NF, select an implementation. Currently, if a Docker implementation

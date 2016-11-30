@@ -532,14 +532,20 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 	//The description must be actually retrieved only for new VNFs, and not for VNFs whose number of ports is changed
 	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 	{
+        nf_manager_ret_t retVal;
 		//FIXME: not sure that this check is necessary
 		if(computeController->getNFSelectedImplementation(nf->getId()))
 		{
 			ULOG_DBG_INFO("\t* NF with id \"%s\" is already part of the graph; it is not retrieved again",nf->getId().c_str());
 			continue;
 		}
-		nf_manager_ret_t retVal = computeController->retrieveDescription(nf->getId(),nf->getVnfTemplate(), vnfRepoIP, vnfRepoPort);
-		if(retVal == NFManager_NO_NF)
+
+        if(nf->checkVnfTemplateField())
+		    retVal = computeController->retrieveDescription(nf->getId(),nf->getVnfTemplate(),nf->checkVnfTemplateField(), vnfRepoIP, vnfRepoPort);
+		else
+            retVal = computeController->retrieveDescription(nf->getId(),nf->getName(),nf->checkVnfTemplateField(), vnfRepoIP, vnfRepoPort);
+
+        if(retVal == NFManager_NO_NF)
 		{
 			ULOG_WARN("NF \"%s\" cannot be retrieved",nf->getName().c_str());
 			return false;
@@ -548,7 +554,6 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 		{
 			throw GraphManagerException();
 		}
-		//system("wget http://localhost:2626/v1/VNF/image/nativeDHCP.tar.gz -P /home/ennio/Scrivania/prova/");
 
 	}
 
