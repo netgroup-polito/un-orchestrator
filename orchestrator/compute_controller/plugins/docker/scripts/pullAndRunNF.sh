@@ -29,7 +29,7 @@
 tmp_file="$1_$2_tmp"
 path=$3
 uri_type=$5
-docker_pull="docker-pull"
+docker_registry="docker-registry"
 
 if (( $EUID != 0 ))
 then
@@ -42,7 +42,7 @@ num_ports=$6
 position_num_forwarding=`expr 4 + $num_ports \* 3 + 1`
 num_forwarding=${!position_num_forwarding}
 
-if [ $uri_type != $docker_pull ]
+if [ $uri_type != $docker_registry ]
 then
 	sudo docker load < $path
 fi
@@ -111,7 +111,7 @@ then
 fi
 
 
-if [ $docker_pull != $uri_type ]
+if [ $docker_registry != $uri_type ]
 then
 	echo "--privileged=true $4 /bin/bash" >> $tmp_file
 else

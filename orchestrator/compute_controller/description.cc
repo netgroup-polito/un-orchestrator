@@ -22,8 +22,8 @@ Description::Description(string type, string uri, std::map<unsigned int, PortTyp
     return;
 }
 
-Description::Description(string type, string uri,string nf_name,string uri_type ,std::map<unsigned int, PortType>& port_types) :
-	 uri(uri) ,nf_name(nf_name),uri_type(uri_type), port_types(port_types)
+Description::Description(string type, string uri,string capability,string uri_type ,std::map<unsigned int, PortType>& port_types) :
+	 uri(uri) ,capability(capability),uri_type(uri_type), port_types(port_types)
 {
 	supported = false;
     this->type = stringToType(type);
@@ -50,8 +50,8 @@ string Description::getURIType() const {
 	return uri_type;
 }
 
-string Description::getName() const {
-	return nf_name;
+string Description::getCapability() const {
+	return capability;
 }
 
 bool Description::isSupported() {

@@ -47,7 +47,7 @@ class Description
 private:
 	nf_t type;
 	string uri;
-	string nf_name;
+	string capability;
 	string uri_type;
 	bool supported;
 	std::map<unsigned int, PortType> port_types;
@@ -55,12 +55,12 @@ private:
 public:
 	Description(nf_t type, string uri, std::map<unsigned int, PortType>& port_types);
 	Description(string type, string uri, std::map<unsigned int, PortType>& port_types);
-	Description(string type, string uri,string nf_name,string uri_type, std::map<unsigned int, PortType>& port_types);//usefull for docker
+	Description(string type, string uri,string capability,string uri_type, std::map<unsigned int, PortType>& port_types);//usefull for docker
 	virtual ~Description();
 	void setURI(string uri);
 	string getURI() const;
 	string getURIType() const;
-	string getName() const;
+	string getCapability() const;
 	nf_t getType() const;
 	void setSupported(bool supported);
 	bool isSupported();

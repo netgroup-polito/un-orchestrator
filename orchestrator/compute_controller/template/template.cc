@@ -9,8 +9,8 @@ Template::~Template() {
 
 }
 
-void Template::setName(string name) {
-    this->name = name;
+void Template::setCapability(string capability) {
+    this->capability = capability;
 }
 
 void Template::setExpandable(bool expandable) {
@@ -37,8 +37,8 @@ bool Template::getExpandable() {
     return this->expandable;
 }
 
-string Template::getName() {
-    return this->name;
+string Template::getCapability() {
+    return this->capability;
 }
 
 string Template::getURI() {

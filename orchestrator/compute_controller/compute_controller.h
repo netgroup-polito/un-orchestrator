@@ -46,7 +46,7 @@ using namespace json_spirit;
 #define NAME_RESOLVER_PORT			"2626"
 #define NAME_RESOLVER_BASE_URL		"/nfs/"
 #define NAME_RESOLVER_DIGEST_URL	"digest/"
-#define VNF_REPOSITORY_BASE_URL     "/v1/VNF/"
+#define VNF_REPOSITORY_BASE_URL     "/v2/nf_template/"
 #define CODE_POSITION				9
 #define CODE_METHOD_NOT_ALLLOWED	"405"
 #define CODE_OK						"200"

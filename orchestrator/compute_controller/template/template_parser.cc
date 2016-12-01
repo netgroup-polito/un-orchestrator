@@ -4,31 +4,34 @@
 static const char LOG_MODULE_NAME[] = "Template-Parser";
 
 bool Template_Parser::parse(std::list<Template>& templates, string answer,bool checkVnfTemplate) {
-    bool return_value = false;
     try
     {
         Value json;
-
         Object obj;
         read(answer, json);
-
+        obj = json.getObject();
         if(checkVnfTemplate) {
             Template temp;
-            obj = json.getObject();
-            return_value = setTemplateFromJson(temp,obj);
+            setTemplateFromJson(temp,obj);
             templates.push_back(temp);
         }
         else {
-
-            const Array& temps = json.getArray();
-            for( unsigned int i = 0; i < temps.size(); ++i)
-            {
-                Template temp;
-                Object t = temps[i].getObject();
-                return_value = setTemplateFromJson(temp,t);
-               // if(!return_value)
-                    //return false;
-                templates.push_back(temp);
+            for( Object::const_iterator j = obj.begin(); j != obj.end(); ++j ) {
+                const Value & jsonList = j->second;
+                const Array& descriptions  = jsonList.getArray();
+                for( unsigned int i = 0; i < descriptions.size(); ++i)
+                {
+                    Object description = descriptions[i].getObject();
+                    for( Object::const_iterator k = description.begin(); k != description.end(); ++k ) {
+                        Template temp;
+                        const string &name = k->first;
+                        const Value & value = k->second;
+                        if(name == "template"){
+                            setTemplateFromJson(temp,value.getObject());
+                            templates.push_back(temp);
+                        }
+                    }
+                }
             }
         }
     }
@@ -36,20 +39,13 @@ bool Template_Parser::parse(std::list<Template>& templates, string answer,bool c
         ULOG_WARN("JSON parse error: %s", e.what());
         return false;
     }
-   // catch(...)
-    //{
-    //    ULOG_WARN("The content does not respect the JSON syntax");
-    //    return false;
-    //}
-
-    return return_value;
-
+    return true;
 }
 
 bool Template_Parser::setTemplateFromJson(Template &temp,Object obj){
 
     bool foundPorts = false;
-    bool foundName = false;
+    bool foundCapability = false;
     bool foundImplementations = false;
     bool foundURI = false;
     bool foundCores = false;
@@ -60,10 +56,10 @@ bool Template_Parser::setTemplateFromJson(Template &temp,Object obj){
         const string& name  = i->first;
         const Value&  value = i->second;
 
-        if(name == "name")
+        if(name == "functional-capability")
         {
-            foundName = true;
-            temp.setName(value.getString()) ;
+            foundCapability = true;
+            temp.setCapability(value.getString()) ;
         }
         else if(name == "expandable")
         {
@@ -77,11 +73,11 @@ bool Template_Parser::setTemplateFromJson(Template &temp,Object obj){
         }
         else if(name == "vnf-type")
         {
-            if(!NFType::isValid(value.getString()))
-            {
-                ULOG_DBG_INFO("Invalid implementation type \"%s\". Skip it.", value.getString().c_str());
-                break;
-            }
+           // if(!NFType::isValid(value.getString()))
+            //{
+             //   ULOG_DBG_INFO("Invalid implementation type \"%s\". Skip it.", value.getString().c_str());
+              //  continue;
+           // }
             temp.setVnfType(value.getString());
             foundImplementations = true;
         }
@@ -109,13 +105,13 @@ bool Template_Parser::setTemplateFromJson(Template &temp,Object obj){
         }
     }//end iteration on the answer
 
-    if(!foundName || !foundImplementations || !foundURI || !foundPorts || !validPortType || !foundTypeURI)
+    if(!foundCapability || !foundImplementations || !foundURI || !foundPorts || !validPortType || !foundTypeURI)
     {
-        ULOG_WARN("Key \"name\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"typeURI\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
+        ULOG_WARN("Key \"functional-capability\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"typeURI\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
         throw new std::string("Key \"name\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"typeURI\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
         //return false;
     }
-    if(!foundCores && temp.getName() == "dpdk"){
+    if(!foundCores && temp.getVnfType() == "dpdk"){
         ULOG_WARN("Core numbers have not been found in the template for implementation dpdk");
         throw new std::string("Core numbers have not been found in the template for implementation dpdk");
         //return false;

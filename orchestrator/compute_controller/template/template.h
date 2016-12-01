@@ -7,20 +7,19 @@
 using namespace std;
 class Template {
 private:
-    string name;
+    string capability;
     bool expandable;
     string uri;
     string uriType;
     string vnfType;
     list<Port> ports;
-    //map<unsigned int, PortType> port_types;string uriType;
     int cores;
 
 public:
     Template();
     ~Template();
-    void setName(string name);
-    string getName();
+    void setCapability(string capability);
+    string getCapability();
     void setExpandable(bool expandable);
     bool getExpandable();
     void setURI(string uri);
