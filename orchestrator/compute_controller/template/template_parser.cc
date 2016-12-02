@@ -16,16 +16,16 @@ bool Template_Parser::parse(std::list<Template>& templates, string answer,bool c
             templates.push_back(temp);
         }
         else {
-            for( Object::const_iterator j = obj.begin(); j != obj.end(); ++j ) {
-                const Value & jsonList = j->second;
-                const Array& descriptions  = jsonList.getArray();
+            for( Object::const_iterator rootElement = obj.begin(); rootElement != obj.end(); ++rootElement ) { //loop just once
+                const Value & arrayValue = rootElement->second;
+                const Array& descriptions  = arrayValue.getArray();
                 for( unsigned int i = 0; i < descriptions.size(); ++i)
                 {
                     Object description = descriptions[i].getObject();
-                    for( Object::const_iterator k = description.begin(); k != description.end(); ++k ) {
+                    for( Object::const_iterator element = description.begin(); element != description.end(); ++element ) {
                         Template temp;
-                        const string &name = k->first;
-                        const Value & value = k->second;
+                        const string &name = element->first;
+                        const Value & value = element->second;
                         if(name == "template"){
                             setTemplateFromJson(temp,value.getObject());
                             templates.push_back(temp);
@@ -42,7 +42,7 @@ bool Template_Parser::parse(std::list<Template>& templates, string answer,bool c
     return true;
 }
 
-bool Template_Parser::setTemplateFromJson(Template &temp,Object obj){
+void Template_Parser::setTemplateFromJson(Template &temp,Object obj){
 
     bool foundPorts = false;
     bool foundCapability = false;
@@ -73,11 +73,6 @@ bool Template_Parser::setTemplateFromJson(Template &temp,Object obj){
         }
         else if(name == "vnf-type")
         {
-           // if(!NFType::isValid(value.getString()))
-            //{
-             //   ULOG_DBG_INFO("Invalid implementation type \"%s\". Skip it.", value.getString().c_str());
-              //  continue;
-           // }
             temp.setVnfType(value.getString());
             foundImplementations = true;
         }
@@ -94,8 +89,7 @@ bool Template_Parser::setTemplateFromJson(Template &temp,Object obj){
             const Array& ports_array = value.getArray();
             if (ports_array.size() == 0)
             {
-                ULOG_WARN("Empty ports list in implementation");
-                return false;
+                throw new std::string("Empty ports list in implementation");
             }
             for( unsigned int i = 0; i < ports_array.size(); ++i)
             {
@@ -107,16 +101,11 @@ bool Template_Parser::setTemplateFromJson(Template &temp,Object obj){
 
     if(!foundCapability || !foundImplementations || !foundURI || !foundPorts || !validPortType || !foundTypeURI)
     {
-        ULOG_WARN("Key \"functional-capability\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"typeURI\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
         throw new std::string("Key \"name\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"typeURI\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
-        //return false;
     }
     if(!foundCores && temp.getVnfType() == "dpdk"){
-        ULOG_WARN("Core numbers have not been found in the template for implementation dpdk");
         throw new std::string("Core numbers have not been found in the template for implementation dpdk");
-        //return false;
     }
-    return true;
 }
 
 bool Template_Parser::parsePort(Template& temp, Object obj) {
@@ -138,9 +127,6 @@ bool Template_Parser::parsePort(Template& temp, Object obj) {
             }
 
         }
-
-        ULOG_DBG_INFO(" Port  range=%s type=%s",  port.getPortsRange().c_str(),port.getTechnology().c_str());
-
         temp.addPort(port);
         return true;
 
@@ -163,7 +149,6 @@ bool Template_Parser::parseCoreNumbers(Template& temp, Object CPUrequirements) {
                     const Value&  socket_value = iterator_socket->second;
                     if(socket_elementName== "coreNumbers"){
                         temp.setCores(socket_value.getInt());
-                        ULOG_DBG_INFO("cores : %d", socket_value.getInt());
                         return true;
                     }
                 }

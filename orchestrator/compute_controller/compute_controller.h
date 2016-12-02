@@ -41,18 +41,15 @@
 using namespace std;
 using namespace json_spirit;
 
-#define VNF_IMAGES_PATH             "NFimages"
-#define NAME_RESOLVER_ADDRESS		"localhost"
-#define NAME_RESOLVER_PORT			"2626"
-#define NAME_RESOLVER_BASE_URL		"/nfs/"
-#define NAME_RESOLVER_DIGEST_URL	"digest/"
-#define VNF_REPOSITORY_BASE_URL     "/v2/nf_template/"
-#define CODE_POSITION				9
-#define CODE_METHOD_NOT_ALLLOWED	"405"
-#define CODE_OK						"200"
+#define VNF_IMAGES_PATH                 "NFimages"
+#define VNF_REPOSITORY_TEMPLATE_URL     "/v2/nf_template/"
+#define VNF_REPOSITORY_TEMPLATES_URL    "/v2/nf_capability/"
+#define CODE_POSITION				    9
+#define CODE_METHOD_NOT_ALLLOWED	    "405"
+#define CODE_OK						    "200"
 
 /**
-*	@brief: paths of the bash scripts used to manage native functions
+*	@brief: paths of the bash scripts used to manage NF
 */
 
 #define PULL_NF		"./compute_controller/template/scripts/retrieveImage.sh"

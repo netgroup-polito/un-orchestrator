@@ -10,7 +10,7 @@
 #$2 NF ID				(e.g., 0000000_1)
 #$3 path				(e.g., NFimages/archive.gz)
 #$4 NF name				(e.g., firewall)
-#$5 URI type				(e.g., docker-pull)						
+#$5 URI type				(e.g., docker-registry)
 #$6 number_of_ports			(e.g., 2)
 		
 #The next $6 *3 parameters are:
@@ -45,20 +45,21 @@ num_forwarding=${!position_num_forwarding}
 if [ $uri_type != $docker_registry ]
 then
 	sudo docker load < $path
+	ret=`echo $?`
+    if [ $ret -eq 0 ]
+    then
+
+    	echo "[$0] Docker image successifull loaded"
+
+    else
+
+    	echo "[$0] Unable to load Docker image"
+    	exit 0
+
+    fi
 fi
 
-ret=`echo $?`
-if [ $ret -eq 0 ]
-then
 
-	echo "[$0] Docker image successifull loaded"
-
-else
-
-	echo "[$0] Unable to load Docker image"
-	exit 0
-	
-fi
 
 echo -ne "sudo docker run -d -i --name $1_$2 "   > $tmp_file
 
@@ -149,7 +150,7 @@ PID=`docker inspect --format '{{ .State.Pid }}' $ID`
 sudo mkdir -p /var/run/netns
 sudo ln -s /proc/$PID/ns/net /var/run/netns/$PID
 	
-current=5
+current=7
 current_mac=`expr $current + 1`
 current_ip=`expr $current + 2`
 

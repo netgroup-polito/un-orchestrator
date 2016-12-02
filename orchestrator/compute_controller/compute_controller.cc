@@ -67,9 +67,9 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string VNF
 
 		stringstream tmp;
         if(checkVnfTemplate)
-		    tmp << "GET " << VNF_REPOSITORY_BASE_URL << VNFname << "/ HTTP/1.1\r\n";
+		    tmp << "GET " << VNF_REPOSITORY_TEMPLATE_URL << VNFname << "/ HTTP/1.1\r\n";
         else
-            tmp << "GET " << "/v2/nf_capability/" << VNFname << "/ HTTP/1.1\r\n";
+            tmp << "GET " << VNF_REPOSITORY_TEMPLATES_URL << VNFname << "/ HTTP/1.1\r\n";
 		tmp << "Host: :" << vnf_repo_ip << ":" << vnf_repo_port << "\r\n";
 		tmp << "Connection: close\r\n";
 		tmp << "Accept: */*\r\n\r\n";
@@ -345,8 +345,6 @@ bool ComputeController::downloadImage(Description * description) {
             sprintf(tmp, "%.2x", hash_token[i]);
             strcat(hash_uri, tmp);
         }
-        ULOG_DBG_INFO("uri %s",description->getURI().c_str());
-        ULOG_DBG_INFO("hash %s", hash_uri);
         command << getenv("un_script_path") << PULL_NF << " " << description->getCapability() << " " << description->getURI() << " "
                 << hash_uri << " " << VNF_IMAGES_PATH;
         ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
