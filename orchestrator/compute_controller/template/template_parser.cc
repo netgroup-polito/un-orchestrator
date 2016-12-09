@@ -3,7 +3,7 @@
 
 static const char LOG_MODULE_NAME[] = "Template-Parser";
 
-bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool checkVnfTemplate) {
+bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool checkSingleTemplate) {
     try
     {
         Value json;
@@ -11,7 +11,7 @@ bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool
         read(answer, json);
         obj = json.getObject();
         //single template
-        if(checkVnfTemplate) {
+        if(checkSingleTemplate) {
             NFtemplate temp;
             setTemplateFromJson(temp,obj);
             templates.push_back(temp);

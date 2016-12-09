@@ -10,8 +10,8 @@ void GraphManager::mutexInit()
 	pthread_mutex_init(&graph_manager_mutex, NULL);
 }
 
-GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_address,bool orchestrator_in_band,string un_interface,string ipsec_certificate, string vnf_repo_ip, int vnf_repo_port) :
-	un_address(un_address), orchestrator_in_band(orchestrator_in_band), un_interface(un_interface), ipsec_certificate(ipsec_certificate), vnfRepoIP(vnf_repo_ip), switchManager()
+GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_address,bool orchestrator_in_band,string un_interface,string ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_images_path) :
+	un_address(un_address), orchestrator_in_band(orchestrator_in_band), un_interface(un_interface), ipsec_certificate(ipsec_certificate), vnfRepoIP(vnf_repo_ip),vnfImagePath(vnf_images_path), switchManager()
 {
 	//TODO: this code can be simplified. Why don't providing the set<string> to the switch manager?
 	set<CheckPhysicalPortsIn> phyPortsRequired;
@@ -540,10 +540,7 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 			continue;
 		}
 
-        if(nf->checkVnfTemplateField())
-		    retVal = computeController->retrieveDescription(nf->getId(),nf->getVnfTemplate(),nf->checkVnfTemplateField(), vnfRepoIP, vnfRepoPort);
-		else
-            retVal = computeController->retrieveDescription(nf->getId(),nf->getName(),nf->checkVnfTemplateField(), vnfRepoIP, vnfRepoPort);
+       retVal = computeController->retrieveDescription(nf->getId(),computeController->buildUrl(*nf,vnfRepoIP, vnfRepoPort),nf->checkVnfTemplateField()  , vnfRepoIP, vnfRepoPort);
 
         if(retVal == NFManager_NO_NF)
 		{
@@ -661,7 +658,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*	2) Select an implementation for each network function of the graph
 	*/
 	ULOG_DBG_INFO("2) Select an implementation for each NF of the graph");
-	if(!computeController->selectImplementation())
+	if(!computeController->selectImplementation(vnfImagePath))
 	{
 		//This is an internal error
 		delete(computeController);
@@ -1612,7 +1609,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	*	2) Select an implementation for the new NFs
 	*/
 	ULOG_DBG_INFO("2) Select an implementation for the new NFs");
-	if(!computeController->selectImplementation())
+	if(!computeController->selectImplementation(vnfImagePath))
 	{
 		//This is an internal error
 		delete(computeController);

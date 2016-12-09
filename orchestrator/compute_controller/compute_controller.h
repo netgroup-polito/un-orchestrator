@@ -16,6 +16,7 @@
 #include "../utils/logger.h"
 #include "../utils/constants.h"
 #include "../utils/sockutils.h"
+#include "../node_resource_manager/graph/high_level_graph/high_level_graph_vnf.h"
 #include "nf.h"
 #include "template/NFtemplate.h"
 #include <json_spirit/json_spirit.h>
@@ -41,8 +42,7 @@
 using namespace std;
 using namespace json_spirit;
 
-#define VNF_IMAGES_PATH                 "NFimages"
-#define VNF_REPOSITORY_TEMPLATE_URL     "/v2/nf_template/"
+
 #define VNF_REPOSITORY_TEMPLATES_URL    "/v2/nf_capability/"
 #define CODE_POSITION				    9
 #define CODE_METHOD_NOT_ALLLOWED	    "405"
@@ -103,7 +103,7 @@ private:
 	*	@param:	desc Description of NF
 	*/
 
-    bool downloadImage(Description * desc);
+    bool downloadImage(Description * desc,string vnf_images_path);
 	/**
 	*	@brief: calculate the core mask for a DPDK NF
 	*
@@ -131,7 +131,7 @@ private:
 	 */
 	void checkSupportedDescriptions();
 
-	NFsManager* selectNFImplementation(list<Description*> descriptions);
+	NFsManager* selectNFImplementation(list<Description*> descriptions,string vnf_images_path);
 
 public:
 	ComputeController();
@@ -142,11 +142,22 @@ public:
 	*
 	*	@param:	nf_id	Name of a network function, used as key in a map <string,NF>
 	 *	@param: nf_name It can be a http or a capability (field "name" in NF-FG)
-	 *	@param: checkVnfTemplate flag that allows to check if the field vnf_template is specified
+	 *	@param: checkSingleTemplate flag that allows to check if the UN has to parse a single template or a list
 	 *	@param: vnf_repo_ip Vnf Repository IP
 	 *	@param: vnf_repo_port Vnf Repository port
 	*/
-	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name,bool checkVnfTemplate, string vnf_repo_ip, int vnf_repo_port);
+
+
+	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name,bool checkSingleTemplate, string vnf_repo_ip, int vnf_repo_port);
+
+
+    /**
+	*	@brief: build url in order to download the descriptions of VNFs
+	*
+	*	@param:	vnf   object representing a vnf
+	*/
+
+    string buildUrl(highlevel::VNFs vnf,string vnfRepoIP,int vnfRepoPort);
 
 	/**
 	*	@brief: For each NF, select an implementation. Currently, if a Docker implementation
@@ -159,7 +170,7 @@ public:
 	*		- DPDK
 	*		- KVM
 	*/
-	bool selectImplementation();
+	bool selectImplementation(string vnf_images_path);
 
 	/**
 	*	@brief: Return the type selected for a specific NF
