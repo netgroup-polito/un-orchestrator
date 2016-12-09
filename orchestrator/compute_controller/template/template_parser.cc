@@ -3,7 +3,7 @@
 
 static const char LOG_MODULE_NAME[] = "Template-Parser";
 
-bool Template_Parser::parse(std::list<Template>& templates, string answer,bool checkVnfTemplate) {
+bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool checkVnfTemplate) {
     try
     {
         Value json;
@@ -11,7 +11,7 @@ bool Template_Parser::parse(std::list<Template>& templates, string answer,bool c
         read(answer, json);
         obj = json.getObject();
         if(checkVnfTemplate) {
-            Template temp;
+            NFtemplate temp;
             setTemplateFromJson(temp,obj);
             templates.push_back(temp);
         }
@@ -23,7 +23,7 @@ bool Template_Parser::parse(std::list<Template>& templates, string answer,bool c
                 {
                     Object description = descriptions[i].getObject();
                     for( Object::const_iterator element = description.begin(); element != description.end(); ++element ) {
-                        Template temp;
+                        NFtemplate temp;
                         const string &name = element->first;
                         const Value & value = element->second;
                         if(name == "template"){
@@ -42,7 +42,7 @@ bool Template_Parser::parse(std::list<Template>& templates, string answer,bool c
     return true;
 }
 
-void Template_Parser::setTemplateFromJson(Template &temp,Object obj){
+void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj){
 
     bool foundPorts = false;
     bool foundCapability = false;
@@ -108,7 +108,7 @@ void Template_Parser::setTemplateFromJson(Template &temp,Object obj){
     }
 }
 
-bool Template_Parser::parsePort(Template& temp, Object obj) {
+bool Template_Parser::parsePort(NFtemplate& temp, Object obj) {
         PortType port_type = UNDEFINED_PORT;
         Port port;
         for( Object::const_iterator port_el = obj.begin(); port_el != obj.end(); ++port_el ) {
@@ -132,7 +132,7 @@ bool Template_Parser::parsePort(Template& temp, Object obj) {
 
 }
 
-bool Template_Parser::parseCoreNumbers(Template& temp, Object CPUrequirements) {
+bool Template_Parser::parseCoreNumbers(NFtemplate& temp, Object CPUrequirements) {
     for( Object::const_iterator iterator_CPUrequirements = CPUrequirements.begin(); iterator_CPUrequirements != CPUrequirements.end(); ++iterator_CPUrequirements )
     {
         const string& name  = iterator_CPUrequirements->first;

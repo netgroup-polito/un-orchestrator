@@ -32,7 +32,7 @@ enum PortType {
 
 PortType portTypeFromString(const std::string& s);
 std::string portTypeToString(PortType t);
-nf_t stringToType(const std::string& type);
+nf_t stringToType(const std::string& type); //convert docker in the nf_t DOCKER for example
 struct nf_port_info
 {
 	string port_name;
@@ -55,7 +55,7 @@ private:
 public:
 	Description(nf_t type, string uri, std::map<unsigned int, PortType>& port_types);
 	Description(string type, string uri, std::map<unsigned int, PortType>& port_types);
-	Description(string type, string uri,string capability,string uri_type, std::map<unsigned int, PortType>& port_types);//usefull for docker
+	Description(string type, string uri,string capability,string uri_type, std::map<unsigned int, PortType>& port_types);//usefull for docker where uri type is required by the script
 	virtual ~Description();
 	void setURI(string uri);
 	string getURI() const;
