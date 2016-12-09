@@ -7,3 +7,6 @@
 [submodule "use-cases/frog/isp_data_center/authentication_graph/controller-openflow/pox"]
 	path = use-cases/frog/isp_data_center/authentication_graph/controller-openflow/pox
 	url = https://github.com/noxrepo/pox.git
+[submodule "datastore"]
+	path = datastore
+	url = https://github.com/netgroup-polito/frog4-datastore
