@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-PROJECT(node-orchestrator)
+ROJECT(node-orchestrator)
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
         ADD_DEFINITIONS(-Wall -Werror -Wno-write-strings)
@@ -449,6 +449,20 @@ ELSE()
 		${SOURCES7}
     )
 ENDIF(ENABLE_RESOURCE_MANAGER)
+
+IF(ENABLE_HARDWARE)
+        SET(SOURCES9
+    ${SOURCES9}
+    hardware_controller/hardware_controller.cc
+    hardware_controller/hardware_controller.h
+    hardware_controller/hw_manager.h
+    hardware_controller/hw_manager.cc
+    )
+ELSE()
+        SET(SOURCES9
+                ${SOURCES9}
+    )
+ENDIF(ENABLE_HARDWARE)
 
 INCLUDE_DIRECTORIES (
 	${CMAKE_BINARY_DIR}/externals/include/
