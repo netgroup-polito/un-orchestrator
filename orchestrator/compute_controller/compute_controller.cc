@@ -41,7 +41,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string VNF
 	try
  	{
  		string translation;
-        list<Template> templates;
+        list<NFtemplate> templates;
  		ULOG_DBG_INFO("Considering the NF with id \"%s\"",nf_id.c_str());
 
 		char ErrBuf[BUFFER_SIZE];
@@ -250,11 +250,11 @@ void ComputeController::checkSupportedDescriptions() {
 
 
 
-bool ComputeController::addImplementations(list<Template>& templates, string nf_id){ //TODO modificare
+bool ComputeController::addImplementations(list<NFtemplate>& templates, string nf_id){ //TODO modificare
   map<unsigned int, PortType> port_types; // port_id -> port_type
   list<Description*> possibleDescriptions;
   string capability ;
-    for(list<Template>::iterator temp = templates.begin(); temp != templates.end(); temp++){
+    for(list<NFtemplate>::iterator temp = templates.begin(); temp != templates.end(); temp++){
         capability = temp->getCapability(); //it s the same for all
         if (temp->getVnfType() == "dpdk") {
             #ifdef ENABLE_DPDK_PROCESSES

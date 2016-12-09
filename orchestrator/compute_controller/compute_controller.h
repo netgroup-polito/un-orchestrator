@@ -17,7 +17,7 @@
 #include "../utils/constants.h"
 #include "../utils/sockutils.h"
 #include "nf.h"
-#include "template/template.h"
+#include "template/NFtemplate.h"
 #include <json_spirit/json_spirit.h>
 #include <json_spirit/value.h>
 #include <json_spirit/writer.h>
@@ -91,12 +91,12 @@ private:
 	/**
 	*	@brief: add  implementations after the answer from VNF-Repository has been parsed
 	*
-	*	@param:	templates	Templates filled with data parsed
-	*	@param:	nf_id		Name of the network function whose description must be in the asnwer
+	*	@param:	templates	list of Templates filled with data parsed
+	*	@param:	nf_id		Name of the network function whose description must be in the answer
 	*
 	*/
 
-	bool addImplementations(std::list<Template>& templates, string nf_id);
+	bool addImplementations(std::list<NFtemplate>& templates, string nf_id);
     /**
 	*	@brief: download image for specific NF
 	*
@@ -138,9 +138,13 @@ public:
 	~ComputeController();
 
 	/**
-	*	@brief: Retrieve, from the name resolver, the information for a specific NF
+	*	@brief: Retrieve, from the Vnf Repository, the informations for a specific NF
 	*
-	*	@param:	nf	Name of a network function
+	*	@param:	nf_id	Name of a network function, used as key in a map <string,NF>
+	 *	@param: nf_name It can be a http or a capability (field "name" in NF-FG)
+	 *	@param: checkVnfTemplate flag that allows to check if the field vnf_template is specified
+	 *	@param: vnf_repo_ip Vnf Repository IP
+	 *	@param: vnf_repo_port Vnf Repository port
 	*/
 	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name,bool checkVnfTemplate, string vnf_repo_ip, int vnf_repo_port);
 

@@ -1,11 +1,12 @@
-#pragma once
+//Class which represents a template returned by VNF Repository
 
+#pragma once
 #include "port.h"
 #include <string>
 #include <list>
-
+//
 using namespace std;
-class Template {
+class NFtemplate {
 private:
     string capability;
     bool expandable;
@@ -16,8 +17,8 @@ private:
     int cores;
 
 public:
-    Template();
-    ~Template();
+    NFtemplate();
+    ~NFtemplate();
     void setCapability(string capability);
     string getCapability();
     void setExpandable(bool expandable);

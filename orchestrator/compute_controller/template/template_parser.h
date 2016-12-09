@@ -1,4 +1,4 @@
-#include "template.h"
+#include "NFtemplate.h"
 #include <string>
 #include <json_spirit/json_spirit.h>
 #include <json_spirit/value.h>
@@ -11,8 +11,36 @@ using namespace std;
 class Template_Parser{
 
 public:
-    static void setTemplateFromJson(Template & temp,Object obj);
-    static bool parse(std::list<Template>& templates,string data,bool checkVnfTemplate);
-    static bool parsePort(Template& temp,Object port);
-    static bool parseCoreNumbers(Template& temp,Object CPUrequirements);
+    /**
+	 * 	@brief: given a template in a list, it fills an object with data receveid
+     * 	@param temp:  object to fill with data parsed
+     * 	@param obj:   object containing the json representing a template
+	 */
+
+    static void setTemplateFromJson(NFtemplate & temp,Object obj);
+
+    /**
+   * 	@brief: It fills a list of templates with data returned by VNF Repository
+   * 	@param templates:  list to fill in,
+   * 	@param data:  data returned by VNF repository
+   * 	@param checkVnfTemplate:   flag which allows to check if field vnf_template is in NF-FG
+   */
+
+    static bool parse(std::list<NFtemplate>& templates,string data,bool checkVnfTemplate);
+
+    /**
+    * 	@brief: It adds in a template object an object representing a port
+    * 	@param temp:  template to fill in with data
+    * 	@param port:  port to add in the template
+   	*/
+
+    static bool parsePort(NFtemplate& temp,Object port);
+
+    /**
+   * 	@brief: It adds in a template object an object representing a CPUrequirements
+   * 	@param temp:  template to fill in with data
+   * 	@param CPUrequirements:  CPURequirements to add in the template
+   */
+
+    static bool parseCoreNumbers(NFtemplate& temp,Object CPUrequirements);
 };
