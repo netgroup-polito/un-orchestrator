@@ -122,6 +122,15 @@ IF(RUN_NFS)
 ENDIF(RUN_NFS)
 
 OPTION(
+	ENABLE_HARDWARE
+	"Turn on the support of the hardware utilization by the NFs"
+	OFF
+)
+IF(ENABLE_HARDWARE)
+	ADD_DEFINITIONS(-DENABLE_HARDWARE)
+ENDIF(ENABLE_HARDWARE)
+
+OPTION(
 	ENABLE_DOCKER
 	"Turn on the support of NFs implemented in Docker containers"
 	OFF
