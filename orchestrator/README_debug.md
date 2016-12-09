@@ -16,10 +16,10 @@ The following commands are useful to check the status of OvS.
     $ sudo ovs-vsctl show
 
     ; Show the OpenFlow identifiers for the ports of a bridge
-    $ sudo ovs-ofctl show <bridge_name> --protocol=Openflow12
+    $ sudo ovs-ofctl show <bridge_name> --protocol=Openflow13
 
     ; Show the forwarding table of a bridge
-    $ sudo ovs-ofctl dump-flows <bridge_name> --protocol=Openflow12
+    $ sudo ovs-ofctl dump-flows <bridge_name> --protocol=Openflow13
 
     ; Delete a bridge
     $ sudo ovs-vsctl del-br <bridge_name>
