@@ -828,14 +828,13 @@ void GraphTranslator::handleMatchOnEndpointGreLSITenant(highlevel::Graph *graph,
 	*	changed.
 	*/
 
-	char input_endpoint[64];
-	strcpy(input_endpoint, match.getInputEndpoint());
+	string input_endpoint = match.getInputEndpoint();
 
 	//Search endpoint id
 	unsigned int e_id = 0;
 	map<string, unsigned int > epp = tenantLSI->getEndpointsPortsId();
 	for(map<string, unsigned int >::iterator ep = epp.begin(); ep != epp.end(); ep++){
-		if(strcmp(ep->first.c_str(), input_endpoint) == 0)
+		if(ep->first == input_endpoint)
 			e_id = ep->second;
 	}
 
@@ -854,7 +853,7 @@ void GraphTranslator::handleMatchOnEndpointGreLSITenant(highlevel::Graph *graph,
 		{
 			ActionNetworkFunction *action_nf = (ActionNetworkFunction*)(*outputAction);
 
-			ULOG_DBG("\tIt matches the gre endpoint \"%s\", and the action is \"%s:%d\"",input_endpoint,action_info.c_str(),action_nf->getPort());
+			ULOG_DBG("\tIt matches the gre endpoint \"%s\", and the action is \"%s:%d\"",input_endpoint.c_str(),action_info.c_str(),action_nf->getPort());
 
 			stringstream action_port;
 			action_port << action_info << "_" << action_nf->getPort();
@@ -870,7 +869,7 @@ void GraphTranslator::handleMatchOnEndpointGreLSITenant(highlevel::Graph *graph,
 			ActionEndPointHostStack *action_hs = (ActionEndPointHostStack*)(*outputAction);
 			string ep_port = action_hs->getOutputEndpointID();
 
-			ULOG_DBG("\tIt matches the gre endpoint \"%s\", and the action is an output on endpoint \"%s\"",input_endpoint,ep_port.c_str());
+			ULOG_DBG("\tIt matches the gre endpoint \"%s\", and the action is an output on endpoint \"%s\"",input_endpoint.c_str(),ep_port.c_str());
 
 			//Search hoststack endpoint port id
 			map<string, unsigned int > hoststackPortID = tenantLSI->getHoststackEndpointPortID();
@@ -881,7 +880,7 @@ void GraphTranslator::handleMatchOnEndpointGreLSITenant(highlevel::Graph *graph,
 		}
 		else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_INTERNAL)
 		{
-			ULOG_DBG("\tIt matches the gre endpoint \"%s\", and the action is \"%s\"",input_endpoint,action_info.c_str());
+			ULOG_DBG("\tIt matches the gre endpoint \"%s\", and the action is \"%s\"",input_endpoint.c_str(),action_info.c_str());
 
 			stringstream action_port;
 			action_port << action_info;
@@ -910,7 +909,7 @@ void GraphTranslator::handleMatchOnEndpointGreLSITenant(highlevel::Graph *graph,
 			ActionEndpointGre *action_ep = (ActionEndpointGre*)(*outputAction);
 			string ep_port = action_ep->getOutputEndpointID();
 
-			ULOG_DBG("\tIt matches the gre endpoint \"%s\", and the action is \"%s\"",input_endpoint,action_info.c_str());
+			ULOG_DBG("\tIt matches the gre endpoint \"%s\", and the action is \"%s\"",input_endpoint.c_str(),action_info.c_str());
 
 			unsigned int e_id = 0;
 			//All the traffic for an endpoint is sent on the same virtual link
@@ -923,7 +922,7 @@ void GraphTranslator::handleMatchOnEndpointGreLSITenant(highlevel::Graph *graph,
 		}
 		else
 		{
-			ULOG_DBG("\tIt matches the endpoint \"%s\", and the action is \"%s\"",input_endpoint,action_info.c_str());
+			ULOG_DBG("\tIt matches the endpoint \"%s\", and the action is \"%s\"",input_endpoint.c_str(),action_info.c_str());
 
 			//Translate the action
 			map<string, uint64_t> p_vlinks = tenantLSI->getPortsVlinks();
