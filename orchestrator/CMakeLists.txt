@@ -308,12 +308,12 @@ SET(SOURCES1
 	compute_controller/startNF_in.h
 	compute_controller/stopNF_in.h
 
-	compute_controller/template/template.h
-	compute_controller/template/template.cc
+		compute_controller/template/NFtemplate.h
+        compute_controller/template/NFtemplate.cc
 	compute_controller/template/port.h
 	compute_controller/template/port.cc
-	compute_controller/template/template_parser.h
-	compute_controller/template/template_parser.cc
+		compute_controller/template/template_parser.h
+		compute_controller/template/template_parser.cc
 	
 
 	node_resource_manager/rest_server/rest_server.h
