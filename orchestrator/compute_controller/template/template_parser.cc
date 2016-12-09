@@ -10,13 +10,15 @@ bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool
         Object obj;
         read(answer, json);
         obj = json.getObject();
+        //single template
         if(checkVnfTemplate) {
             NFtemplate temp;
             setTemplateFromJson(temp,obj);
             templates.push_back(temp);
         }
-        else {
-            for( Object::const_iterator rootElement = obj.begin(); rootElement != obj.end(); ++rootElement ) { //loop just once
+        //multiple templates
+        else { //here we have to remove all that we don't need from the answer and we have to take the info about the templates
+            for( Object::const_iterator rootElement = obj.begin(); rootElement != obj.end(); ++rootElement ) { //loop just once, take the object "list", info about template is inside
                 const Value & arrayValue = rootElement->second;
                 const Array& descriptions  = arrayValue.getArray();
                 for( unsigned int i = 0; i < descriptions.size(); ++i)
@@ -26,7 +28,7 @@ bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool
                         NFtemplate temp;
                         const string &name = element->first;
                         const Value & value = element->second;
-                        if(name == "template"){
+                        if(name == "template"){  //it can be also id , but we re not interested
                             setTemplateFromJson(temp,value.getObject());
                             templates.push_back(temp);
                         }
@@ -101,7 +103,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj){
 
     if(!foundCapability || !foundImplementations || !foundURI || !foundPorts || !validPortType || !foundTypeURI)
     {
-        throw new std::string("Key \"name\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"typeURI\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
+        throw new std::string("Key \"functional-capability\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"uri-type\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
     }
     if(!foundCores && temp.getVnfType() == "dpdk"){
         throw new std::string("Core numbers have not been found in the template for implementation dpdk");

@@ -336,27 +336,24 @@ bool ComputeController::downloadImage(Description * description) {
     unsigned char hash_token[HASH_SIZE];
     char hash_uri [BUFFER_SIZE] ;
     char tmp[HASH_SIZE] ;
-    if(description->getURIType() == "remote-file") {
-        strcpy(tmp, "");
-        strcpy(hash_uri, "");
-        SHA256((const unsigned char *) description->getURI().c_str(), strlen(description->getURI().c_str()), hash_token);
+    strcpy(tmp, "");
+    strcpy(hash_uri, "");
+    SHA256((const unsigned char *) description->getURI().c_str(), strlen(description->getURI().c_str()), hash_token);
 
-        for (int i = 0; i < HASH_SIZE; i++) {
-            sprintf(tmp, "%.2x", hash_token[i]);
-            strcat(hash_uri, tmp);
-        }
-        command << getenv("un_script_path") << PULL_NF << " " << description->getCapability() << " " << description->getURI() << " "
-                << hash_uri << " " << VNF_IMAGES_PATH;
-        ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
-        int retVal = system(command.str().c_str());
-        retVal = retVal >> 8;
-
-        if (retVal == 0)
-            return false;
-
-        pathImage << VNF_IMAGES_PATH << "/" << description->getCapability() << "_" << hash_uri ;
-        description->setURI(pathImage.str());
+    for (int i = 0; i < HASH_SIZE; i++) {
+        sprintf(tmp, "%.2x", hash_token[i]);
+        strcat(hash_uri, tmp);
     }
+    command << getenv("un_script_path") << PULL_NF << " " << description->getCapability() << " " << description->getURI() << " "
+            << hash_uri << " " << VNF_IMAGES_PATH;
+    ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
+    int retVal = system(command.str().c_str());
+    retVal = retVal >> 8;
+    if (retVal == 0)
+        return false;
+    pathImage << VNF_IMAGES_PATH << "/" << description->getCapability() << "_" << hash_uri ;
+    description->setURI(pathImage.str());
+
     return true;
 }
 
@@ -385,7 +382,8 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("Docker description has been selected.");
-                assert(downloadImage(*descr));
+				if((*descr)->getURIType() == "remote-file")
+                    assert(downloadImage(*descr));
 				return dockerManager;
 
 			}
@@ -401,7 +399,8 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("DPDK description has been selected.");
-                assert(downloadImage(*descr));
+				if((*descr)->getURIType() == "remote-file")
+                    assert(downloadImage(*descr));
 				return dpdkManager;
 
 			}
@@ -417,7 +416,8 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("KVM description has been selected.");
-                assert(downloadImage(*descr));
+				if((*descr)->getURIType() == "remote-file")
+                    assert(downloadImage(*descr));
 				return libvirtManager;
 
 			}
@@ -436,7 +436,8 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 					selected = true;
 					ULOG_DBG_INFO("Native description has been selected.");
-                    assert(downloadImage(*descr));
+					if((*descr)->getURIType() == "remote-file")
+                        assert(downloadImage(*descr));
 					return nativeManager;
 
 				} catch (exception& e) {
