@@ -126,15 +126,18 @@ class Nat(object):
                                         _type = interface['type'],
                                         configuration_type= interface['configurationType'],
                                         default_gw = default_gw)
-            new_interface.set_interface()
             if new_interface.type == 'wan':
                 self.wan_interface = new_interface
+            else:
+                new_interface.set_interface()
             interfaces.append(new_interface)
         self.if_entries = if_entries
         self.json_instance = json_instance
         self.if_entries = self.json_instance[self.yang_module_name+':'+'interfaces']['ifEntry']
         if self.wan_interface is not None:
-            self.set_nat(self.wan_interface.name)
+            Bash('route del default gw 0.0.0.0')
+            self.wan_interface.set_interface()
+            self.set_nat(self.wan_interface.name, default_gw)
         else:
             self.clean_nat()
         self.get_interfaces()
