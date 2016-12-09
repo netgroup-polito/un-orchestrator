@@ -35,7 +35,7 @@ This NF is deployed as part of the service shown in the picture:
 To create the NF image and store it in the local file system of the Universal Node, execute the following command in the folder containing the Docker file describing the NF:
 
 	sudo docker build --tag="dummy" .
-	sudo docker save dummy
+	sudo docker save dummy > dummy.tar
 
 Then, upload the NF and its template in the datastore.
 
