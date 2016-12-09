@@ -24,7 +24,7 @@ It handles the orchestration of compute and network resources within a UN, hence
 In a nutshell, when it receives a new Network Functions Forwarding Graph (NF-FG) to be deployed, it does the following operations:
 
   * retrieve the most appropriate images for the selected virtual network
-    functions (VNFs) through the VNF name resolver;
+    functions (VNFs) through the datastore;
   * configure the virtual switch (vSwitch) to create a new logical switching
     instance (LSI) and the ports required to connect it to the VNFs to be deployed;
   * deploy and start the VNFs;
@@ -36,9 +36,19 @@ Similarly, the un-orchestrator takes care of updating or destroying a graph,
 when the proper messages are received.
 
 
-## Name Resolver
-The Name Resolver is a module that returns a set of implementations for a given NF.
-It is exploited by the un-orchestrator each time that a NF must be started in order to translate the 'abstract' name (e.g., *firewall*) into the proper suitable software image (e.g., *firewall\_vmimage\_abc*).
+## datastore
+The datastore is a module that contains NF images and templates, NF-FGs, and more.
+It is exploited by the un-orchestrator each time that a NF must be started, in 
+order to:
+  * retrive the NF template(s)
+  * download the software image implementing the NF to be started
+Particularly, in case the NF-FG indicates a specific template for the network 
+function (e.g., *firewall_vmimage_abc*), only such a template is retrieved from 
+the datastore. Otherwise the universal node orchestrastor downloads all the 
+templates implementing the required function (e.g., *firewall*), and will
+select one of them based on such internal policies.
+
+The datastore can be installed either locally or on a remote server.
 
 ## Virtualizer
 The Virtualizer is a module that enables the un-orchestrator to interact with the upper layers of the Unify architecture, by means of the NF-FG defined in UNIFY. It in fact converts that NF-FG in the native representation accepted by the un-orchestrator.

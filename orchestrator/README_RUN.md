@@ -14,8 +14,8 @@ Therefore you need to start your preferred vSwitch first, before running
 the un-orchestrator. Proper instructions for Open vSwich, ERFS and xDPd are provided
 below.
 
-Similarly, the un-orchestrator requires that the Name Resolver is already running; 
-please, refer to the instructions provided in [../name-resolver/README.md](../name-resolver/README.md) 
+Similarly, the un-orchestrator requires that the datastore is already running; 
+please, refer to the instructions provided in [../datastore](../datastore) 
 to understand how to execute this component.
 
 ### Configuration file examples
