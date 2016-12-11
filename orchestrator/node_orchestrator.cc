@@ -538,10 +538,10 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, m
 	strcpy(temp_ipsec_certificate, (char *)reader.Get("GRE over IPsec", "certificate", "UNKNOWN").c_str());
 	*ipsec_certificate = temp_ipsec_certificate;
 
-	vnf_repo_ip = reader.Get("VNF repository", "ip_address", "localhost");
+	vnf_repo_ip = reader.Get("datastore", "ip_address", "localhost");
 
-	*vnf_repo_port = (int) reader.GetInteger("VNF repository", "port", 2626);
-	vnf_images_path = reader.Get("NF images path", "path", "NFimages");
+	*vnf_repo_port = (int) reader.GetInteger("datastore", "port", 8081);
+	vnf_images_path = reader.Get("misc", "IMAGE_DIR", "NFimages");
 
     /* Path of the script file*/
 	char script_path[64];

@@ -539,8 +539,8 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 			ULOG_DBG_INFO("\t* NF with id \"%s\" is already part of the graph; it is not retrieved again",nf->getId().c_str());
 			continue;
 		}
-
-       retVal = computeController->retrieveDescription(nf->getId(),computeController->buildUrl(*nf,vnfRepoIP, vnfRepoPort),nf->checkVnfTemplateField()  , vnfRepoIP, vnfRepoPort);
+        string url = computeController->buildUrl(*nf,vnfRepoIP, vnfRepoPort);
+        retVal = computeController->retrieveDescription(nf->getId(), url ,nf->checkVnfTemplateField()  , vnfRepoIP, vnfRepoPort);
 
         if(retVal == NFManager_NO_NF)
 		{

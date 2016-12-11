@@ -39,7 +39,7 @@ void ComputeController::setCoreMask(uint64_t core_mask)
 string ComputeController::buildUrl(highlevel::VNFs vnf,string vnfRepoIP,int vnfRepoPort) {
     stringstream tmp;
     if(vnf.checkVnfTemplateField()) {
-        tmp << "GET " << vnf.getVnfTemplate() << "/ HTTP/1.1\r\n";
+        tmp << "GET " << VNF_REPOSITORY_TEMPLATE_URL << vnf.getVnfTemplate() << "/ HTTP/1.1\r\n";
     }
     else
         tmp << "GET " << VNF_REPOSITORY_TEMPLATES_URL << vnf.getName() << "/ HTTP/1.1\r\n";

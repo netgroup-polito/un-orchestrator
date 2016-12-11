@@ -42,7 +42,7 @@
 using namespace std;
 using namespace json_spirit;
 
-
+#define VNF_REPOSITORY_TEMPLATE_URL    "/v2/nf_template/"
 #define VNF_REPOSITORY_TEMPLATES_URL    "/v2/nf_capability/"
 #define CODE_POSITION				    9
 #define CODE_METHOD_NOT_ALLLOWED	    "405"
@@ -142,7 +142,7 @@ public:
 	*
 	*	@param:	nf_id	Name of a network function, used as key in a map <string,NF>
 	 *	@param: nf_name It can be a http or a capability (field "name" in NF-FG)
-	 *	@param: checkSingleTemplate flag that allows to check if the UN has to parse a single template or a list
+	 *	@param: checkSingleTemplate flag that allows to check if the UN has to parse a single template or a list of templates
 	 *	@param: vnf_repo_ip Vnf Repository IP
 	 *	@param: vnf_repo_port Vnf Repository port
 	*/
