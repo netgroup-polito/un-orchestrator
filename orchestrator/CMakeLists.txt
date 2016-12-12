@@ -562,7 +562,7 @@ IF(BUILD_ExternalProjects)
 	ExternalProject_Add(
 		ROFL_Common
 		URL ${CMAKE_SOURCE_DIR}/contrib/rofl-common.zip
-		URL_MD5 5127f286f96010ec9e85dcf4c712599d
+		URL_MD5 37b524426d1c7ee9c63e01c8f467d4e2
 		BUILD_IN_SOURCE 1
 		CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_BINARY_DIR}/externals
 	)
