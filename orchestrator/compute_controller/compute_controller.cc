@@ -369,7 +369,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 	 */
 
 	bool selected = false;
-
+	bool downloadSuccess;
 	for(descr = descriptions.begin(); descr != descriptions.end() && !selected; descr++) {
 
 		if((*descr)->isSupported()){
@@ -382,11 +382,12 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				NFsManager *dockerManager = new Docker();
 				dockerManager->setDescription(*descr);
-
 				selected = true;
 				ULOG_DBG_INFO("Docker description has been selected.");
-				if((*descr)->getURIType() == "remote-file")
-					assert(downloadImage(*descr,vnf_images_path));
+				if((*descr)->getURIType() == "remote-file"){
+					downloadSuccess=downloadImage(*descr,vnf_images_path);
+					assert(downloadSuccess);
+				}
 				return dockerManager;
 
 			}
@@ -402,8 +403,11 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("DPDK description has been selected.");
-				if((*descr)->getURIType() == "remote-file")
-					assert(downloadImage(*descr,vnf_images_path));
+				if((*descr)->getURIType() == "remote-file"){
+					downloadSuccess = downloadImage(*descr,vnf_images_path);
+					assert(downloadSuccess);
+				}
+
 				return dpdkManager;
 
 			}
@@ -419,8 +423,10 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("KVM description has been selected.");
-				if((*descr)->getURIType() == "remote-file")
-					assert(downloadImage(*descr,vnf_images_path));
+				if((*descr)->getURIType() == "remote-file"){
+					downloadSuccess = downloadImage(*descr,vnf_images_path);
+					assert(downloadSuccess);
+				}
 				return libvirtManager;
 
 			}
@@ -439,8 +445,10 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 					selected = true;
 					ULOG_DBG_INFO("Native description has been selected.");
-					if((*descr)->getURIType() == "remote-file")
-						assert(downloadImage(*descr,vnf_images_path));
+					if((*descr)->getURIType() == "remote-file"){
+						downloadSuccess = downloadImage(*descr,vnf_images_path);
+						assert(downloadSuccess);
+					}
 					return nativeManager;
 
 				} catch (exception& e) {
