@@ -52,10 +52,10 @@ string ComputeController::buildUrl(highlevel::VNFs vnf,string vnfRepoIP,int vnfR
 nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string url,bool checkSingleTemplate, string vnf_repo_ip, int vnf_repo_port)
 {
 	try
- 	{
- 		string translation;
-        list<NFtemplate> templates;
- 		ULOG_DBG_INFO("Considering the NF with id \"%s\"",nf_id.c_str());
+	{
+		string translation;
+		list<NFtemplate> templates;
+		ULOG_DBG_INFO("Considering the NF with ID \"%s\"",nf_id.c_str());
 
 		char ErrBuf[BUFFER_SIZE];
 		struct addrinfo Hints;
@@ -78,7 +78,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string url
 			return NFManager_SERVER_ERROR;
 		}
 
-        char command[url.size()+1];
+		char command[url.size()+1];
 		command[url.size()]=0;
 		memcpy(command,url.c_str(),url.size());
 
@@ -140,12 +140,12 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string url
 		if(!Template_Parser::parse(templates,translation,checkSingleTemplate))
 		{
 			//ERROR IN THE SERVER
-            ULOG_ERR("FAILED TO PARSE");
+			ULOG_ERR("An error occurred while parsing the VNF template associated with the NF with ID: \"%s\"",nf_id.c_str());
 			return NFManager_SERVER_ERROR;
 		}
-        addImplementations(templates,nf_id);
+		addImplementations(templates,nf_id);
 
-    }
+	}
 	catch (std::exception& e)
 	{
 		ULOG_ERR("Exception: %s",e.what());
@@ -386,7 +386,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				selected = true;
 				ULOG_DBG_INFO("Docker description has been selected.");
 				if((*descr)->getURIType() == "remote-file")
-                    assert(downloadImage(*descr,vnf_images_path));
+					assert(downloadImage(*descr,vnf_images_path));
 				return dockerManager;
 
 			}
@@ -403,7 +403,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				selected = true;
 				ULOG_DBG_INFO("DPDK description has been selected.");
 				if((*descr)->getURIType() == "remote-file")
-                   assert(downloadImage(*descr,vnf_images_path));
+					assert(downloadImage(*descr,vnf_images_path));
 				return dpdkManager;
 
 			}
@@ -420,7 +420,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				selected = true;
 				ULOG_DBG_INFO("KVM description has been selected.");
 				if((*descr)->getURIType() == "remote-file")
-                    assert(downloadImage(*descr,vnf_images_path));
+					assert(downloadImage(*descr,vnf_images_path));
 				return libvirtManager;
 
 			}
@@ -440,7 +440,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 					selected = true;
 					ULOG_DBG_INFO("Native description has been selected.");
 					if((*descr)->getURIType() == "remote-file")
-                        assert(downloadImage(*descr,vnf_images_path));
+						assert(downloadImage(*descr,vnf_images_path));
 					return nativeManager;
 
 				} catch (exception& e) {

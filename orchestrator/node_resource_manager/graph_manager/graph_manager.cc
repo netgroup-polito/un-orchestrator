@@ -532,17 +532,18 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 	//The description must be actually retrieved only for new VNFs, and not for VNFs whose number of ports is changed
 	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 	{
-        nf_manager_ret_t retVal;
+		nf_manager_ret_t retVal;
 		//FIXME: not sure that this check is necessary
 		if(computeController->getNFSelectedImplementation(nf->getId()))
 		{
 			ULOG_DBG_INFO("\t* NF with id \"%s\" is already part of the graph; it is not retrieved again",nf->getId().c_str());
 			continue;
 		}
-        string url = computeController->buildUrl(*nf,vnfRepoIP, vnfRepoPort);
-        retVal = computeController->retrieveDescription(nf->getId(), url ,nf->checkVnfTemplateField()  , vnfRepoIP, vnfRepoPort);
+		string url = computeController->buildUrl(*nf,vnfRepoIP, vnfRepoPort);//FIXME: the URL must be created in the compute controller. IP and PORT must be provided to the 
+		//compute controller when initialized.
+		retVal = computeController->retrieveDescription(nf->getId(), url ,nf->checkVnfTemplateField()  , vnfRepoIP, vnfRepoPort);
 
-        if(retVal == NFManager_NO_NF)
+		if(retVal == NFManager_NO_NF)
 		{
 			ULOG_WARN("NF \"%s\" cannot be retrieved",nf->getName().c_str());
 			return false;
@@ -562,12 +563,12 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 
 void *startNF(void *arguments)
 {
-    to_thread_t *args = (to_thread_t *)arguments;
-    assert(args->computeController != NULL);
+	to_thread_t *args = (to_thread_t *)arguments;
+	assert(args->computeController != NULL);
 
-    if(!args->computeController->startNF(args->nf_id, args->namesOfPortsOnTheSwitch, args->portsConfiguration
+	if(!args->computeController->startNF(args->nf_id, args->namesOfPortsOnTheSwitch, args->portsConfiguration
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-	    , args->controlConfiguration, args->environmentVariables
+		, args->controlConfiguration, args->environmentVariables
 #endif
 	))
 		return (void*) 0;
