@@ -21,7 +21,7 @@ then
 	exit 0
 fi
 if [ ! -d "$4" ]; then
-  mkdir $4
+	mkdir $4
 fi
 if [ ! -f "$4/$archive_file" ]; then
 	echo "[$0] Downloading NF image"
@@ -30,7 +30,6 @@ else
 	echo "[$0] The NF image is already available"
 fi
 #wget returns 0 in case of success
-
 
 ret=`echo $?`
 

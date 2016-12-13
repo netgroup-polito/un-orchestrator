@@ -176,10 +176,11 @@ int main(int argc, char *argv[])
 	char *un_address = new char[BUFFER_SIZE], *t_un_address = NULL;
 	char *ipsec_certificate = new char[BUFFER_SIZE], *t_ipsec_certificate = NULL;
 
+	//FIXME-ENNIO: the following parameters should be mandatory in the configuration file. If they are not specified, the orchestrator should not start
 	string vnf_repo_ip;
 	int vnf_repo_port;
+	//FIXME-ENNIO: the images path, in addition of being mandatory, must also be absolute. In fact, kvm does no work with relative paths.
 	string vnf_images_path;
-
 
 	string s_un_address;
 	string s_ipsec_certificate;
@@ -204,7 +205,7 @@ int main(int argc, char *argv[])
 		descr_file_name = NULL;
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	//The following parameters ara mandatory in case of DD connection
+	//The following parameters are mandatory in case of DD connection
 	strcpy(client_name, t_client_name);
 	strcpy(broker_address, t_broker_address);
 	strcpy(key_path, t_key_path);
