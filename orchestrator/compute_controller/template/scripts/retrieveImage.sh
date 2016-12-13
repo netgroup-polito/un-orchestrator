@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#FIXME-ENNIO: why is this script here? Why is it related to the template?
 
 #Brief: pull a NF from a remote repository and run it. 
 
@@ -16,14 +17,17 @@ archive_file=`echo "$1_$3"`
 
 if (( $EUID != 0 )) 
 then
-    echo "[$0] This script must be executed with ROOT privileges"
-    exit 0
+	echo "[$0] This script must be executed with ROOT privileges"
+	exit 0
 fi
 if [ ! -d "$4" ]; then
   mkdir $4
 fi
 if [ ! -f "$4/$archive_file" ]; then
-    wget $2 -O $4/$archive_file
+	echo "[$0] Downloading NF image"
+	wget $2 -O $4/$archive_file
+else
+	echo "[$0] The NF image is already available"
 fi
 #wget returns 0 in case of success
 
