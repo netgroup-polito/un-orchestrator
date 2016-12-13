@@ -38,8 +38,8 @@ bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool
 			}
 		}
 	}
-	catch (const std::string& e) {
-		ULOG_WARN("JSON parse error: %s", e.c_str());
+	catch (const std::exception& e) {
+		ULOG_WARN("JSON parse error: %s", e.what());
 		return false;
 	}
 
@@ -47,13 +47,13 @@ bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool
 	return true;
 }
 
-void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj){
-
+void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj)
+{
+	//The following parameters are mandatory in the template
 	bool foundPorts = false;
 	bool foundCapability = false;
 	bool foundImplementations = false;
 	bool foundURI = false;
-	bool foundCores = false;
 	bool validPortType = false;
 	bool foundTypeURI = false;
 
@@ -63,6 +63,12 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj){
 		const string& name  = i->first;
 		const Value&  value = i->second;
 
+		if(name == "name")
+		{
+			//Optional field
+			ULOG_DBG("Parsing 'name'");
+			temp.setName(value.getString()) ;
+		}
 		if(name == "functional-capability")
 		{
 			ULOG_DBG("Parsing 'functional-capability'");
@@ -71,6 +77,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj){
 		}
 		else if(name == "expandable")
 		{
+			//Optional field
 			ULOG_DBG("Parsing 'expandable'");
 			temp.setExpandable(value.getBool());
 		}
@@ -84,7 +91,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj){
 		{
 			ULOG_DBG("Parsing 'vnf-type'");
 			temp.setVnfType(value.getString());//FIXME-ENNIO: check that the VNF type is valid, as we already do for the port technology.
-			foundImplementations = true;
+			foundImplementations = true;	//FIXME-ENNIO: why do you talk about implementation, and not vnf-type?
 		}
 		else if(name == "uri-type"){
 			ULOG_DBG("Parsing 'uri-type'");
@@ -94,8 +101,13 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj){
 		}
 		else if(name == "CPUrequirements")
 		{
+			//Optional field
 			ULOG_DBG("Parsing 'CPUrequirements'");
-			foundCores = Template_Parser::parseCoreNumbers(temp,value.getObject());
+			if(!Template_Parser::parseCPUrequirements(temp,value.getObject()))
+			{
+				ULOG_WARN("Wrong element 'CPUrequirements'");
+				throw new std::string("Wrong element 'CPUrequirements'");
+			}
 		}
 		else if(name == "ports"){
 			ULOG_DBG("Parsing 'ports'");
@@ -122,38 +134,40 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj){
 		throw new std::string("Key \"functional-capability\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"uri-type\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
 	}
 
+#if 0
 	//FIXME-ENNIO: this check must be done in the DPDK plugin. Similarly, checks needed to KVM must be done in the KVM plugin
 	if(!foundCores && temp.getVnfType() == "dpdk"){//FIXME-ENNIO: don't use the string "dpdk". in compute_controller/nf_type.h there is an enum that defined the types
 		throw new std::string("Core numbers have not been found in the template for implementation dpdk");
 	}
+#endif
 }
 
 bool Template_Parser::parsePort(NFtemplate& temp, Object obj) {
-		PortType port_type = UNDEFINED_PORT;
-		Port port;
-		for( Object::const_iterator port_el = obj.begin(); port_el != obj.end(); ++port_el ) {
-			const string &pel_name = port_el->first;
-			const Value &pel_value = port_el->second;
-			if (pel_name == "position") { //FIXME-ENNIO: if the template specifies an unbounded number of ports, the UN crashes when trying to deploy the network function
-				ULOG_DBG("Parsing 'position'");
-				port.setPortsRange(pel_value.getString());
-			}
-			else if (pel_name == "technology") {
-				ULOG_DBG("Parsing 'technology'");
-				port_type = portTypeFromString(pel_value.getString()); //FIXME-ENNIO: why do you talk about port type and not port technology?
-				if (port_type == INVALID_PORT) {
-					ULOG_WARN("Invalid port type \"%s\" for implementation port", pel_value.getString().c_str());
-					return false;
-				}
+	PortType port_type = UNDEFINED_PORT;
+	Port port;
+	for( Object::const_iterator port_el = obj.begin(); port_el != obj.end(); ++port_el ) {
+		const string &pel_name = port_el->first;
+		const Value &pel_value = port_el->second;
+		if (pel_name == "position") { //FIXME-ENNIO: if the template specifies an unbounded number of ports, the UN crashes when trying to deploy the network function
+			ULOG_DBG("Parsing 'position'");
+			port.setPortsRange(pel_value.getString());
+		}
+		else if (pel_name == "technology") {
+			ULOG_DBG("Parsing 'technology'");
+			port_type = portTypeFromString(pel_value.getString()); //FIXME-ENNIO: why do you talk about port type and not port technology?
+			if (port_type == INVALID_PORT) {
+				ULOG_WARN("Invalid port type \"%s\" for implementation port", pel_value.getString().c_str());
+				return false;
 			}
 		}
-		port.setTechnology(port_type);
-		temp.addPort(port);
-		return true;
+	}
+	port.setTechnology(port_type);
+	temp.addPort(port);
+	return true;
 
 }
 
-bool Template_Parser::parseCoreNumbers(NFtemplate& temp, Object CPUrequirements) {
+bool Template_Parser::parseCPUrequirements(NFtemplate& temp, Object CPUrequirements) {
 	for( Object::const_iterator iterator_CPUrequirements = CPUrequirements.begin(); iterator_CPUrequirements != CPUrequirements.end(); ++iterator_CPUrequirements )
 	{
 		const string& name  = iterator_CPUrequirements->first;
@@ -162,6 +176,11 @@ bool Template_Parser::parseCoreNumbers(NFtemplate& temp, Object CPUrequirements)
 		{
 			ULOG_DBG("Parsing 'socket'");
 			const Array& sockets = value.getArray();
+			if(sockets.size() != 1)
+			{
+				ULOG_ERR("Too much elements inside the element 'socket'.");
+				return  false; 
+			}
 			for( unsigned int i = 0; i < sockets.size(); ++i)
 			{
 				Object socket = sockets[i].getObject();
@@ -171,11 +190,17 @@ bool Template_Parser::parseCoreNumbers(NFtemplate& temp, Object CPUrequirements)
 					const Value&  socket_value = iterator_socket->second;
 					if(socket_elementName== "coreNumbers"){
 						temp.setCores(socket_value.getInt());
-						return true;
+						break;
 					}
 				}
 			}
 		}
+		else if(name == "platformType")
+		{
+			ULOG_DBG("Parsing 'platformType'");
+			temp.setPlatform(value.getString());
+		}
 	}
-	return false;
+	return true;
 }
+

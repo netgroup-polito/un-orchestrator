@@ -462,7 +462,7 @@ bool Libvirt::startNF(StartNFIn sni)
 		return false;
 	}
 
-	ULOG_DBG_INFO("Boot guest");
+	ULOG_DBG_INFO("VM has started");
 
 	virDomainFree(dom);
 

@@ -45,6 +45,8 @@ class Description
 {
 
 private:
+	//FIXME-ENNIO: many infomation stored in this class are also stored in the class template. Please remove them from here and add a pointer to the proper template, in order
+	//to avoid duplicate information
 	nf_t type;
 	string uri;
 	string capability;

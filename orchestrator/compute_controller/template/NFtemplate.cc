@@ -2,11 +2,13 @@
 
 using namespace std;
 NFtemplate::NFtemplate() {
-
 }
 
 NFtemplate::~NFtemplate() {
+}
 
+void NFtemplate::setName(string name) {
+	this->name = name;
 }
 
 void NFtemplate::setCapability(string capability) {
@@ -29,8 +31,16 @@ void NFtemplate::setVnfType(string type) {
 	this->vnfType = type;
 }
 
+void NFtemplate::setPlatform(string platform) {
+	this->platformType = name;
+}
+
 void NFtemplate::addPort(Port port) {
 	this->ports.push_back(port);
+}
+
+string NFtemplate::getName() {
+	return this->name;
 }
 
 bool NFtemplate::getExpandable() {
@@ -65,4 +75,6 @@ string NFtemplate::getURIType() {
 	return this->uriType;
 }
 
-
+string NFtemplate::getPlatform() {
+	return this->platformType;
+}

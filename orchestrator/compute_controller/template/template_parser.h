@@ -15,14 +15,6 @@ class Template_Parser{
 
 public:
 	/**
-	 * 	@brief: given a template in a list, it fills an object with data receveid
-	 * 	@param temp:  object to fill with data parsed
-	 * 	@param obj:   object containing the json representing a template
-	 */
-
-	static void setTemplateFromJson(NFtemplate & temp,Object obj);
-
-	/**
 	* 	@brief: It fills a list of templates with data returned by VNF Repository
 	* 	@param templates:  list to fill in,
 	* 	@param data:  data returned by VNF repository
@@ -30,6 +22,15 @@ public:
 	*/
 
 	static bool parse(std::list<NFtemplate>& templates,string data,bool checkVnfTemplate);
+
+public:
+	/**
+	 * 	@brief: given a template in a list, it fills an object with data receveid
+	 * 	@param temp:  object to fill with data parsed
+	 * 	@param obj:   object containing the json representing a template
+	 */
+
+	static void setTemplateFromJson(NFtemplate & temp,Object obj);
 
 	/**
 	* 	@brief: It adds in a template object an object representing a port
@@ -45,5 +46,5 @@ public:
 	* 	@param CPUrequirements:  CPURequirements to add in the template
 	*/
 
-	static bool parseCoreNumbers(NFtemplate& temp,Object CPUrequirements);
+	static bool parseCPUrequirements(NFtemplate& temp,Object CPUrequirements);
 };
