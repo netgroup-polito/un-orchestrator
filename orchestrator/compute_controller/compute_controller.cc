@@ -37,16 +37,16 @@ void ComputeController::setCoreMask(uint64_t core_mask)
 }
 
 string ComputeController::buildUrl(highlevel::VNFs vnf,string vnfRepoIP,int vnfRepoPort) {
-    stringstream tmp;
-    if(vnf.checkVnfTemplateField()) {
-        tmp << "GET " << VNF_REPOSITORY_TEMPLATE_URL << vnf.getVnfTemplate() << "/ HTTP/1.1\r\n";
-    }
-    else
-        tmp << "GET " << VNF_REPOSITORY_TEMPLATES_URL << vnf.getName() << "/ HTTP/1.1\r\n";
-    tmp << "Host: :" << vnfRepoIP << ":" << vnfRepoPort << "\r\n";
-    tmp << "Connection: close\r\n";
-    tmp << "Accept: */*\r\n\r\n";
-    return tmp.str();
+	stringstream tmp;
+	if(vnf.checkVnfTemplateField()) {
+		tmp << "GET " << VNF_REPOSITORY_TEMPLATE_URL << vnf.getVnfTemplate() << "/ HTTP/1.1\r\n";
+	}
+	else
+		tmp << "GET " << VNF_REPOSITORY_TEMPLATES_URL << vnf.getName() << "/ HTTP/1.1\r\n";
+	tmp << "Host: :" << vnfRepoIP << ":" << vnfRepoPort << "\r\n";
+	tmp << "Connection: close\r\n";
+	tmp << "Accept: */*\r\n\r\n";
+	return tmp.str();
 }
 
 nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string url,bool checkSingleTemplate, string vnf_repo_ip, int vnf_repo_port)
@@ -135,7 +135,6 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string url
 		}
 
 		translation.assign(&DataBuffer[i]);
-
 
 		if(!Template_Parser::parse(templates,translation,checkSingleTemplate))
 		{
@@ -257,107 +256,109 @@ bool ComputeController::addImplementations(list<NFtemplate>& templates, string n
   map<unsigned int, PortType> port_types; // port_id -> port_type
   list<Description*> possibleDescriptions;
   string capability ;
-    for(list<NFtemplate>::iterator temp = templates.begin(); temp != templates.end(); temp++){
-        capability = temp->getCapability(); //it s the same for all
-        if (temp->getVnfType() == "dpdk") {
-            #ifdef ENABLE_DPDK_PROCESSES
-            for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
-                int begin, end;
-                port->splitPortsRangeInInt(begin, end);
-                for(int i = begin;i<=end;i++){
-                    port_types.insert(map<unsigned int, PortType>::value_type(i, DPDKR_PORT));
-                }
-            }
-            possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_types)));
-            #endif
-        } else if (temp->getVnfType() == "native") {
-            #ifdef ENABLE_NATIVE
-            for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
-                    int begin, end;
-                    port->splitPortsRangeInInt(begin, end);
-                    for(int i = begin;i<=end;i++){
-                        port_types.insert(map<unsigned int, PortType>::value_type(i, VETH_PORT));
-                    }
-            }
-            possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_types)));
-            #endif
-        }
+	for(list<NFtemplate>::iterator temp = templates.begin(); temp != templates.end(); temp++){
+		capability = temp->getCapability(); //it s the same for all
+		if (temp->getVnfType() == "dpdk") {
+			#ifdef ENABLE_DPDK_PROCESSES
+			for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
+				int begin, end;
+				port->splitPortsRangeInInt(begin, end);
+				for(int i = begin;i<=end;i++){
+					port_types.insert(map<unsigned int, PortType>::value_type(i, DPDKR_PORT));
+				}
+			}
+			possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_types)));
+			#endif
+		} else if (temp->getVnfType() == "native") {
+			#ifdef ENABLE_NATIVE
+			for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
+					int begin, end;
+					port->splitPortsRangeInInt(begin, end);
+					for(int i = begin;i<=end;i++){
+						port_types.insert(map<unsigned int, PortType>::value_type(i, VETH_PORT));
+					}
+			}
+			possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_types)));
+			#endif
+		}
 
-        if (temp->getVnfType() == "docker") {
-            #ifdef ENABLE_DOCKER
-                for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
-                    int begin, end;
-                    port->splitPortsRangeInInt(begin, end);
-                    for (int i = begin; i <= end; i++) {
-                        port_types.insert(map<unsigned int, PortType> ::value_type(i, VETH_PORT));
-                    }
-                }
-                Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_types);
-                possibleDescriptions.push_back(descr);
-            #endif
-        }
-        if (temp->getVnfType() == "virtual-machine-kvm") {
-            #ifdef ENABLE_KVM
-                for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
-                    int begin, end;
-                    port->splitPortsRangeInInt(begin, end);
-                    for (int i = begin; i <= end; i++) {
-                        port_types.insert(map <unsigned int, PortType> ::value_type(i, portTypeFromString(port->getTechnology())));
-                    }
-                }
-                Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_types);
-                possibleDescriptions.push_back(descr);
-            #endif
-        }
+		if (temp->getVnfType() == "docker") {
+			#ifdef ENABLE_DOCKER
+				for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
+					int begin, end;
+					port->splitPortsRangeInInt(begin, end);
+					for (int i = begin; i <= end; i++) {
+						port_types.insert(map<unsigned int, PortType> ::value_type(i, VETH_PORT));
+					}
+				}
+				Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_types);
+				possibleDescriptions.push_back(descr);
+			#endif
+		}
+		if (temp->getVnfType() == "virtual-machine-kvm") {
+			#ifdef ENABLE_KVM
+				for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
+					int begin, end;
+					port->splitPortsRangeInInt(begin, end);
+					for (int i = begin; i <= end; i++) {
+						port_types.insert(map <unsigned int, PortType> ::value_type(i, portTypeFromString(port->getTechnology())));
+					}
+				}
+				Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_types);
+				possibleDescriptions.push_back(descr);
+			#endif
+		}
 
-        //insert other implementations
+		//insert other implementations
 
-    }
+	}
 
 
-    NF *new_nf = new NF(capability);
-    assert(possibleDescriptions.size() != 0);
+	NF *new_nf = new NF(capability);
+	assert(possibleDescriptions.size() != 0);
 
-    if(possibleDescriptions.size() == 0)
-    {
-        ULOG_WARN("Cannot find a supported implementation for the network function \"%s\"",capability.c_str());
-        return false;
-    }
+	if(possibleDescriptions.size() == 0)
+	{
+		ULOG_WARN("Cannot find a supported implementation for the network function \"%s\"",capability.c_str());
+		return false;
+	}
 
-    for(list<Description*>::iterator impl = possibleDescriptions.begin(); impl != possibleDescriptions.end(); impl++)
-        new_nf->addDescription(*impl);
+	for(list<Description*>::iterator impl = possibleDescriptions.begin(); impl != possibleDescriptions.end(); impl++)
+		new_nf->addDescription(*impl);
 
-    nfs[nf_id] = new_nf;
-    return true;
+	nfs[nf_id] = new_nf;
+	return true;
 
 }
 
 
 bool ComputeController::downloadImage(Description * description,string vnfImagePath) {
-    stringstream command;
-    stringstream pathImage;
-    unsigned char hash_token[HASH_SIZE];
-    char hash_uri [BUFFER_SIZE] ;
-    char tmp[HASH_SIZE] ;
-    strcpy(tmp, "");
-    strcpy(hash_uri, "");
-    SHA256((const unsigned char *) description->getURI().c_str(), strlen(description->getURI().c_str()), hash_token);
+	stringstream command;
+	stringstream pathImage;
+	unsigned char hash_token[HASH_SIZE];
+	char hash_uri [BUFFER_SIZE] ;
+	char tmp[HASH_SIZE] ;
+	strcpy(tmp, "");
+	strcpy(hash_uri, "");
+	SHA256((const unsigned char *) description->getURI().c_str(), strlen(description->getURI().c_str()), hash_token);
 
-    for (int i = 0; i < HASH_SIZE; i++) {
-        sprintf(tmp, "%.2x", hash_token[i]);
-        strcat(hash_uri, tmp);
-    }
-    command << getenv("un_script_path") << PULL_NF << " " << description->getCapability() << " " << description->getURI() << " "
-            << hash_uri << " " << vnfImagePath;
-    ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
-    int retVal = system(command.str().c_str());
-    retVal = retVal >> 8;
-    if (retVal == 0)
-        return false;
-    pathImage << vnfImagePath << "/" << description->getCapability() << "_" << hash_uri ;
-    description->setURI(pathImage.str());
+	for (int i = 0; i < HASH_SIZE; i++) {
+		sprintf(tmp, "%.2x", hash_token[i]);
+		strcat(hash_uri, tmp);
+	}
+	command << getenv("un_script_path") << PULL_NF << " " << description->getCapability() << " " << description->getURI() << " "
+			<< hash_uri << " " << vnfImagePath;
+	ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
+	int retVal = system(command.str().c_str());
+	retVal = retVal >> 8;
+	if (retVal == 0)
+		return false;
+	pathImage << vnfImagePath << "/" << description->getCapability() << "_" << hash_uri ;
+	description->setURI(pathImage.str());
 
-    return true;
+	ULOG_DBG_INFO("NF image properly downloaded");
+
+	return true;
 }
 
 NFsManager* ComputeController::selectNFImplementation(list<Description*> descriptions, string vnf_images_path) {
@@ -387,9 +388,9 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				if((*descr)->getURIType() == "remote-file"){
 					downloadSuccess=downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
+					//FIXME-ENNIO: check if the download was completed successfully. If not, print a message and return with error
 				}
 				return dockerManager;
-
 			}
 			break;
 #endif
@@ -406,6 +407,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				if((*descr)->getURIType() == "remote-file"){
 					downloadSuccess = downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
+					//FIXME-ENNIO: check if the download was completed successfully. If not, print a message and return with error
 				}
 
 				return dpdkManager;
@@ -423,9 +425,10 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("KVM description has been selected.");
-				if((*descr)->getURIType() == "remote-file"){
+				if((*descr)->getURIType() == "remote-file"){//FIXME-ENNIO: compare with an enum that can assume the allowed values
 					downloadSuccess = downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
+					//FIXME-ENNIO: check if the download was completed successfully. If not, print a message and return with error
 				}
 				return libvirtManager;
 
@@ -448,6 +451,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 					if((*descr)->getURIType() == "remote-file"){
 						downloadSuccess = downloadImage(*descr,vnf_images_path);
 						assert(downloadSuccess);
+						//FIXME-ENNIO: check if the download was completed successfully. If not, print a message and return with error
 					}
 					return nativeManager;
 

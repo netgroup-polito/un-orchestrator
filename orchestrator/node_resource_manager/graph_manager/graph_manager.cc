@@ -539,7 +539,7 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 			ULOG_DBG_INFO("\t* NF with id \"%s\" is already part of the graph; it is not retrieved again",nf->getId().c_str());
 			continue;
 		}
-		string url = computeController->buildUrl(*nf,vnfRepoIP, vnfRepoPort);//FIXME: the URL must be created in the compute controller. IP and PORT must be provided to the 
+		string url = computeController->buildUrl(*nf,vnfRepoIP, vnfRepoPort);//FIXME-ENNIO: the URL must be created in the compute controller. IP and PORT must be provided to the 
 		//compute controller when initialized.
 		retVal = computeController->retrieveDescription(nf->getId(), url ,nf->checkVnfTemplateField()  , vnfRepoIP, vnfRepoPort);
 

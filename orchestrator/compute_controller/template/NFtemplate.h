@@ -1,4 +1,4 @@
-//Class which represents a template returned by VNF Repository
+//Class which represents a NF template
 
 #pragma once
 #include "port.h"

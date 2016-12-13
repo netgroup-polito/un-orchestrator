@@ -4,6 +4,7 @@
 static const char LOG_MODULE_NAME[] = "Template-Parser";
 
 bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool checkSingleTemplate) {
+	ULOG_DBG_INFO("Starting to parse the NF template");
 	try
 	{
 		Value json;
@@ -37,10 +38,12 @@ bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool
 			}
 		}
 	}
-	catch (std::runtime_error& e) {
-		ULOG_WARN("JSON parse error: %s", e.what());
+	catch (const std::string& e) {
+		ULOG_WARN("JSON parse error: %s", e.c_str());
 		return false;
 	}
+
+	ULOG_DBG_INFO("NF template parsed correctly");
 	return true;
 }
 
@@ -53,6 +56,8 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj){
 	bool foundCores = false;
 	bool validPortType = false;
 	bool foundTypeURI = false;
+
+	ULOG_DBG("Starting iteration on elements of the template");
 	for( Object::const_iterator i = obj.begin(); i != obj.end(); ++i )
 	{
 		const string& name  = i->first;
@@ -60,32 +65,40 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj){
 
 		if(name == "functional-capability")
 		{
+			ULOG_DBG("Parsing 'functional-capability'");
 			foundCapability = true;
 			temp.setCapability(value.getString()) ;
 		}
 		else if(name == "expandable")
 		{
+			ULOG_DBG("Parsing 'expandable'");
 			temp.setExpandable(value.getBool());
 		}
 		else if(name == "uri")
 		{
+			ULOG_DBG("Parsing 'uri'");
 			temp.setURI(value.getString());
 			foundURI = true;
 		}
 		else if(name == "vnf-type")
 		{
-			temp.setVnfType(value.getString());
+			ULOG_DBG("Parsing 'vnf-type'");
+			temp.setVnfType(value.getString());//FIXME-ENNIO: check that the VNF type is valid, as we already do for the port technology.
 			foundImplementations = true;
 		}
 		else if(name == "uri-type"){
-			temp.setURIType(value.getString());
+			ULOG_DBG("Parsing 'uri-type'");
+			temp.setURIType(value.getString()); //FIXME-ENNIO: check that the URI type is valide. Define somewhere an enum that can assume the allowed values.
+												//this enum should also be used in the compute controller in order to decide how to download a VNF
 			foundTypeURI = true;
 		}
 		else if(name == "CPUrequirements")
 		{
+			ULOG_DBG("Parsing 'CPUrequirements'");
 			foundCores = Template_Parser::parseCoreNumbers(temp,value.getObject());
 		}
 		else if(name == "ports"){
+			ULOG_DBG("Parsing 'ports'");
 			foundPorts = true;
 			const Array& ports_array = value.getArray();
 			if (ports_array.size() == 0)
@@ -100,11 +113,17 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj){
 		}
 	}//end iteration on the answer
 
+	ULOG_DBG("Iteration on elements of the template terminated");
+
+	//Check that those fields manatory for each NF implementation are set
 	if(!foundCapability || !foundImplementations || !foundURI || !foundPorts || !validPortType || !foundTypeURI)
 	{
+		ULOG_WARN("Key \"functional-capability\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"uri-type\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
 		throw new std::string("Key \"functional-capability\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"uri-type\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
 	}
-	if(!foundCores && temp.getVnfType() == "dpdk"){
+
+	//FIXME-ENNIO: this check must be done in the DPDK plugin. Similarly, checks needed to KVM must be done in the KVM plugin
+	if(!foundCores && temp.getVnfType() == "dpdk"){//FIXME-ENNIO: don't use the string "dpdk". in compute_controller/nf_type.h there is an enum that defined the types
 		throw new std::string("Core numbers have not been found in the template for implementation dpdk");
 	}
 }
@@ -115,10 +134,12 @@ bool Template_Parser::parsePort(NFtemplate& temp, Object obj) {
 		for( Object::const_iterator port_el = obj.begin(); port_el != obj.end(); ++port_el ) {
 			const string &pel_name = port_el->first;
 			const Value &pel_value = port_el->second;
-			if (pel_name == "position") {
+			if (pel_name == "position") { //FIXME-ENNIO: if the template specifies an unbounded number of ports, the UN crashes when trying to deploy the network function
+				ULOG_DBG("Parsing 'position'");
 				port.setPortsRange(pel_value.getString());
 			}
 			else if (pel_name == "technology") {
+				ULOG_DBG("Parsing 'technology'");
 				port_type = portTypeFromString(pel_value.getString());
 				if (port_type == INVALID_PORT) {
 					ULOG_WARN("Invalid port type \"%s\" for implementation port", pel_value.getString().c_str());
@@ -140,11 +161,12 @@ bool Template_Parser::parseCoreNumbers(NFtemplate& temp, Object CPUrequirements)
 		const Value&  value = iterator_CPUrequirements->second;
 		if(name == "socket")
 		{
+			ULOG_DBG("Parsing 'socket'");
 			const Array& sockets = value.getArray();
 			for( unsigned int i = 0; i < sockets.size(); ++i)
 			{
 				Object socket = sockets[i].getObject();
-				for( Object::const_iterator iterator_socket = socket.begin(); iterator_socket != socket.end(); ++iterator_socket ) //per eventuali espansioni template
+				for( Object::const_iterator iterator_socket = socket.begin(); iterator_socket != socket.end(); ++iterator_socket )
 				{
 					const string& socket_elementName  = iterator_socket->first;
 					const Value&  socket_value = iterator_socket->second;
