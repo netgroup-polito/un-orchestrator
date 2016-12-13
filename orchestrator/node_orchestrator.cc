@@ -543,7 +543,7 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, m
 	*vnf_repo_port = (int) reader.GetInteger("datastore", "port", 8081);
 	vnf_images_path = reader.Get("misc", "IMAGE_DIR", "NFimages");
 
-    /* Path of the script file*/
+	/* Path of the script file*/
 	char script_path[64];
 	strcpy(script_path, (char *)reader.Get("misc", "script_path", "./").c_str());
 	setenv("un_script_path", script_path, 1);

@@ -83,8 +83,6 @@ PortType portTypeFromString(const std::string& s)
 	return INVALID_PORT;
 }
 
-
-
 std::string portTypeToString(PortType t)
 {
 	switch (t) {

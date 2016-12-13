@@ -330,6 +330,9 @@ bool ComputeController::addImplementations(list<NFtemplate>& templates, string n
 
 
 bool ComputeController::downloadImage(Description * description,string vnfImagePath) {
+
+	ULOG_DBG_INFO("Downloading image for NF at path '%s'",vnfImagePath.c_str());
+	
 	stringstream command;
 	stringstream pathImage;
 	unsigned char hash_token[HASH_SIZE];

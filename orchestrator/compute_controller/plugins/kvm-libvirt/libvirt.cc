@@ -66,7 +66,7 @@ void Libvirt::disconnect()
 bool Libvirt::updateNF(UpdateNFIn uni)
 {
 	ULOG_INFO("Update not supported by this type of functions");
-        return false;
+		return false;
 }
 
 bool Libvirt::startNF(StartNFIn sni)
@@ -78,10 +78,10 @@ bool Libvirt::startNF(StartNFIn sni)
 	string nf_name = sni.getNfId();
 	string uri_image = description->getURI();
 
+	ULOG_DBG_INFO("Loading base libvirt template '%s'...",BASE_LIBVIRT_TEMPLATE);
+
 	/* Domain name */
 	sprintf(domain_name, "%" PRIu64 "_%s", sni.getLsiID(), nf_name.c_str());
-
-	ULOG_DBG_INFO("Using Libvirt XML template %s", uri_image.c_str());
 	xmlInitParser();
 
 	xmlDocPtr doc;
@@ -89,9 +89,9 @@ bool Libvirt::startNF(StartNFIn sni)
 	xmlXPathObjectPtr xpathObj;
 
 	/* Load XML document */
-	doc = xmlParseFile(uri_image.c_str());
+	doc = xmlParseFile(BASE_LIBVIRT_TEMPLATE);
 	if (doc == NULL) {
-		ULOG_ERR("Unable to parse file \"%s\"", uri_image.c_str());
+		ULOG_ERR("Unable to parse file \"%s\"", BASE_LIBVIRT_TEMPLATE);
 		return 0;
 	}
 
@@ -119,16 +119,16 @@ bool Libvirt::startNF(StartNFIn sni)
 
 	xmlNodeSetPtr nodes = xpathObj->nodesetval;
 	int size = (nodes) ? nodes->nodeNr : 0;
-	ULOG_DBG_INFO("xpath return size: %d", size);
+	ULOG_DBG("xpath return size: %d", size);
 	int i;
 	for(i = size - 1; i >= 0; i--) {
-	  	xmlNodePtr node = nodes->nodeTab[i];
+		xmlNodePtr node = nodes->nodeTab[i];
 
 		if (node != NULL) {
 			switch (node->type) {
 				case XML_ELEMENT_NODE:
 					if (xmlStrcmp(node->name, (xmlChar*)"name") == 0) {
-						xmlNodeSetContent(node, BAD_CAST domain_name);
+						xmlNodeSetContent(node, BAD_CAST domain_name); //set the domain name, which is different for each network function
 						update_flags |= DOMAIN_NAME_UPDATED;
 					}
 					else if (xmlStrcmp(node->name, (xmlChar*)"emulator") == 0) {
@@ -137,6 +137,7 @@ bool Libvirt::startNF(StartNFIn sni)
 							update_flags |= EMULATOR_UPDATED;
 						}
 					}
+#if 0
 					else if (xmlStrcmp(node->name, (xmlChar*)"interface") == 0) {
 						// Currently we just remove any net interface device present in the template and re-create our own
 						// with the exception of bridged interfaces which are handy for managing the VM.
@@ -148,6 +149,7 @@ bool Libvirt::startNF(StartNFIn sni)
 						xmlUnlinkNode(node);
 						xmlFreeNode(node);
 					}
+#endif
 					break;
 				case XML_ATTRIBUTE_NODE:
 					ULOG_ERR("ATTRIBUTE found here");
@@ -183,10 +185,14 @@ bool Libvirt::startNF(StartNFIn sni)
 	/* Cleanup of XPath data */
 	xmlXPathFreeObject(xpathObj);
 
-	/* Add domain name if not present */
+	ULOG_DBG_INFO("Base libvirt template loaded...");
+
+#if 0
+	/* Set the domain name */
 	if (0 == (update_flags & DOMAIN_NAME_UPDATED)) {
 		xmlNewTextChild(xmlDocGetRootElement(doc), NULL, BAD_CAST "name", BAD_CAST domain_name);
 	}
+#endif
 
 	/* Create xpath evaluation context for Libvirt domain/devices */
 	/* Evaluate xpath expression */
@@ -214,6 +220,36 @@ bool Libvirt::startNF(StartNFIn sni)
 	}
 
 	/* Create XML for VM */
+
+	ULOG_DBG_INFO("The network function image is available at '%s'...",uri_image.c_str());
+
+	/* Create disk using the NF image specified in the uri */
+	xmlNodePtr diskn = xmlNewChild(devices, NULL, BAD_CAST "disk", NULL);
+	xmlNewProp(diskn, BAD_CAST "type", BAD_CAST "file");
+	xmlNewProp(diskn, BAD_CAST "device", BAD_CAST "disk");
+	
+	xmlNodePtr drivern = xmlNewChild(diskn, NULL, BAD_CAST "driver", NULL);
+	xmlNewProp(drivern, BAD_CAST "name", BAD_CAST "qemu");
+	xmlNewProp(drivern, BAD_CAST "type", BAD_CAST "qcow2"); //FIXME: this must not be fixed, but it should depend on the disk image
+
+	xmlNodePtr sourcen = xmlNewChild(diskn, NULL, BAD_CAST "source", NULL);
+	xmlNewProp(sourcen, BAD_CAST "file", BAD_CAST uri_image.c_str());
+
+	xmlNewChild(diskn, NULL, BAD_CAST "backingStore", NULL);
+
+	xmlNodePtr targetn = xmlNewChild(diskn, NULL, BAD_CAST "target", NULL);
+	xmlNewProp(targetn, BAD_CAST "dev", BAD_CAST "vda");
+	xmlNewProp(targetn, BAD_CAST "bus", BAD_CAST "virtio");
+
+	xmlNodePtr aliasn = xmlNewChild(diskn, NULL, BAD_CAST "alias", NULL);
+	xmlNewProp(aliasn, BAD_CAST "name", BAD_CAST "virtio-disk0");
+
+	xmlNodePtr addressn = xmlNewChild(diskn, NULL, BAD_CAST "address", NULL);
+	xmlNewProp(addressn, BAD_CAST "type", BAD_CAST "pci");
+	xmlNewProp(addressn, BAD_CAST "domain", BAD_CAST "0x0000");
+	xmlNewProp(addressn, BAD_CAST "bus", BAD_CAST "0x00");
+	xmlNewProp(addressn, BAD_CAST "slot", BAD_CAST "0x05");
+	xmlNewProp(addressn, BAD_CAST "function", BAD_CAST "0x0");
 
 	/* Create NICs */
 	vector< pair<string, string> > ivshmemPorts; // name, alias

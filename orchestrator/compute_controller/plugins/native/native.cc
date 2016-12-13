@@ -24,7 +24,7 @@ Native::Native(){
 
 		//Validate the configuration file with the schema
 		std::stringstream ss_xsd;
-                ss_xsd << getenv("un_script_path") <<  CAPABILITIES_XSD;
+		ss_xsd << getenv("un_script_path") <<  CAPABILITIES_XSD;
 		schema_doc = xmlReadFile(ss_xsd.str().c_str(), NULL, XML_PARSE_NONET);
 		if (schema_doc == NULL){
 			ULOG_ERR("The schema cannot be loaded or is not well-formed.");
@@ -183,7 +183,7 @@ bool Native::startNF(StartNFIn sni) {
 	uri << uri_script;
 
 	std::stringstream command;
-    command << getenv("un_script_path") << RUN_NATIVE_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << n_ports;
+	command << getenv("un_script_path") << RUN_NATIVE_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << n_ports;
 
 	//create the names of the ports
 	for(std::map<unsigned int, std::string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)
