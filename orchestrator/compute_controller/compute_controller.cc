@@ -249,70 +249,67 @@ void ComputeController::checkSupportedDescriptions() {
 
 }
 
-
-
-
 bool ComputeController::addImplementations(list<NFtemplate>& templates, string nf_id){ //TODO modificare
-  map<unsigned int, PortType> port_types; // port_id -> port_type
-  list<Description*> possibleDescriptions;
-  string capability ;
+	map<unsigned int, PortType> port_types; // port_id -> port_type
+	list<Description*> possibleDescriptions;
+	string capability ;
 	for(list<NFtemplate>::iterator temp = templates.begin(); temp != templates.end(); temp++){
 		capability = temp->getCapability(); //it s the same for all
 		if (temp->getVnfType() == "dpdk") {
-			#ifdef ENABLE_DPDK_PROCESSES
+#ifdef ENABLE_DPDK_PROCESSES
 			for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
 				int begin, end;
 				port->splitPortsRangeInInt(begin, end);
 				for(int i = begin;i<=end;i++){
+					//In case of DPDK process, the port type is fixed
 					port_types.insert(map<unsigned int, PortType>::value_type(i, DPDKR_PORT));
 				}
 			}
 			possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_types)));
-			#endif
+#endif
 		} else if (temp->getVnfType() == "native") {
-			#ifdef ENABLE_NATIVE
+#ifdef ENABLE_NATIVE
 			for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
 					for(int i = begin;i<=end;i++){
+						//In case of native function, the port type is fixed
 						port_types.insert(map<unsigned int, PortType>::value_type(i, VETH_PORT));
 					}
 			}
 			possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_types)));
-			#endif
+#endif
 		}
 
 		if (temp->getVnfType() == "docker") {
-			#ifdef ENABLE_DOCKER
+#ifdef ENABLE_DOCKER
 				for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
 					for (int i = begin; i <= end; i++) {
+						//In case of docker, the port type is fixed
 						port_types.insert(map<unsigned int, PortType> ::value_type(i, VETH_PORT));
 					}
 				}
 				Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_types);
 				possibleDescriptions.push_back(descr);
-			#endif
+#endif
 		}
 		if (temp->getVnfType() == "virtual-machine-kvm") {
-			#ifdef ENABLE_KVM
+#ifdef ENABLE_KVM
 				for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
 					for (int i = begin; i <= end; i++) {
-						port_types.insert(map <unsigned int, PortType> ::value_type(i, portTypeFromString(port->getTechnology())));
+						port_types.insert(map <unsigned int, PortType> ::value_type(i, port->getTechnology()));
 					}
 				}
 				Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_types);
 				possibleDescriptions.push_back(descr);
-			#endif
+#endif
 		}
-
-		//insert other implementations
-
+		//[+] insert other implementations
 	}
-
 
 	NF *new_nf = new NF(capability);
 	assert(possibleDescriptions.size() != 0);

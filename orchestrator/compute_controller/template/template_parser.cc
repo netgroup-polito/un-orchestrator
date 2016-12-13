@@ -140,15 +140,14 @@ bool Template_Parser::parsePort(NFtemplate& temp, Object obj) {
 			}
 			else if (pel_name == "technology") {
 				ULOG_DBG("Parsing 'technology'");
-				port_type = portTypeFromString(pel_value.getString());
+				port_type = portTypeFromString(pel_value.getString()); //FIXME-ENNIO: why do you talk about port type and not port technology?
 				if (port_type == INVALID_PORT) {
 					ULOG_WARN("Invalid port type \"%s\" for implementation port", pel_value.getString().c_str());
 					return false;
 				}
-				port.setTechnology(pel_value.getString());
 			}
-
 		}
+		port.setTechnology(port_type);
 		temp.addPort(port);
 		return true;
 

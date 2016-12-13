@@ -731,9 +731,9 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		// Fill in incomplete port type specifications (unless we make it mandatory input from name-resolver)
 		for (list<unsigned int>::iterator p_it = nf_ports.begin(); p_it != nf_ports.end(); p_it++) {
 			map<unsigned int, PortType>::iterator pt_it = nf_ports_type.find(*p_it);
-			if (pt_it == nf_ports_type.end()) {
-				ULOG_WARN("\tNF Port \"%s\":%d has no type defined in NF description", nf_id.c_str(), (*p_it));
-				ULOG_WARN("\tThe ports ID used in the graph must correspond to those specified in the name resolver...");
+			if(pt_it->second == UNDEFINED_PORT) {
+				ULOG_WARN("\tNF Port \"%s\":%d has no type defined", nf_id.c_str(), (*p_it));
+				ULOG_WARN("\tThe ports ID used in the graph must correspond to those specified in the network function template...");
 				//This is an error of the client, which specified a wrong NF-FG (wrong ports towards a VNF)
 				delete(computeController);
 				delete(controller);
