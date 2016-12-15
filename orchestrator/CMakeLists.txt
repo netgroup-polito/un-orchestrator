@@ -451,16 +451,25 @@ ELSE()
 ENDIF(ENABLE_RESOURCE_MANAGER)
 
 IF(ENABLE_HARDWARE)
+        FILE(GLOB driverH "hardware_controller/drivers/*.h")
+        FILE(GLOB driverCC "hardware_controller/drivers/*.cc")
+	FILE(GLOB driverC "hardware_controller/drivers/*.c")
+	FILE(GLOB driverCPP "hardware_controller/drivers/*.cpp")
         SET(SOURCES9
-    ${SOURCES9}
+    ${SOURCES8}
     hardware_controller/hardware_controller.cc
     hardware_controller/hardware_controller.h
     hardware_controller/hw_manager.h
     hardware_controller/hw_manager.cc
+    hardware_controller/manifest_list.h
+    ${driverH}
+    ${driverC}
+    ${driverCC}
+    ${driverCPP}
     )
 ELSE()
         SET(SOURCES9
-                ${SOURCES9}
+                ${SOURCES8}
     )
 ENDIF(ENABLE_HARDWARE)
 
@@ -479,7 +488,7 @@ LINK_DIRECTORIES(
 # Create the executable
 ADD_EXECUTABLE(
 	node-orchestrator
-	${SOURCES8}
+	${SOURCES9}
 )
 
 IF(BUILD_ExternalProjects)

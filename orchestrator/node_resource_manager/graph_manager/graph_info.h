@@ -8,6 +8,10 @@
 #include "../../compute_controller/compute_controller.h"
 #include "../graph/high_level_graph/high_level_graph.h"
 
+#ifdef ENABLE_HARDWARE
+#include "../../hardware_controller/hardware_controller.h"
+#endif
+
 class Controller;
 
 class GraphInfo
