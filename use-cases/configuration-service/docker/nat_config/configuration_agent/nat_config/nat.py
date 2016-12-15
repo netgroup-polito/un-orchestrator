@@ -137,7 +137,7 @@ class Nat(object):
         if self.wan_interface is not None:
             Bash('route del default gw 0.0.0.0')
             self.wan_interface.set_interface()
-            self.set_nat(self.wan_interface.name, default_gw)
+            self.set_nat(self.wan_interface.name)
         else:
             self.clean_nat()
         self.get_interfaces()
