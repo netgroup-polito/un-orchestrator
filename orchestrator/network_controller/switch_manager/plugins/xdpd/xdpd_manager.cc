@@ -176,7 +176,7 @@ void XDPDManager::checkPhysicalInterfaces(set<CheckPhysicalPortsIn> cppi)
 	set<CheckPhysicalPortsIn>::iterator pit = cppi.begin();
 	for(; pit != cppi.end(); pit++)
 	{
-		if(pit->getPortTechnology() == ETHERNET_PORT)
+		if(pit->getPortType() == ETHERNET_PORT)
 		{
 			if(ethernetInterfaces.count(pit->getPortName()) == 0)
 			{
@@ -279,15 +279,15 @@ string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli, map<string,unsigned
 		Array nf_ports_array;
 		list<struct nf_port_info> nf_ports = cli.getNetworkFunctionsPortsInfo(*nf);
 
-		PortTechnology port_technology = UNDEFINED_PORT;
+		PortType port_type = UNDEFINED_PORT;
 		for(list<struct nf_port_info>::iterator nfp = nf_ports.begin(); nfp != nf_ports.end(); nfp++)
 		{
 			nf_ports_array.push_back(nfp->port_name);
-			port_technology = nfp->port_technology;
+			port_type = nfp->port_type;
 
 			port_name_id_in_graph[nfp->port_name] = nfp->port_id;
 
-			switch (port_technology) {
+			switch (port_type) {
 				case VETH_PORT:
 					assert(nft == DOCKER || nft == NATIVE);
 					if(nft == NATIVE){
@@ -744,13 +744,13 @@ string XDPDManager::prepareCreateNFPortsRequest(AddNFportsIn anpi)
 
 	Array nf_ports_array;
 	list<struct nf_port_info> nf_ports = anpi.getNetworkFunctionsPorts();
-	PortTechnology port_technology = UNDEFINED_PORT;
+	PortType port_type = UNDEFINED_PORT;
 	for(list<struct nf_port_info>::iterator nfp = nf_ports.begin(); nfp != nf_ports.end(); nfp++)
 	{
 		nf_ports_array.push_back(nfp->port_name);
-		port_technology = nfp->port_technology;
+		port_type = nfp->port_type;
 
-		switch (port_technology) {
+		switch (port_type) {
 			case VETH_PORT:
 				assert(type == DOCKER || type == NATIVE);
 				if(type == NATIVE){
