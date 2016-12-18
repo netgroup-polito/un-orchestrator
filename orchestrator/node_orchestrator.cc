@@ -176,7 +176,6 @@ int main(int argc, char *argv[])
 	char *un_address = new char[BUFFER_SIZE], *t_un_address = NULL;
 	char *ipsec_certificate = new char[BUFFER_SIZE], *t_ipsec_certificate = NULL;
 
-	//FIXME-ENNIO: the following parameters should be mandatory in the configuration file. If they are not specified, the orchestrator should not start
 	string vnf_repo_ip;
 	int vnf_repo_port;
 	//FIXME-ENNIO: the images path, in addition of being mandatory, must also be absolute. In fact, kvm does no work with relative paths.
@@ -539,10 +538,24 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, m
 	strcpy(temp_ipsec_certificate, (char *)reader.Get("GRE over IPsec", "certificate", "UNKNOWN").c_str());
 	*ipsec_certificate = temp_ipsec_certificate;
 
-	vnf_repo_ip = reader.Get("datastore", "ip_address", "localhost");
+	vnf_repo_ip = reader.Get("datastore", "ip_address", "UNKNOWN");
+	if(vnf_repo_ip == "UNKNOWN"){
+		ULOG_ERR("Error in configuration file '%'s. Mandatory parameter 'ip_address' is missing",config_file_name);
+		return false;
+	}
 
-	*vnf_repo_port = (int) reader.GetInteger("datastore", "port", 8081);
-	vnf_images_path = reader.Get("misc", "IMAGE_DIR", "NFimages");
+	*vnf_repo_port = (int) reader.GetInteger("datastore", "port", -1);
+	if(*vnf_repo_port == -1) {
+		ULOG_ERR("Error in configuration file '%'s. Mandatory parameter 'port' is missing",config_file_name);
+		return false;
+	}
+
+	vnf_images_path = reader.Get("misc", "IMAGE_DIR", "UNKNOWN");
+	if(vnf_images_path == "UNKNOWN") {
+		ULOG_ERR("Error in configuration file '%'s. Mandatory parameter 'IMAGE_DIR' is missing",config_file_name);
+		return false;
+	}
+
 
 	/* Path of the script file*/
 	char script_path[64];
