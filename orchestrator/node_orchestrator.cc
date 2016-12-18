@@ -178,7 +178,6 @@ int main(int argc, char *argv[])
 
 	string vnf_repo_ip;
 	int vnf_repo_port;
-	//FIXME-ENNIO: the images path, in addition of being mandatory, must also be absolute. In fact, kvm does no work with relative paths.
 	string vnf_images_path;
 
 	string s_un_address;
@@ -555,6 +554,11 @@ bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, m
 		ULOG_ERR("Error in configuration file '%'s. Mandatory parameter 'IMAGE_DIR' is missing",config_file_name);
 		return false;
 	}
+	else
+		if(vnf_images_path.at(0) != '/') {
+			ULOG_ERR("Error in configuration file '%'s. 'IMAGE_DIR' must be an absolute path",config_file_name);
+			return false;
+		}
 
 
 	/* Path of the script file*/
