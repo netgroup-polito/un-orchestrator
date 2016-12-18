@@ -35,10 +35,10 @@ ret=`echo $?`
 
 if [ $ret -eq 0 ]
 then
-	echo "[$0] Function '"$3"' retrieved"
+	echo "[$0] Function '"$1"' retrieved"
 else
-	echo "[$0] Unable to retrieve function '"$3"'"
-	sudo rm NFimages/$archive_file
+	echo "[$0] Unable to retrieve function '"$1"'"
+	sudo rm $4/$archive_file
 	exit 0
 fi
 

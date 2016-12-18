@@ -134,9 +134,11 @@ nf_t stringToType(const std::string& type){
         return NATIVE;
     }
 
+	return UNDEFINED;
+
 
     //[+] Add here other implementations for the execution environment
 
-    assert(0);
+
 
 }

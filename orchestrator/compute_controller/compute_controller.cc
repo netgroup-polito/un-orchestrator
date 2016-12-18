@@ -388,7 +388,10 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				if((*descr)->getURIType() == "remote-file"){
 					downloadSuccess=downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
-					//FIXME-ENNIO: check if the download was completed successfully. If not, print a message and return with error
+					if(!downloadSuccess){
+						ULOG_ERR("Download failed!");
+						return NULL;
+					}
 				}
 				return dockerManager;
 			}
@@ -407,7 +410,10 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				if((*descr)->getURIType() == "remote-file"){
 					downloadSuccess = downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
-					//FIXME-ENNIO: check if the download was completed successfully. If not, print a message and return with error
+					if(!downloadSuccess){
+						ULOG_ERR("Download failed!");
+						return NULL;
+					}
 				}
 
 				return dpdkManager;
@@ -428,7 +434,10 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				if((*descr)->getURIType() == "remote-file"){//FIXME-ENNIO: compare with an enum that can assume the allowed values
 					downloadSuccess = downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
-					//FIXME-ENNIO: check if the download was completed successfully. If not, print a message and return with error
+					if(!downloadSuccess){
+						ULOG_ERR("Download failed!");
+						return NULL;
+					}
 				}
 				return libvirtManager;
 
@@ -451,7 +460,10 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 					if((*descr)->getURIType() == "remote-file"){
 						downloadSuccess = downloadImage(*descr,vnf_images_path);
 						assert(downloadSuccess);
-						//FIXME-ENNIO: check if the download was completed successfully. If not, print a message and return with error
+						if(!downloadSuccess){
+							ULOG_ERR("Download failed!");
+							return NULL;
+						}
 					}
 					return nativeManager;
 

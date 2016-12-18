@@ -10,7 +10,8 @@ typedef enum{
 	DPDK,
 	DOCKER,
 	KVM,
-	NATIVE
+	NATIVE,
+	UNDEFINED
 	//[+] Add here other implementations for the execution environment
 	}nf_t;
 
