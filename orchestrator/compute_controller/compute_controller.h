@@ -89,6 +89,17 @@ private:
 	uint64_t lsiID;
 
 	/**
+	*	@brief: VNF repository IP
+	**/
+
+	string vnf_repo_ip;
+
+	/**
+	*	@brief: VNF repository port
+	**/
+	int vnf_repo_port;
+
+	/**
 	*	@brief: add  implementations after the answer from VNF-Repository has been parsed
 	*
 	*	@param:	templates	list of Templates filled with data parsed
@@ -134,30 +145,26 @@ private:
 	NFsManager* selectNFImplementation(list<Description*> descriptions,string vnf_images_path);
 
 public:
-	ComputeController();
+	ComputeController(string vfn_repo_ip,int vnf_repo_port);
 	~ComputeController();
 
 	/**
 	*	@brief: Retrieve, from the Vnf Repository, the informations for a specific NF
 	*
-	*	@param:	nf_id	Name of a network function, used as key in a map <string,NF>
-	 *	@param: nf_name It can be a http or a capability (field "name" in NF-FG)
-	 *	@param: checkSingleTemplate flag that allows to check if the UN has to parse a single template or a list of templates
-	 *	@param: vnf_repo_ip Vnf Repository IP
-	 *	@param: vnf_repo_port Vnf Repository port
+	*	@param:	vnf   object representing a vnf
 	*/
 
 
-	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name,bool checkSingleTemplate, string vnf_repo_ip, int vnf_repo_port);
+	nf_manager_ret_t retrieveDescription(highlevel::VNFs vnf);
 
 
     /**
-	*	@brief: build url in order to download the descriptions of VNFs
+	*	@brief: build url in order to download the template of a VNF
 	*
 	*	@param:	vnf   object representing a vnf
 	*/
 
-    string buildUrl(highlevel::VNFs vnf,string vnfRepoIP,int vnfRepoPort);
+    string buildUrl(highlevel::VNFs vnf);
 
 	/**
 	*	@brief: For each NF, select an implementation. Currently, if a Docker implementation

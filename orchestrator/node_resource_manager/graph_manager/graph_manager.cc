@@ -539,9 +539,8 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 			ULOG_DBG_INFO("\t* NF with id \"%s\" is already part of the graph; it is not retrieved again",nf->getId().c_str());
 			continue;
 		}
-		string url = computeController->buildUrl(*nf,vnfRepoIP, vnfRepoPort);//FIXME-ENNIO: the URL must be created in the compute controller. IP and PORT must be provided to the 
-		//compute controller when initialized.
-		retVal = computeController->retrieveDescription(nf->getId(), url ,nf->checkVnfTemplateField()  , vnfRepoIP, vnfRepoPort);
+
+		retVal = computeController->retrieveDescription(*nf);
 
 		if(retVal == NFManager_NO_NF)
 		{
@@ -614,7 +613,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*	0) Check the validity of the graph
 	*/
 	ULOG_DBG_INFO("0) Checking the validity of the graph");
-	ComputeController *computeController = new ComputeController();
+	ComputeController *computeController = new ComputeController(vnfRepoIP,vnfRepoPort);
 
 	if(!checkGraphValidity(graph,computeController))
 	{

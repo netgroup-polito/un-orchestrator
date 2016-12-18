@@ -9,7 +9,8 @@ pthread_mutex_t ComputeController::nfs_manager_mutex = PTHREAD_MUTEX_INITIALIZER
 map<int,uint64_t> ComputeController::cores;
 int ComputeController::nextCore = 0;
 
-ComputeController::ComputeController()
+ComputeController::ComputeController(string vnf_repo_ip,int vnf_repo_port):
+		vnf_repo_ip(vnf_repo_ip),vnf_repo_port(vnf_repo_port)
 {
 }
 
@@ -36,26 +37,26 @@ void ComputeController::setCoreMask(uint64_t core_mask)
 		ULOG_DBG_INFO("Mask of an available core: \"%d\"",cores[i]);
 }
 
-string ComputeController::buildUrl(highlevel::VNFs vnf,string vnfRepoIP,int vnfRepoPort) {
+string ComputeController::buildUrl(highlevel::VNFs vnfDescription) {
 	stringstream tmp;
-	if(vnf.checkVnfTemplateField()) {
-		tmp << "GET " << VNF_REPOSITORY_TEMPLATE_URL << vnf.getVnfTemplate() << "/ HTTP/1.1\r\n";
+	if(vnfDescription.checkVnfTemplateField()) {
+		tmp << "GET " << VNF_REPOSITORY_TEMPLATE_URL << vnfDescription.getVnfTemplate() << "/ HTTP/1.1\r\n";
 	}
 	else
-		tmp << "GET " << VNF_REPOSITORY_TEMPLATES_URL << vnf.getName() << "/ HTTP/1.1\r\n";
-	tmp << "Host: :" << vnfRepoIP << ":" << vnfRepoPort << "\r\n";
+		tmp << "GET " << VNF_REPOSITORY_TEMPLATES_URL << vnfDescription.getName() << "/ HTTP/1.1\r\n";
+	tmp << "Host: :" << vnf_repo_ip << ":" << vnf_repo_port << "\r\n";
 	tmp << "Connection: close\r\n";
 	tmp << "Accept: */*\r\n\r\n";
 	return tmp.str();
 }
 
-nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string url,bool checkSingleTemplate, string vnf_repo_ip, int vnf_repo_port)
+nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescription)
 {
 	try
 	{
 		string translation;
 		list<NFtemplate> templates;
-		ULOG_DBG_INFO("Considering the NF with ID \"%s\"",nf_id.c_str());
+		ULOG_DBG_INFO("Considering the NF with ID \"%s\"",vnfDescription.getId().c_str());
 
 		char ErrBuf[BUFFER_SIZE];
 		struct addrinfo Hints;
@@ -64,7 +65,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string url
 		int WrittenBytes;					// Number of bytes written on the socket
 		int ReadBytes;						// Number of bytes received from the socket
 		char DataBuffer[DATA_BUFFER_SIZE];	// Buffer containing data received from the socket
-
+		string url;
 		memset(&Hints, 0, sizeof(struct addrinfo));
 
 		Hints.ai_family= AF_INET;
@@ -77,7 +78,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string url
 			ULOG_ERR("Error resolving given address/port (%s/%d): %s",  vnf_repo_ip.c_str(), vnf_repo_port, ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
-
+		url = buildUrl(vnfDescription);
 		char command[url.size()+1];
 		command[url.size()]=0;
 		memcpy(command,url.c_str(),url.size());
@@ -136,13 +137,13 @@ nf_manager_ret_t ComputeController::retrieveDescription(string nf_id, string url
 
 		translation.assign(&DataBuffer[i]);
 
-		if(!Template_Parser::parse(templates,translation,checkSingleTemplate))
+		if(!Template_Parser::parse(templates,translation,vnfDescription.checkVnfTemplateField() /*add eventual additional checks with ||*/))
 		{
 			//ERROR IN THE SERVER
-			ULOG_ERR("An error occurred while parsing the VNF template associated with the NF with ID: \"%s\"",nf_id.c_str());
+			ULOG_ERR("An error occurred while parsing the VNF template associated with the NF with ID: \"%s\"",vnfDescription.getId().c_str());
 			return NFManager_SERVER_ERROR;
 		}
-		addImplementations(templates,nf_id);
+		addImplementations(templates,vnfDescription.getId());
 
 	}
 	catch (std::exception& e)
