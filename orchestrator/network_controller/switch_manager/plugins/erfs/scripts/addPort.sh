@@ -55,7 +55,7 @@ fi
 
 echo "[$0] Adding port to $NAME (name=$PORT_NAME, type=$PORT_TYPE, id=$PORT_ID, core_id=$LCORE)"
 
-type_cmd="type=$port_type"
+type_cmd="type=$port_technology"
 
 if [ "$PORT_TYPE" = "dpdk" ]
 then

@@ -220,7 +220,7 @@ public:
 	/**
 	 * Add a port to the LSI identifed by dnumber. Returns the port name on as known on the switch.
 	 */
-	string add_port(string p, uint64_t dnumber, bool is_nf_port, int s, PortType port_type = UNDEFINED_PORT);
+	string add_port(string p, uint64_t dnumber, bool is_nf_port, int s, PortTechnology port_technology = UNDEFINED_PORT);
 
 	/*
 	*	Example of command to create a new GRE PORT

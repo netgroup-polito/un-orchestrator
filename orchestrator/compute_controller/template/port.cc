@@ -8,7 +8,7 @@ void Port::setPortsRange(string portsRange){
 	this->portsRange = portsRange;
 }
 
-void Port::setTechnology(PortType technology) {
+void Port::setTechnology(PortTechnology technology) {
 	this->technology = technology;
 }
 
@@ -16,7 +16,7 @@ string Port::getPortsRange() {
 	return  this->portsRange;
 }
 
-PortType Port::getTechnology() {
+PortTechnology Port::getTechnology() {
 	return this->technology;
 }
 

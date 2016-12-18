@@ -7,14 +7,14 @@ using namespace std;
 class Port{
 private:
 	string portsRange;
-	PortType technology;
+	PortTechnology technology;
 
 public:
 	Port();
 	void setPortsRange(string portsRange);
-	void setTechnology(PortType technology);
+	void setTechnology(PortTechnology technology);
 	string getPortsRange();
-	PortType getTechnology();
+	PortTechnology getTechnology();
 	void  splitPortsRangeInInt(int& begin, int& end);  //it splits portsRange in integers,so i can add in a map each port with the appropriate technology through a loop
 
 };

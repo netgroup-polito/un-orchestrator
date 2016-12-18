@@ -251,7 +251,7 @@ void ComputeController::checkSupportedDescriptions() {
 }
 
 bool ComputeController::addImplementations(list<NFtemplate>& templates, string nf_id){ //TODO modificare
-	map<unsigned int, PortType> port_types; // port_id -> port_type
+	map<unsigned int, PortTechnology> port_technologies; // port_id -> port_technology
 	list<Description*> possibleDescriptions;
 	string capability ;
 	for(list<NFtemplate>::iterator temp = templates.begin(); temp != templates.end(); temp++){
@@ -263,10 +263,10 @@ bool ComputeController::addImplementations(list<NFtemplate>& templates, string n
 				port->splitPortsRangeInInt(begin, end);
 				for(int i = begin;i<=end;i++){
 					//In case of DPDK process, the port type is fixed
-					port_types.insert(map<unsigned int, PortType>::value_type(i, DPDKR_PORT));
+					port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, DPDKR_PORT));
 				}
 			}
-			possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_types)));
+			possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_technologies)));
 #endif
 		} else if (temp->getVnfType() == "native") {
 #ifdef ENABLE_NATIVE
@@ -275,10 +275,10 @@ bool ComputeController::addImplementations(list<NFtemplate>& templates, string n
 					port->splitPortsRangeInInt(begin, end);
 					for(int i = begin;i<=end;i++){
 						//In case of native function, the port type is fixed
-						port_types.insert(map<unsigned int, PortType>::value_type(i, VETH_PORT));
+						port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, VETH_PORT));
 					}
 			}
-			possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_types)));
+			possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_technologies)));
 #endif
 		}
 
@@ -289,10 +289,10 @@ bool ComputeController::addImplementations(list<NFtemplate>& templates, string n
 					port->splitPortsRangeInInt(begin, end);
 					for (int i = begin; i <= end; i++) {
 						//In case of docker, the port type is fixed
-						port_types.insert(map<unsigned int, PortType> ::value_type(i, VETH_PORT));
+						port_technologies.insert(map<unsigned int, PortTechnology> ::value_type(i, VETH_PORT));
 					}
 				}
-				Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_types);
+				Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_technologies);
 				possibleDescriptions.push_back(descr);
 #endif
 		}
@@ -302,10 +302,10 @@ bool ComputeController::addImplementations(list<NFtemplate>& templates, string n
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
 					for (int i = begin; i <= end; i++) {
-						port_types.insert(map <unsigned int, PortType> ::value_type(i, port->getTechnology()));
+						port_technologies.insert(map <unsigned int, PortTechnology> ::value_type(i, port->getTechnology()));
 					}
 				}
-				Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_types);
+				Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_technologies);
 				possibleDescriptions.push_back(descr);
 #endif
 		}

@@ -272,8 +272,8 @@ bool Libvirt::startNF(StartNFIn sni)
 		const unsigned int port_id = p->first;
 		const string& port_name = p->second;
 
-		PortType port_type = description->getPortTypes().at(port_id);
-		ULOG_DBG_INFO("NF Port \"%s\":%d (%s) is of type %s", nf_name.c_str(), port_id, port_name.c_str(), portTypeToString(port_type).c_str());
+		PortTechnology port_technology = description->getPortTechnologies().at(port_id);
+		ULOG_DBG_INFO("NF Port \"%s\":%d (%s) is of type %s", nf_name.c_str(), port_id, port_name.c_str(), portTechnologyToString(port_technology).c_str());
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		/* retrieve ip address */
@@ -285,7 +285,7 @@ bool Libvirt::startNF(StartNFIn sni)
 
 		ULOG_DBG("Interface \"%s\" associated with MAC address \"%s\"", port_name.c_str(), port_mac_address.c_str());
 
-		if (port_type == USVHOST_PORT) {
+		if (port_technology == USVHOST_PORT) {
 			xmlNodePtr ifn = xmlNewChild(devices, NULL, BAD_CAST "interface", NULL);
 			xmlNewProp(ifn, BAD_CAST "type", BAD_CAST "vhostuser");
 
@@ -308,13 +308,13 @@ bool Libvirt::startNF(StartNFIn sni)
 			xmlNewProp(drv_guestn, BAD_CAST "tso6", BAD_CAST "off");
 			xmlNewProp(drv_guestn, BAD_CAST "ecn", BAD_CAST "off");
 		}
-		else if (port_type == IVSHMEM_PORT) {
+		else if (port_technology == IVSHMEM_PORT) {
 			ostringstream local_name;  // Name of the port as known by the VNF internally - We set a convention here
 			local_name << "p" << port_id;  // Will result in p<n>_tx and p<n>_rx rings
 
 			ivshmemPorts.push_back(pair<string, string>(port_name, local_name.str()));
 		}
-		else if (port_type == VHOST_PORT) {
+		else if (port_technology == VHOST_PORT) {
 			xmlNodePtr ifn = xmlNewChild(devices, NULL, BAD_CAST "interface", NULL);
 			xmlNewProp(ifn, BAD_CAST "type", BAD_CAST "direct");
 

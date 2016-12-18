@@ -17,7 +17,7 @@ using namespace std;
 
 class NFsManager;
 
-enum PortType {
+enum PortTechnology {
 	INVALID_PORT = -1,
 	UNDEFINED_PORT = 0,
 	//Ports used for virtual machines
@@ -30,13 +30,13 @@ enum PortType {
 	DPDKR_PORT				//dpdkr port
 };
 
-PortType portTypeFromString(const std::string& s);
-std::string portTypeToString(PortType t);
+PortTechnology portTechnologyFromString(const std::string& s);
+std::string portTechnologyToString(PortTechnology t);
 nf_t stringToType(const std::string& type); //convert docker in the nf_t DOCKER for example
 struct nf_port_info
 {
 	string port_name;
-	PortType port_type;
+	PortTechnology port_technology;
 	unsigned int port_id;
 };
 bool operator==(const nf_port_info& lhs, const nf_port_info& rhs);
@@ -52,12 +52,12 @@ private:
 	string capability;
 	string uri_type;
 	bool supported;
-	std::map<unsigned int, PortType> port_types;
+	std::map<unsigned int, PortTechnology> port_technologies;
 
 public:
-	Description(nf_t type, string uri, std::map<unsigned int, PortType>& port_types);
-	Description(string type, string uri, std::map<unsigned int, PortType>& port_types);
-	Description(string type, string uri,string capability,string uri_type, std::map<unsigned int, PortType>& port_types);//usefull for docker where uri type is required by the script
+	Description(nf_t type, string uri, std::map<unsigned int, PortTechnology>& port_technologies);
+	Description(string type, string uri, std::map<unsigned int, PortTechnology>& port_technologies);
+	Description(string type, string uri,string capability,string uri_type, std::map<unsigned int, PortTechnology>& port_technologies);//usefull for docker where uri type is required by the script
 	virtual ~Description();
 	void setURI(string uri);
 	string getURI() const;
@@ -66,8 +66,8 @@ public:
 	nf_t getType() const;
 	void setSupported(bool supported);
 	bool isSupported();
-	const std::map<unsigned int, PortType>& getPortTypes() const { return port_types; }
-	PortType getPortType(unsigned int port_id) const;
+	const std::map<unsigned int, PortTechnology>& getPortTechnologies() const { return port_technologies; }
+	PortTechnology getPortTechnology(unsigned int port_id) const;
 };
 
 #endif //DESCRIPTION_H_

@@ -74,7 +74,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 
 	//The following structures are empty. No network function, virtual link gre-tunnel endpoint is attached.
 	list<highlevel::VNFs> dummy_network_functions;
-	map<string, map<unsigned int, PortType> > dummy_nfs_ports_type;
+	map<string, map<unsigned int, PortTechnology> > dummy_nfs_ports_type;
 	list<highlevel::EndPointGre> dummy_gre_endpoints;
 	list<highlevel::EndPointHostStack> dummy_hoststack_endpoints;
 	vector<VLink> dummy_virtual_links;
@@ -707,7 +707,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 	//Check the types of the VNFs ports
 	map<string, nf_t>  nf_types;
-	map<string, map<unsigned int, PortType> > nfs_ports_type;
+	map<string, map<unsigned int, PortTechnology> > nfs_ports_type;
 	for(list<highlevel::VNFs>::iterator nf_it = network_functions.begin(); nf_it != network_functions.end(); nf_it++)
 	{
 		const string& nf_id = nf_it->getId();
@@ -717,7 +717,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 		//Gather VNF ports types
 		const Description* descr = computeController->getNFSelectedImplementation(nf_id);
-		map<unsigned int, PortType> nf_ports_type = descr->getPortTypes();  // Port types as specified by the retrieved and selected NF implementation
+		map<unsigned int, PortTechnology> nf_ports_type = descr->getPortTechnologies();  // Port types as specified by the retrieved and selected NF implementation
 
 		if (nf_ports.size() > nf_ports_type.size())
 		{
@@ -729,7 +729,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		ULOG_DBG_INFO("NF with id \"%s\" selected implementation (type %d) defines type for %d ports", nf_id.c_str(), nf_types[nf_id], nf_ports_type.size());
 		// Fill in incomplete port type specifications (unless we make it mandatory input from name-resolver)
 		for (list<unsigned int>::iterator p_it = nf_ports.begin(); p_it != nf_ports.end(); p_it++) {
-			map<unsigned int, PortType>::iterator pt_it = nf_ports_type.find(*p_it);
+			map<unsigned int, PortTechnology>::iterator pt_it = nf_ports_type.find(*p_it);
 			if(pt_it->second == UNDEFINED_PORT) {
 				ULOG_WARN("\tNF Port \"%s\":%d has no type defined", nf_id.c_str(), (*p_it));
 				ULOG_WARN("\tThe ports ID used in the graph must correspond to those specified in the network function template...");
@@ -740,7 +740,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 				controller = NULL;
 				return false;
 			}
-			ULOG_DBG_INFO("\tNF Port \"%s\":%d is of type '%s'", nf_id.c_str(), (*p_it), portTypeToString(pt_it->second).c_str());
+			ULOG_DBG_INFO("\tNF Port \"%s\":%d is of type '%s'", nf_id.c_str(), (*p_it), portTechnologyToString(pt_it->second).c_str());
 		}
 		nfs_ports_type[nf_id] = nf_ports_type;
 	}
@@ -1244,7 +1244,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 			list<highlevel::VNFs> dummyNetworkFunctions;
 			list<highlevel::EndPointGre> dummyEndpointsGre;
 			list<highlevel::EndPointHostStack> dummyEndpointHoststack;
-			map<string, map<unsigned int, PortType> > dummyNfsPortsType;
+			map<string, map<unsigned int, PortTechnology> > dummyNfsPortsType;
 
 			//Prepare the structure representing the new internal-LSI
 			LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS),
@@ -1785,7 +1785,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 			map<string, list<struct nf_port_info> >pi_map_before = lsi->getNetworkFunctionsPortsInfo();
 			map<string, list<struct nf_port_info> >::iterator pi_it_before = pi_map_before.find(nf->getId()); //pi_it_before==pi_map.end() in case of a new NF
 
-			lsi->addNF(nf->getId()/*first*/, /*nf->second*/ nf_ports_id_list, computeController->getNFSelectedImplementation(nf->getId()/*first*/)->getPortTypes());
+			lsi->addNF(nf->getId()/*first*/, /*nf->second*/ nf_ports_id_list, computeController->getNFSelectedImplementation(nf->getId()/*first*/)->getPortTechnologies());
 
 			//after
 			map<string, list<struct nf_port_info> >pi_map = lsi->getNetworkFunctionsPortsInfo();//for each network function, retrieve a list of "port name, port type"

@@ -52,9 +52,9 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj)
 	//The following parameters are mandatory in the template
 	bool foundPorts = false;
 	bool foundCapability = false;
-	bool foundImplementations = false;
+	bool foundVnfType = false;
 	bool foundURI = false;
-	bool validPortType = false;
+	bool validPortTechnology = false;
 	bool foundTypeURI = false;
 
 	ULOG_DBG("Starting iteration on elements of the template");
@@ -91,7 +91,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj)
 		{
 			ULOG_DBG("Parsing 'vnf-type'");
 			temp.setVnfType(value.getString());//FIXME-ENNIO: check that the VNF type is valid, as we already do for the port technology.
-			foundImplementations = true;	//FIXME-ENNIO: why do you talk about implementation, and not vnf-type?
+			foundVnfType = true;
 		}
 		else if(name == "uri-type"){
 			ULOG_DBG("Parsing 'uri-type'");
@@ -120,7 +120,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj)
 			for( unsigned int i = 0; i < ports_array.size(); ++i)
 			{
 				Object port = ports_array[i].getObject();
-				validPortType=parsePort(temp,port);
+				validPortTechnology=parsePort(temp,port);
 			}
 		}
 	}//end iteration on the answer
@@ -128,7 +128,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj)
 	ULOG_DBG("Iteration on elements of the template terminated");
 
 	//Check that those fields manatory for each NF implementation are set
-	if(!foundCapability || !foundImplementations || !foundURI || !foundPorts || !validPortType || !foundTypeURI)
+	if(!foundCapability || !foundVnfType || !foundURI || !foundPorts || !validPortTechnology || !foundTypeURI)
 	{
 		ULOG_WARN("Key \"functional-capability\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"uri-type\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
 		throw new std::string("Key \"functional-capability\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"uri-type\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
@@ -143,7 +143,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj)
 }
 
 bool Template_Parser::parsePort(NFtemplate& temp, Object obj) {
-	PortType port_type = UNDEFINED_PORT;
+	PortTechnology port_technology = UNDEFINED_PORT;
 	Port port;
 	for( Object::const_iterator port_el = obj.begin(); port_el != obj.end(); ++port_el ) {
 		const string &pel_name = port_el->first;
@@ -154,14 +154,14 @@ bool Template_Parser::parsePort(NFtemplate& temp, Object obj) {
 		}
 		else if (pel_name == "technology") {
 			ULOG_DBG("Parsing 'technology'");
-			port_type = portTypeFromString(pel_value.getString()); //FIXME-ENNIO: why do you talk about port type and not port technology?
-			if (port_type == INVALID_PORT) {
+			port_technology = portTechnologyFromString(pel_value.getString());
+			if (port_technology == INVALID_PORT) {
 				ULOG_WARN("Invalid port type \"%s\" for implementation port", pel_value.getString().c_str());
 				return false;
 			}
 		}
 	}
-	port.setTechnology(port_type);
+	port.setTechnology(port_technology);
 	temp.addPort(port);
 	return true;
 

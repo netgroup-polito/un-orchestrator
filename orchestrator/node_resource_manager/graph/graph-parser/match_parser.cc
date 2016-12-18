@@ -9,7 +9,7 @@ void MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 {
 	bool foundOne = false;
 	bool foundEndPointID = false, foundProtocolField = false, definedInCurrentGraph = false;
-	enum port_type { VNF_PORT_TYPE, EP_PORT_TYPE, EP_INTERNAL_TYPE };
+	enum port_technology { VNF_PORT_TYPE, EP_PORT_TYPE, EP_INTERNAL_TYPE };
 
 	for(Object::const_iterator i = match_element.begin(); i != match_element.end(); i++)
 	{
@@ -40,7 +40,7 @@ void MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			char delimiter[] = ":";
 		 	char * pnt;
 
-			port_type p_type = VNF_PORT_TYPE;
+			port_technology p_type = VNF_PORT_TYPE;
 
 			char tmp[BUFFER_SIZE];
 			strcpy(tmp,(char *)port_in_name_tmp);
