@@ -67,10 +67,10 @@ bool Docker::startNF(StartNFIn sni)
 {
 	uint64_t lsiID = sni.getLsiID();
 	string nf_id = sni.getNfId();
-
-	string uri_image = description->getURI();
-    string nf_name = description->getCapability();
-    string uri_type = description->getURIType();
+	NFtemplate *temp = description->getTemplate();
+	string uri_image = temp->getURI();
+    string nf_name = temp->getCapability();
+    string uri_type = temp->getURIType();
 	map<unsigned int, string> namesOfPortsOnTheSwitch = sni.getNamesOfPortsOnTheSwitch();
 	unsigned int n_ports = namesOfPortsOnTheSwitch.size();
 

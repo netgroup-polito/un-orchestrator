@@ -107,7 +107,7 @@ private:
 	*
 	*/
 
-	bool addImplementations(std::list<NFtemplate>& templates, string nf_id);
+	bool addImplementations(std::list<NFtemplate*>& templates, string nf_id);
     /**
 	*	@brief: download image for specific NF
 	*

@@ -74,9 +74,18 @@ bool Libvirt::startNF(StartNFIn sni)
 	virDomainPtr dom = NULL;
 	char domain_name[64];
 	const char *xmlconfig = NULL;
+	NFtemplate *temp = description->getTemplate();
 
+	if(description->getTemplate()->getCores() == 0){
+		ULOG_ERR("Core numbers have not been found in the template for implementation kvm");
+		return false;
+	}
+	if(description->getTemplate()->getPlatform() == ""){
+		ULOG_ERR("Platform type has not been found in the template for implementation kvm");
+		return false;
+	}
 	string nf_name = sni.getNfId();
-	string uri_image = description->getURI();
+	string uri_image = temp->getURI();
 
 	ULOG_DBG_INFO("Loading base libvirt template '%s'...",BASE_LIBVIRT_TEMPLATE);
 

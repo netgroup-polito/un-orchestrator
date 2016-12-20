@@ -2,6 +2,7 @@
 
 using namespace std;
 NFtemplate::NFtemplate() {
+	this->cores=0;
 }
 
 NFtemplate::~NFtemplate() {
@@ -27,7 +28,7 @@ void NFtemplate::setURIType(string uriType) {
 	this->uriType = uriType;
 }
 
-void NFtemplate::setVnfType(string type) {
+void NFtemplate::setVnfType(nf_t type) {
 	this->vnfType = type;
 }
 
@@ -55,7 +56,7 @@ string NFtemplate::getURI() {
 	return this->uri;
 }
 
-string NFtemplate::getVnfType() {
+nf_t NFtemplate::getVnfType() {
 	return this->vnfType;
 }
 
@@ -78,3 +79,5 @@ string NFtemplate::getURIType() {
 string NFtemplate::getPlatform() {
 	return this->platformType;
 }
+
+

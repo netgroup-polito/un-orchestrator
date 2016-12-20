@@ -1,6 +1,6 @@
 #include <string>
 #include <cstring>
-#include "../description.h"
+#include "../port_technology.h"
 
 using namespace std;
 
@@ -18,3 +18,4 @@ public:
 	void  splitPortsRangeInInt(int& begin, int& end);  //it splits portsRange in integers,so i can add in a map each port with the appropriate technology through a loop
 
 };
+

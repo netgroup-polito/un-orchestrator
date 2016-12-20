@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "nf_type.h"
 #include "startNF_in.h"
 #include "updateNF_in.h"
 #include "stopNF_in.h"

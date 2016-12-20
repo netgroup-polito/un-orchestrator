@@ -121,6 +121,7 @@ bool Native::isSupported(Description& descr) {
 }
 bool Native::updateNF(UpdateNFIn uni)
 {
+	NFtemplate * temp = description->getTemplate();
 	uint64_t lsiID = uni.getLsiID();
 	std::string nf_name = uni.getNfId();
 	map<unsigned int, string> namesOfPortsOnTheSwitch = uni.getNamesOfPortsOnTheSwitch();
@@ -138,7 +139,7 @@ bool Native::updateNF(UpdateNFIn uni)
 		return false;
 	}*/
 
-	std::string uri_script = description->getURI();
+	std::string uri_script = temp->getURI();
 	uri << uri_script;
 
 	std::stringstream command;
@@ -168,7 +169,7 @@ bool Native::startNF(StartNFIn sni) {
 	std::string nf_name = sni.getNfId();
 	map<unsigned int, string> namesOfPortsOnTheSwitch = sni.getNamesOfPortsOnTheSwitch();
 	unsigned int n_ports = namesOfPortsOnTheSwitch.size();
-
+	NFtemplate *temp = description->getTemplate();
 	std::stringstream uri;
 
 	/*try {
@@ -179,7 +180,7 @@ bool Native::startNF(StartNFIn sni) {
 		ULOG_DBG_INFO("exception %s", e.what());
 		return false;
 	}*/
-	std::string uri_script = description->getURI();
+	std::string uri_script = temp->getURI();
 	uri << uri_script;
 
 	std::stringstream command;

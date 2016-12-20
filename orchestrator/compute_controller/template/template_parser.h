@@ -21,7 +21,7 @@ public:
 	* 	@param checkVnfTemplate:   flag which allows to check if field vnf_template is in NF-FG
 	*/
 
-	static bool parse(std::list<NFtemplate>& templates,string data,bool checkVnfTemplate);
+	static bool parse(std::list<NFtemplate*>& templates,string data,bool checkVnfTemplate);
 
 public:
 	/**
@@ -30,7 +30,7 @@ public:
 	 * 	@param obj:   object containing the json representing a template
 	 */
 
-	static void setTemplateFromJson(NFtemplate & temp,Object obj);
+	static void setTemplateFromJson(NFtemplate* temp,Object obj);
 
 	/**
 	* 	@brief: It adds in a template object an object representing a port
@@ -38,7 +38,7 @@ public:
 	* 	@param port:  port to add in the template
 	*/
 
-	static bool parsePort(NFtemplate& temp,Object port);
+	static bool parsePort(NFtemplate* temp,Object port);
 
 	/**
 	* 	@brief: It adds in a template object an object representing a CPUrequirements
@@ -46,5 +46,6 @@ public:
 	* 	@param CPUrequirements:  CPURequirements to add in the template
 	*/
 
-	static bool parseCPUrequirements(NFtemplate& temp,Object CPUrequirements);
+	static bool parseCPUrequirements(NFtemplate* temp,Object CPUrequirements);
 };
+

@@ -7,52 +7,19 @@ bool operator==(const nf_port_info& lhs, const nf_port_info& rhs)
 
 
 
-Description::Description(nf_t type, string uri, std::map<unsigned int, PortTechnology>& port_technologies) :
-        type(type), uri(uri), port_technologies(port_technologies)
-{
-    supported = false;
-}
-
-Description::Description(string type, string uri, std::map<unsigned int, PortTechnology>& port_technologies) :
-		 uri(uri), port_technologies(port_technologies)
+Description::Description(NFtemplate * temp,std::map<unsigned int, PortTechnology>& port_technologies) :
+	 temp(temp), port_technologies(port_technologies)
 {
 	supported = false;
-    this->type=stringToType(type);
-
-    return;
-}
-
-Description::Description(string type, string uri,string capability,string uri_type ,std::map<unsigned int, PortTechnology>& port_technologies) :
-	 uri(uri) ,capability(capability),uri_type(uri_type), port_technologies(port_technologies)
-{
-	supported = false;
-    this->type = stringToType(type);
 	return;
 }
 
 Description::~Description(){}
 
-nf_t Description::getType() const
-{
-	return type;
+NFtemplate* Description::getTemplate() {
+	return temp;
 }
 
-string Description::getURI() const
-{
-	return uri;
-}
-
-void Description::setURI(string uri) {
-	this->uri=uri;
-}
-
-string Description::getURIType() const {
-	return uri_type;
-}
-
-string Description::getCapability() const {
-	return capability;
-}
 
 bool Description::isSupported() {
 	return supported;
@@ -112,7 +79,7 @@ std::string portTechnologyToString(PortTechnology t)
 
 
 
-nf_t stringToType(const std::string& type){
+nf_t stringToVnfType(const std::string& type){
 
     if(!type.compare("dpdk"))
     {
@@ -139,6 +106,31 @@ nf_t stringToType(const std::string& type){
 
     //[+] Add here other implementations for the execution environment
 
+}
 
 
+
+string vnfTypeToString(nf_t type)
+{
+#if defined(ENABLE_DPDK_PROCESSES) || defined(VSWITCH_IMPLEMENTATION_XDPD)
+	if(type == DPDK)
+			return string("dpdk");
+#endif
+#if defined(ENABLE_DOCKER) || defined(VSWITCH_IMPLEMENTATION_XDPD)
+	if(type == DOCKER)
+			return string("docker");
+#endif
+#ifdef ENABLE_KVM
+	if(type == KVM)
+			return string("virtual-machine-kvm");
+#endif
+#ifdef ENABLE_NATIVE
+	if(type == NATIVE)
+			return string("native");
+#endif
+
+	//[+] Add here other implementations for the execution environment
+
+	assert(0);
+	return "";
 }

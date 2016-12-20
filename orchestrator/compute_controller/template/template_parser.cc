@@ -3,7 +3,7 @@
 
 static const char LOG_MODULE_NAME[] = "Template-Parser";
 
-bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool checkSingleTemplate) {
+bool Template_Parser::parse(std::list<NFtemplate*>& templates, string answer,bool checkSingleTemplate) {
 	ULOG_DBG_INFO("Starting to parse the NF template");
 	try
 	{
@@ -13,7 +13,7 @@ bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool
 		obj = json.getObject();
 		//single template
 		if(checkSingleTemplate) {
-			NFtemplate temp;
+			NFtemplate* temp = new NFtemplate();
 			setTemplateFromJson(temp,obj);
 			templates.push_back(temp);
 		}
@@ -26,7 +26,7 @@ bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool
 				{
 					Object description = descriptions[i].getObject();
 					for( Object::const_iterator element = description.begin(); element != description.end(); ++element ) {
-						NFtemplate temp;
+						NFtemplate* temp = new NFtemplate();
 						const string &name = element->first;
 						const Value & value = element->second;
 						if(name == "template"){  //it can be also id , but we re not interested
@@ -47,7 +47,7 @@ bool Template_Parser::parse(std::list<NFtemplate>& templates, string answer,bool
 	return true;
 }
 
-void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj)
+void Template_Parser::setTemplateFromJson(NFtemplate *temp,Object obj)
 {
 	//The following parameters are mandatory in the template
 	bool foundPorts = false;
@@ -67,35 +67,42 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj)
 		{
 			//Optional field
 			ULOG_DBG("Parsing 'name'");
-			temp.setName(value.getString()) ;
+			temp->setName(value.getString()) ;
 		}
 		if(name == "functional-capability")
 		{
 			ULOG_DBG("Parsing 'functional-capability'");
 			foundCapability = true;
-			temp.setCapability(value.getString()) ;
+			temp->setCapability(value.getString()) ;
 		}
 		else if(name == "expandable")
 		{
 			//Optional field
 			ULOG_DBG("Parsing 'expandable'");
-			temp.setExpandable(value.getBool());
+			temp->setExpandable(value.getBool());
 		}
 		else if(name == "uri")
 		{
 			ULOG_DBG("Parsing 'uri'");
-			temp.setURI(value.getString());
+			temp->setURI(value.getString());
 			foundURI = true;
 		}
 		else if(name == "vnf-type")
 		{
 			ULOG_DBG("Parsing 'vnf-type'");
-			temp.setVnfType(value.getString());//FIXME-ENNIO: check that the VNF type is valid, as we already do for the port technology.
-			foundVnfType = true;
+			if(stringToVnfType(value.getString()) != UNDEFINED){
+				temp->setVnfType(stringToVnfType(value.getString()));//FIXME-ENNIO: check that the VNF type is valid, as we already do for the port technology.
+				foundVnfType = true;
+			}
+			else{
+				ULOG_WARN("Invalid vnf type \"%s\"", value.getString().c_str());
+				throw new std::string("Invalid vnf type \"%s\"", value.getString().c_str());
+			}
+
 		}
 		else if(name == "uri-type"){
 			ULOG_DBG("Parsing 'uri-type'");
-			temp.setURIType(value.getString()); //FIXME-ENNIO: check that the URI type is valide. Define somewhere an enum that can assume the allowed values.
+			temp->setURIType(value.getString()); //FIXME-ENNIO: check that the URI type is valide. Define somewhere an enum that can assume the allowed values.
 												//this enum should also be used in the compute controller in order to decide how to download a VNF
 			foundTypeURI = true;
 		}
@@ -133,16 +140,9 @@ void Template_Parser::setTemplateFromJson(NFtemplate &temp,Object obj)
 		ULOG_WARN("Key \"functional-capability\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"uri-type\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
 		throw new std::string("Key \"functional-capability\", and/or key \"vnf-type\", and/or key \"uri\" and/or key \"uri-type\" and/or key \"ports\" and/or valid ports has not been found in the answer ");
 	}
-
-#if 0
-	//FIXME-ENNIO: this check must be done in the DPDK plugin. Similarly, checks needed to KVM must be done in the KVM plugin
-	if(!foundCores && temp.getVnfType() == "dpdk"){//FIXME-ENNIO: don't use the string "dpdk". in compute_controller/nf_type.h there is an enum that defined the types
-		throw new std::string("Core numbers have not been found in the template for implementation dpdk");
-	}
-#endif
 }
 
-bool Template_Parser::parsePort(NFtemplate& temp, Object obj) {
+bool Template_Parser::parsePort(NFtemplate* temp, Object obj) {
 	PortTechnology port_technology = UNDEFINED_PORT;
 	Port port;
 	for( Object::const_iterator port_el = obj.begin(); port_el != obj.end(); ++port_el ) {
@@ -162,12 +162,12 @@ bool Template_Parser::parsePort(NFtemplate& temp, Object obj) {
 		}
 	}
 	port.setTechnology(port_technology);
-	temp.addPort(port);
+	temp->addPort(port);
 	return true;
 
 }
 
-bool Template_Parser::parseCPUrequirements(NFtemplate& temp, Object CPUrequirements) {
+bool Template_Parser::parseCPUrequirements(NFtemplate* temp, Object CPUrequirements) {
 	for( Object::const_iterator iterator_CPUrequirements = CPUrequirements.begin(); iterator_CPUrequirements != CPUrequirements.end(); ++iterator_CPUrequirements )
 	{
 		const string& name  = iterator_CPUrequirements->first;
@@ -189,7 +189,7 @@ bool Template_Parser::parseCPUrequirements(NFtemplate& temp, Object CPUrequireme
 					const string& socket_elementName  = iterator_socket->first;
 					const Value&  socket_value = iterator_socket->second;
 					if(socket_elementName== "coreNumbers"){
-						temp.setCores(socket_value.getInt());
+						temp->setCores(socket_value.getInt());
 						break;
 					}
 				}
@@ -198,7 +198,7 @@ bool Template_Parser::parseCPUrequirements(NFtemplate& temp, Object CPUrequireme
 		else if(name == "platformType")
 		{
 			ULOG_DBG("Parsing 'platformType'");
-			temp.setPlatform(value.getString());
+			temp->setPlatform(value.getString());
 		}
 	}
 	return true;

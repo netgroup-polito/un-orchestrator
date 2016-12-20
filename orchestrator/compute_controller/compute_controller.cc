@@ -55,7 +55,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescr
 	try
 	{
 		string translation;
-		list<NFtemplate> templates;
+		list<NFtemplate *> templates;
 		ULOG_DBG_INFO("Considering the NF with ID \"%s\"",vnfDescription.getId().c_str());
 
 		char ErrBuf[BUFFER_SIZE];
@@ -143,7 +143,9 @@ nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescr
 			ULOG_ERR("An error occurred while parsing the VNF template associated with the NF with ID: \"%s\"",vnfDescription.getId().c_str());
 			return NFManager_SERVER_ERROR;
 		}
-		addImplementations(templates,vnfDescription.getId());
+		if(!addImplementations(templates,vnfDescription.getId())){
+			return NFManager_NO_NF;
+		}
 
 	}
 	catch (std::exception& e)
@@ -170,7 +172,7 @@ void ComputeController::checkSupportedDescriptions() {
 		list<Description*>::iterator descr;
 		for(descr = descriptions.begin(); descr != descriptions.end(); descr++){
 
-			switch((*descr)->getType()){
+			switch((*descr)->getTemplate()->getVnfType()){
 
 #ifdef ENABLE_DOCKER
 					//Manage Docker execution environment
@@ -241,7 +243,7 @@ void ComputeController::checkSupportedDescriptions() {
 					//[+] Add here other implementations for the execution environment
 
 				default:
-					ULOG_DBG_INFO("No available execution environments for description type %s", NFType::toString((*descr)->getType()).c_str());
+					ULOG_DBG_INFO("No available execution environments for description type %s", vnfTypeToString((*descr)->getTemplate()->getVnfType()).c_str());
 			}
 
 		}
@@ -250,15 +252,15 @@ void ComputeController::checkSupportedDescriptions() {
 
 }
 
-bool ComputeController::addImplementations(list<NFtemplate>& templates, string nf_id){ //TODO modificare
+bool ComputeController::addImplementations(list<NFtemplate *>& templates, string nf_id){
 	map<unsigned int, PortTechnology> port_technologies; // port_id -> port_technology
 	list<Description*> possibleDescriptions;
 	string capability ;
-	for(list<NFtemplate>::iterator temp = templates.begin(); temp != templates.end(); temp++){
-		capability = temp->getCapability(); //it s the same for all
-		if (temp->getVnfType() == "dpdk") {
+	for(list<NFtemplate*>::iterator temp = templates.begin(); temp != templates.end(); temp++){
+		capability = (*temp)->getCapability(); //it s the same for all
+		if ((*temp)->getVnfType() == DPDK) {
 #ifdef ENABLE_DPDK_PROCESSES
-			for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
+			for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 				int begin, end;
 				port->splitPortsRangeInInt(begin, end);
 				for(int i = begin;i<=end;i++){
@@ -266,11 +268,11 @@ bool ComputeController::addImplementations(list<NFtemplate>& templates, string n
 					port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, DPDKR_PORT));
 				}
 			}
-			possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_technologies)));
+			possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(*temp,port_technologies)));
 #endif
-		} else if (temp->getVnfType() == "native") {
+		} else if ((*temp)->getVnfType() == NATIVE) {
 #ifdef ENABLE_NATIVE
-			for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
+			for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
 					for(int i = begin;i<=end;i++){
@@ -278,13 +280,13 @@ bool ComputeController::addImplementations(list<NFtemplate>& templates, string n
 						port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, VETH_PORT));
 					}
 			}
-			possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(temp->getVnfType(),temp->getURI(),temp->getCapability(),temp->getURIType(),port_technologies)));
+			possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(*temp,port_technologies)));
 #endif
 		}
 
-		if (temp->getVnfType() == "docker") {
+		if ((*temp)->getVnfType() == DOCKER) {
 #ifdef ENABLE_DOCKER
-				for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
+				for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
 					for (int i = begin; i <= end; i++) {
@@ -292,27 +294,27 @@ bool ComputeController::addImplementations(list<NFtemplate>& templates, string n
 						port_technologies.insert(map<unsigned int, PortTechnology> ::value_type(i, VETH_PORT));
 					}
 				}
-				Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_technologies);
+				Description *descr = new Description(*temp, port_technologies);
 				possibleDescriptions.push_back(descr);
 #endif
 		}
-		if (temp->getVnfType() == "virtual-machine-kvm") {
+		if ((*temp)->getVnfType() == KVM) {
 #ifdef ENABLE_KVM
-				for(list<Port>::iterator port = temp->getPorts().begin(); port != temp->getPorts().end(); port++) {
+				for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
 					for (int i = begin; i <= end; i++) {
 						port_technologies.insert(map <unsigned int, PortTechnology> ::value_type(i, port->getTechnology()));
 					}
 				}
-				Description *descr = new Description(temp->getVnfType(), temp->getURI(),temp->getCapability(),temp->getURIType(), port_technologies);
+				Description *descr = new Description(*temp, port_technologies);
 				possibleDescriptions.push_back(descr);
 #endif
 		}
 		//[+] insert other implementations
 	}
 
-	NF *new_nf = new NF(capability);
+
 	assert(possibleDescriptions.size() != 0);
 
 	if(possibleDescriptions.size() == 0)
@@ -321,6 +323,7 @@ bool ComputeController::addImplementations(list<NFtemplate>& templates, string n
 		return false;
 	}
 
+	NF *new_nf = new NF(capability);
 	for(list<Description*>::iterator impl = possibleDescriptions.begin(); impl != possibleDescriptions.end(); impl++)
 		new_nf->addDescription(*impl);
 
@@ -341,22 +344,21 @@ bool ComputeController::downloadImage(Description * description,string vnfImageP
 	char tmp[HASH_SIZE] ;
 	strcpy(tmp, "");
 	strcpy(hash_uri, "");
-	SHA256((const unsigned char *) description->getURI().c_str(), strlen(description->getURI().c_str()), hash_token);
+	SHA256((const unsigned char *) description->getTemplate()->getURI().c_str(), strlen(description->getTemplate()->getURI().c_str()), hash_token);
 
 	for (int i = 0; i < HASH_SIZE; i++) {
 		sprintf(tmp, "%.2x", hash_token[i]);
 		strcat(hash_uri, tmp);
 	}
-	command << getenv("un_script_path") << PULL_NF << " " << description->getCapability() << " " << description->getURI() << " "
+	command << getenv("un_script_path") << PULL_NF << " " << description->getTemplate()->getCapability() << " " << description->getTemplate()->getURI() << " "
 			<< hash_uri << " " << vnfImagePath;
 	ULOG_DBG_INFO("Executing command \"%s\"",command.str().c_str());
 	int retVal = system(command.str().c_str());
 	retVal = retVal >> 8;
 	if (retVal == 0)
 		return false;
-	pathImage << vnfImagePath << "/" << description->getCapability() << "_" << hash_uri ;
-	description->setURI(pathImage.str());
-
+	pathImage << vnfImagePath << "/" << description->getTemplate()->getCapability() << "_" << hash_uri ;
+	description->getTemplate()->setURI(pathImage.str());
 	ULOG_DBG_INFO("NF image properly downloaded");
 
 	return true;
@@ -376,7 +378,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 		if((*descr)->isSupported()){
 
-			switch((*descr)->getType()){
+			switch((*descr)->getTemplate()->getVnfType()){
 
 #ifdef ENABLE_DOCKER
 				//Manage Docker execution environment
@@ -386,7 +388,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				dockerManager->setDescription(*descr);
 				selected = true;
 				ULOG_DBG_INFO("Docker description has been selected.");
-				if((*descr)->getURIType() == "remote-file"){
+				if((*descr)->getTemplate()->getURIType() == "remote-file"){
 					downloadSuccess=downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
 					if(!downloadSuccess){
@@ -408,7 +410,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("DPDK description has been selected.");
-				if((*descr)->getURIType() == "remote-file"){
+				if((*descr)->getTemplate()->getURIType() == "remote-file"){
 					downloadSuccess = downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
 					if(!downloadSuccess){
@@ -432,7 +434,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("KVM description has been selected.");
-				if((*descr)->getURIType() == "remote-file"){//FIXME-ENNIO: compare with an enum that can assume the allowed values
+				if((*descr)->getTemplate()->getURIType() == "remote-file"){//FIXME-ENNIO: compare with an enum that can assume the allowed values
 					downloadSuccess = downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
 					if(!downloadSuccess){
@@ -458,7 +460,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 					selected = true;
 					ULOG_DBG_INFO("Native description has been selected.");
-					if((*descr)->getURIType() == "remote-file"){
+					if((*descr)->getTemplate()->getURIType() == "remote-file"){
 						downloadSuccess = downloadImage(*descr,vnf_images_path);
 						assert(downloadSuccess);
 						if(!downloadSuccess){
@@ -736,7 +738,7 @@ void ComputeController::printInfo(int graph_id)
 	for(map<string, NF*>::iterator nf = nfs.begin(); nf != nfs.end(); nf++)
 	{
 		nf_t type = nf->second->getSelectedDescription()->getNFType();
-		string str = NFType::toString(type);
+		string str = vnfTypeToString(type);
 		if(graph_id == 2)
 			coloredLogger(ANSI_COLOR_BLUE,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tID: '%s'\t-\tType: %s\t-\tStatus: %s",nf->second->getName().c_str(),(nf->first.length()<=7)? "\t" : "",nf->first.c_str(), str.c_str(),(nf->second->getRunning())?"running":"stopped");
 		else if(graph_id == 3)

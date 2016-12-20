@@ -1,4 +1,8 @@
+#ifndef TEMPLATE_H_
+#define TEMPLATE_H_ 1
 #pragma once
+
+#include "../nf_type.h"
 #include "port.h"
 #include <string>
 #include <list>
@@ -14,7 +18,7 @@
 	"uri-type": "remote-file",
 	"ports": [
 		{
-			"position": "0-2",
+			"position": "1-2",
 			"label": "L2Port",
 			"min": "1",
 			"ipv4-config": "none",
@@ -47,10 +51,9 @@ private:
 	string capability;
 	string uri;
 	string uriType;
-	string vnfType;
+	nf_t vnfType;
 	bool expandable;
 	int memorySize;
-	int coreNumbers;
 	string platformType;
 	list<Port> ports;
 	int cores;
@@ -62,12 +65,12 @@ public:
 	string getName();
 	void setCapability(string capability);
 	string getCapability();
+	nf_t getVnfType();
 	void setExpandable(bool expandable);
 	bool getExpandable();
 	void setURI(string uri);
 	string getURI();
-	void setVnfType(string type);
-	string getVnfType();
+	void setVnfType(nf_t type);
 	void addPort(Port port);
 	list<Port>& getPorts();
 	void setCores(int cores);
@@ -77,3 +80,5 @@ public:
 	string getURIType();
 	void setURIType(string uriType);
 };
+
+#endif

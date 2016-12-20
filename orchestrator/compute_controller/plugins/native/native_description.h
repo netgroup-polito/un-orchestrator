@@ -14,8 +14,7 @@ private:
 public:
 	std::list<std::string> getRequirements() const;
 	std::string getLocation() const;
-	NativeDescription(nf_t type, std::string uri, std::map<unsigned int, PortTechnology>& port_technologies);
-	NativeDescription(std::string type, std::string uri,std::string nf_name,std::string uri_type, std::map<unsigned int, PortTechnology>& port_technologies);
+	NativeDescription(NFtemplate *temp, std::map<unsigned int, PortTechnology>& port_technologies);
 	~NativeDescription();
 };
 
