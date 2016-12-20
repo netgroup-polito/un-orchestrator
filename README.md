@@ -50,7 +50,7 @@ select one of them based on such internal policies.
 
 The datastore can be installed either locally or on a remote server.
 
-## Virtualizer
+## Virtualizer - DEPRECATED
 The Virtualizer is a module that enables the un-orchestrator to interact with the upper layers of the Unify architecture, by means of the NF-FG defined in UNIFY. It in fact converts that NF-FG in the native representation accepted by the un-orchestrator.
 
 The virtualizer operates as follows:
@@ -61,6 +61,13 @@ The virtualizer operates as follows:
 
 This module is only required to integrate the un-orchestrator with the upper layers of the Unify architecture.
 Instead, it is not needed when the un-orchestrator is controller through its native interface; in the case, the native NF-FG specification must be used.
+
+**WARNING: 
+
+The virtualizer is deprecated; if you are interested in using it, you have to switch to the tag *virtualizer-working* through the following commands:
+
+    $ cd [un-orchestrator]
+    $ git checkout tags/virtualizer-working
 
 ## NFs
 This folder contains some examples of virtual network functions that are known to work on the UN.
