@@ -52,8 +52,7 @@ string ComputeController::buildUrl(highlevel::VNFs vnfDescription) {
 
 nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescription)
 {
-	try
-	{
+
 		string translation;
 		list<NFtemplate *> templates;
 		ULOG_DBG_INFO("Considering the NF with ID \"%s\"",vnfDescription.getId().c_str());
@@ -147,12 +146,6 @@ nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescr
 			return NFManager_NO_NF;
 		}
 
-	}
-	catch (std::exception& e)
-	{
-		ULOG_ERR("Exception: %s",e.what());
-		return NFManager_SERVER_ERROR;
-	}
 
 	return NFManager_OK;
 }
@@ -388,7 +381,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				dockerManager->setDescription(*descr);
 				selected = true;
 				ULOG_DBG_INFO("Docker description has been selected.");
-				if((*descr)->getTemplate()->getURIType() == "remote-file"){
+				if((*descr)->getTemplate()->getURIType() == REMOTE_FILE){
 					downloadSuccess=downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
 					if(!downloadSuccess){
@@ -410,7 +403,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("DPDK description has been selected.");
-				if((*descr)->getTemplate()->getURIType() == "remote-file"){
+				if((*descr)->getTemplate()->getURIType() == REMOTE_FILE){
 					downloadSuccess = downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
 					if(!downloadSuccess){
@@ -434,7 +427,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 				selected = true;
 				ULOG_DBG_INFO("KVM description has been selected.");
-				if((*descr)->getTemplate()->getURIType() == "remote-file"){//FIXME-ENNIO: compare with an enum that can assume the allowed values
+				if((*descr)->getTemplate()->getURIType() == REMOTE_FILE){
 					downloadSuccess = downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
 					if(!downloadSuccess){
@@ -460,7 +453,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 
 					selected = true;
 					ULOG_DBG_INFO("Native description has been selected.");
-					if((*descr)->getTemplate()->getURIType() == "remote-file"){
+					if((*descr)->getTemplate()->getURIType() == REMOTE_FILE){
 						downloadSuccess = downloadImage(*descr,vnf_images_path);
 						assert(downloadSuccess);
 						if(!downloadSuccess){

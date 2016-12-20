@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#FIXME-ENNIO: why is this script here? Why is it related to the template?
+
 
 #Brief: pull a NF from a remote repository and run it. 
 

@@ -91,20 +91,26 @@ void Template_Parser::setTemplateFromJson(NFtemplate *temp,Object obj)
 		{
 			ULOG_DBG("Parsing 'vnf-type'");
 			if(stringToVnfType(value.getString()) != UNDEFINED){
-				temp->setVnfType(stringToVnfType(value.getString()));//FIXME-ENNIO: check that the VNF type is valid, as we already do for the port technology.
+				temp->setVnfType(stringToVnfType(value.getString()));
 				foundVnfType = true;
 			}
 			else{
-				ULOG_WARN("Invalid vnf type \"%s\"", value.getString().c_str());
+				ULOG_ERR("Invalid vnf type \"%s\"", value.getString().c_str());
 				throw new std::string("Invalid vnf type \"%s\"", value.getString().c_str());
 			}
 
 		}
 		else if(name == "uri-type"){
 			ULOG_DBG("Parsing 'uri-type'");
-			temp->setURIType(value.getString()); //FIXME-ENNIO: check that the URI type is valide. Define somewhere an enum that can assume the allowed values.
-												//this enum should also be used in the compute controller in order to decide how to download a VNF
-			foundTypeURI = true;
+			if(stringToUriType(value.getString()) != UNDEFINED_URITYPE){
+				temp->setURIType(stringToUriType(value.getString()));
+				foundTypeURI = true;
+			}
+			else{
+				ULOG_ERR("Invalid uri type \"%s\"", value.getString().c_str());
+				throw new std::string("Invalid uri type \"%s\"", value.getString().c_str());
+			}
+
 		}
 		else if(name == "CPUrequirements")
 		{

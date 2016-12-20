@@ -3,6 +3,7 @@
 #pragma once
 
 #include "../nf_type.h"
+#include "../uri_type.h"
 #include "port.h"
 #include <string>
 #include <list>
@@ -50,7 +51,7 @@ private:
 	string name;
 	string capability;
 	string uri;
-	string uriType;
+	uri_t uriType;
 	nf_t vnfType;
 	bool expandable;
 	int memorySize;
@@ -77,8 +78,8 @@ public:
 	int getCores();
 	void setPlatform(string platform);
 	string getPlatform();
-	string getURIType();
-	void setURIType(string uriType);
+	uri_t getURIType();
+	void setURIType(uri_t uriType);
 };
 
 #endif

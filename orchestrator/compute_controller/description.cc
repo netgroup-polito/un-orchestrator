@@ -38,6 +38,17 @@ PortTechnology Description::getPortTechnology(unsigned int port_id) const
 	return UNDEFINED_PORT;  // TODO: Should we make this INVALID_PORT to notify an error? Question is also: do we make the port specification in the NF description mandatory?
 }
 
+uri_t stringToUriType(const std::string& s){
+	if (s.compare("remote-file") == 0)
+		return REMOTE_FILE;
+	else if (s.compare("local-file") == 0)
+		return LOCAL_FILE;
+	else if (s.compare("docker-registry") == 0)
+		return DOCKER_REGISTRY;
+
+	return UNDEFINED_URITYPE;
+}
+
 PortTechnology portTechnologyFromString(const std::string& s)
 {
 	if (s.compare("ivshmem") == 0)
@@ -50,7 +61,7 @@ PortTechnology portTechnologyFromString(const std::string& s)
 	return INVALID_PORT;
 }
 
-std::string portTechnologyToString(PortTechnology t)
+string portTechnologyToString(PortTechnology t)
 {
 	switch (t) {
 	case IVSHMEM_PORT:
@@ -76,6 +87,8 @@ std::string portTechnologyToString(PortTechnology t)
 	}
 	return "INVALID";
 }
+
+
 
 
 
@@ -107,6 +120,26 @@ nf_t stringToVnfType(const std::string& type){
     //[+] Add here other implementations for the execution environment
 
 }
+
+
+string uriTypeToString(uri_t type){
+
+	switch (type) {
+		case REMOTE_FILE:
+			return "remote-file";
+			break;
+		case LOCAL_FILE:
+			return "local-file";
+			break;
+		case DOCKER_REGISTRY:
+			return "docker-registry";
+			break;
+		default:
+			break;
+	}
+	return "INVALID";
+}
+
 
 
 

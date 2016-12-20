@@ -11,6 +11,7 @@
 #include <vector>
 #include <assert.h>
 #include "port_technology.h"
+#include "uri_type.h"
 using namespace std;
 
 class NFsManager;
@@ -21,6 +22,8 @@ PortTechnology portTechnologyFromString(const std::string& port);
 string portTechnologyToString(PortTechnology port);
 nf_t stringToVnfType(const std::string& vnfType); //convert docker in the nf_t DOCKER for example
 string vnfTypeToString(nf_t vnfType);
+uri_t stringToUriType(const std::string& uriType);
+string uriTypeToString(uri_t uriType);
 struct nf_port_info
 {
 	string port_name;

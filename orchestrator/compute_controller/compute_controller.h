@@ -52,7 +52,7 @@ using namespace json_spirit;
 *	@brief: paths of the bash scripts used to manage NF
 */
 
-#define PULL_NF		"./compute_controller/template/scripts/retrieveImage.sh"
+#define PULL_NF		"./compute_controller/scripts/retrieveImage.sh"
 
 class Implementation;
 

@@ -24,7 +24,7 @@ void NFtemplate::setURI(string uri) {
 	this->uri = uri;
 }
 
-void NFtemplate::setURIType(string uriType) {
+void NFtemplate::setURIType(uri_t uriType) {
 	this->uriType = uriType;
 }
 
@@ -72,7 +72,7 @@ int NFtemplate::getCores() {
 	return this->cores;
 }
 
-string NFtemplate::getURIType() {
+uri_t NFtemplate::getURIType() {
 	return this->uriType;
 }
 
