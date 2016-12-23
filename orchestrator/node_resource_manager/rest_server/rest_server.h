@@ -74,6 +74,7 @@ private:
 	static int readGraph(struct MHD_Connection *connection, char *graphID);
 	static int readMultipleGraphs(struct MHD_Connection *connection, user_info_t *usr);
 	static int readMultipleUsers(struct MHD_Connection *connection, user_info_t *usr);
+	static int readConfiguration(struct MHD_Connection *connection);
 
 	static int doPost(struct MHD_Connection *connection, const char *url, void **con_cls, bool client_auth);
 
