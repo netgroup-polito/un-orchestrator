@@ -91,23 +91,7 @@ bool Dpdk::updateNF(UpdateNFIn uni)
 	return false;
 }
 
-string Dpdk::getCores() {
-	string cores;
-	try {
-
-		DPDKDescription& dpdkDescr = dynamic_cast<DPDKDescription&>(*description);
-		cores = dpdkDescr.getCores();
-
-	} catch (exception& e) {
-
-		/*
-		 * Bad cast
-		 * It is not a DPDK description
-		 */
-
-		ULOG_WARN("Exception %s raised! Wrong description treated as dpdk description", e.what());
-		return "";
-	}
-	return cores;
+int Dpdk::getCores() {
+	return description->getTemplate()->getCores();
 }
 

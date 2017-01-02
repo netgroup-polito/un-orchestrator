@@ -5,7 +5,7 @@
 
 #include "../../nfs_manager.h"
 #include "dpdk_constants.h"
-#include "dpdk_description.h"
+
 
 #include <string>
 #include <sstream>
@@ -24,7 +24,7 @@ public:
 	bool stopNF(StopNFIn sni);
 	bool updateNF(UpdateNFIn uni);
 
-	string getCores();
+	int getCores();
 };
 
 #endif //DPDK_H_

@@ -261,7 +261,7 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 					port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, DPDKR_PORT));
 				}
 			}
-			possibleDescriptions.push_back(dynamic_cast<Description*>(new DPDKDescription(*temp,port_technologies)));
+			possibleDescriptions.push_back(new Description(*temp,port_technologies));
 #endif
 		} else if ((*temp)->getVnfType() == NATIVE) {
 #ifdef ENABLE_NATIVE

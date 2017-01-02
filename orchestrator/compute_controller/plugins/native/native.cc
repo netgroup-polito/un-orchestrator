@@ -126,18 +126,7 @@ bool Native::updateNF(UpdateNFIn uni)
 	map<unsigned int, string> namesOfPortsOnTheSwitch = uni.getNamesOfPortsOnTheSwitch();
 	list<unsigned int> newPorts = uni.getNewPortsToAdd();
 	unsigned int n_ports = newPorts.size();
-
 	std::stringstream uri;
-
-	/*try {
-		NativeDescription& nativeDescr = dynamic_cast<NativeDescription&>(*description);
-		if(nativeDescr.getLocation() == "local")
-			uri << "file://";
-	} catch (exception& e) {
-		ULOG_DBG_INFO("exception %s", e.what());
-		return false;
-	}*/
-
 	std::string uri_script = temp->getURI();
 	uri << uri_script;
 
@@ -170,15 +159,6 @@ bool Native::startNF(StartNFIn sni) {
 	unsigned int n_ports = namesOfPortsOnTheSwitch.size();
 	NFtemplate *temp = description->getTemplate();
 	std::stringstream uri;
-
-	/*try {
-		NativeDescription& nativeDescr = dynamic_cast<NativeDescription&>(*description);
-		if(nativeDescr.getLocation() == "local")
-			uri << "file://";
-	} catch (exception& e) {
-		ULOG_DBG_INFO("exception %s", e.what());
-		return false;
-	}*/
 	std::string uri_script = temp->getURI();
 	uri << uri_script;
 

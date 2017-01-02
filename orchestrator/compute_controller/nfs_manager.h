@@ -8,7 +8,7 @@
 #include "updateNF_in.h"
 #include "stopNF_in.h"
 #include "description.h"
-//#include "plugins/dpdk/dpdk_description.h"
+
 #include <typeinfo>
 
 /**
