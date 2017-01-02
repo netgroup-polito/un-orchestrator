@@ -539,6 +539,8 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 			return readMultipleUsers(connection, usr);
 		else if (strcmp(generic_resource, BASE_URL_GROUP) == 0)
 			return readMultipleGroups(connection, usr);
+		else if (strcmp(generic_resource, URL_CONFIGURATION) == 0)
+			return readConfiguration(connection);
 
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	} else if(strcmp(method, PUT) == 0) {
@@ -1015,6 +1017,30 @@ int RestServer::readMultipleGraphs(struct MHD_Connection *connection, user_info_
 		return ret;
 	} catch (...) {
 		ULOG_ERR("An error occurred while retrieving the graph description!");
+		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
+	}
+}
+
+int RestServer::readConfiguration(struct MHD_Connection *connection) {
+
+	struct MHD_Response *response;
+	string datastoreEndpoint = gm->getVnfRepoEndpoint();
+	try {
+		Object json;
+		json["datastoreEndpoint"]=datastoreEndpoint.c_str();
+		stringstream ssj;
+		write_formatted(json, ssj );
+		string sssj = ssj.str();
+		char *aux = (char*)malloc(sizeof(char) * (sssj.length()+1));
+		strcpy(aux,sssj.c_str());
+		response = MHD_create_response_from_buffer (strlen(aux),(void*) aux, MHD_RESPMEM_PERSISTENT);
+		MHD_add_response_header (response, "Content-Type",JSON_C_TYPE);
+		MHD_add_response_header (response, "Cache-Control",NO_CACHE);
+		int ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+		MHD_destroy_response (response);
+		return ret;
+	} catch (...) {
+		ULOG_ERR("An error occurred while retrieving the configuration!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 }

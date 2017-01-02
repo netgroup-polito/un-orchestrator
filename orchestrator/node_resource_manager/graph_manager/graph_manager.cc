@@ -2926,3 +2926,10 @@ list<string> GraphManager::getRulesIDForLSITenant(highlevel::Rule rule)
 	return rulesID;
 }
 
+string GraphManager::getVnfRepoEndpoint()
+{
+	stringstream ss;
+	ss << "http://" << vnfRepoIP << ":" << vnfRepoPort;
+	return ss.str();
+}
+

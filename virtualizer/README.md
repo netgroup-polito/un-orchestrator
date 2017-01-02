@@ -1,18 +1,24 @@
-# Virtualizer
+# Virtualizer (DEPRECATED)
 
-The Virtualizer is an intermediate module sit between the un-orchestrator and the upper layers 
-of the Unify architecture. It operates as follows:
+The Virtualizer is a module that enables the un-orchestrator to interact with the upper layers of the architecture defined in the UNIFY FP7 project, by means of the NF-FG defined in that project.
+In fact, this module converts that NF-FG in the native representation accepted by the un-orchestrator.
+
+The Virtualizer operates as follows:
   * receives commands from the upper layers of the Unify architecture based on the virtualizer 
     library defined by WP3;
   * converts those commands in the formalism natively supported by the un-orchestrator
     (described in [../orchestrator/README_NF-FG.md](../orchestrator/README_NF-FG.md));
   * sends the command to the un-orchestrator through the API described in [../orchestrator/README_RESTAPI.md](../orchestrator/README_RESTAPI.md)
 
-This module is only required to integrate the un-orchestrator with the upper layers of the
-Unify architecture, hence to enable the orchestrator itself to *use* the Network Functions - 
-Forwarding Graph (NF-FG) defined in WP3, which is based on the concept of *virtualizer*.
-It is instead not needed to use the un-orchestrator in the standalone mode; in the case, the native 
-NF-FG can be used ([../orchestrator/README_NF-FG.md](../orchestrator/README_NF-FG.md)).
+This module is only required to integrate the un-orchestrator with the upper layers of the UNIFY architecture.
+Instead, it is not needed when the un-orchestrator is controller through its native interface; in the case, the native NF-FG specification ([../orchestrator/README_NF-FG.md](../orchestrator/README_NF-FG.md)) must be used.
+
+**WARNING:** 
+
+The virtualizer is deprecated; if you are interested in using it, you have to switch to the tag *virtualizer-working* through the following commands:
+
+    $ cd [un-orchestrator]
+    $ git checkout tags/virtualizer-working
 
 
 ## Required libraries

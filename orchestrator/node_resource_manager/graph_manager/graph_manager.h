@@ -134,7 +134,7 @@ private:
 	map<string,GraphInfo> tenantLSIs;
 
 	/**
-	*	Name resolver configuration parameters
+	*	Vnf repository configuration parameters
 	**/
 	string vnfRepoIP;
 	int vnfRepoPort;
@@ -294,6 +294,9 @@ public:
 	void removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *graph, LSI *lsi);
 
 	void getGraphsNames(std::list<std::string> *l);
+	
+	//Returns the ip address + port of the vnf repository
+	string getVnfRepoEndpoint();
 };
 
 
