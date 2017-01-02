@@ -80,4 +80,9 @@ string NFtemplate::getPlatform() {
 	return this->platformType;
 }
 
+list<string> NFtemplate::getRequirements(){
+	return this->requirements;
+}
+
+
 

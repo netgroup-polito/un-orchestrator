@@ -273,7 +273,7 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 						port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, VETH_PORT));
 					}
 			}
-			possibleDescriptions.push_back(dynamic_cast<Description*>(new NativeDescription(*temp,port_technologies)));
+			possibleDescriptions.push_back(new Description(*temp,port_technologies));
 #endif
 		}
 
@@ -381,7 +381,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				dockerManager->setDescription(*descr);
 				selected = true;
 				ULOG_DBG_INFO("Docker description has been selected.");
-				if((*descr)->getTemplate()->getURIType() == REMOTE_FILE){
+				if((*descr)->getTemplate()->getURIType() == REMOTE_FILE){  //other checks are in the script called by the plugin
 					downloadSuccess=downloadImage(*descr,vnf_images_path);
 					assert(downloadSuccess);
 					if(!downloadSuccess){

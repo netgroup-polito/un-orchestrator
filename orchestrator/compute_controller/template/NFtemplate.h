@@ -57,6 +57,7 @@ private:
 	int memorySize;
 	string platformType;
 	list<Port> ports;
+	list<string> requirements;
 	int cores;
 
 public:
@@ -80,6 +81,7 @@ public:
 	string getPlatform();
 	uri_t getURIType();
 	void setURIType(uri_t uriType);
+	list<string> getRequirements();
 };
 
 #endif
