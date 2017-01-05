@@ -773,11 +773,11 @@ int RestServer::readGraph(struct MHD_Connection *connection, char *graphID)
 
 	// Check whether the graph exists in the local database and in the graph manager
 	if ( (dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_GRAPH, graphID)) || (dbmanager == NULL && !gm->graphExists(graphID))) {
-		ULOG_INFO("Method GET is not supported for this resource (i.e. it does not exist)");
+		ULOG_INFO("The required resource does not exist!");
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Allow", PUT);
-		ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED,
+		ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND,
 				response);
 		MHD_destroy_response(response);
 		return ret;
