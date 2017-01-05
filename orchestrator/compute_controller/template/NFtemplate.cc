@@ -33,7 +33,7 @@ void NFtemplate::setVnfType(nf_t type) {
 }
 
 void NFtemplate::setPlatform(string platform) {
-	this->platformType = name;
+	this->platformType = platform;
 }
 
 void NFtemplate::addPort(Port port) {
