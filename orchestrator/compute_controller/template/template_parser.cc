@@ -154,7 +154,7 @@ bool Template_Parser::parsePort(NFtemplate* temp, Object obj) {
 	for( Object::const_iterator port_el = obj.begin(); port_el != obj.end(); ++port_el ) {
 		const string &pel_name = port_el->first;
 		const Value &pel_value = port_el->second;
-		if (pel_name == "position") { //FIXME-ENNIO: if the template specifies an unbounded number of ports, the UN crashes when trying to deploy the network function
+		if (pel_name == "position") { 
 			ULOG_DBG("Parsing 'position'");
 			port.setPortsRange(pel_value.getString());
 		}
