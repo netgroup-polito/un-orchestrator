@@ -142,7 +142,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescr
 			ULOG_ERR("An error occurred while parsing the VNF template associated with the NF with ID: \"%s\"",vnfDescription.getId().c_str());
 			return NFManager_SERVER_ERROR;
 		}
-		if(!addImplementations(templates,vnfDescription.getId())){
+		if(!addImplementations(templates,vnfDescription.getId(),vnfDescription.getPortsId().size())){
 			return NFManager_NO_NF;
 		}
 
@@ -245,21 +245,29 @@ void ComputeController::checkSupportedDescriptions() {
 
 }
 
-bool ComputeController::addImplementations(list<NFtemplate *>& templates, string nf_id){
+bool ComputeController::addImplementations(list<NFtemplate *>& templates, string nf_id, int number_of_ports){
 	map<unsigned int, PortTechnology> port_technologies; // port_id -> port_technology
 	list<Description*> possibleDescriptions;
-	string capability ;
+	string capability =templates.front()->getCapability(); //it s the same for all
+	int original_number_of_ports = number_of_ports;  //save the original value , so i can decrease it below to check the remaining number of ports to instantiate
 	for(list<NFtemplate*>::iterator temp = templates.begin(); temp != templates.end(); temp++){
-		capability = (*temp)->getCapability(); //it s the same for all
 		if ((*temp)->getVnfType() == DPDK) {
 #ifdef ENABLE_DPDK_PROCESSES
 			for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 				int begin, end;
 				port->splitPortsRangeInInt(begin, end);
-				for(int i = begin;i<=end;i++){
-					//In case of DPDK process, the port type is fixed
-					port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, DPDKR_PORT));
+				if(end != -1){
+					for(int i = begin;i<=end;i++){
+						//In case of DPDK process, the port type is fixed
+						port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, DPDKR_PORT));
+					}
+					number_of_ports -= (end-begin)+1;
 				}
+				else
+					for(int i = begin;i<=number_of_ports;i++){  //case UNBOUNDED
+						//In case of DPDK process, the port type is fixed
+						port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, DPDKR_PORT));
+					}
 			}
 			possibleDescriptions.push_back(new Description(*temp,port_technologies));
 #endif
@@ -268,10 +276,18 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 			for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
-					for(int i = begin;i<=end;i++){
-						//In case of native function, the port type is fixed
-						port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, VETH_PORT));
+					if(end != -1){
+						for(int i = begin;i<=end;i++){
+							//In case of native function, the port type is fixed
+							port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, VETH_PORT));
+						}
+						number_of_ports -= (end-begin)+1;
 					}
+					else //case UNBOUNDED
+						for(int i = begin;i<=number_of_ports;i++){
+							//In case of native function, the port type is fixed
+							port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, VETH_PORT));
+						}
 			}
 			possibleDescriptions.push_back(new Description(*temp,port_technologies));
 #endif
@@ -282,10 +298,21 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 				for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
-					for (int i = begin; i <= end; i++) {
-						//In case of docker, the port type is fixed
-						port_technologies.insert(map<unsigned int, PortTechnology> ::value_type(i, VETH_PORT));
+					if(end != -1){
+						for (int i = begin; i <= end; i++) {
+							//In case of docker, the port type is fixed
+							port_technologies.insert(map<unsigned int, PortTechnology> ::value_type(i, VETH_PORT));
+						}
+						number_of_ports -= (end-begin)+1;
 					}
+					else {//case UNBOUNDED
+						for (int i = begin; i <= number_of_ports; i++) {
+							//In case of docker, the port type is fixed
+							port_technologies.insert(map<unsigned int, PortTechnology> ::value_type(i, VETH_PORT));
+						}
+					}
+
+
 				}
 				Description *descr = new Description(*temp, port_technologies);
 				possibleDescriptions.push_back(descr);
@@ -296,16 +323,31 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 				for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
-					for (int i = begin; i <= end; i++) {
-						port_technologies.insert(map <unsigned int, PortTechnology> ::value_type(i, port->getTechnology()));
+					if(end != -1){
+						for (int i = begin; i <= end; i++) {
+							port_technologies.insert(map <unsigned int, PortTechnology> ::value_type(i, port->getTechnology()));
+						}
+						number_of_ports -= (end-begin) +1;
 					}
-				}
+					else
+						for (int i = begin; i <= number_of_ports; i++) {
+							port_technologies.insert(map <unsigned int, PortTechnology> ::value_type(i, port->getTechnology()));
+						}
+					}
 				Description *descr = new Description(*temp, port_technologies);
 				possibleDescriptions.push_back(descr);
 #endif
 		}
 		//[+] insert other implementations
+
+	if (original_number_of_ports > (int)port_technologies.size())
+	{
+	//TODO: when we select the implementation, we should take into account the number of ports supported by the VNF!
+	ULOG_WARN("Number of ports from (%d) graph is greater then the number of ports from NF description (%d) for VNF with id \"%s\"",number_of_ports,port_technologies.size(), nf_id.c_str());
+	return false;
 	}
+
+}
 
 
 	assert(possibleDescriptions.size() != 0);

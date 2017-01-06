@@ -29,7 +29,10 @@ void Port::splitPortsRangeInInt(int& begin, int& end){
 		if (!i)
 			begin = atoi(token.c_str());
 		else
-			end = atoi(token.c_str());
+			if(!token.compare("N"))
+				end = -1;
+			else
+				end = atoi(token.c_str());
 		i++;
 	}
 }

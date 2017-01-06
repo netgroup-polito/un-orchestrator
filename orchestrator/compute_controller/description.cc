@@ -14,7 +14,9 @@ Description::Description(NFtemplate * temp,std::map<unsigned int, PortTechnology
 	return;
 }
 
-Description::~Description(){}
+Description::~Description(){
+	delete temp;
+}
 
 NFtemplate* Description::getTemplate() {
 	return temp;

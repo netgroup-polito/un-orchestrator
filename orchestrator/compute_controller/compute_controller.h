@@ -102,12 +102,13 @@ private:
 	/**
 	*	@brief: add  implementations after the answer from VNF-Repository has been parsed
 	*
-	*	@param:	templates	list of Templates filled with data parsed
-	*	@param:	nf_id		Name of the network function whose description must be in the answer
+	*	@param:	templates		list of Templates filled with data parsed
+	*	@param:	nf_id			Name of the network function whose description must be in the answer
+	*   @param: number_of_ports number of ports in NF_FG for a VNF
 	*
 	*/
 
-	bool addImplementations(std::list<NFtemplate*>& templates, string nf_id);
+	bool addImplementations(std::list<NFtemplate*>& templates, string nf_id, int number_of_ports);
     /**
 	*	@brief: download image for specific NF
 	*

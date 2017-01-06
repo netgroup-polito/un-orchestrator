@@ -719,13 +719,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		const Description* descr = computeController->getNFSelectedImplementation(nf_id);
 		map<unsigned int, PortTechnology> nf_ports_type = descr->getPortTechnologies();  // Port types as specified by the retrieved and selected NF implementation
 
-		if (nf_ports.size() > nf_ports_type.size())
-		{
-			//TODO: when we select the implementation, we should take into account the number of ports supported by the VNF!
-			ULOG_WARN("Number of ports from (%d) graph is greater then the number of ports from NF description (%d) for VNF with id \"%s\"",nf_ports.size(),nf_ports_type.size(), nf_id.c_str());
-			return false;
-		}
-
 		ULOG_DBG_INFO("NF with id \"%s\" selected implementation (type %d) defines type for %d ports", nf_id.c_str(), nf_types[nf_id], nf_ports_type.size());
 		// Fill in incomplete port type specifications (unless we make it mandatory input from name-resolver)
 		for (list<unsigned int>::iterator p_it = nf_ports.begin(); p_it != nf_ports.end(); p_it++) {
