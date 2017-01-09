@@ -1,6 +1,8 @@
 #include "libvirt.h"
 #include "libvirt_constants.h"
 
+#include <unistd.h>
+#define GetCurrentDir getcwd
 #include <memory>
 
 static const char LOG_MODULE_NAME[] = "KVM-Manager";
@@ -260,6 +262,24 @@ bool Libvirt::startNF(StartNFIn sni)
 	xmlNewProp(addressn, BAD_CAST "slot", BAD_CAST "0x05");
 	xmlNewProp(addressn, BAD_CAST "function", BAD_CAST "0x0");
 
+	/* Create device that prints log information of the VM */
+	xmlNodePtr logSerialn = xmlNewChild(devices, NULL, BAD_CAST "serial", NULL);
+	xmlNewProp(logSerialn, BAD_CAST "type", BAD_CAST "file");
+
+	string logPath = getLogPath(domain_name);
+	if(logPath=="")
+	{
+		ULOG_ERR("Error getting current dir");
+		return false;
+	}
+	ULOG_DBG_INFO("Log file path: %s", logPath.c_str());
+
+	xmlNodePtr logSurcen = xmlNewChild(logSerialn, NULL, BAD_CAST "source", NULL);
+	xmlNewProp(logSurcen, BAD_CAST "path", BAD_CAST logPath.c_str());
+
+	xmlNodePtr logTargetn = xmlNewChild(logSerialn, NULL, BAD_CAST "target", NULL);
+	xmlNewProp(logTargetn, BAD_CAST "port", BAD_CAST "0");
+
 	/* Create NICs */
 	vector< pair<string, string> > ivshmemPorts; // name, alias
 
@@ -493,5 +513,15 @@ bool Libvirt::stopNF(StopNFIn sni)
 	}
 
 	return true;
+}
+
+string Libvirt::getLogPath(char *domain_name)
+{
+	char cCurrentPath[500];
+	if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath)))
+		return string();
+	stringstream currentDir;
+	currentDir << cCurrentPath << "/" << domain_name << ".log";
+	return currentDir.str();
 }
 

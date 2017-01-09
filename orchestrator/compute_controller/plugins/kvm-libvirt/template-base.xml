@@ -40,6 +40,7 @@
 			<alias name='ide'/>
 			<address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x1'/>
 		</controller>
+		<!-- these elements (that allow the connection to the VM using virsh) are in conflict with a serial element (inserted by the UN) printing log info
 		<serial type='pty'>
 			<source path='/dev/pts/27'/>
 			<target port='0'/>
@@ -50,6 +51,7 @@
 			<target type='serial' port='0'/>
 			<alias name='serial0'/>
 		</console>
+		-->
 		<input type='mouse' bus='ps2'/>
 		<input type='keyboard' bus='ps2'/>
 		<graphics type='vnc' port='5900' autoport='yes' listen='127.0.0.1'>

@@ -59,6 +59,11 @@ private:
 	*/
 	static void customErrorFunc(void *userdata, virErrorPtr err);
 
+	/**
+	*	@brief: Returns the path of the log file of the specified domain
+	*/
+	string getLogPath(char *domain_name);
+
 public:
 
 	Libvirt();
