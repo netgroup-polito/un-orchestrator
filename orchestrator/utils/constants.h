@@ -50,6 +50,7 @@
 			#define VNF_PORT			"vnf-tcp-port"
 		#define UNIFY_ENV_VARIABLES	"unify-env-variables"
 			#define VARIABLE			"variable"
+		#define USER_DATA			"user_data"
 		#define	VNF_PORTS			"ports"
 			//#define PORT_ID			"id"
 			//#define PORT_NAME		"name"

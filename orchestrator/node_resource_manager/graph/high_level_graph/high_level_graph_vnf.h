@@ -76,6 +76,13 @@ private:
 	*/
 	Position *position = NULL;
 
+#ifdef ENABLE_KVM
+	/**
+	*	@brief: user_data (for cloud server images) needed to the VM (not mandatory)
+	*/
+	string user_data;
+#endif
+
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	/**
 	*	@brief: the list of control ports configuration of the VNF
@@ -103,11 +110,14 @@ private:
 
 public:
 
+	VNFs(string id, string name, list<string> groups, string vnf_template, list<vnf_port_t> ports
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-	VNFs(string id, string name, list<string> groups, string vnf_template, list<vnf_port_t> ports, list<port_mapping_t> control_ports, list<string> environment_variables);
-#else
-	VNFs(string id, string name, list<string> groups, string vnf_template, list<vnf_port_t> ports);
+	, list<port_mapping_t> control_ports, list<string> environment_variables
 #endif
+#ifdef ENABLE_KVM
+	, string user_data
+#endif
+	);
 
 	/**
 	*	@brief: add a new port to the network function
@@ -152,6 +162,13 @@ public:
 	*	@brief: return the list of environment variables associated with the VNF
 	*/
 	list<string> getEnvironmentVariables();
+#endif
+
+#ifdef ENABLE_KVM
+	/*
+	*	@brief: return the user_data
+	*/
+	string getUserData();
 #endif
 
 	~VNFs();

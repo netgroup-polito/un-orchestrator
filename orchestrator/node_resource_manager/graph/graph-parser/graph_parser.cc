@@ -144,7 +144,9 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								//list of environment variables in the form "variable=value"
 								list<string> environmentVariables;
 #endif
-								//list of ports of the VNF
+#ifdef ENABLE_KVM
+								string user_data;
+#endif								//list of ports of the VNF
 								list<highlevel::vnf_port_t> portS;
 								// coordinates of the vnf (to be displayed by the GUI)
 								highlevel::Position *vnfPosition=NULL;
@@ -307,7 +309,15 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 #endif
 									}
-									else if(nf_name == VNF_PORTS)
+									else if(nf_name == USER_DATA)
+									{
+#ifndef ENABLE_KVM
+										ULOG_WARN("Key \"%s\" is ignored in this configuration of the %s!",USER_DATA,MODULE_NAME);
+										continue;
+#else
+										user_data = nf_value.getString();
+#endif
+									}else if(nf_name == VNF_PORTS)
 									{
 										try{
 											nf_value.getArray();
@@ -517,11 +527,14 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									throw new GraphParserException(std::move(error));
 								}
 
+								highlevel::VNFs vnfs(id, name, groups, vnf_template, portS
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-								highlevel::VNFs vnfs(id, name, groups, vnf_template, portS, controlPorts,environmentVariables);
-#else
-								highlevel::VNFs vnfs(id, name, groups, vnf_template, portS);
+								, controlPorts,environmentVariables
 #endif
+#ifdef ENABLE_KVM
+								, user_data
+#endif
+								);
 
 								//update information on the trusted status of VNF ports
 								for(list<highlevel::vnf_port_t>::iterator port = portS.begin(); port != portS.end(); port++)
