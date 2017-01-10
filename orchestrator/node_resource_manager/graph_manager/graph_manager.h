@@ -50,6 +50,9 @@ typedef struct
 		list<port_mapping_t > controlConfiguration;
 		list<string> environmentVariables;
 #endif
+#ifdef ENABLE_KVM
+		string user_data;
+#endif
 	}to_thread_t;
 
 class GraphManager

@@ -637,6 +637,9 @@ bool ComputeController::startNF(string nf_id, map<unsigned int, string> namesOfP
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	, list<port_mapping_t > controlConfiguration, list<string> environmentVariables
 #endif
+#ifdef ENABLE_KVM
+		, string user_data
+#endif
 	)
 {
 	ULOG_INFO("Starting the NF with id \"%s\"", nf_id.c_str());
@@ -689,6 +692,9 @@ bool ComputeController::startNF(string nf_id, map<unsigned int, string> namesOfP
 	StartNFIn sni(lsiID, nf_id, namesOfPortsOnTheSwitch, portsConfiguration,
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		controlConfiguration, environmentVariables,
+#endif
+#ifdef ENABLE_KVM
+			user_data,
 #endif
 		calculateCoreMask(nfsManager->getCores()));
 

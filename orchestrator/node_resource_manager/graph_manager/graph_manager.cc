@@ -569,6 +569,9 @@ void *startNF(void *arguments)
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		, args->controlConfiguration, args->environmentVariables
 #endif
+#ifdef ENABLE_KVM
+			, args->user_data
+#endif
 	))
 		return (void*) 0;
 	else
@@ -990,6 +993,9 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		thr[i].controlConfiguration = nf->getControlPorts();
 		thr[i].environmentVariables = nf->getEnvironmentVariables();
+#endif
+#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
+		thr[i].user_data = nf->getUserData();
 #endif
 
 #ifdef STARTVNF_SINGLE_THREAD

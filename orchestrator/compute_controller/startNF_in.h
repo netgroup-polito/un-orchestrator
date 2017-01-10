@@ -59,6 +59,13 @@ private:
 	list<string> environmentVariables;
 #endif
 
+#ifdef ENABLE_KVM
+	/**
+	*	@brief: user_data associated to the VM (used by cloud-init)
+	*/
+	string user_data;
+#endif
+
 	/**
 	*	@brief: mask of the cores to be assigned to the network functon.
 	*			0x0 means that no binding has to be done
@@ -72,10 +79,16 @@ protected:
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 			list<port_mapping_t > controlPorts, list<string> environmentVariables,
 #endif
+#ifdef ENABLE_KVM
+			string user_data,
+#endif
 			  uint64_t coreMask = 0x0)
 			: lsiID(lsiID), nf_id(nf_id), namesOfPortsOnTheSwitch(namesOfPortsOnTheSwitch), portsConfiguration(portsConfiguration),
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 			controlPorts(controlPorts), environmentVariables(environmentVariables),
+#endif
+#ifdef ENABLE_KVM
+			  user_data(user_data),
 #endif
 			  coreMask(coreMask)
 	{
@@ -114,6 +127,13 @@ public:
 	const list<string>& getEnvironmentVariables() const
 	{
 		return environmentVariables;
+	}
+#endif
+
+#ifdef ENABLE_KVM
+	string getUserData()
+	{
+		return user_data;
 	}
 #endif
 

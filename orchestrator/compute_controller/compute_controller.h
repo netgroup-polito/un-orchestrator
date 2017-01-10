@@ -214,6 +214,9 @@ public:
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		, list<port_mapping_t > controlConfiguration, list<string> environmentVariables
 #endif
+#ifdef ENABLE_KVM
+			, string user_data
+#endif
 		);
 	
 	/**
