@@ -994,7 +994,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		thr[i].controlConfiguration = nf->getControlPorts();
 		thr[i].environmentVariables = nf->getEnvironmentVariables();
 #endif
-#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
+#ifdef ENABLE_KVM
 		thr[i].user_data = nf->getUserData();
 #endif
 

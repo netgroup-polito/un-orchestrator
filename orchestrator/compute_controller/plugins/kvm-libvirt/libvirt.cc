@@ -367,6 +367,32 @@ bool Libvirt::startNF(StartNFIn sni)
 	xmlNewProp(addressn, BAD_CAST "slot", BAD_CAST "0x05");
 	xmlNewProp(addressn, BAD_CAST "function", BAD_CAST "0x0");
 
+	//TODO: create disk image from user data
+	string user_data = sni.getUserData();
+	if(user_data!="")
+	{
+		ULOG_DBG_INFO("A user_data information is provided to the network function");
+#ifdef DEBUG_KVM
+		ULOG_DBG_INFO("Content of user_data:\n'%s'",user_data.c_str());
+#endif
+
+		xmlNodePtr userDataDiskn = xmlNewChild(devices, NULL, BAD_CAST "disk", NULL);
+		xmlNewProp(userDataDiskn, BAD_CAST "type", BAD_CAST "file");
+		xmlNewProp(userDataDiskn, BAD_CAST "device", BAD_CAST "disk");
+
+		xmlNodePtr userDataDrivern = xmlNewChild(userDataDiskn, NULL, BAD_CAST "driver", NULL);
+		xmlNewProp(userDataDrivern, BAD_CAST "name", BAD_CAST "qemu");
+		xmlNewProp(userDataDrivern, BAD_CAST "type", BAD_CAST "raw");
+
+		xmlNodePtr userDataSourcen = xmlNewChild(userDataDiskn, NULL, BAD_CAST "source", NULL);
+		xmlNewProp(userDataSourcen, BAD_CAST "file", BAD_CAST "/home/francesco/Scrivania/cloud_init/config.iso");
+		//FIXME: use the path provided from the disk generator
+
+		xmlNodePtr userDataTargetn = xmlNewChild(userDataDiskn, NULL, BAD_CAST "target", NULL);
+		xmlNewProp(userDataTargetn, BAD_CAST "dev", BAD_CAST "vdb");
+		xmlNewProp(userDataTargetn, BAD_CAST "bus", BAD_CAST "virtio");
+	}
+
 	/* Create device that prints log information of the VM */
 	xmlNodePtr logSerialn = xmlNewChild(devices, NULL, BAD_CAST "serial", NULL);
 	xmlNewProp(logSerialn, BAD_CAST "type", BAD_CAST "file");
