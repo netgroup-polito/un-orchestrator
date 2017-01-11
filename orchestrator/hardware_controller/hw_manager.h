@@ -5,6 +5,8 @@
 
 using namespace std;
 
+class NFsManager;
+
 class HWManager
 {
 private:

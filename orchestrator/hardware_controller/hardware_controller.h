@@ -4,6 +4,8 @@
 
 using namespace std;
 
+class HWManager;
+
 class HardwareController
 {
 private:

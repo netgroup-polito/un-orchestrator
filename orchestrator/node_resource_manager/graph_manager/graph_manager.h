@@ -248,6 +248,13 @@ private:
 	*/
 	list<string> getRulesIDForLSITenant(highlevel::Rule rule);
 
+#ifdef ENABLE_HARDWARE
+	/**
+	*	Hardware controller used to implement the NF/network with the hardware
+	*/
+	HardwareController *hwController;
+#endif
+
 public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF
 	//(plus other fields)
