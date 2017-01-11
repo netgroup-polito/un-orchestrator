@@ -24,7 +24,7 @@ public:
 	bool stopNF(StopNFIn sni);
 	bool updateNF(UpdateNFIn uni);
 
-	int getCores();
+	string getCores();
 };
 
 #endif //DPDK_H_
