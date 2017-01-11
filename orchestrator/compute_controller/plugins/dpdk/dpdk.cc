@@ -11,7 +11,6 @@ bool Dpdk::isSupported(Description&)
 
 bool Dpdk::startNF(StartNFIn sni)
 {
-	nf_t type;
 	uint64_t lsiID = sni.getLsiID();
 	string nf_name = sni.getNfId();
 	uint64_t coreMask = sni.getCoreMask();
@@ -91,7 +90,12 @@ bool Dpdk::updateNF(UpdateNFIn uni)
 	return false;
 }
 
-int Dpdk::getCores() {
-	return description->getTemplate()->getCores();
+string Dpdk::getCores() {
+	string s;
+	int cores = description->getTemplate()->getCores();
+	if(cores==0)
+		return s;
+	s+=cores;
+	return s;
 }
 

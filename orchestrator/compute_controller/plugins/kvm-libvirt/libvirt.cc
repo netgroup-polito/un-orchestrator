@@ -67,8 +67,113 @@ void Libvirt::disconnect()
 
 bool Libvirt::updateNF(UpdateNFIn uni)
 {
-	ULOG_INFO("Update not supported by this type of functions");
+	xmlDocPtr doc = NULL;
+	xmlNodePtr ifn = NULL; //root_node
+	doc = xmlNewDoc(BAD_CAST "1.0");
+	ifn = xmlNewNode(NULL, BAD_CAST "interface");
+	xmlDocSetRootElement(doc, ifn);
+
+	/* Create NICs */
+	vector< pair<string, string> > ivshmemPorts; // name, alias
+
+	string nf_name = uni.getNfId();
+	map<unsigned int, string> namesOfPortsOnTheSwitch = uni.getNamesOfPortsOnTheSwitch();
+	map<unsigned int, port_network_config_t > portsConfiguration = uni.getPortsConfiguration();
+	list<unsigned int> newPortsToAdd = uni.getNewPortsToAdd();
+
+#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
+	list<port_mapping_t > control_ports = sni.getControlPorts();
+	if(control_ports.size() != 0)
+		UN_LOG(ORCH_WARNING, "Required %d control connections for VNF '%s'. Control connections are not supported by KVM type", control_ports.size(),nf_name.c_str());
+	list<string> environment_variables = sni.getEnvironmentVariables();
+	if(environment_variables.size() != 0)
+		UN_LOG(ORCH_WARNING, "Required %d environment variables for VNF '%s'. Environment variables are not supported by KVM type", environment_variables.size(),nf_name.c_str());
+#endif
+
+	for(list<unsigned int>::iterator p = newPortsToAdd.begin(); p != newPortsToAdd.end(); p++)
+	{
+		const unsigned int port_id = *p;
+		const string& port_name = namesOfPortsOnTheSwitch[port_id];
+
+		PortTechnology port_technology = description->getPortTechnologies().at(port_id);
+		ULOG_DBG_INFO("NF Port \"%s\":%d (%s) is of type %s", nf_name.c_str(), port_id, port_name.c_str(), portTechnologyToString(port_technology).c_str());
+
+#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
+		/* retrieve ip address */
+		if(!portsConfiguration[port_id].ip_address.empty())
+			UN_LOG(ORCH_WARNING, "Required ip address configuration for VNF '%s'. Ip address configuration are not supported by KVM type", control_ports.size(),nf_name.c_str());
+#endif
+		/* retrieve mac address */
+		string port_mac_address = portsConfiguration[port_id].mac_address;
+
+		ULOG_DBG("Interface \"%s\" associated with MAC address \"%s\"", port_name.c_str(), port_mac_address.c_str());
+
+		if (port_technology == USVHOST_PORT) {
+			xmlNewProp(ifn, BAD_CAST "type", BAD_CAST "vhostuser");
+
+			xmlNodePtr srcn = xmlNewChild(ifn, NULL, BAD_CAST "source", NULL);
+			ostringstream sock_path_os;
+			sock_path_os << OVS_BASE_SOCK_PATH << port_name;
+			xmlNewProp(srcn, BAD_CAST "type", BAD_CAST "unix");
+			xmlNewProp(srcn, BAD_CAST "path", BAD_CAST sock_path_os.str().c_str());
+			xmlNewProp(srcn, BAD_CAST "mode", BAD_CAST "client");
+
+			xmlNodePtr modeln = xmlNewChild(ifn, NULL, BAD_CAST "model", NULL);
+			xmlNewProp(modeln, BAD_CAST "type", BAD_CAST "virtio");
+
+			xmlNodePtr drvn = xmlNewChild(ifn, NULL, BAD_CAST "driver", NULL);
+			xmlNodePtr drv_hostn = xmlNewChild(drvn, NULL, BAD_CAST "host", NULL);
+			xmlNewProp(drv_hostn, BAD_CAST "csum", BAD_CAST "off");
+			xmlNewProp(drv_hostn, BAD_CAST "gso", BAD_CAST "off");
+			xmlNodePtr drv_guestn = xmlNewChild(drvn, NULL, BAD_CAST "guest", NULL);
+			xmlNewProp(drv_guestn, BAD_CAST "tso4", BAD_CAST "off");
+			xmlNewProp(drv_guestn, BAD_CAST "tso6", BAD_CAST "off");
+			xmlNewProp(drv_guestn, BAD_CAST "ecn", BAD_CAST "off");
+		}
+		else if (port_technology == IVSHMEM_PORT) {
+			ULOG_INFO("Update not supported by functions with this type of ports: %s", IVSHMEM_PORT);
+			return false;
+		}
+		else if (port_technology == VHOST_PORT) {
+			xmlNewProp(ifn, BAD_CAST "type", BAD_CAST "direct");
+
+			if(!port_mac_address.empty())
+			{
+				xmlNodePtr mac_addr = xmlNewChild(ifn, NULL, BAD_CAST "mac", NULL);
+				xmlNewProp(mac_addr, BAD_CAST "address", BAD_CAST port_mac_address.c_str());
+			}
+
+			xmlNodePtr srcn = xmlNewChild(ifn, NULL, BAD_CAST "source", NULL);
+			xmlNewProp(srcn, BAD_CAST "dev", BAD_CAST port_name.c_str());
+			xmlNewProp(srcn, BAD_CAST "mode", BAD_CAST "passthrough");
+
+			xmlNodePtr modeln = xmlNewChild(ifn, NULL, BAD_CAST "model", NULL);
+			xmlNewProp(modeln, BAD_CAST "type", BAD_CAST "virtio");
+
+			xmlNodePtr virt = xmlNewChild(ifn, NULL, BAD_CAST "virtualport", NULL);
+			xmlNewProp(virt, BAD_CAST "type", BAD_CAST "openvswitch");
+			}
+			else
+			{
+				assert(0 && "There is a BUG! You cannot be here!");
+				ULOG_ERR("Something went wrong in the creation of the ports for the VNF...");
+				return false;
+			}
+	}
+
+	/* Get resulting document */
+	xmlChar* xml_buf; int xml_bufsz; const char *xmlconfig = NULL;
+	xmlDocDumpMemory(doc, &xml_buf, &xml_bufsz);
+	xmlconfig = (const char *)xml_buf;
+
+	char vm_name[64];
+	sprintf(vm_name, "%" PRIu64 "_%s", uni.getLsiID(), uni.getNfId().c_str());
+	/*update the VM*/
+	if(virDomainAttachDevice(virDomainLookupByName(connection, vm_name),xmlconfig) != 0){
+		ULOG_ERR("failed to update VM. %s", vm_name);
 		return false;
+	}
+	return true;
 }
 
 bool Libvirt::startNF(StartNFIn sni)

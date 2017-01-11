@@ -1583,6 +1583,27 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	ULOG_DBG_INFO("0) Calculate the new parts of the graph");
 	highlevel::Graph *diff = graph->calculateDiff(newGraph, graphID);
 
+	// Save list of new network functions created
+	list<string> new_network_functions;
+	list<highlevel::VNFs> network_functions_diff = diff->getVNFs();
+	list<highlevel::VNFs> network_functions_before = graph->getVNFs();
+	for(list<highlevel::VNFs>::iterator nf_diff = network_functions_diff.begin(); nf_diff != network_functions_diff.end(); ++nf_diff)
+	{
+		string nf_diff_id = nf_diff->getId();
+		bool find = false;
+		for(list<highlevel::VNFs>::iterator nf_before = network_functions_before.begin(); nf_before != network_functions_before.end(); ++nf_before)
+		{
+			string nf_before_id = nf_before->getId();
+			if(nf_diff_id==nf_before_id) // this is not a new Network Function!
+			{
+				find = true;
+				break;
+			}
+		}
+		if(!find)
+			new_network_functions.push_back(nf_diff_id);
+	}
+
 	ULOG_DBG_INFO("The diff graph is:");
 	diff->print();
 
@@ -1620,8 +1641,6 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	*	3) Update the lsi (in case of new interface/VNFs/gre/vlan endpoints are required)
 	*/
 	ULOG_DBG_INFO("3) update the lsi (in case of new ports/VNFs/gre/vlan endpoints are required)");
-
-	list<highlevel::VNFs> network_functions = diff->getVNFs();
 
 	/**
 	*	3-a) condider the virtual links
@@ -1769,14 +1788,15 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	/**
 	*	3-b) condider the virtual network functions
 	*/
-	ULOG_DBG_INFO("3-b) considering the new virtual network functions (%d)",network_functions.size());
+	ULOG_DBG_INFO("3-b) considering the new virtual network functions (%d)",network_functions_diff.size());
 
 	//Itarate on all the new network functions
-	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
+	for(list<highlevel::VNFs>::iterator nf = network_functions_diff.begin(); nf != network_functions_diff.end(); nf++)
 	{
 		AddNFportsOut *anpo = NULL;
 		try
 		{
+			string nf_id = nf->getId();
 			list<highlevel::vnf_port_t> nf_ports = nf->getPorts(); // nf_it->second;
 			list<unsigned int> nf_ports_id_list = nf->getPortsId();
 
@@ -1789,9 +1809,17 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 			//after
 			map<string, list<struct nf_port_info> >pi_map = lsi->getNetworkFunctionsPortsInfo();//for each network function, retrieve a list of "port name, port type"
 			map<string, list<struct nf_port_info> >::iterator pi_it = pi_map.find(nf->getId()/*first*/); //select the info related to the network function currently considered
+
 			assert(pi_it != pi_map.end());
 			list<struct nf_port_info> newPortList;
-			if(pi_it->second.size() == nf_ports.size())
+			bool is_new_nf=false;
+			for(list<string>::iterator new_nf = new_network_functions.begin(); new_nf != new_network_functions.end(); ++new_nf)
+				if(nf_id==*new_nf)
+				{
+					is_new_nf=true;
+					break;
+				}
+			if(is_new_nf)
 			{
 				ULOG_INFO("Adding new ports on the switch to create the NF with id %s", nf->getId().c_str());
 				newPortList = pi_it->second;
@@ -1940,19 +1968,20 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	*	4) Start or update the new NFs
 	*/
 #ifdef RUN_NFS
-	ULOG_DBG_INFO("4) start the new NFs");
+	ULOG_DBG_INFO("4) start or update the new NFs");
 
 	computeController->setLsiID(dpid);
 
 
 #ifndef STARTVNF_SINGLE_THREAD
-	pthread_t some_thread[network_functions.size()];
+	pthread_t some_thread[network_functions_diff.size()];
 #endif
-	to_thread_t thr[network_functions.size()];
+	to_thread_t thr[network_functions_diff.size()];
 	int i = 0;
 
-	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
+	for(list<highlevel::VNFs>::iterator nf = network_functions_diff.begin(); nf != network_functions_diff.end(); nf++)
 	{
+		string nf_id=nf->getId();
 		map<unsigned int, string> nfPortIdToNameOnSwitch = lsi->getNetworkFunctionsPortsNameOnSwitchMap(nf->getId()/*first*/); //Returns the map <port ID, port name on switch>
 		//TODO: the following information should be retrieved through the highlevel graph
 		map<unsigned int, port_network_config_t > nfs_ports_configuration = nf->getPortsID_configuration();
@@ -1960,8 +1989,14 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 		list<port_mapping_t > nfs_control_configuration = nf->getControlPorts();
 		list<string> environment_variables_tmp = nf->getEnvironmentVariables();
 #endif
-		//If not, startNF should then be called; if yes, o new function must be called
-		if(nfPortIdToNameOnSwitch.size() != nf->getPortsId().size())
+		bool is_new_nf=false;
+		for(list<string>::iterator new_nf = new_network_functions.begin(); new_nf != new_network_functions.end(); ++new_nf)
+			if(nf_id==*new_nf)
+			{
+				is_new_nf=true;
+				break;
+			}
+		if(!is_new_nf)
 		{
 			if(!computeController->updateNF(nf->getId(), nfPortIdToNameOnSwitch, nfs_ports_configuration, nf->getPortsId()))
 			{
@@ -2026,7 +2061,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 #endif
 	if(!ok)
 	{
-		for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
+		for(list<highlevel::VNFs>::iterator nf = network_functions_diff.begin(); nf != network_functions_diff.end(); nf++)
 			computeController->stopNF(nf->getId());
 
 		switchManager.destroyLsi(lsi->getDpid());
