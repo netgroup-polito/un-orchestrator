@@ -613,7 +613,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*	0) Check the validity of the graph
 	*/
 	ULOG_DBG_INFO("0) Checking the validity of the graph");
-	ComputeController *computeController = new ComputeController(Configuration::instance()->getVnfRepoIp(),Configuration::instance()->getVnfRepoPort());
+	ComputeController *computeController = new ComputeController();
 
 	if(!checkGraphValidity(graph,computeController))
 	{
@@ -658,7 +658,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*	2) Select an implementation for each network function of the graph
 	*/
 	ULOG_DBG_INFO("2) Select an implementation for each NF of the graph");
-	if(!computeController->selectImplementation(Configuration::instance()->getVnfImagesPath()))
+	if(!computeController->selectImplementation())
 	{
 		//This is an internal error
 		delete(computeController);
@@ -1623,7 +1623,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	*	2) Select an implementation for the new NFs
 	*/
 	ULOG_DBG_INFO("2) Select an implementation for the new NFs");
-	if(!computeController->selectImplementation(Configuration::instance()->getVnfImagesPath()))
+	if(!computeController->selectImplementation())
 	{
 		//This is an internal error
 		delete(computeController);
