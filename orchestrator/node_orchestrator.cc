@@ -61,12 +61,6 @@ bool usage(void);
 void printUniversalNodeInfo();
 void terminateRestServer(void);
 
-/*
-*
-* Configuration class (contanins all configuration parameters)
-*
-*/
-Configuration configuration;
 
 /**
 *	Implementations
@@ -176,13 +170,13 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if(!configuration.init(string(config_file_name)))
+	if(!Configuration::instance()->init(string(config_file_name)))
 	{
 		ULOG_ERR( "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
 	}
 
-	if(configuration.getUserAuthentication()) {
+	if(Configuration::instance()->getUserAuthentication()) {
 		std::ifstream ifile(DB_NAME);
 
 		if(ifile)
@@ -196,30 +190,30 @@ int main(int argc, char *argv[])
 	}
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	if(!DoubleDeckerClient::init(configuration.getDdClientName().c_str(), configuration.getDdBrokerAddress().c_str(), configuration.getDdKeyPath()).c_str())
+	if(!DoubleDeckerClient::init(Configuration::instance()->getDdClientName().c_str(), Configuration::instance()->getDdBrokerAddress().c_str(), Configuration::instance()->getDdKeyPath()).c_str())
 	{
 		ULOG_ERR( "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
 	}
 #endif
 
-	if(!RestServer::init(dbm,configuration.getUserAuthentication(),configuration.getBootGraphs(),core_mask,configuration.getPhisicalPorts(),configuration.getUnAddress(),configuration.getOrchestratorInBand(),configuration.getUnInterface(),configuration.getIpsecCertificate(), configuration.getVnfRepoIp(), configuration.getVnfRepoPort(),configuration.getVnfImagesPath()))
+	if(!RestServer::init(dbm,core_mask))
 	{
 		ULOG_ERR( "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
 	}
 
 #ifdef ENABLE_RESOURCE_MANAGER
-	ResourceManager::publishDescriptionFromFile(descr_file_name);
+	ResourceManager::publishDescriptionFromFile(Configuration::instance()->getDescriptionFileName());
 #endif
 
-	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, configuration.getRestPort(), NULL, NULL,&RestServer::answer_to_connection,
+	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, Configuration::instance()->getRestPort(), NULL, NULL,&RestServer::answer_to_connection,
 		NULL, MHD_OPTION_NOTIFY_COMPLETED, &RestServer::request_completed, NULL,MHD_OPTION_END);
 
 	if (NULL == http_daemon)
 	{
 		ULOG_ERR( "Cannot start the HTTP deamon. The %s cannot be run.",MODULE_NAME);
-		ULOG_ERR( "Please, check that the TCP port %d is not used (use the command \"netstat -lnp | grep %d\")",configuration.getRestPort(),configuration.getRestPort());
+		ULOG_ERR( "Please, check that the TCP port %d is not used (use the command \"netstat -lnp | grep %d\")",Configuration::instance()->getRestPort(),Configuration::instance()->getRestPort());
 
 		terminateRestServer();
 
@@ -252,7 +246,7 @@ int main(int argc, char *argv[])
 
 	printUniversalNodeInfo();
 	ULOG_INFO("The '%s' is started!",MODULE_NAME);
-	ULOG_INFO("Waiting for commands on TCP port \"%d\"",configuration.getRestPort());
+	ULOG_INFO("Waiting for commands on TCP port \"%d\"",Configuration::instance()->getRestPort());
 
 	while(true) {
 		struct timeval tv;

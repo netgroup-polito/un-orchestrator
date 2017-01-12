@@ -33,6 +33,7 @@ public:
     string getScriptPath();
     string getVnfImagesPath();
     string getDescriptionFileName();
+    static Configuration *instance();
 
 private:
     list<string> physicalPorts;
@@ -51,6 +52,8 @@ private:
     string scriptPath;
     string vnfImagesPath;
     string descriptionFileName;
+    static Configuration *s_instance;
+    Configuration();
 };
 
 

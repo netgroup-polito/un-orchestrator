@@ -2,6 +2,20 @@
 
 static const char LOG_MODULE_NAME[] = "Configuration-object";
 
+Configuration *Configuration::s_instance;
+
+Configuration *Configuration::instance()
+{
+    if (!s_instance)
+        s_instance = new Configuration();
+    return s_instance;
+}
+
+Configuration::Configuration()
+{
+
+}
+
 bool Configuration::init(string configurationFile)
 {
     INIReader reader(configurationFile);
