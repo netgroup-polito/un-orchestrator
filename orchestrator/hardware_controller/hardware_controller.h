@@ -13,7 +13,7 @@ private:
 public:
 	HardwareController();
 	~HardwareController();
-	bool checkHWAvailability();
+	bool checkHWAvailability(Description *);
 };
 
 #endif

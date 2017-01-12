@@ -9,16 +9,22 @@ SampleDriver::~SampleDriver()
 {
 }
 
-void SampleDriver::attachHardware(NFsManager *nf)
+bool SampleDriver::attachHardware(NFsManager *nf)
 {
+	return true;
 }
 
 
-void SampleDriver::detachHardware()
+void SampleDriver::detachHardware(NFsManager *nf)
 {
 }
 
 
 void SampleDriver::initializeHardware()
 {
+}
+
+bool SampleDriver::supportNetworkFunction(Description *description)
+{
+        return false;
 }

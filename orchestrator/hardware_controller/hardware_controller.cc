@@ -11,7 +11,7 @@ HardwareController::~HardwareController()
 }
 
 
-bool HardwareController::checkHWAvailability()
+bool HardwareController::checkHWAvailability(Description *description)
 {
 	return true;
 }
