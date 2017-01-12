@@ -4,6 +4,7 @@
 #include <unistd.h>
 #define GetCurrentDir getcwd
 #include <memory>
+#include <fstream>
 
 static const char LOG_MODULE_NAME[] = "KVM-Manager";
 
@@ -367,7 +368,6 @@ bool Libvirt::startNF(StartNFIn sni)
 	xmlNewProp(addressn, BAD_CAST "slot", BAD_CAST "0x05");
 	xmlNewProp(addressn, BAD_CAST "function", BAD_CAST "0x0");
 
-	//TODO: create disk image from user data
 	string user_data = sni.getUserData();
 	if(user_data!="")
 	{
@@ -375,6 +375,11 @@ bool Libvirt::startNF(StartNFIn sni)
 #ifdef DEBUG_KVM
 		ULOG_DBG_INFO("Content of user_data:\n'%s'",user_data.c_str());
 #endif
+		if(!createDisk(user_data,Configuration::instance()->getVnfImagesPath(),domain_name))
+		{
+			ULOG_DBG_INFO("An error occured during the disk creation");
+			return false;
+		}
 
 		xmlNodePtr userDataDiskn = xmlNewChild(devices, NULL, BAD_CAST "disk", NULL);
 		xmlNewProp(userDataDiskn, BAD_CAST "type", BAD_CAST "file");
@@ -384,9 +389,9 @@ bool Libvirt::startNF(StartNFIn sni)
 		xmlNewProp(userDataDrivern, BAD_CAST "name", BAD_CAST "qemu");
 		xmlNewProp(userDataDrivern, BAD_CAST "type", BAD_CAST "raw");
 
+		string disk_path = Configuration::instance()->getVnfImagesPath() + string("/") + domain_name + string("_config.iso");
 		xmlNodePtr userDataSourcen = xmlNewChild(userDataDiskn, NULL, BAD_CAST "source", NULL);
-		xmlNewProp(userDataSourcen, BAD_CAST "file", BAD_CAST "/home/francesco/Scrivania/cloud_init/config.iso");
-		//FIXME: use the path provided from the disk generator
+		xmlNewProp(userDataSourcen, BAD_CAST "file", BAD_CAST disk_path.c_str());
 
 		xmlNodePtr userDataTargetn = xmlNewChild(userDataDiskn, NULL, BAD_CAST "target", NULL);
 		xmlNewProp(userDataTargetn, BAD_CAST "dev", BAD_CAST "vdb");
@@ -656,3 +661,35 @@ string Libvirt::getLogPath(char *domain_name)
 	return currentDir.str();
 }
 
+// Note: user-data and meta-data files must be called in this way to be recognized by cloud-init.
+// For concurrence issues (VMs launched at the same times) I have to create an univocal folder where insert these files
+bool Libvirt::createDisk(string userData, string folder, string domainName)
+{
+	string vmTempFolder = folder + string("/") + domainName;
+	mkdir(vmTempFolder.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	ULOG_DBG_INFO("Creating disk for user_data...");
+	// creating file containing user_data and meta_data:
+	string metaDataFilePath = vmTempFolder + string("/") + string("meta-data");
+	ofstream metaFile(metaDataFilePath);
+	metaFile << "instance-id: " << domainName << endl << "local-hostname: cloudimg";
+	metaFile.close();
+	string userDataFilePath = vmTempFolder + string("/") + string("user-data");
+	ofstream userFile(userDataFilePath);
+	userFile << userData;
+	userFile.close();
+	// generating disk:
+	string userDataDiskPath = folder + string("/") + domainName + string("_config.iso");
+	stringstream cmd_create_disk;
+	cmd_create_disk << "genisoimage  -output " << userDataDiskPath << " -volid cidata -joliet -rock " << userDataFilePath << " " << metaDataFilePath;
+	ULOG_DBG_INFO("Executing command \"%s\"", cmd_create_disk.str().c_str());
+	int retVal = system(cmd_create_disk.str().c_str());
+	retVal = retVal >> 8;
+	if(retVal != 0)
+		return false;
+	//remove temp files hosting user_data and meta_data in textual format
+	remove(metaDataFilePath.c_str());
+	remove(userDataFilePath.c_str());
+	remove(vmTempFolder.c_str());
+	ULOG_DBG_INFO("Disk created successfully");
+	return true;
+}
