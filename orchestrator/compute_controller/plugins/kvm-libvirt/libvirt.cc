@@ -642,6 +642,10 @@ bool Libvirt::stopNF(StopNFIn sni)
 
 	assert(connection != NULL);
 
+	//destroy user_data disk (if exists)
+	string userDataDiskPath = Configuration::instance()->getVnfImagesPath() + string("/") + string(vm_name) + string("_config.iso");
+	remove(userDataDiskPath.c_str());
+
 	/*destroy the VM*/
 	if(virDomainDestroy(virDomainLookupByName(connection, vm_name)) != 0){
 		ULOG_ERR("failed to stop (destroy) VM. %s", vm_name);
