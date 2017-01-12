@@ -72,9 +72,7 @@ bool Configuration::init(string configurationFile)
     userAuth = reader.GetBoolean("user authentication", "user_authentication", false);
 
     /* description file to export*/
-    //char *temp_descr = new char[64];
-    //strcpy(temp_descr, (char *)reader.Get("resource-manager", "description_file", "").c_str());
-    //*descr_file_name = temp_descr;
+    descriptionFileName = reader.Get("resource-manager", "description_file", "");
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
     // client_name : mandatory
@@ -220,4 +218,9 @@ string Configuration::getScriptPath()
 string Configuration::getVnfImagesPath()
 {
     return vnfImagesPath;
+}
+
+string Configuration::getDescriptionFileName()
+{
+    return descriptionFileName;
 }

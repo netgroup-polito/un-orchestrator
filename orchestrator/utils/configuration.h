@@ -32,6 +32,7 @@ public:
     int getVnfRepoPort();
     string getScriptPath();
     string getVnfImagesPath();
+    string getDescriptionFileName();
 
 private:
     list<string> physicalPorts;
@@ -49,7 +50,7 @@ private:
     int vnfRepoPort;
     string scriptPath;
     string vnfImagesPath;
-
+    string descriptionFileName;
 };
 
 
