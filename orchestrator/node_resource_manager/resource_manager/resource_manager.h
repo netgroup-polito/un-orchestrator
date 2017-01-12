@@ -19,7 +19,7 @@ public:
 	*	@param	descr_file: file containing the descriptio of the domain to
 	*		be exported
 	*/
-	static void publishDescriptionFromFile(char *descr_file);
+	static void publishDescriptionFromFile(string descr_file);
 };
 
 #endif // RESOURCE_MANAGER_H_

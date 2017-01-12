@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 	}
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	if(!DoubleDeckerClient::init(Configuration::instance()->getDdClientName().c_str(), Configuration::instance()->getDdBrokerAddress().c_str(), Configuration::instance()->getDdKeyPath()).c_str())
+	if(!DoubleDeckerClient::init(Configuration::instance()->getDdClientName(), Configuration::instance()->getDdBrokerAddress(), Configuration::instance()->getDdKeyPath()))
 	{
 		ULOG_ERR( "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);

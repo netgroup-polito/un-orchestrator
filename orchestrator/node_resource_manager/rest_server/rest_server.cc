@@ -12,7 +12,7 @@ bool RestServer::init(SQLiteManager *dbm, int core_mask)
 {
 	try
 	{
-		gm = new GraphManager(core_mask,Configuration::instance()->getPhisicalPorts(),Configuration::instance()->getUnAddress(),Configuration::instance()->getOrchestratorInBand(),Configuration::instance()->getUnInterface(),Configuration::instance()->getIpsecCertificate(), Configuration::instance()->getVnfRepoIp(), Configuration::instance()->getVnfRepoPort(),Configuration::instance()->getVnfImagesPath());
+		gm = new GraphManager(core_mask);
 
 	} catch (...) {
 		return false;

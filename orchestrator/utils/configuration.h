@@ -11,6 +11,7 @@
 #include <istream>
 #include <sstream>
 #include <INIReader.h>
+#include <string.h>
 
 using namespace std;
 
@@ -21,9 +22,9 @@ public:
     map<string,string> getBootGraphs();
     int getRestPort();
     bool getUserAuthentication();
-    string getDdClientName();
-    string getDdBrokerAddress();
-    string getDdKeyPath();
+    char *getDdClientName();
+    char *getDdBrokerAddress();
+    char *getDdKeyPath();
     bool getOrchestratorInBand();
     string getUnInterface();
     string getUnAddress();
@@ -40,9 +41,9 @@ private:
     map<string,string> bootGraphs;
     int restPort;
     bool userAuth;
-    string ddClientName;
-    string ddBrokerAddress;
-    string ddKeyPath;
+    char ddClientName[128];
+    char ddBrokerAddress[128];
+    char ddKeyPath[1024];
     bool orchestratorInBand;
     string unInterface;
     string unAddress;

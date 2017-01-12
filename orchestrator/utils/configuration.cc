@@ -90,31 +90,36 @@ bool Configuration::init(string configurationFile)
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
     // client_name : mandatory
-	ddClientName = reader.Get("double-decker", "client_name", "");
+	string tmp_ddClientName = reader.Get("double-decker", "client_name", "");
 
 	// brocker_address : mandatory
-	ddBrokerAddress = reader.Get("double-decker", "broker_address", "");
+	string tmp_ddBrokerAddress = reader.Get("double-decker", "broker_address", "");
 
 	// key_path : mandatory
-	ddKeyPath = reader.Get("double-decker", "key_path", "");
+	string tmp_ddKeyPath = reader.Get("double-decker", "key_path", "");
 
-	if(ddClientName=="")
+	if(tmp_ddClientName=="")
 	{
 		ULOG_ERR( "Error in configuration file '%'s. Mandatory parameter 'client_name' is missing.",configurationFile.c_str());
 		return false;
 	}
 
-	if(ddBrokerAddress=="")
+	if(tmp_ddBrokerAddress=="")
 	{
 		ULOG_ERR( "Error in configuration file '%'s. Mandatory parameter 'brocker_address' is missing.",configurationFile.c_str());
 		return false;
 	}
 
-	if(ddKeyPath=="")
+	if(tmp_ddKeyPath=="")
 	{
 		ULOG_ERR( "Error in configuration file '%'s. Mandatory parameter 'key_path	' is missing.",configurationFile.c_str());
 		return false;
 	}
+
+    strcpy(ddClientName,tmp_ddClientName.c_str());
+    strcpy(ddBrokerAddress,tmp_ddBrokerAddress.c_str());
+    strcpy(ddKeyPath,tmp_ddKeyPath.c_str());
+
 #endif
 
     // is_in_bande : optional - false if not specified
@@ -179,17 +184,17 @@ bool Configuration::getUserAuthentication()
     return userAuth;
 }
 
-string Configuration::getDdClientName()
+char *Configuration::getDdClientName()
 {
     return ddClientName;
 }
 
-string Configuration::getDdBrokerAddress()
+char *Configuration::getDdBrokerAddress()
 {
     return ddBrokerAddress;
 }
 
-string Configuration::getDdKeyPath()
+char *Configuration::getDdKeyPath()
 {
     return ddKeyPath;
 }
