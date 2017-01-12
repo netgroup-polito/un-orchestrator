@@ -13,8 +13,9 @@ void GraphManager::mutexInit()
 GraphManager::GraphManager(int core_mask) : switchManager()
 {
 	//TODO: this code can be simplified. Why don't providing the set<string> to the switch manager?
+	list<string> phisicalPorts = Configuration::instance()->getPhisicalPorts();
 	set<CheckPhysicalPortsIn> phyPortsRequired;
-	for(list<string>::iterator pp = Configuration::instance()->getPhisicalPorts().begin(); pp != Configuration::instance()->getPhisicalPorts().end(); pp++)
+	for(list<string>::iterator pp = phisicalPorts.begin(); pp != phisicalPorts.end(); pp++)
 	{
 		CheckPhysicalPortsIn cppi(*pp);
 		phyPortsRequired.insert(cppi);
