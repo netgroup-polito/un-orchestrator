@@ -9,8 +9,7 @@ pthread_mutex_t ComputeController::nfs_manager_mutex = PTHREAD_MUTEX_INITIALIZER
 map<int,uint64_t> ComputeController::cores;
 int ComputeController::nextCore = 0;
 
-ComputeController::ComputeController(string vnf_repo_ip,int vnf_repo_port):
-		vnf_repo_ip(vnf_repo_ip),vnf_repo_port(vnf_repo_port)
+ComputeController::ComputeController()
 {
 }
 
@@ -44,7 +43,7 @@ string ComputeController::buildUrl(highlevel::VNFs vnfDescription) {
 	}
 	else
 		tmp << "GET " << VNF_REPOSITORY_TEMPLATES_URL << vnfDescription.getName() << "/ HTTP/1.1\r\n";
-	tmp << "Host: :" << vnf_repo_ip << ":" << vnf_repo_port << "\r\n";
+	tmp << "Host: :" << Configuration::instance()->getVnfRepoIp() << ":" << Configuration::instance()->getVnfRepoPort() << "\r\n";
 	tmp << "Connection: close\r\n";
 	tmp << "Accept: */*\r\n\r\n";
 	return tmp.str();
@@ -70,11 +69,11 @@ nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescr
 		Hints.ai_family= AF_INET;
 		Hints.ai_socktype= SOCK_STREAM;
 		ostringstream oss;
-		oss << vnf_repo_port;
+		oss << Configuration::instance()->getVnfRepoPort();
 
-		if (sock_initaddress (vnf_repo_ip.c_str(), oss.str().c_str(), &Hints, &AddrInfo, ErrBuf, sizeof(ErrBuf)) == sockFAILURE)
+		if (sock_initaddress (Configuration::instance()->getVnfRepoIp().c_str(), oss.str().c_str(), &Hints, &AddrInfo, ErrBuf, sizeof(ErrBuf)) == sockFAILURE)
 		{
-			ULOG_ERR("Error resolving given address/port (%s/%d): %s",  vnf_repo_ip.c_str(), vnf_repo_port, ErrBuf);
+			ULOG_ERR("Error resolving given address/port (%s/%d): %s",  Configuration::instance()->getVnfRepoIp().c_str(), Configuration::instance()->getVnfRepoPort(), ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
 		url = buildUrl(vnfDescription);
@@ -85,7 +84,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescr
 		if ( (socket= sock_open(AddrInfo, 0, 0,  ErrBuf, sizeof(ErrBuf))) == sockFAILURE)
 		{
 			// AddrInfo is no longer required
-			ULOG_ERR("Cannot contact the vnf repository at \"%s:%d\"", vnf_repo_ip.c_str(), vnf_repo_port);
+			ULOG_ERR("Cannot contact the vnf repository at \"%s:%d\"", Configuration::instance()->getVnfRepoIp().c_str(), Configuration::instance()->getVnfRepoPort());
 			ULOG_ERR("%s", ErrBuf);
 			return NFManager_SERVER_ERROR;
 		}
@@ -399,7 +398,7 @@ bool ComputeController::downloadImage(Description * description,string vnfImageP
 	return true;
 }
 
-NFsManager* ComputeController::selectNFImplementation(list<Description*> descriptions, string vnf_images_path) {
+NFsManager* ComputeController::selectNFImplementation(list<Description*> descriptions) {
 
 	list<Description*>::iterator descr;
 
@@ -424,7 +423,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				selected = true;
 				ULOG_DBG_INFO("Docker description has been selected.");
 				if((*descr)->getTemplate()->getURIType() == REMOTE_FILE){  //other checks are in the script called by the plugin
-					downloadSuccess=downloadImage(*descr,vnf_images_path);
+					downloadSuccess=downloadImage(*descr,Configuration::instance()->getVnfImagesPath());
 					assert(downloadSuccess);
 					if(!downloadSuccess){
 						ULOG_ERR("Download failed!");
@@ -446,7 +445,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				selected = true;
 				ULOG_DBG_INFO("DPDK description has been selected.");
 				if((*descr)->getTemplate()->getURIType() == REMOTE_FILE){
-					downloadSuccess = downloadImage(*descr,vnf_images_path);
+					downloadSuccess = downloadImage(*descr,Configuration::instance()->getVnfImagesPath());
 					assert(downloadSuccess);
 					if(!downloadSuccess){
 						ULOG_ERR("Download failed!");
@@ -470,7 +469,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 				selected = true;
 				ULOG_DBG_INFO("KVM description has been selected.");
 				if((*descr)->getTemplate()->getURIType() == REMOTE_FILE){
-					downloadSuccess = downloadImage(*descr,vnf_images_path);
+					downloadSuccess = downloadImage(*descr,Configuration::instance()->getVnfImagesPath());
 					assert(downloadSuccess);
 					if(!downloadSuccess){
 						ULOG_ERR("Download failed!");
@@ -496,7 +495,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 					selected = true;
 					ULOG_DBG_INFO("Native description has been selected.");
 					if((*descr)->getTemplate()->getURIType() == REMOTE_FILE){
-						downloadSuccess = downloadImage(*descr,vnf_images_path);
+						downloadSuccess = downloadImage(*descr,Configuration::instance()->getVnfImagesPath());
 						assert(downloadSuccess);
 						if(!downloadSuccess){
 							ULOG_ERR("Download failed!");
@@ -523,7 +522,7 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 }
 
 
-bool ComputeController::selectImplementation(string vnf_images_path)
+bool ComputeController::selectImplementation()
 {
 	/**
 	 * set boolean `supported` in each supported network function
@@ -542,7 +541,7 @@ bool ComputeController::selectImplementation(string vnf_images_path)
 
 			list<Description*> descriptions = current->getAvailableDescriptions();
 
-			NFsManager *selectedImplementation = selectNFImplementation(descriptions,vnf_images_path);
+			NFsManager *selectedImplementation = selectNFImplementation(descriptions);
 
 			if(selectedImplementation == NULL) {
 

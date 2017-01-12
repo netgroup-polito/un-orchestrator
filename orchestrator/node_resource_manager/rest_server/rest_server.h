@@ -31,6 +31,7 @@
 #include "../graph_manager/graph_manager.h"
 #include "../../utils/constants.h"
 #include "../../utils/logger.h"
+#include "../../utils/configuration.h"
 
 #include "../graph/generic_actions/vlan_action.h"
 #include "../graph/output_actions/action_port.h"
@@ -131,7 +132,7 @@ private:
 	static int httpResponse(struct MHD_Connection *connection, int code);
 
 public:
-	static bool init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs ,int core_mask, set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_images_path);
+	static bool init(SQLiteManager *dbm, int core_mask);
 
 	static void terminate();
 

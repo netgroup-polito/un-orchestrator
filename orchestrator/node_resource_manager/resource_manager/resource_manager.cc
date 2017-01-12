@@ -2,13 +2,13 @@
 
 static const char LOG_MODULE_NAME[] = "Resource-Manager";
 
-void ResourceManager::publishDescriptionFromFile(char *descr_file)
+void ResourceManager::publishDescriptionFromFile(string descr_file)
 {
-	assert(descr_file != NULL);
+	assert(descr_file != "");
 
-	FILE *fp = fopen(descr_file, "rb");
+	FILE *fp = fopen(descr_file.c_str(), "rb");
 	if(fp == NULL) {
-		ULOG_ERR("Something wrong while opening file '%s'.",descr_file);
+		ULOG_ERR("Something wrong while opening file '%s'.",descr_file.c_str());
 		fclose(fp);
 		return;
 	}
@@ -18,7 +18,7 @@ void ResourceManager::publishDescriptionFromFile(char *descr_file)
 
 	char *mesg = (char *) malloc(fsize + 1);
 	if(fread(mesg, fsize, 1, fp) != 1) {
-		ULOG_ERR("Something wrong while reading file '%s'.",descr_file);
+		ULOG_ERR("Something wrong while reading file '%s'.",descr_file.c_str());
 		free(mesg);
 		fclose(fp);
 		return;
