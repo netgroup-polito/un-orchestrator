@@ -138,10 +138,11 @@ private:
 	map<string,GraphInfo> tenantLSIs;
 
 	/**
-	*	Name resolver configuration parameters
+	*	Vnf repository configuration parameters
 	**/
-	string nameResolverIP;
-	int nameResolverPort;
+	string vnfRepoIP;
+	int vnfRepoPort;
+    string vnfImagePath;
 
 	/**
 	*	The module that interacts with the virtual switch
@@ -259,7 +260,7 @@ public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF
 	//(plus other fields)
 
-	GraphManager(int core_mask,set<string> physical_ports,string un_address,bool control,string un_interface,string ipsec_certificate, string name_resolver_ip, int name_resolver_port);
+	GraphManager(int core_mask,set<string> physical_ports,string un_address,bool control,string un_interface,string ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_images_path);
 	~GraphManager();
 
 	/**
@@ -304,6 +305,9 @@ public:
 	void removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *graph, LSI *lsi);
 
 	void getGraphsNames(std::list<std::string> *l);
+	
+	//Returns the ip address + port of the vnf repository
+	string getVnfRepoEndpoint();
 };
 
 

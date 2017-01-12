@@ -2,64 +2,26 @@
 
 bool operator==(const nf_port_info& lhs, const nf_port_info& rhs)
 {
-    return (lhs.port_name.compare(rhs.port_name) == 0) && (lhs.port_type == rhs.port_type);
+    return (lhs.port_name.compare(rhs.port_name) == 0) && (lhs.port_technology == rhs.port_technology);
 }
 
-Description::Description(nf_t type, string uri, std::map<unsigned int, PortType>& port_types) :
-	type(type), uri(uri), port_types(port_types)
+
+
+Description::Description(NFtemplate * temp,std::map<unsigned int, PortTechnology>& port_technologies) :
+	 temp(temp), port_technologies(port_technologies)
 {
 	supported = false;
-}
-
-Description::Description(string type, string uri, std::map<unsigned int, PortType>& port_types) :
-	 uri(uri) , port_types(port_types)
-{
-	supported = false;
-
-	if(type == "dpdk")
-	{
-		this->type = DPDK;
-		return;
-	}
-#ifdef ENABLE_DOCKER
-	else if(type == "docker")
-	{
-		this->type = DOCKER;
-		return;
-	}
-#endif
-#ifdef ENABLE_KVM
-	else if(type == "kvm")
-	{
-		this->type = KVM;
-		return;
-	}
-#endif
-#ifdef ENABLE_NATIVE
-	else if(type == "native")
-	{
-		this->type = NATIVE;
-		return;
-	}
-#endif
-
-	//[+] Add here other implementations for the execution environment
-
-	assert(0);
 	return;
 }
 
-Description::~Description(){}
-
-nf_t Description::getType() const
-{
-	return type;
+Description::~Description(){
+	delete temp;
 }
 
-string Description::getURI() const
-{
-	return uri;
+NFtemplate* Description::getTemplate() {
+	return temp;
 }
+
 
 bool Description::isSupported() {
 	return supported;
@@ -69,16 +31,27 @@ void Description::setSupported(bool supported) {
 	this->supported = supported;
 }
 
-PortType Description::getPortType(unsigned int port_id) const
+PortTechnology Description::getPortTechnology(unsigned int port_id) const
 {
-	std::map<unsigned int, PortType>::const_iterator it = port_types.find(port_id);
-	if (it != port_types.end()) {
+	std::map<unsigned int, PortTechnology>::const_iterator it = port_technologies.find(port_id);
+	if (it != port_technologies.end()) {
 		return it->second;
 	}
 	return UNDEFINED_PORT;  // TODO: Should we make this INVALID_PORT to notify an error? Question is also: do we make the port specification in the NF description mandatory?
 }
 
-PortType portTypeFromString(const std::string& s)
+uri_t stringToUriType(const std::string& s){
+	if (s.compare("remote-file") == 0)
+		return REMOTE_FILE;
+	else if (s.compare("local-file") == 0)
+		return LOCAL_FILE;
+	else if (s.compare("docker-registry") == 0)
+		return DOCKER_REGISTRY;
+
+	return UNDEFINED_URITYPE;
+}
+
+PortTechnology portTechnologyFromString(const std::string& s)
 {
 	if (s.compare("ivshmem") == 0)
 		return IVSHMEM_PORT;
@@ -90,7 +63,7 @@ PortType portTypeFromString(const std::string& s)
 	return INVALID_PORT;
 }
 
-std::string portTypeToString(PortType t)
+string portTechnologyToString(PortTechnology t)
 {
 	switch (t) {
 	case IVSHMEM_PORT:
@@ -115,4 +88,84 @@ std::string portTypeToString(PortType t)
 		break;
 	}
 	return "INVALID";
+}
+
+
+
+
+
+nf_t stringToVnfType(const std::string& type){
+
+    if(!type.compare("dpdk"))
+    {
+        return DPDK;
+    }
+
+    else if(!type.compare("docker"))
+    {
+        return DOCKER;
+    }
+
+    else if(!type.compare("virtual-machine-kvm"))
+    {
+        return KVM;
+    }
+
+    else if(!type.compare("native"))
+    {
+        return NATIVE;
+    }
+
+	return UNDEFINED;
+
+
+    //[+] Add here other implementations for the execution environment
+
+}
+
+
+string uriTypeToString(uri_t type){
+
+	switch (type) {
+		case REMOTE_FILE:
+			return "remote-file";
+			break;
+		case LOCAL_FILE:
+			return "local-file";
+			break;
+		case DOCKER_REGISTRY:
+			return "docker-registry";
+			break;
+		default:
+			break;
+	}
+	return "INVALID";
+}
+
+
+
+
+string vnfTypeToString(nf_t type)
+{
+#if defined(ENABLE_DPDK_PROCESSES) || defined(VSWITCH_IMPLEMENTATION_XDPD)
+	if(type == DPDK)
+			return string("dpdk");
+#endif
+#if defined(ENABLE_DOCKER) || defined(VSWITCH_IMPLEMENTATION_XDPD)
+	if(type == DOCKER)
+			return string("docker");
+#endif
+#ifdef ENABLE_KVM
+	if(type == KVM)
+			return string("virtual-machine-kvm");
+#endif
+#ifdef ENABLE_NATIVE
+	if(type == NATIVE)
+			return string("native");
+#endif
+
+	//[+] Add here other implementations for the execution environment
+
+	assert(0);
+	return "";
 }

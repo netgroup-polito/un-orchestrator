@@ -16,12 +16,13 @@
 #include "../utils/logger.h"
 #include "../utils/constants.h"
 #include "../utils/sockutils.h"
+#include "../node_resource_manager/graph/high_level_graph/high_level_graph_vnf.h"
 #include "nf.h"
-
+#include "template/NFtemplate.h"
 #include <json_spirit/json_spirit.h>
 #include <json_spirit/value.h>
 #include <json_spirit/writer.h>
-
+#include <openssl/sha.h>
 #include "nfs_manager.h"
 
 #ifdef ENABLE_DPDK_PROCESSES
@@ -41,14 +42,17 @@
 using namespace std;
 using namespace json_spirit;
 
-#define NAME_RESOLVER_ADDRESS		"localhost"
-#define NAME_RESOLVER_PORT			"2626"
-#define NAME_RESOLVER_BASE_URL		"/nfs/"
-#define NAME_RESOLVER_DIGEST_URL	"digest/"
+#define VNF_REPOSITORY_TEMPLATE_URL    "/v2/nf_template/"
+#define VNF_REPOSITORY_TEMPLATES_URL    "/v2/nf_capability/"
+#define CODE_POSITION				    9
+#define CODE_METHOD_NOT_ALLLOWED	    "405"
+#define CODE_OK						    "200"
 
-#define CODE_POSITION				9
-#define CODE_METHOD_NOT_ALLLOWED	"405"
-#define CODE_OK						"200"
+/**
+*	@brief: paths of the bash scripts used to manage NF
+*/
+
+#define PULL_NF		"./compute_controller/scripts/retrieveImage.sh"
 
 class Implementation;
 
@@ -85,13 +89,33 @@ private:
 	uint64_t lsiID;
 
 	/**
-	*	@brief: parse the JSON answer received from the name translator database
-	*
-	*	@param:	answer	Answer to be parsed
-	*	@param:	nf		Name of the network function whose description must be in the asnwer
-	*/
-	bool parseAnswer(string answer, string nf_name, string nf_id);
+	*	@brief: VNF repository IP
+	**/
 
+	string vnf_repo_ip;
+
+	/**
+	*	@brief: VNF repository port
+	**/
+	int vnf_repo_port;
+
+	/**
+	*	@brief: add  implementations after the answer from VNF-Repository has been parsed
+	*
+	*	@param:	templates		list of Templates filled with data parsed
+	*	@param:	nf_id			Name of the network function whose description must be in the answer
+	*   @param: number_of_ports number of ports in NF_FG for a VNF
+	*
+	*/
+
+	bool addImplementations(std::list<NFtemplate*>& templates, string nf_id, int number_of_ports);
+    /**
+	*	@brief: download image for specific NF
+	*
+	*	@param:	desc Description of NF
+	*/
+
+    bool downloadImage(Description * desc,string vnf_images_path);
 	/**
 	*	@brief: calculate the core mask for a DPDK NF
 	*
@@ -119,18 +143,29 @@ private:
 	 */
 	void checkSupportedDescriptions();
 
-	NFsManager* selectNFImplementation(list<Description*> descriptions);
+	NFsManager* selectNFImplementation(list<Description*> descriptions,string vnf_images_path);
 
 public:
-	ComputeController();
+	ComputeController(string vfn_repo_ip,int vnf_repo_port);
 	~ComputeController();
 
 	/**
-	*	@brief: Retrieve, from the name resolver, the information for a specific NF
+	*	@brief: Retrieve, from the Vnf Repository, the informations for a specific NF
 	*
-	*	@param:	nf	Name of a network function
+	*	@param:	vnf   object representing a vnf
 	*/
-	nf_manager_ret_t retrieveDescription(string nf_id, string nf_name, string name_resolver_ip, int name_resolver_port);
+
+
+	nf_manager_ret_t retrieveDescription(highlevel::VNFs vnf);
+
+
+    /**
+	*	@brief: build url in order to download the template of a VNF
+	*
+	*	@param:	vnf   object representing a vnf
+	*/
+
+    string buildUrl(highlevel::VNFs vnf);
 
 	/**
 	*	@brief: For each NF, select an implementation. Currently, if a Docker implementation
@@ -143,7 +178,7 @@ public:
 	*		- DPDK
 	*		- KVM
 	*/
-	bool selectImplementation();
+	bool selectImplementation(string vnf_images_path);
 
 	/**
 	*	@brief: Return the type selected for a specific NF

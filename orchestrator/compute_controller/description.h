@@ -1,42 +1,33 @@
+
 #ifndef DESCRIPTION_H_
 #define DESCRIPTION_H_ 1
-
-#include "nf_type.h"
-#include "nfs_manager.h"
-
 #pragma once
-
+#include "nfs_manager.h"
 #include "../utils/logger.h"
 #include "../utils/constants.h"
+#include "template/NFtemplate.h"
 
 #include <string>
 #include <vector>
 #include <assert.h>
-
+#include "port_technology.h"
+#include "uri_type.h"
 using namespace std;
 
 class NFsManager;
 
-enum PortType {
-	INVALID_PORT = -1,
-	UNDEFINED_PORT = 0,
-	//Ports used for virtual machines
-	USVHOST_PORT,			//user space vhost port
-	IVSHMEM_PORT,			//ivshmem port
-	VHOST_PORT,				//(in kernel) vhost port
-	//Ports used fro Docker containers
-	VETH_PORT,				//veth pair port
-	//Ports used for DPDK processes executed in the host
-	DPDKR_PORT				//dpdkr port
-};
 
-PortType portTypeFromString(const std::string& s);
-std::string portTypeToString(PortType t);
 
+PortTechnology portTechnologyFromString(const std::string& port);
+string portTechnologyToString(PortTechnology port);
+nf_t stringToVnfType(const std::string& vnfType); //convert docker in the nf_t DOCKER for example
+string vnfTypeToString(nf_t vnfType);
+uri_t stringToUriType(const std::string& uriType);
+string uriTypeToString(uri_t uriType);
 struct nf_port_info
 {
 	string port_name;
-	PortType port_type;
+	PortTechnology port_technology;
 	unsigned int port_id;
 };
 bool operator==(const nf_port_info& lhs, const nf_port_info& rhs);
@@ -45,22 +36,18 @@ class Description
 {
 
 private:
-	nf_t type;
-	string uri;
+	NFtemplate* temp;
 	bool supported;
-	std::map<unsigned int, PortType> port_types;
+	std::map<unsigned int, PortTechnology> port_technologies;
 
 public:
-	Description(nf_t type, string uri, std::map<unsigned int, PortType>& port_types);
-	Description(string type, string uri, std::map<unsigned int, PortType>& port_types);
+	Description(NFtemplate* temp, std::map<unsigned int, PortTechnology>& port_technologies);
 	virtual ~Description();
-
-	string getURI() const;
-	nf_t getType() const;
+	NFtemplate * getTemplate();
 	void setSupported(bool supported);
 	bool isSupported();
-	const std::map<unsigned int, PortType>& getPortTypes() const { return port_types; }
-	PortType getPortType(unsigned int port_id) const;
+	const std::map<unsigned int, PortTechnology>& getPortTechnologies() const { return port_technologies; }
+	PortTechnology getPortTechnology(unsigned int port_id) const;
 };
 
 #endif //DESCRIPTION_H_

@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include "nf_type.h"
 #include "startNF_in.h"
 #include "updateNF_in.h"
 #include "stopNF_in.h"
 #include "description.h"
-//#include "plugins/dpdk/dpdk_description.h"
+
 #include <typeinfo>
 
 #ifdef ENABLE_HARDWARE

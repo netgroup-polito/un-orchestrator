@@ -4,13 +4,16 @@
 #Date: June 16th 2014
 #Brief: pull a NF from a docker repository, and run it.
 
-#command line: sudo ./pullAndRunNF.sh $1 $2 $3 $4 [$5 ...]
+#command line: sudo ./pullAndRunNF.sh $1 $2 $3 $4 $5 $6[$7 ...]
 
 #$1 LSI ID				(e.g., 2)
-#$2 NF name				(e.g., firewall)
-#$3 registry/nf[:tag] 	(e.g., localhost:5000/pcap:latest)
-#$4 number_of_ports		(e.g., 2)
-#The next $4 *3 parameters are:
+#$2 NF ID				(e.g., 0000000_1)
+#$3 path				(e.g., NFimages/archive.gz)
+#$4 NF name				(e.g., firewall)
+#$5 URI type				(e.g., docker-registry)
+#$6 number_of_ports			(e.g., 2)
+		
+#The next $6 *3 parameters are:
 #	* the port name to be provided to the container (e.g., vEth0)
 #	* the MAC address to be assigned to the port (e.g., aa:bb:cc:dd:ee:ff)
 #	* the IP addres/netmask to be assigned to the port (e.g., 10.0.0.1/24)
@@ -24,6 +27,9 @@
 #not zero, the next N elements are in the form "env_variable_name=value"
 
 tmp_file="$1_$2_tmp"
+path=$3
+uri_type=$5
+docker_registry="docker-registry"
 
 if (( $EUID != 0 ))
 then
@@ -32,9 +38,28 @@ then
 fi
 
 #Check if some port forwarding must be set up
-num_ports=$4
+num_ports=$6
 position_num_forwarding=`expr 4 + $num_ports \* 3 + 1`
 num_forwarding=${!position_num_forwarding}
+
+if [ $uri_type != $docker_registry ]
+then
+	sudo docker load < $path
+	ret=`echo $?`
+    if [ $ret -eq 0 ]
+    then
+
+    	echo "[$0] Docker image successifull loaded"
+
+    else
+
+    	echo "[$0] Unable to load Docker image"
+    	exit 0
+
+    fi
+fi
+
+
 
 echo -ne "sudo docker run -d -i --name $1_$2 "   > $tmp_file
 
@@ -59,13 +84,13 @@ then
 	done
 	
 	firstnicname=1
-	lastnicname=`expr $4 + 1`
+	lastnicname=`expr $6 + 1`
 else
 	# The NIC connected to the docker0 is not needed
 	echo -ne "--net=\"none\" " >> $tmp_file
 	
 	firstnicname=0
-	lastnicname=$4
+	lastnicname=$6
 fi
 
 #Check if some environment variables myust be set up
@@ -86,7 +111,13 @@ then
 	done
 fi
 
-echo "--privileged=true  $3 /bin/bash" >> $tmp_file
+
+if [ $docker_registry != $uri_type ]
+then
+	echo "--privileged=true $4 /bin/bash" >> $tmp_file
+else
+	echo "--privileged=true $3 /bin/bash" >> $tmp_file
+fi
 
 echo [`date`]"[$0] Executing command: '"`cat $tmp_file`"'"
 
@@ -119,7 +150,7 @@ PID=`docker inspect --format '{{ .State.Pid }}' $ID`
 sudo mkdir -p /var/run/netns
 sudo ln -s /proc/$PID/ns/net /var/run/netns/$PID
 	
-current=5
+current=7
 current_mac=`expr $current + 1`
 current_ip=`expr $current + 2`
 

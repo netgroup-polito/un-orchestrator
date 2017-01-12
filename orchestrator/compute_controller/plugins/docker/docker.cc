@@ -66,17 +66,18 @@ bool Docker::updateNF(UpdateNFIn uni)
 bool Docker::startNF(StartNFIn sni)
 {
 	uint64_t lsiID = sni.getLsiID();
-	string nf_name = sni.getNfId();
-
-	string uri_image = description->getURI();
-
+	string nf_id = sni.getNfId();
+	NFtemplate *temp = description->getTemplate();
+	string uri_image = temp->getURI();
+    string nf_name = temp->getCapability();
+    string uri_type = uriTypeToString(temp->getURIType());
 	map<unsigned int, string> namesOfPortsOnTheSwitch = sni.getNamesOfPortsOnTheSwitch();
 	unsigned int n_ports = namesOfPortsOnTheSwitch.size();
 
 	map<unsigned int, port_network_config_t > portsConfiguration = sni.getPortsConfiguration();
 	for(map<unsigned int, port_network_config_t >::iterator configuration = portsConfiguration.begin(); configuration != portsConfiguration.end(); configuration++)
 	{
-		ULOG_DBG_INFO("Network configuration for port: %s:%d",nf_name.c_str(),configuration->first);
+		ULOG_DBG_INFO("Network configuration for port: %s:%d",nf_id.c_str(),configuration->first);
 
 		if(configuration->second.mac_address != "")
 			ULOG_DBG_INFO("\t MAC address: %s",(configuration->second.mac_address).c_str());
@@ -87,7 +88,7 @@ bool Docker::startNF(StartNFIn sni)
 	}
 
 	stringstream command;
-	command << getenv("un_script_path") << PULL_AND_RUN_DOCKER_NF << " " << lsiID << " " << nf_name << " " << uri_image << " " << n_ports;
+	command << getenv("un_script_path") << PULL_AND_RUN_DOCKER_NF << " " << lsiID << " " << nf_id << " " << uri_image << " " << nf_name << " " << uri_type << " " <<n_ports;
 	assert(portsConfiguration.size() == namesOfPortsOnTheSwitch.size());
 	//map<unsigned int, port_network_config_t >::iterator configuration = portsConfiguration.begin();
 	for(map<unsigned int, string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)

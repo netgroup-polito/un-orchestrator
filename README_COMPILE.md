@@ -38,6 +38,11 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 	; Update the dynamic libraries cache
 	$ sudo ldconfig
 
+Some components of the UN are available as git submodules. To retrieve such modules, type the
+following commands
+
+	$ cd [un-orchestrator]
+	$ git submodule update --init --recursive
 
 ## Getting the code
 

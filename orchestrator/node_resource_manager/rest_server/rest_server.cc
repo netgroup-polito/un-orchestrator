@@ -10,12 +10,12 @@ SecurityManager *secmanager = NULL;
 
 bool client_auth = false;
 
-bool RestServer::init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs,int core_mask,set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string name_resolver_ip, int name_resolver_port)
+bool RestServer::init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs,int core_mask,set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_images_path)
 {
 
 	try
 	{
-		gm = new GraphManager(core_mask,physical_ports,un_address,orchestrator_in_band,string(un_interface),string(ipsec_certificate), name_resolver_ip, name_resolver_port);
+		gm = new GraphManager(core_mask,physical_ports,un_address,orchestrator_in_band,string(un_interface),string(ipsec_certificate), vnf_repo_ip, vnf_repo_port,vnf_images_path);
 
 	} catch (...) {
 		return false;
@@ -539,6 +539,8 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 			return readMultipleUsers(connection, usr);
 		else if (strcmp(generic_resource, BASE_URL_GROUP) == 0)
 			return readMultipleGroups(connection, usr);
+		else if (strcmp(generic_resource, URL_CONFIGURATION) == 0)
+			return readConfiguration(connection);
 
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	} else if(strcmp(method, PUT) == 0) {
@@ -771,11 +773,11 @@ int RestServer::readGraph(struct MHD_Connection *connection, char *graphID)
 
 	// Check whether the graph exists in the local database and in the graph manager
 	if ( (dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_GRAPH, graphID)) || (dbmanager == NULL && !gm->graphExists(graphID))) {
-		ULOG_INFO("Method GET is not supported for this resource (i.e. it does not exist)");
+		ULOG_INFO("The required resource does not exist!");
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
 		MHD_add_response_header(response, "Allow", PUT);
-		ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED,
+		ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND,
 				response);
 		MHD_destroy_response(response);
 		return ret;
@@ -1015,6 +1017,30 @@ int RestServer::readMultipleGraphs(struct MHD_Connection *connection, user_info_
 		return ret;
 	} catch (...) {
 		ULOG_ERR("An error occurred while retrieving the graph description!");
+		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
+	}
+}
+
+int RestServer::readConfiguration(struct MHD_Connection *connection) {
+
+	struct MHD_Response *response;
+	string datastoreEndpoint = gm->getVnfRepoEndpoint();
+	try {
+		Object json;
+		json["datastoreEndpoint"]=datastoreEndpoint.c_str();
+		stringstream ssj;
+		write_formatted(json, ssj );
+		string sssj = ssj.str();
+		char *aux = (char*)malloc(sizeof(char) * (sssj.length()+1));
+		strcpy(aux,sssj.c_str());
+		response = MHD_create_response_from_buffer (strlen(aux),(void*) aux, MHD_RESPMEM_PERSISTENT);
+		MHD_add_response_header (response, "Content-Type",JSON_C_TYPE);
+		MHD_add_response_header (response, "Cache-Control",NO_CACHE);
+		int ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+		MHD_destroy_response (response);
+		return ret;
+	} catch (...) {
+		ULOG_ERR("An error occurred while retrieving the configuration!");
 		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 	}
 }

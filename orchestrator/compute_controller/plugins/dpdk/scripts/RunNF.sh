@@ -10,7 +10,7 @@
 
 #$1 LSI ID						(e.g., 2)
 #$2 NF name						(e.g., firewall)
-#$3 URL							(e.g., https://dl.dropboxusercontent.com/u/26069382/nf)
+#$3 path file						(e.g., un-orchestrator/orchestrator/NFimages/archive.gz)
 #$4 core mask					(e.g., 2) XXX: it must be in decimal. The conversion in exadecimal is done in this script
 #$5 number of memory channels	(e.g., 2)
 #$6 number_of_ports				(e.g., 2)
@@ -25,43 +25,7 @@ then
 fi
 
 echo "" > $tmp_file
-
-#Retrieve the exec, and rename it
-exec_name=`echo $1"_"$tmp_file"_"$2`
-
-tmp=$3
-
-remote=false
-
-begin=${tmp:0:7}
-# file:// means that the NF is local
-if [ $begin == "file://" ]
-then
-	#The NF is in the local file system
-	path=${tmp:7:${#tmp}}
-	
-	cp $path $exec_name
-else
-	#The NF must be retrieved from a remote url
-	remote=true
-	sudo wget -O $exec_name $3
-	#wget returns 0 in case of success
-fi
-
-ret=`echo $?`
-
-if [ $ret -eq 0 ]
-then
-	echo "[$0] Image '"$3"' retrieved"
-else
-	echo "[$0] Impossible to retrieve image '"$3"'"
-	rm $tmp_file
-	if [ $remote == true ]
-	then
-		rm $exec_name
-	fi
-	exit 0
-fi
+exec_name=$3
 
 sudo chmod +x $exec_name
 
