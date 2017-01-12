@@ -131,7 +131,7 @@ private:
 	static int httpResponse(struct MHD_Connection *connection, int code);
 
 public:
-	static bool init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs ,int core_mask, set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_images_path);
+	static bool init(SQLiteManager *dbm, bool cli_auth, map<string,string> boot_graphs ,int core_mask, list<string> physical_ports, string un_address, bool orchestrator_in_band, string un_interface, string ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_images_path);
 
 	static void terminate();
 

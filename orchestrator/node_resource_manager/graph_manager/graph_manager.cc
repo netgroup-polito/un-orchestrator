@@ -10,12 +10,12 @@ void GraphManager::mutexInit()
 	pthread_mutex_init(&graph_manager_mutex, NULL);
 }
 
-GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_address,bool orchestrator_in_band,string un_interface,string ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_images_path) :
+GraphManager::GraphManager(int core_mask,list<string> physical_ports,string un_address,bool orchestrator_in_band,string un_interface,string ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_images_path) :
 	un_address(un_address), orchestrator_in_band(orchestrator_in_band), un_interface(un_interface), ipsec_certificate(ipsec_certificate), vnfRepoIP(vnf_repo_ip),vnfImagePath(vnf_images_path), switchManager()
 {
 	//TODO: this code can be simplified. Why don't providing the set<string> to the switch manager?
 	set<CheckPhysicalPortsIn> phyPortsRequired;
-	for(set<string>::iterator pp = physical_ports.begin(); pp != physical_ports.end(); pp++)
+	for(list<string>::iterator pp = physical_ports.begin(); pp != physical_ports.end(); pp++)
 	{
 		CheckPhysicalPortsIn cppi(*pp);
 		phyPortsRequired.insert(cppi);

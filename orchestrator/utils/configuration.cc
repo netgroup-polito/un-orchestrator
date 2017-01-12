@@ -23,7 +23,7 @@ bool Configuration::init(string configurationFile)
             return false;
         }
 
-        stringstream ss(tmp_physical_ports);
+        stringstream ss(tmp_physical_ports.substr(1,tmp_physical_ports.size()-2));
         string item;
         while (getline(ss, item, ' ')) {
             ULOG_DBG( "\tphysical port: %s",item.c_str());

@@ -22,6 +22,7 @@
 #include "node_resource_manager/database_manager/SQLite/SQLiteManager.h"
 
 #include <INIReader.h>
+#include "utils/configuration.h"
 
 #include <signal.h>
 #include <execinfo.h>
@@ -56,11 +57,16 @@ SQLiteManager *dbm = NULL;
 *	Private prototypes
 */
 bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file);
-bool parse_config_file(char *config_file, int *rest_port, bool *cli_auth,  map<string,string> &boot_graphs, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate, string &vnf_repo_ip, int *vnf_repo_port,string& vnf_images_path);
-
 bool usage(void);
 void printUniversalNodeInfo();
 void terminateRestServer(void);
+
+/*
+*
+* Configuration class (contanins all configuration parameters)
+*
+*/
+Configuration configuration;
 
 /**
 *	Implementations
@@ -160,28 +166,7 @@ int main(int argc, char *argv[])
 #endif
 
 	int core_mask;
-	int rest_port, t_rest_port;
-	bool cli_auth, t_cli_auth, orchestrator_in_band, t_orchestrator_in_band;
 	char *config_file_name = new char[BUFFER_SIZE];
-	set<string> physical_ports;
-	map<string,string> boot_graphs;
-	char *descr_file_name = new char[BUFFER_SIZE], *t_descr_file_name = NULL;
-#ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	char *client_name = new char[BUFFER_SIZE];
-	char *broker_address = new char[BUFFER_SIZE];
-	char *key_path = new char[BUFFER_SIZE];
-#endif
-	char *t_client_name = NULL, *t_broker_address = NULL, *t_key_path = NULL;
-	char *un_interface = new char[BUFFER_SIZE], *t_un_interface = NULL;
-	char *un_address = new char[BUFFER_SIZE], *t_un_address = NULL;
-	char *ipsec_certificate = new char[BUFFER_SIZE], *t_ipsec_certificate = NULL;
-
-	string vnf_repo_ip;
-	int vnf_repo_port;
-	string vnf_images_path;
-
-	string s_un_address;
-	string s_ipsec_certificate;
 
 	strcpy(config_file_name, DEFAULT_FILE);
 
@@ -191,62 +176,13 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if(!parse_config_file(config_file_name,&t_rest_port,&t_cli_auth,boot_graphs,physical_ports,&t_descr_file_name,&t_client_name,&t_broker_address,&t_key_path,&t_orchestrator_in_band,&t_un_interface,&t_un_address,&t_ipsec_certificate, vnf_repo_ip, &vnf_repo_port,vnf_images_path))
+	if(!configuration.init(string(config_file_name)))
 	{
 		ULOG_ERR( "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
 	}
 
-	if(strcmp(t_descr_file_name, "UNKNOWN") != 0)
-		strcpy(descr_file_name, t_descr_file_name);
-	else
-		descr_file_name = NULL;
-
-#ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	//The following parameters are mandatory in case of DD connection
-	strcpy(client_name, t_client_name);
-	strcpy(broker_address, t_broker_address);
-	strcpy(key_path, t_key_path);
-#endif
-
-	if(strcmp(t_un_interface, "UNKNOWN") != 0)
-		strcpy(un_interface, t_un_interface);
-	else
-		un_interface = "";
-
-	if(strcmp(t_un_address, "UNKNOWN") != 0)
-		strcpy(un_address, t_un_address);
-	else
-		un_address = "";
-
-	if(strcmp(t_ipsec_certificate, "UNKNOWN") != 0)
-		strcpy(ipsec_certificate, t_ipsec_certificate);
-	else
-		ipsec_certificate = "";
-
-	rest_port = t_rest_port;
-	cli_auth = t_cli_auth;
-	orchestrator_in_band = t_orchestrator_in_band;
-
-	if(!string(un_address).empty())
-		s_un_address = string(un_address);
-	if(!string(ipsec_certificate).empty())
-		s_ipsec_certificate = string(ipsec_certificate);
-
-	if(!string(un_address).empty())
-	{
-		//remove " character from string
-		s_un_address.erase(0,1);
-		s_un_address.erase(s_un_address.size()-1,1);
-	}
-
-	if(!string(ipsec_certificate).empty())
-	{
-		s_ipsec_certificate.erase(0,1);
-		s_ipsec_certificate.erase(s_ipsec_certificate.size()-1,1);
-	}
-
-	if(cli_auth) {
+	if(configuration.getUserAuthentication()) {
 		std::ifstream ifile(DB_NAME);
 
 		if(ifile)
@@ -260,14 +196,14 @@ int main(int argc, char *argv[])
 	}
 
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	if(!DoubleDeckerClient::init(client_name, broker_address, key_path))
+	if(!DoubleDeckerClient::init(configuration.getDdClientName().c_str(), configuration.getDdBrokerAddress().c_str(), configuration.getDdKeyPath()).c_str())
 	{
 		ULOG_ERR( "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
 	}
 #endif
 
-	if(!RestServer::init(dbm,cli_auth,boot_graphs,core_mask,physical_ports,s_un_address,orchestrator_in_band,un_interface,ipsec_certificate, vnf_repo_ip, vnf_repo_port,vnf_images_path))
+	if(!RestServer::init(dbm,configuration.getUserAuthentication(),configuration.getBootGraphs(),core_mask,configuration.getPhisicalPorts(),configuration.getUnAddress(),configuration.getOrchestratorInBand(),configuration.getUnInterface(),configuration.getIpsecCertificate(), configuration.getVnfRepoIp(), configuration.getVnfRepoPort(),configuration.getVnfImagesPath()))
 	{
 		ULOG_ERR( "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
@@ -277,13 +213,13 @@ int main(int argc, char *argv[])
 	ResourceManager::publishDescriptionFromFile(descr_file_name);
 #endif
 
-	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, rest_port, NULL, NULL,&RestServer::answer_to_connection,
+	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, configuration.getRestPort(), NULL, NULL,&RestServer::answer_to_connection,
 		NULL, MHD_OPTION_NOTIFY_COMPLETED, &RestServer::request_completed, NULL,MHD_OPTION_END);
 
 	if (NULL == http_daemon)
 	{
 		ULOG_ERR( "Cannot start the HTTP deamon. The %s cannot be run.",MODULE_NAME);
-		ULOG_ERR( "Please, check that the TCP port %d is not used (use the command \"netstat -a | grep %d\")",rest_port,rest_port);
+		ULOG_ERR( "Please, check that the TCP port %d is not used (use the command \"netstat -lnp | grep %d\")",configuration.getRestPort(),configuration.getRestPort());
 
 		terminateRestServer();
 
@@ -316,7 +252,7 @@ int main(int argc, char *argv[])
 
 	printUniversalNodeInfo();
 	ULOG_INFO("The '%s' is started!",MODULE_NAME);
-	ULOG_INFO("Waiting for commands on TCP port \"%d\"",rest_port);
+	ULOG_INFO("Waiting for commands on TCP port \"%d\"",configuration.getRestPort());
 
 	while(true) {
 		struct timeval tv;
@@ -392,179 +328,6 @@ static struct option lgopts[] = {
 				return usage();
 		}
 	}
-
-	return true;
-}
-
-bool parse_config_file(char *config_file_name, int *rest_port, bool *cli_auth, map<string,string> &boot_graphs, set<string> &physical_ports, char **descr_file_name, char **client_name, char **broker_address, char **key_path, bool *orchestrator_in_band, char **un_interface, char **un_address, char **ipsec_certificate, string &vnf_repo_ip, int *vnf_repo_port,string & vnf_images_path)
-{
-	*rest_port = REST_PORT;
-
-	/*
-	*
-	* Parsing universal node configuration file. Checks about mandatory parameters are done in this functions.
-	*
-	*/
-	INIReader reader(config_file_name);
-
-	if (reader.ParseError() < 0) {
-		ULOG_ERR( "Can't load a default-config.ini file");
-		return false;
-	}
-
-	// ports_name : optional
-	char tmp_physical_ports[PATH_MAX];
-	strcpy(tmp_physical_ports, (char *)reader.Get("physical ports", "ports_name", "UNKNOWN").c_str());
-	if(strcmp(tmp_physical_ports, "UNKNOWN") != 0 && strcmp(tmp_physical_ports, "") != 0)
-	{
-		ULOG_DBG( "Physical ports read from configuation file: %s",tmp_physical_ports);
-		//the string must start and terminate respectively with [ and ]
-		if((tmp_physical_ports[strlen(tmp_physical_ports)-1] != ']') || (tmp_physical_ports[0] != '[') )
-		{
-			ULOG_ERR( "Wrong list of physical ports '%s'. It must be enclosed in '[...]'",tmp_physical_ports);
-			return false;
-		}
-		tmp_physical_ports[strlen(tmp_physical_ports)-1] = '\0';
-
-		//the string just read must be tokenized
-		char delimiter[] = " ";
-		char * pnt;
-		pnt=strtok(tmp_physical_ports + 1, delimiter);
-		while(pnt!= NULL)
-		{
-			ULOG_DBG( "\tphysical port: %s",pnt);
-			string s(pnt);
-			physical_ports.insert(pnt);
-			pnt = strtok( NULL, delimiter );
-		}
-	}
-
-	// nf-fgs : optional
-	string nffgs = reader.Get("initial graphs", "nffgs", "UNKNOWN");
-	if(nffgs != "UNKNOWN" && nffgs != "")
-	{
-		ULOG_DBG( "Initial graphs read from configuation file: %s",nffgs.c_str());
-		//the string must start and terminate respectively with [ and ]
-		if(nffgs.at(0)!='[' || nffgs.at(nffgs.length()-1)!=']')
-		{
-			ULOG_ERR( "Wrong list initial graphs '%s'. They must be enclosed in '[...]'",nffgs.c_str());
-			return false;
-		}
-		nffgs=nffgs.substr(1,nffgs.length()-2);
-
-		//the string just read must be tokenized
-		istringstream iss(nffgs);
-		string graph;
-		while (getline(iss, graph, ' '))
-		{
-			istringstream iss(graph);
-			string graphName,graphFile;
-			getline(iss, graphName, '=');
-			getline(iss, graphFile, '=');
-			ULOG_DBG_INFO( "Boot Graph: '%s' - '%s'",graphName.c_str(),graphFile.c_str());
-			boot_graphs[graphName]=graphFile;
-		}
-	}
-
-	// server_port : mandatory
-	int temp_rest_port = (int)reader.GetInteger("rest server", "server_port", -1);
-
-	if(temp_rest_port != -1)
-		*rest_port = temp_rest_port;
-	else
-	{
-		ULOG_ERR( "Error in configuration file '%'s. Mandatory parameter 'server_port' is missing.",config_file_name);
-		return false;
-	}
-
-	// user_authentication : optional - false if not specified
-	*cli_auth = reader.GetBoolean("user authentication", "user_authentication", false);
-
-	/* description file to export*/
-	char *temp_descr = new char[64];
-	strcpy(temp_descr, (char *)reader.Get("resource-manager", "description_file", "UNKNOWN").c_str());
-	*descr_file_name = temp_descr;
-#ifdef ENABLE_DOUBLE_DECKER_CONNECTION
-	// client_name : mandatory
-	char *temp_cli = new char[64];
-	strcpy(temp_cli, (char *)reader.Get("double-decker", "client_name", "UNKNOWN").c_str());
-	*client_name = temp_cli;
-
-	// brocker_address : mandatory
-	char *temp_dealer = new char[64];
-	strcpy(temp_dealer, (char *)reader.Get("double-decker", "broker_address", "UNKNOWN").c_str());
-	*broker_address = temp_dealer;
-
-	// key_path : mandatory
-	char *temp_key = new char[64];
-	strcpy(temp_key, (char *)reader.Get("double-decker", "key_path", "UNKNOWN").c_str());
-	*key_path = temp_key;
-
-	if(strcmp(temp_cli, "UNKNOWN") == 0)
-	{
-		ULOG_ERR( "Error in configuration file '%'s. Mandatory parameter 'client_name' is missing.",config_file_name);
-		return false;
-	}
-
-	if(strcmp(temp_dealer, "UNKNOWN") == 0)
-	{
-		ULOG_ERR( "Error in configuration file '%'s. Mandatory parameter 'brocker_address' is missing.",config_file_name);
-		return false;
-	}
-
-	if(strcmp(temp_key, "UNKNOWN") == 0)
-	{
-		ULOG_ERR( "Error in configuration file '%'s. Mandatory parameter 'key_path	' is missing.",config_file_name);
-		return false;
-	}
-#endif
-
-	// is_in_bande : optional - false if not specified
-	*orchestrator_in_band = reader.GetBoolean("orchestrator", "is_in_band", false);
-
-	/* universal node interface */
-	char *temp_ctrl_iface = new char[64];
-	strcpy(temp_ctrl_iface, (char *)reader.Get("orchestrator", "un_interface", "UNKNOWN").c_str());
-	*un_interface = temp_ctrl_iface;
-
-	/* local ip */
-	char *temp_un_address = new char[64];
-	strcpy(temp_un_address, (char *)reader.Get("orchestrator", "un_address", "UNKNOWN").c_str());
-	*un_address = temp_un_address;
-
-	/* IPsec certificate */
-	char *temp_ipsec_certificate = new char[64];
-	strcpy(temp_ipsec_certificate, (char *)reader.Get("GRE over IPsec", "certificate", "UNKNOWN").c_str());
-	*ipsec_certificate = temp_ipsec_certificate;
-
-	vnf_repo_ip = reader.Get("datastore", "ip_address", "UNKNOWN");
-	if(vnf_repo_ip == "UNKNOWN"){
-		ULOG_ERR("Error in configuration file '%'s. Mandatory parameter 'ip_address' is missing",config_file_name);
-		return false;
-	}
-
-	*vnf_repo_port = (int) reader.GetInteger("datastore", "port", -1);
-	if(*vnf_repo_port == -1) {
-		ULOG_ERR("Error in configuration file '%'s. Mandatory parameter 'port' is missing",config_file_name);
-		return false;
-	}
-
-	vnf_images_path = reader.Get("misc", "IMAGE_DIR", "UNKNOWN");
-	if(vnf_images_path == "UNKNOWN") {
-		ULOG_ERR("Error in configuration file '%'s. Mandatory parameter 'IMAGE_DIR' is missing",config_file_name);
-		return false;
-	}
-	else
-		if(vnf_images_path.at(0) != '/') {
-			ULOG_ERR("Error in configuration file '%'s. 'IMAGE_DIR' must be an absolute path",config_file_name);
-			return false;
-		}
-
-
-	/* Path of the script file*/
-	char script_path[64];
-	strcpy(script_path, (char *)reader.Get("misc", "script_path", "./").c_str());
-	setenv("un_script_path", script_path, 1);
 
 	return true;
 }
