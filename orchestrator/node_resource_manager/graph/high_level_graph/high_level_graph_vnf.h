@@ -62,7 +62,9 @@ private:
 	list<string> groups;
 
 	/**
-	*	@brief: the vnf template of the VNF (e.g., example.json)
+	*	@brief: the vnf template of the VNF (e.g., exampleId)
+	*		this field doesn't point to the complete URL of the template,
+	*		but it contains the id of the template stored in the Datastore
 	*/
 	string vnf_template;
 
