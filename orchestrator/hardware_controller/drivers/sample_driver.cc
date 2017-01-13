@@ -9,13 +9,13 @@ SampleDriver::~SampleDriver()
 {
 }
 
-bool SampleDriver::attachHardware(NFsManager *nf)
+bool SampleDriver::attachHardware(NF *nf)
 {
 	return true;
 }
 
 
-void SampleDriver::detachHardware(NFsManager *nf)
+void SampleDriver::detachHardware(NF *nf)
 {
 }
 

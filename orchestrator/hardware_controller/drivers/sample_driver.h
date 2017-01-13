@@ -7,8 +7,8 @@ class SampleDriver : public HWManager
 public:
 	SampleDriver();
 	~SampleDriver();
-	bool attachHardware(NFsManager *);
-        void detachHardware(NFsManager *);
+	bool attachHardware(NF *);
+        void detachHardware(NF *);
         void initializeHardware();
 	bool supportNetworkFunction(Description *);
 };
