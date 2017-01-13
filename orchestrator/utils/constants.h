@@ -44,6 +44,8 @@
 	#define F_DESCR				"description"
 	#define VNFS 				"VNFs"
 		//#define VNF_NAME			"name"
+		#define	FUNCTIONAL_CAPABILITY		"functional_capability"
+		#define	DESCRIPTION		"description"
 		#define	VNF_TEMPLATE		"vnf_template"
 		#define UNIFY_CONTROL			"unify-control"
 			#define HOST_PORT			"host-tcp-port"

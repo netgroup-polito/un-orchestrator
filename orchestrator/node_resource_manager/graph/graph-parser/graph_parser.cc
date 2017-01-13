@@ -133,9 +133,9 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 								Object network_function = vnfs_array[vnf].getObject();
 
-								bool foundName = false;
+								bool foundName = false, foundFC=false, foundTemplate=false;
 
-								string id, name, vnf_template, port_id, port_name;
+								string id, name, functionalCapability, description, vnf_template, port_id, port_name;
 								list<string> groups;
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 								int vnf_tcp_port = 0, host_tcp_port = 0;
@@ -163,10 +163,24 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										foundName = true;
 										name = nf_value.getString();
 									}
+									else if(nf_name == FUNCTIONAL_CAPABILITY)
+									{
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNFS,FUNCTIONAL_CAPABILITY,nf_value.getString().c_str());
+										functionalCapability = nf_value.getString();
+										if(functionalCapability!="")
+											foundFC = true;
+									}
+									else if(nf_name == DESCRIPTION)
+									{
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNFS,DESCRIPTION,nf_value.getString().c_str());
+										description = nf_value.getString();
+									}
 									else if(nf_name == VNF_TEMPLATE)
 									{
 										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNFS,VNF_TEMPLATE,nf_value.getString().c_str());
 										vnf_template = nf_value.getString();
+										if(vnf_template!="")
+											foundTemplate = true;
 										ULOG_WARN("Key \"%s\" found. It is ignored in the current implementation of the %s",VNF_TEMPLATE,MODULE_NAME);
 									}
 									else if(nf_name == _ID)
@@ -526,8 +540,14 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									ULOG_WARN(error.c_str());
 									throw new GraphParserException(std::move(error));
 								}
+								if(!foundFC && !foundTemplate)
+								{
+									string error = string("At least one beetween '") + FUNCTIONAL_CAPABILITY + "' and '" + VNF_TEMPLATE + "' must be present in the VNF definition";
+									ULOG_WARN(error.c_str());
+									throw new GraphParserException(std::move(error));
+								}
 
-								highlevel::VNFs vnfs(id, name, groups, vnf_template, portS
+								highlevel::VNFs vnfs(id, name, groups, functionalCapability, description, vnf_template, portS
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 								, controlPorts,environmentVariables
 #endif

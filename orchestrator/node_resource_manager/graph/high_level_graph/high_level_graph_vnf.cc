@@ -5,7 +5,7 @@ static const char LOG_MODULE_NAME[] = "High-Level-Graph-VNF";
 namespace highlevel
 {
 
-VNFs::VNFs(string id, string name, list<string> groups, string vnf_template, list<vnf_port_t> ports
+VNFs::VNFs(string id, string name, list<string> groups, string functionalCapability, string description, string vnf_template, list<vnf_port_t> ports
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 , list<port_mapping_t> control_ports, list<string> environment_variables
 #endif
@@ -13,7 +13,7 @@ VNFs::VNFs(string id, string name, list<string> groups, string vnf_template, lis
 		, string user_data
 #endif
 ) :
-	id(id), name(name), groups(groups), vnf_template(vnf_template), updated(false)
+	id(id), name(name), groups(groups), functionalCapability(functionalCapability), description(description), vnf_template(vnf_template), updated(false)
 {
 	for(list<vnf_port_t>::iterator p = ports.begin(); p != ports.end(); p++)
 		this->ports.push_back((*p));
@@ -71,6 +71,16 @@ bool VNFs::checkVnfTemplateField() {
 list<string> VNFs::getGroups()
 {
 	return groups;
+}
+
+string VNFs::getFunctionalCapability()
+{
+	return functionalCapability;
+}
+
+string VNFs::getDescription()
+{
+	return description;
 }
 
 string VNFs::getVnfTemplate()

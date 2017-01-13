@@ -42,7 +42,7 @@ string ComputeController::buildUrl(highlevel::VNFs vnfDescription) {
 		tmp << "GET " << VNF_REPOSITORY_TEMPLATE_URL << vnfDescription.getVnfTemplate() << "/ HTTP/1.1\r\n";
 	}
 	else
-		tmp << "GET " << VNF_REPOSITORY_TEMPLATES_URL << vnfDescription.getName() << "/ HTTP/1.1\r\n";
+		tmp << "GET " << VNF_REPOSITORY_TEMPLATES_URL << vnfDescription.getFunctionalCapability() << "/ HTTP/1.1\r\n";
 	tmp << "Host: :" << Configuration::instance()->getVnfRepoIp() << ":" << Configuration::instance()->getVnfRepoPort() << "\r\n";
 	tmp << "Connection: close\r\n";
 	tmp << "Accept: */*\r\n\r\n";

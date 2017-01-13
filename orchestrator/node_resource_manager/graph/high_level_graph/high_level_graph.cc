@@ -592,7 +592,7 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 				if(ports_needed_by_diff.size() !=0)
 				{
 					ULOG_DBG_INFO("\tUpdate for VNF '%s' is added to the diff graph",(it->getName()).c_str());
-					highlevel::VNFs the_vnf(it->getId(), it->getName(), it->getGroups(), it->getVnfTemplate(), ports_needed_by_diff
+					highlevel::VNFs the_vnf(it->getId(), it->getName(), it->getGroups(), it->getFunctionalCapability(), it->getDescription(), it->getVnfTemplate(), ports_needed_by_diff
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 					, it->getControlPorts(),it->getEnvironmentVariables()
 #endif

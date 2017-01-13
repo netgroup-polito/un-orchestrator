@@ -62,6 +62,16 @@ private:
 	list<string> groups;
 
 	/**
+	*	@brief: the functional capability of the VNF (e.g., switch)
+	*/
+	string functionalCapability;
+
+	/**
+	*	@brief: the description of the VNF (e.g., my beautiful firewall)
+	*/
+	string description;
+
+	/**
 	*	@brief: the vnf template of the VNF (e.g., exampleId)
 	*		this field doesn't point to the complete URL of the template,
 	*		but it contains the id of the template stored in the Datastore
@@ -112,7 +122,7 @@ private:
 
 public:
 
-	VNFs(string id, string name, list<string> groups, string vnf_template, list<vnf_port_t> ports
+	VNFs(string id, string name, list<string> groups, string functional_capability, string description, string vnf_template, list<vnf_port_t> ports
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	, list<port_mapping_t> control_ports, list<string> environment_variables
 #endif
@@ -129,6 +139,8 @@ public:
 	string getId();
 	string getName();
 	list<string> getGroups();
+	string getFunctionalCapability();
+	string getDescription();
 	string getVnfTemplate();
 
 	/*
