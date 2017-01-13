@@ -8,22 +8,17 @@ SQLiteManager *dbmanager = NULL;
 
 SecurityManager *secmanager = NULL;
 
-bool client_auth = false;
-
-bool RestServer::init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs,int core_mask,set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_images_path)
+bool RestServer::init(SQLiteManager *dbm, int core_mask)
 {
-
 	try
 	{
-		gm = new GraphManager(core_mask,physical_ports,un_address,orchestrator_in_band,string(un_interface),string(ipsec_certificate), vnf_repo_ip, vnf_repo_port,vnf_images_path);
+		gm = new GraphManager(core_mask);
 
 	} catch (...) {
 		return false;
 	}
 
-	client_auth = cli_auth;
-
-	if (client_auth) {
+	if (Configuration::instance()->getUserAuthentication()) {
 		dbmanager = dbm;
 		dbmanager->cleanTables();
 		secmanager = new SecurityManager(dbmanager);
@@ -31,8 +26,9 @@ bool RestServer::init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boo
 
 	sleep(2); //XXX This give time to the controller to be initialized
 
+	map <string,string> bootGraph = Configuration::instance()->getBootGraphs();
 	//Handle the file containing the graphs to be deployed
-	for(map<string,string>::iterator iter = boot_graphs.begin(); iter!=boot_graphs.end(); iter++)
+	for(map<string,string>::iterator iter = bootGraph.begin(); iter!=bootGraph.end(); iter++)
 	{
 		if (!readGraphFromFile(iter->first,iter->second)) {
 			delete gm;

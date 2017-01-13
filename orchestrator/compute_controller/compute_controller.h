@@ -16,6 +16,7 @@
 #include "../utils/logger.h"
 #include "../utils/constants.h"
 #include "../utils/sockutils.h"
+#include "../utils/configuration.h"
 #include "../node_resource_manager/graph/high_level_graph/high_level_graph_vnf.h"
 #include "nf.h"
 #include "template/NFtemplate.h"
@@ -89,17 +90,6 @@ private:
 	uint64_t lsiID;
 
 	/**
-	*	@brief: VNF repository IP
-	**/
-
-	string vnf_repo_ip;
-
-	/**
-	*	@brief: VNF repository port
-	**/
-	int vnf_repo_port;
-
-	/**
 	*	@brief: add  implementations after the answer from VNF-Repository has been parsed
 	*
 	*	@param:	templates		list of Templates filled with data parsed
@@ -143,10 +133,10 @@ private:
 	 */
 	void checkSupportedDescriptions();
 
-	NFsManager* selectNFImplementation(list<Description*> descriptions,string vnf_images_path);
+	NFsManager* selectNFImplementation(list<Description*> descriptions);
 
 public:
-	ComputeController(string vfn_repo_ip,int vnf_repo_port);
+	ComputeController();
 	~ComputeController();
 
 	/**
@@ -178,7 +168,7 @@ public:
 	*		- DPDK
 	*		- KVM
 	*/
-	bool selectImplementation(string vnf_images_path);
+	bool selectImplementation();
 
 	/**
 	*	@brief: Return the type selected for a specific NF
