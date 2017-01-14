@@ -84,5 +84,11 @@ list<string> NFtemplate::getRequirements(){
 	return this->requirements;
 }
 
+string NFtemplate::getId() {
+	return this->id;
+}
 
+void NFtemplate::setId(string id) {
+	this->id = id;
+}
 

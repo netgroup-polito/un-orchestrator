@@ -182,7 +182,7 @@ public:
 	 *
 	 *	@param: name	Name of the network function
 	 */
-	const Description* getNFSelectedImplementation(string id);
+	Description* getNFSelectedImplementation(string id);
 
 	/**
 	*	@brief: Set the identifier of the identifier of the LSI attached to the NFs

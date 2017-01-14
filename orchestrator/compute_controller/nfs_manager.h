@@ -67,7 +67,7 @@ public:
 	/**
 	*	@brief: set the description of the network function to be handled by the manager
 	*/
-	const Description* getDescription() { return description; }
+	Description* getDescription() { return description; }
 
 	/**
 	*	@brief: provide the type of the network function handled by the manager

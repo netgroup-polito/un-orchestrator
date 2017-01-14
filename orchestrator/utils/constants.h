@@ -14,6 +14,7 @@
 #define BASE_URL_GRAPH			"NF-FG"
 #define URL_STATUS				"status"
 #define URL_CONFIGURATION		"conf"
+#define BASE_URL_TEMPLATE		"template"
 #define BASE_URL_LOGIN			"login"
 #define BASE_URL_USER			"users"
 #define BASE_URL_GROUP			"groups"
