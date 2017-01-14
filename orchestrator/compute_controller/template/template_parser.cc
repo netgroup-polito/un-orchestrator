@@ -25,15 +25,18 @@ bool Template_Parser::parse(std::list<NFtemplate*>& templates, string answer,boo
 				for( unsigned int i = 0; i < descriptions.size(); ++i)
 				{
 					Object description = descriptions[i].getObject();
+					NFtemplate* temp = new NFtemplate();
 					for( Object::const_iterator element = description.begin(); element != description.end(); ++element ) {
-						NFtemplate* temp = new NFtemplate();
 						const string &name = element->first;
 						const Value & value = element->second;
-						if(name == "template"){  //it can be also id , but we re not interested
+						if(name == "template"){
 							setTemplateFromJson(temp,value.getObject());
-							templates.push_back(temp);
+						}
+						else if(name == "id"){
+							temp->setId(value.getString());
 						}
 					}
+					templates.push_back(temp);
 				}
 			}
 		}

@@ -676,7 +676,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*	3) Create the LSI
 	*/
 	ULOG_DBG_INFO("3) Create the LSI");
-
 	list<highlevel::VNFs> network_functions = graph->getVNFs();
 	list<highlevel::EndPointInternal> endpointsInternal = graph->getEndPointsInternal();
 	list<highlevel::EndPointGre> endpointsGre = graph->getEndPointsGre();
@@ -720,7 +719,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		nf_types[nf_id] = computeController->getNFType(nf_id);
 
 		//Gather VNF ports types
-		const Description* descr = computeController->getNFSelectedImplementation(nf_id);
+		Description* descr = computeController->getNFSelectedImplementation(nf_id);
 		map<unsigned int, PortTechnology> nf_ports_type = descr->getPortTechnologies();  // Port types as specified by the retrieved and selected NF implementation
 
 		ULOG_DBG_INFO("NF with id \"%s\" selected implementation (type %d) defines type for %d ports", nf_id.c_str(), nf_types[nf_id], nf_ports_type.size());
@@ -2966,5 +2965,35 @@ string GraphManager::getVnfRepoEndpoint()
 	stringstream ss;
 	ss << "http://" << Configuration::instance()->getVnfRepoIp() << ":" << Configuration::instance()->getVnfRepoPort();
 	return ss.str();
+}
+
+string GraphManager::getVnfTemplateId(string graphId, string macAddress)
+{
+	string templateId;
+
+	if(tenantLSIs.count(graphId) == 0)
+		return "";
+
+	GraphInfo graphInfo = (tenantLSIs.find(graphId))->second;
+	ComputeController *computeController = graphInfo.getComputeController();
+	highlevel::Graph *graph = graphInfo.getGraph();
+
+	list<highlevel::VNFs> network_functions = graph->getVNFs();
+	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
+	{
+		list<highlevel::vnf_port_t> ports = nf->getPorts();
+		for(list<highlevel::vnf_port_t>::iterator port = ports.begin(); port != ports.end(); port++)
+			if(port->configuration.mac_address == macAddress)
+			{
+				templateId = nf->getVnfTemplate();
+				if(templateId.empty())
+				{
+					Description *description = computeController->getNFSelectedImplementation(nf->getId());
+					templateId = description->getTemplate()->getId();
+				}
+				break;
+			}
+	}
+	return templateId;
 }
 

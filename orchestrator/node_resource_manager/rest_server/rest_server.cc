@@ -633,6 +633,9 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 		}
 		if(strcmp(generic_resource,BASE_URL_GRAPH)==0 && strcmp(resource,URL_STATUS)==0)
 			return doGetStatus(connection,extra_info);
+		else if (strcmp(generic_resource, BASE_URL_TEMPLATE) == 0)
+			return retrieveTemplateId(connection,string(resource),string(extra_info));
+
 	}
 	// PUT, POST, DELETE: currently not supported
 	else if(strcmp(method, POST) == 0) {
@@ -1034,6 +1037,40 @@ int RestServer::readConfiguration(struct MHD_Connection *connection) {
 		MHD_add_response_header (response, "Cache-Control",NO_CACHE);
 		int ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
 		MHD_destroy_response (response);
+		return ret;
+	} catch (...) {
+		ULOG_ERR("An error occurred while retrieving the configuration!");
+		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
+	}
+}
+
+int RestServer::retrieveTemplateId(struct MHD_Connection *connection, string graphId, string vnfId) {
+	struct MHD_Response *response;
+	int ret;
+	string templateId = gm->getVnfTemplateId(graphId, vnfId);
+	try {
+		Object json;
+		if(templateId.empty())
+		{
+			response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
+			ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
+			MHD_destroy_response (response);
+		}
+		else
+		{
+			string templateUrl = gm->getVnfRepoEndpoint() + string("/v2/nf_template/") + templateId;
+			json["templateUrl"]=templateUrl.c_str();
+			stringstream ssj;
+			write_formatted(json, ssj );
+			string sssj = ssj.str();
+			char *aux = (char*)malloc(sizeof(char) * (sssj.length()+1));
+			strcpy(aux,sssj.c_str());
+			response = MHD_create_response_from_buffer (strlen(aux),(void*) aux, MHD_RESPMEM_PERSISTENT);
+			MHD_add_response_header (response, "Content-Type",JSON_C_TYPE);
+			MHD_add_response_header (response, "Cache-Control",NO_CACHE);
+			ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+			MHD_destroy_response (response);
+		}
 		return ret;
 	} catch (...) {
 		ULOG_ERR("An error occurred while retrieving the configuration!");

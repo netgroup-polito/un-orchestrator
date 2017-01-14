@@ -594,7 +594,7 @@ nf_t ComputeController::getNFType(string id)
 	return impl->getNFType();
 }
 
-const Description* ComputeController::getNFSelectedImplementation(string id)
+Description* ComputeController::getNFSelectedImplementation(string id)
 {
 	map<string, NF*>::iterator nf_it = nfs.find(id);
 	if (nf_it == nfs.end()) { // Not found
