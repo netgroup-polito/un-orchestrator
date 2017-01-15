@@ -33,9 +33,17 @@ bool initDB(SQLiteManager *dbm, char *pass)
 		dbm->insertResource(BASE_URL_GRAPH);
 		dbm->insertResource(BASE_URL_USER);
 		dbm->insertResource(BASE_URL_GROUP);
+		dbm->insertResource(URL_CONFIGURATION);
 
 		// default permissions for NF-FGs
 		dbm->insertDefaultUsagePermissions(BASE_URL_GRAPH,
+				DEFAULT_NFFG_OWNER_PERMISSION,
+				DEFAULT_NFFG_GROUP_PERMISSION,
+				DEFAULT_NFFG_ALL_PERMISSION,
+				DEFAULT_NFFG_ADMIN_PERMISSION);
+
+		// default permissions for Configuration Parameters
+		dbm->insertDefaultUsagePermissions(URL_CONFIGURATION,
 				DEFAULT_NFFG_OWNER_PERMISSION,
 				DEFAULT_NFFG_GROUP_PERMISSION,
 				DEFAULT_NFFG_ALL_PERMISSION,
@@ -59,6 +67,7 @@ bool initDB(SQLiteManager *dbm, char *pass)
 		dbm->insertUserCreationPermission(ADMIN, BASE_URL_GRAPH, ALLOW);
 		dbm->insertUserCreationPermission(ADMIN, BASE_URL_USER, ALLOW);
 		dbm->insertUserCreationPermission(ADMIN, BASE_URL_GROUP, ALLOW);
+		dbm->insertUserCreationPermission(ADMIN, URL_CONFIGURATION, ALLOW);
 
 		// default users
 		dbm->insertResource(BASE_URL_GROUP, ADMIN, ADMIN);

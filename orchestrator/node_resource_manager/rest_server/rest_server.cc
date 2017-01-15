@@ -337,7 +337,7 @@ int RestServer::createUser(char *username, struct MHD_Connection *connection, co
 
 		if(token == NULL) {
 			ULOG_INFO("\"Token\" header not present in the request");
-			return false;
+			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
 		user_info_t *creator = dbmanager->getUserByToken(token);
@@ -705,7 +705,7 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 
 		if(token == NULL) {
 			ULOG_INFO("\"Token\" header not present in the request");
-			return false;
+			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
 		if(!secmanager->isAuthenticated(connection, token)) {
