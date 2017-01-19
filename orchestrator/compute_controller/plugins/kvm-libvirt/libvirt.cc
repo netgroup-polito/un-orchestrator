@@ -336,12 +336,17 @@ bool Libvirt::startNF(StartNFIn sni)
 	/* Create XML for VM */
 
 	ULOG_DBG_INFO("The network function image is available at '%s'...",uri_image.c_str());
+	if(!createImgDisk(uri_image, Configuration::instance()->getVnfImagesPath(), domain_name))
+	{
+		ULOG_DBG_INFO("An error occured during the copy-on-write image disk creation");
+		return false;
+	}
 
 	/* Create disk using the NF image specified in the uri */
 	xmlNodePtr diskn = xmlNewChild(devices, NULL, BAD_CAST "disk", NULL);
 	xmlNewProp(diskn, BAD_CAST "type", BAD_CAST "file");
 	xmlNewProp(diskn, BAD_CAST "device", BAD_CAST "disk");
-	
+
 	xmlNodePtr drivern = xmlNewChild(diskn, NULL, BAD_CAST "driver", NULL);
 	xmlNewProp(drivern, BAD_CAST "name", BAD_CAST "qemu");
 	xmlNewProp(drivern, BAD_CAST "type", BAD_CAST "qcow2"); //FIXME: this must not be fixed, but it should depend on the disk image
@@ -364,6 +369,7 @@ bool Libvirt::startNF(StartNFIn sni)
 	xmlNewProp(addressn, BAD_CAST "bus", BAD_CAST "0x00");
 	xmlNewProp(addressn, BAD_CAST "slot", BAD_CAST "0x05");
 	xmlNewProp(addressn, BAD_CAST "function", BAD_CAST "0x0");
+
 
 	/* Create NICs */
 	vector< pair<string, string> > ivshmemPorts; // name, alias
@@ -591,6 +597,10 @@ bool Libvirt::stopNF(StopNFIn sni)
 
 	assert(connection != NULL);
 
+	//destroy image disk
+	string imageDiskPath = Configuration::instance()->getVnfImagesPath() + string("/") + string(vm_name) + string("_img.qcow2");
+	remove(imageDiskPath.c_str());
+
 	/*destroy the VM*/
 	if(virDomainDestroy(virDomainLookupByName(connection, vm_name)) != 0){
 		ULOG_ERR("failed to stop (destroy) VM. %s", vm_name);
@@ -600,3 +610,17 @@ bool Libvirt::stopNF(StopNFIn sni)
 	return true;
 }
 
+bool Libvirt::createImgDisk(string imgBasePath, string folder, string domainName)
+{
+	ULOG_DBG_INFO("A new copy-on-write image from the base image is going to be created ...");
+	string imageDiskPath = folder + string("/") + domainName + string("_img.qcow2");
+	stringstream cmd_create_disk;
+	cmd_create_disk << "qemu-img create -b " << imgBasePath << " -f qcow2 " << imageDiskPath;
+	ULOG_DBG_INFO("Executing command \"%s\"", cmd_create_disk.str().c_str());
+	int retVal = system(cmd_create_disk.str().c_str());
+	retVal = retVal >> 8;
+	if(retVal != 0)
+		return false;
+	ULOG_DBG_INFO("Image disk created successfully");
+	return true;
+}

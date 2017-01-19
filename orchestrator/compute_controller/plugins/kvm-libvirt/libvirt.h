@@ -18,6 +18,7 @@
 #include <libvirt/virterror.h>
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
+#include "../../../utils/configuration.h"
 
 #include "../../nfs_manager.h"
 #include "../../startNF_in.h"
@@ -58,6 +59,11 @@ private:
 	*	@brief: Custom error handler
 	*/
 	static void customErrorFunc(void *userdata, virErrorPtr err);
+
+	/**
+	*	@brief: Create the copy-on-write disk starting from the image base
+	*/
+	bool createImgDisk(string imgBasePath, string folder, string domainName);
 
 public:
 
