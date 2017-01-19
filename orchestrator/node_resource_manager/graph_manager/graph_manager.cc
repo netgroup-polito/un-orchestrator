@@ -2031,6 +2031,9 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 			thr[i].controlConfiguration = nf->getControlPorts();
 			thr[i].environmentVariables = nf->getEnvironmentVariables();
 #endif
+#ifdef ENABLE_KVM
+			thr[i].user_data = nf->getUserData();
+#endif
 
 #ifdef STARTVNF_SINGLE_THREAD
 			startNF((void *) &thr[i]);
