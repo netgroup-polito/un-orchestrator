@@ -84,7 +84,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate *temp,Object obj)
 			ULOG_DBG("Parsing 'expandable'");
 			temp->setExpandable(value.getBool());
 		}
-		else if(name == "uri")
+		else if(name == "uri-image")
 		{
 			ULOG_DBG("Parsing 'uri'");
 			temp->setURI(value.getString());
@@ -103,7 +103,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate *temp,Object obj)
 			}
 
 		}
-		else if(name == "uri-type"){
+		else if(name == "uri-image-type"){
 			ULOG_DBG("Parsing 'uri-type'");
 			if(stringToUriType(value.getString()) != UNDEFINED_URITYPE){
 				temp->setURIType(stringToUriType(value.getString()));
