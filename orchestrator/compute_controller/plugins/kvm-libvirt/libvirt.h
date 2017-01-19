@@ -20,6 +20,7 @@
 #include <libvirt/virterror.h>
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
+#include "../../../utils/configuration.h"
 
 #include "../../nfs_manager.h"
 #include "../../startNF_in.h"
@@ -69,7 +70,12 @@ private:
 	/**
 	*	@brief: Create a disk containing the user_data information
 	*/
-	bool createDisk(string userData, string folder, string domainName);
+	bool createUserDataDisk(string userData, string folder, string domainName);
+
+	/**
+	*	@brief: Create the copy-on-write disk starting from the image base
+	*/
+	bool createImgDisk(string imgBasePath, string folder, string domainName);
 
 public:
 
