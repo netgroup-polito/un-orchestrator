@@ -1027,6 +1027,14 @@ int RestServer::readConfiguration(struct MHD_Connection *connection) {
 	try {
 		Object json;
 		json["datastoreEndpoint"]=datastoreEndpoint.c_str();
+		Array ports;
+		list<string> unPorts = Configuration::instance()->getPhisicalPorts();
+		for(list<string>::iterator port = unPorts.begin(); port != unPorts.end(); port++) {
+			//Object obj;
+			//obj["name"] = *i;
+			ports.push_back(port->c_str());
+		}
+		json["unPhisicalPorts"]=ports;
 		stringstream ssj;
 		write_formatted(json, ssj );
 		string sssj = ssj.str();
