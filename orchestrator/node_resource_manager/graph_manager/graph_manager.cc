@@ -566,7 +566,7 @@ void *startNF(void *arguments)
 	to_thread_t *args = (to_thread_t *)arguments;
 	assert(args->computeController != NULL);
 
-	if(!args->computeController->startNF(args->nf_id, args->namesOfPortsOnTheSwitch, args->portsConfiguration
+	if(!args->computeController->startNF(args->nf_id, args->nf_name, args->namesOfPortsOnTheSwitch, args->portsConfiguration
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		, args->controlConfiguration, args->environmentVariables
 #endif
@@ -987,6 +987,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 	{
 		thr[i].nf_id = nf->getId();
+		thr[i].nf_name = nf->getName();
 		thr[i].computeController = computeController;
 		thr[i].namesOfPortsOnTheSwitch = lsi->getNetworkFunctionsPortsNameOnSwitchMap(nf->getId());
 		thr[i].portsConfiguration = nf->getPortsID_configuration();
@@ -1982,6 +1983,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	for(list<highlevel::VNFs>::iterator nf = network_functions_diff.begin(); nf != network_functions_diff.end(); nf++)
 	{
 		string nf_id=nf->getId();
+		string nf_name=nf->getName();
 		map<unsigned int, string> nfPortIdToNameOnSwitch = lsi->getNetworkFunctionsPortsNameOnSwitchMap(nf->getId()/*first*/); //Returns the map <port ID, port name on switch>
 		//TODO: the following information should be retrieved through the highlevel graph
 		map<unsigned int, port_network_config_t > nfs_ports_configuration = nf->getPortsID_configuration();
@@ -2024,6 +2026,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 		else
 		{
 			thr[i].nf_id = nf->getId();
+			thr[i].nf_name = nf_name;
 			thr[i].computeController = computeController;
 			thr[i].namesOfPortsOnTheSwitch = lsi->getNetworkFunctionsPortsNameOnSwitchMap(nf->getId());
 			thr[i].portsConfiguration = nf->getPortsID_configuration();

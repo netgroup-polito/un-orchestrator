@@ -632,7 +632,7 @@ bool ComputeController::updateNF(string nf_id, map<unsigned int, string> namesOf
 	return true;
 }
 
-bool ComputeController::startNF(string nf_id, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration
+bool ComputeController::startNF(string nf_id, string nf_name, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	, list<port_mapping_t > controlConfiguration, list<string> environmentVariables
 #endif
@@ -688,7 +688,7 @@ bool ComputeController::startNF(string nf_id, map<unsigned int, string> namesOfP
 	NF *nf = nfs[nf_id];
 	NFsManager *nfsManager = nf->getSelectedDescription();
 
-	StartNFIn sni(lsiID, nf_id, namesOfPortsOnTheSwitch, portsConfiguration,
+	StartNFIn sni(lsiID, nf_id, nf_name, namesOfPortsOnTheSwitch, portsConfiguration,
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		controlConfiguration, environmentVariables,
 #endif

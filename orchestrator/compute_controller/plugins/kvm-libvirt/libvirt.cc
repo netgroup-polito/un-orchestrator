@@ -354,8 +354,9 @@ bool Libvirt::startNF(StartNFIn sni)
 	xmlNewProp(drivern, BAD_CAST "name", BAD_CAST "qemu");
 	xmlNewProp(drivern, BAD_CAST "type", BAD_CAST "qcow2"); //FIXME: this must not be fixed, but it should depend on the disk image
 
+	string image_disk_path = Configuration::instance()->getVnfImagesPath() + string("/") + domain_name + string("_img.qcow2");
 	xmlNodePtr sourcen = xmlNewChild(diskn, NULL, BAD_CAST "source", NULL);
-	xmlNewProp(sourcen, BAD_CAST "file", BAD_CAST uri_image.c_str());
+	xmlNewProp(sourcen, BAD_CAST "file", BAD_CAST image_disk_path.c_str());
 
 	xmlNewChild(diskn, NULL, BAD_CAST "backingStore", NULL);
 
@@ -380,7 +381,7 @@ bool Libvirt::startNF(StartNFIn sni)
 #ifdef DEBUG_KVM
 		ULOG_DBG_INFO("Content of user_data:\n'%s'",user_data.c_str());
 #endif
-		if(!createUserDataDisk(user_data,Configuration::instance()->getVnfImagesPath(),domain_name))
+		if(!createUserDataDisk(user_data,Configuration::instance()->getVnfImagesPath(),domain_name,sni.getNfName()))
 		{
 			ULOG_DBG_INFO("An error occured during the disk creation");
 			return false;
@@ -394,9 +395,9 @@ bool Libvirt::startNF(StartNFIn sni)
 		xmlNewProp(userDataDrivern, BAD_CAST "name", BAD_CAST "qemu");
 		xmlNewProp(userDataDrivern, BAD_CAST "type", BAD_CAST "raw");
 
-		string disk_path = Configuration::instance()->getVnfImagesPath() + string("/") + domain_name + string("_config.iso");
+		string user_data_disk_path = Configuration::instance()->getVnfImagesPath() + string("/") + domain_name + string("_config.iso");
 		xmlNodePtr userDataSourcen = xmlNewChild(userDataDiskn, NULL, BAD_CAST "source", NULL);
-		xmlNewProp(userDataSourcen, BAD_CAST "file", BAD_CAST disk_path.c_str());
+		xmlNewProp(userDataSourcen, BAD_CAST "file", BAD_CAST user_data_disk_path.c_str());
 
 		xmlNodePtr userDataTargetn = xmlNewChild(userDataDiskn, NULL, BAD_CAST "target", NULL);
 		xmlNewProp(userDataTargetn, BAD_CAST "dev", BAD_CAST "vdb");
@@ -676,7 +677,7 @@ string Libvirt::getLogPath(char *domain_name)
 
 // Note: user-data and meta-data files must be called in this way to be recognized by cloud-init.
 // For concurrence issues (VMs launched at the same times) I have to create an univocal folder where insert these files
-bool Libvirt::createUserDataDisk(string userData, string folder, string domainName)
+bool Libvirt::createUserDataDisk(string userData, string folder, string domainName, string hostname)
 {
 	string vmTempFolder = folder + string("/") + domainName;
 	mkdir(vmTempFolder.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -684,7 +685,8 @@ bool Libvirt::createUserDataDisk(string userData, string folder, string domainNa
 	// creating file containing user_data and meta_data:
 	string metaDataFilePath = vmTempFolder + string("/") + string("meta-data");
 	ofstream metaFile(metaDataFilePath);
-	metaFile << "instance-id: " << domainName << endl << "local-hostname: cloudimg";
+	metaFile << "instance-id: " << domainName << endl << "local-hostname: " << hostname;
+	ULOG_DBG_INFO("------------------------------------------------------------------------------------ hostname:\n%s", hostname.c_str());
 	metaFile.close();
 	string userDataFilePath = vmTempFolder + string("/") + string("user-data");
 	ofstream userFile(userDataFilePath);

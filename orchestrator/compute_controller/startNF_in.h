@@ -38,6 +38,11 @@ private:
 	string nf_id;
 
 	/**
+	*	@brief: name of the network function
+	*/
+	string nf_name;
+
+	/**
 	*	@brief: mapping of port_id to name of port on the vSwitch for ports associated with the network function
 	*/
 	map<unsigned int, string> namesOfPortsOnTheSwitch;
@@ -75,7 +80,7 @@ private:
 protected:
 
 
-	StartNFIn(uint64_t lsiID, string nf_id, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration,
+	StartNFIn(uint64_t lsiID, string nf_id, string nf_name, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration,
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 			list<port_mapping_t > controlPorts, list<string> environmentVariables,
 #endif
@@ -83,7 +88,7 @@ protected:
 			string user_data,
 #endif
 			  uint64_t coreMask = 0x0)
-			: lsiID(lsiID), nf_id(nf_id), namesOfPortsOnTheSwitch(namesOfPortsOnTheSwitch), portsConfiguration(portsConfiguration),
+			: lsiID(lsiID), nf_id(nf_id), nf_name(nf_name), namesOfPortsOnTheSwitch(namesOfPortsOnTheSwitch), portsConfiguration(portsConfiguration),
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 			controlPorts(controlPorts), environmentVariables(environmentVariables),
 #endif
@@ -106,7 +111,10 @@ public:
 		return nf_id;
 	}
 
-
+	string getNfName() const
+	{
+		return nf_name;
+	}
 
 	const map<unsigned int, string>& getNamesOfPortsOnTheSwitch() const
 	{

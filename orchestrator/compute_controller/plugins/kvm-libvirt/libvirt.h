@@ -70,7 +70,7 @@ private:
 	/**
 	*	@brief: Create a disk containing the user_data information
 	*/
-	bool createUserDataDisk(string userData, string folder, string domainName);
+	bool createUserDataDisk(string userData, string folder, string domainName, string hostname);
 
 	/**
 	*	@brief: Create the copy-on-write disk starting from the image base
