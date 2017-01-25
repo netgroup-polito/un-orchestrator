@@ -60,7 +60,7 @@ private:
 	*	@brief: this variable represents the group of the internal
 	*			endpoint.
 	*/
-	unsigned int endpointInternalGroup;
+	string endpointInternalGroup;
 	
 	/**
 	*	@brief: this variable represents the ID of the gre endpoint.
@@ -196,7 +196,7 @@ public:
 	/**
 	*	@brief: get the group of the internal endpoint (the match must be on an internal endpoint)
 	*/
-	unsigned int getEndPointInternal();
+	string getEndPointInternal();
 
 	/**
 	*	@brief: get the identifier of the endpoint within the graph defining it (the match must be on gre endpoint)
