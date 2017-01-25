@@ -1176,7 +1176,7 @@ void GraphManager::handleControllerForInternalEndpoint(highlevel::Graph *graph)
 		//In case the internal LSI representing the current internal endpoints has not been yet created, let's create its controller
 		if(!internalLSIsCreated[internal_group])
 		{
-			ULOG_DBG_INFO("4) Create the Openflow controller for the internal endpoint '%s'",internal_group.c_str());
+			ULOG_DBG_INFO("Create the Openflow controller for the internal endpoint '%s'",internal_group.c_str());
 
 			pthread_mutex_lock(&graph_manager_mutex);
 			uint32_t controllerPort = nextControllerPort;
@@ -1221,7 +1221,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 	for(list<highlevel::EndPointInternal>::iterator iep = internalEPs.begin(); iep != internalEPs.end(); iep++)
 	{
 		string internal_group(iep->getGroup());
-		ULOG_DBG_INFO("5) handling the internal LSI representing the internal-group: \"%s\"", internal_group.c_str());
+		ULOG_DBG_INFO("handling the internal LSI representing the internal-group: \"%s\"", internal_group.c_str());
 
 		GraphInfo graphInfoInternalLSI = internalLSIs[internal_group];
 		Controller *controller = graphInfoInternalLSI.getController();
@@ -1942,15 +1942,10 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	/**
 	*	3-d) condider the internal endpoints
 	*/
-	list<highlevel::EndPointInternal> tmp_internal_endpoints = diff->getEndPointsInternal();
-	ULOG_DBG_INFO("3-d) considering the new internal endpoints (%d)",tmp_internal_endpoints.size());
+	ULOG_DBG_INFO("3-d) considering the new internal endpoints (%d)",diff->getEndPointsInternal().size());
+	handleControllerForInternalEndpoint(diff);
+	handleGraphForInternalEndpoint(diff);
 
-	for(list<highlevel::EndPointInternal>::iterator ep = tmp_internal_endpoints.begin(); ep != tmp_internal_endpoints.end(); ep++)
-	{
-		//TODO: implement the creation of new internal endpoints
-		ULOG_DBG_INFO("The creation of new internal endpoint in the update is not supported yet!");
-		assert(0);
-	}
 
 	/**
 	*	3-e) condider the hoststack endpoints
