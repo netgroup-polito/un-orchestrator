@@ -22,6 +22,10 @@ bool Template_Parser::parse(std::list<NFtemplate*>& templates, string answer,boo
 			for( Object::const_iterator rootElement = obj.begin(); rootElement != obj.end(); ++rootElement ) { //loop just once, take the object "list", info about template is inside
 				const Value & arrayValue = rootElement->second;
 				const Array& descriptions  = arrayValue.getArray();
+				if(descriptions.size() == 0){
+					ULOG_ERR("there are no templates associated with the specified capability");
+					return false;
+				}
 				for( unsigned int i = 0; i < descriptions.size(); ++i)
 				{
 					Object description = descriptions[i].getObject();
