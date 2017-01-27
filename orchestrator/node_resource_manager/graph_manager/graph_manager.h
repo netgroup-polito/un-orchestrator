@@ -268,9 +268,6 @@ public:
 	void removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *graph, LSI *lsi);
 
 	void getGraphsNames(std::list<std::string> *l);
-	
-	//Returns the ip address + port of the vnf repository
-	string getVnfRepoEndpoint();
 
 	//Given a graph ID and vnf ID it returns the template ID
 	string getVnfTemplateId(string graphId, string vnfId);

@@ -1023,10 +1023,14 @@ int RestServer::readMultipleGraphs(struct MHD_Connection *connection, user_info_
 int RestServer::readConfiguration(struct MHD_Connection *connection) {
 
 	struct MHD_Response *response;
-	string datastoreEndpoint = gm->getVnfRepoEndpoint();
+	stringstream ssDatastore;
+	ssDatastore << "http://" << Configuration::instance()->getVnfRepoIp() << ":" << Configuration::instance()->getVnfRepoPort();
+	stringstream ssConfigService;
+	ssConfigService << "http://" << Configuration::instance()->getConfigServiceIp() << ":" << Configuration::instance()->getConfigServicePort();
 	try {
 		Object json;
-		json["datastoreEndpoint"]=datastoreEndpoint.c_str();
+		json["datastoreEndpoint"]=ssDatastore.str().c_str();
+		json["configurationServiceEndpoint"]=ssConfigService.str().c_str();
 		Array ports;
 		list<string> unPorts = Configuration::instance()->getPhisicalPorts();
 		for(list<string>::iterator port = unPorts.begin(); port != unPorts.end(); port++) {
@@ -1066,7 +1070,9 @@ int RestServer::retrieveTemplateId(struct MHD_Connection *connection, string gra
 		}
 		else
 		{
-			string templateUrl = gm->getVnfRepoEndpoint() + string("/v2/nf_template/") + templateId;
+			stringstream ssDatastore;
+			ssDatastore << "http://" << Configuration::instance()->getVnfRepoIp() << ":" << Configuration::instance()->getVnfRepoPort();
+			string templateUrl = ssDatastore.str() + string("/v2/nf_template/") + templateId;
 			json["templateUrl"]=templateUrl.c_str();
 			stringstream ssj;
 			write_formatted(json, ssj );

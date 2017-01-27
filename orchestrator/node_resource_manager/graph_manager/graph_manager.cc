@@ -2961,13 +2961,6 @@ list<string> GraphManager::getRulesIDForLSITenant(highlevel::Rule rule)
 	return rulesID;
 }
 
-string GraphManager::getVnfRepoEndpoint()
-{
-	stringstream ss;
-	ss << "http://" << Configuration::instance()->getVnfRepoIp() << ":" << Configuration::instance()->getVnfRepoPort();
-	return ss.str();
-}
-
 string GraphManager::getVnfTemplateId(string graphId, string macAddress)
 {
 	string templateId;
