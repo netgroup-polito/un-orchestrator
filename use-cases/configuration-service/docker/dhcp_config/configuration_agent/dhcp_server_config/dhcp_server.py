@@ -301,7 +301,7 @@ class Dhcp(object):
             default_gw = ''
             configuration_type = None
             gws = netifaces.gateways()
-            if gws['default'][netifaces.AF_INET][1] == interface:
+            if gws['default'] != {} and gws['default'][netifaces.AF_INET][1] == interface:
                 default_gw = gws['default'][netifaces.AF_INET][0]
             interface_af_link_info = netifaces.ifaddresses(interface)[17]
             if 2 in netifaces.ifaddresses(interface):
