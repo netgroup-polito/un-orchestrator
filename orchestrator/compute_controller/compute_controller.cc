@@ -55,6 +55,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescr
 
 		string translation;
 		list<NFtemplate *> templates;
+		nf_manager_ret_t retVal;
 		ULOG_DBG_INFO("Considering the NF with ID \"%s\"",vnfDescription.getId().c_str());
 
 		char ErrBuf[BUFFER_SIZE];
@@ -114,7 +115,7 @@ nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescr
 		shutdown(socket,SHUT_WR);
 		sock_close(socket,ErrBuf,sizeof(ErrBuf));
 
-		if(strncmp(&DataBuffer[CODE_POSITION],CODE_METHOD_NOT_ALLLOWED,3) == 0)
+		if(strncmp(&DataBuffer[CODE_POSITION],CODE_METHOD_NOT_ALLLOWED,3) == 0 || strncmp(&DataBuffer[CODE_POSITION],CODE_HTTP_NOT_FOUND,3) == 0)
 			return NFManager_NO_NF;
 
 		if(strncmp(&DataBuffer[CODE_POSITION],CODE_OK,3) != 0)
@@ -136,12 +137,10 @@ nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescr
 
 		translation.assign(&DataBuffer[i]);
 
-		if(!Template_Parser::parse(templates,translation,vnfDescription.checkVnfTemplateField() /*add eventual additional checks with ||*/))
-		{
-			//ERROR IN THE SERVER
-			ULOG_ERR("An error occurred while parsing the VNF template associated with the NF with ID: \"%s\"",vnfDescription.getId().c_str());
-			return NFManager_SERVER_ERROR;
-		}
+		retVal = Template_Parser::parse(templates,translation,vnfDescription.checkVnfTemplateField() /*add eventual additional checks with ||*/);
+		if(retVal != NFManager_OK)
+			return retVal;
+
 		if(!addImplementations(templates,vnfDescription.getId(),vnfDescription.getPortsId().size())){
 			return NFManager_NO_NF;
 		}

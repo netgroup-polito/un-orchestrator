@@ -3,7 +3,7 @@
 
 static const char LOG_MODULE_NAME[] = "Template-Parser";
 
-bool Template_Parser::parse(std::list<NFtemplate*>& templates, string answer,bool checkSingleTemplate) {
+nf_manager_ret_t Template_Parser::parse(std::list<NFtemplate*>& templates, string answer,bool checkSingleTemplate) {
 	ULOG_DBG_INFO("Starting to parse the NF template");
 	try
 	{
@@ -22,6 +22,10 @@ bool Template_Parser::parse(std::list<NFtemplate*>& templates, string answer,boo
 			for( Object::const_iterator rootElement = obj.begin(); rootElement != obj.end(); ++rootElement ) { //loop just once, take the object "list", info about template is inside
 				const Value & arrayValue = rootElement->second;
 				const Array& descriptions  = arrayValue.getArray();
+				if(descriptions.size() == 0){
+					ULOG_WARN("there are no templates associated with the specified capability");
+					return NFManager_NO_NF;
+				}
 				for( unsigned int i = 0; i < descriptions.size(); ++i)
 				{
 					Object description = descriptions[i].getObject();
@@ -40,11 +44,11 @@ bool Template_Parser::parse(std::list<NFtemplate*>& templates, string answer,boo
 	}
 	catch (const std::exception& e) {
 		ULOG_WARN("JSON parse error: %s", e.what());
-		return false;
+		return NFManager_SERVER_ERROR;
 	}
 
 	ULOG_DBG_INFO("NF template parsed correctly");
-	return true;
+	return NFManager_OK;
 }
 
 void Template_Parser::setTemplateFromJson(NFtemplate *temp,Object obj)
