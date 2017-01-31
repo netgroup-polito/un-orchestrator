@@ -137,12 +137,16 @@ class Dhcp(object):
         for interface in if_entries:
             # Set interface
             logging.debug(interface)
-            if interface['default_gw'] == '':
+            if 'default_gw' not in interface:
                 default_gw = None
             else:
                 default_gw = interface['default_gw']
+            if 'address' not in interface:
+                address = None
+            else:
+                address = interface['address']
             new_interface = Interface(name = interface['name'], 
-                                        ipv4_address= interface['address'],
+                                        ipv4_address= address,
                                         _type = interface['type'],
                                         configuration_type= interface['configurationType'],
                                         default_gw = default_gw)

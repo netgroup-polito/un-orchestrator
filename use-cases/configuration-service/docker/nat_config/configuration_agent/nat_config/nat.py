@@ -117,12 +117,16 @@ class Nat(object):
         for interface in if_entries:
             # Set interface
             logging.debug(interface)
-            if interface['default_gw'] == '':
+            if 'default_gw' not in interface:
                 default_gw = None
             else:
                 default_gw = interface['default_gw']
+            if 'address' not in interface:
+                address = None
+            else:
+                address = interface['address']
             new_interface = Interface(name = interface['name'], 
-                                        ipv4_address= interface['address'],
+                                        ipv4_address= address,
                                         _type = interface['type'],
                                         configuration_type= interface['configurationType'],
                                         default_gw = default_gw)
@@ -157,9 +161,12 @@ class Nat(object):
             logging.debug("GATEWAY: "+str(gws))
             logging.debug("GATEWAY: "+str(gws['default']))
             logging.debug("GATEWAY: "+str(gws['default'][netifaces.AF_INET]))
-            for gw in gws[netifaces.AF_INET]:
-                if gw[1] == interface:
-                    default_gw = gw[0]
+            if gws['default'] == {}:
+                default_gw = ''
+            else:
+                for gw in gws[netifaces.AF_INET]:
+                    if gw[1] == interface:
+                        default_gw = gw[0]
             interface_af_link_info = netifaces.ifaddresses(interface)[17]
             if 2 in netifaces.ifaddresses(interface):
                 interface_af_inet_info = netifaces.ifaddresses(interface)[2]
