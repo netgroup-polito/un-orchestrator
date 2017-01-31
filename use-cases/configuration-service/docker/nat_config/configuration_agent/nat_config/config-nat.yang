@@ -33,11 +33,13 @@ module config-nat {
 			}
 			leaf address { 
 				description "name='IP Address'";
+                                mandatory false;
 				type inet:ip-address; 
 			}
 			leaf default_gw { 
 				description "name='Default GW'";
-				type string; 
+                                mandatory false;
+				type inet:ip-address; 
 			}
 		} 
 	} 
