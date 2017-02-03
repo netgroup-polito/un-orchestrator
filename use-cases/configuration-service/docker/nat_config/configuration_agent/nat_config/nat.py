@@ -103,9 +103,9 @@ class Nat(object):
             dict['type'] = interface.type
         else:
             dict['type'] = 'not_defined'
-        if interface.ipv4_address is not None:   
+        if interface.ipv4_address is not None and interface.ipv4_address != "":
             dict['address'] = interface.ipv4_address
-        if interface.default_gw is not None:
+        if interface.default_gw is not None and interface.default_gw != "":
             dict['default_gw'] = interface.default_gw
         return dict
     
