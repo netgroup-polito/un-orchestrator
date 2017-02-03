@@ -39,11 +39,13 @@ class Nat(object):
     
     def __init__(self):
         self.interfaces = []
-        self.json_instance = {self.yang_module_name+':'+'interfaces':{'ifEntry':[]}}
+        self.json_instance = {self.yang_module_name+':'+'interfaces': {'ifEntry': []},
+                              self.yang_module_name + ':' + 'parameters': []}
         self.if_entries = self.json_instance[self.yang_module_name+':'+'interfaces']['ifEntry']
         self.yang_model = self.get_yang()
         self.mac_address = utils.get_mac_address(constants.configuration_interface)
         self.wan_interface = None
+        self.floating_ip = []
     
     def get_json_instance(self):
         '''
@@ -69,16 +71,18 @@ class Nat(object):
         self.get_interfaces()
         self.get_nat_configuration()
         self.get_interfaces_dict()
+        self.get_floating()
+        self.get_floating_dict()
         logging.debug(json.dumps(self.json_instance))
         return self.json_instance
-    
+
     def get_interfaces_dict(self):
         '''
         Get a python dictionary with the interfaces
         of the VNF
         '''
         old_if_entries = self.if_entries
-        self.json_instance[self.yang_module_name+':'+'interfaces']['ifEntry']  = []
+        self.json_instance[self.yang_module_name+':'+'interfaces']['ifEntry'] = []
         self.if_entries = self.json_instance[self.yang_module_name+':'+'interfaces']['ifEntry']
         for interface in self.interfaces:
             interface_dict = self.get_interface_dict(interface)
@@ -125,11 +129,11 @@ class Nat(object):
                 address = None
             else:
                 address = interface['address']
-            new_interface = Interface(name = interface['name'], 
-                                        ipv4_address= address,
-                                        _type = interface['type'],
-                                        configuration_type= interface['configurationType'],
-                                        default_gw = default_gw)
+            new_interface = Interface(name=interface['name'],
+                                      ipv4_address=address,
+                                      _type=interface['type'],
+                                      configuration_type=interface['configurationType'],
+                                      default_gw=default_gw)
             if new_interface.type == 'wan':
                 self.wan_interface = new_interface
             else:
@@ -146,7 +150,56 @@ class Nat(object):
             self.clean_nat()
         self.get_interfaces()
         self.get_interfaces_dict()
-    
+        self.floating_ip = json_instance[self.yang_module_name+':'+'staticBindings']['floatingIP']
+        self.set_floating()
+
+    def set_floating(self):
+        for address in self.floating_ip:
+            Bash('iptables -t nat -I POSTROUTING -s ' + address['private_address'] + ' -j SNAT --to ' + address['public_address'])
+            Bash('iptables -t nat -I PREROUTING -d ' + address['public_address'] + ' -j DNAT --to-destination ' + address['private_address'])
+
+    def get_floating(self):
+        '''
+        Retrieve the floating ip entries
+        A floating IP is described by 2 rules of the NAT table:
+            a) 'PREROUTING' chain: dst = public_address become dst = private_address
+            b) 'POSTROUTING' chain: src = private_address become src = public_address
+        First I save all the possible floating IPs (found looping through the 'PREROUTING' chain) into a temporary list
+        Then I check if they really are floating IP iterating through the 'POSTROUTING' chain (it is mandatory the presence of both the rules for a floating IP to be valid)
+        :return:
+        '''
+        self.floating_ip = []
+        floating_ip_tmp = {}
+        table = iptc.Table(iptc.Table.NAT)
+        table.refresh() #it seems that iptc cash table entries among multiple iptc.Table requests
+        pre_chain = iptc.Chain(table, "PREROUTING")
+        for rule in pre_chain.rules:
+            if rule.target.__getattr__('to_destination') is not None:
+                if rule.dst is not None:
+                    private_address = rule.target.__getattr__('to_destination')
+                    public_address = rule.dst.split('/')[0]
+                    floating_ip_tmp[public_address] = private_address
+        post_chain = iptc.Chain(table, "POSTROUTING")
+        for rule in post_chain.rules:
+            if rule.target.__getattr__('to_source') is not None:
+                if rule.src is not None:
+                    private_address = rule.src.split('/')[0]
+                    public_address = rule.target.__getattr__('to_source')
+                    if public_address in floating_ip_tmp and floating_ip_tmp[public_address] == private_address:
+                        floating_ip_object = {}
+                        floating_ip_object['public_address'] = public_address
+                        floating_ip_object['private_address'] = private_address
+                        self.floating_ip.append(floating_ip_object)
+
+    def get_floating_dict(self):
+        self.json_instance[self.yang_module_name + ':' + 'staticBindings']['floatingIP'] = []
+        floating_ip = self.json_instance[self.yang_module_name+':'+'staticBindings']['floatingIP']
+        for address in self.floating_ip:
+            dict = {}
+            dict['public_address'] = address['public_address']
+            dict['private_address'] = address['private_address']
+            floating_ip.append(dict)
+
     def get_interfaces(self):
         '''
         Retrieve the interfaces of the VM
@@ -158,9 +211,9 @@ class Nat(object):
                 continue
             default_gw = ''
             gws = netifaces.gateways()
-            logging.debug("GATEWAY: "+str(gws))
-            logging.debug("GATEWAY: "+str(gws['default']))
-            logging.debug("GATEWAY: "+str(gws['default'][netifaces.AF_INET]))
+            #logging.debug("GATEWAY: "+str(gws))
+            #logging.debug("GATEWAY: "+str(gws['default']))
+            #logging.debug("GATEWAY: "+str(gws['default'][netifaces.AF_INET]))
             if gws['default'] == {}:
                 default_gw = ''
             else:
