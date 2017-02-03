@@ -169,6 +169,28 @@ bool Configuration::init(string configurationFile)
         return false;
     }
 
+    externalNetwork = reader.Get("network-info", "external_network", "");
+
+    string floatingIpPool = reader.Get("network-info", "floating_ip_pool", "");
+    if(floatingIpPool != "")
+    {
+        //the string must start and terminate respectively with [ and ]
+        if(floatingIpPool.at(0)!='[' || floatingIpPool.at(floatingIpPool.length()-1)!=']')
+        {
+            ULOG_ERR( "Wrong floating ip pool '%s'. They must be enclosed in '[...]'",floatingIpPool.c_str());
+            return false;
+        }
+        floatingIpPool=floatingIpPool.substr(1,floatingIpPool.length()-2);
+
+        //the string just read must be tokenized
+        istringstream iss(floatingIpPool);
+        string address;
+        getline(iss, address, ' ');
+        startFloatingIpPool=address;
+        getline(iss, address, ' ');
+        endFloatingIpPool=address;
+    }
+
     /* Path of the script file*/
     scriptPath = reader.Get("misc", "script_path", "./").c_str();
     setenv("un_script_path", scriptPath.c_str(), 1);
@@ -264,4 +286,19 @@ string Configuration::getConfigServiceIp()
 int Configuration::getConfigServicePort()
 {
     return configServicePort;
+}
+
+string Configuration::getExternalNetwork()
+{
+    return externalNetwork;
+}
+
+string Configuration::getStartFloatingIpPool()
+{
+    return startFloatingIpPool;
+}
+
+string Configuration::getEndFloatingIpPool()
+{
+    return endFloatingIpPool;
 }

@@ -1039,6 +1039,11 @@ int RestServer::readConfiguration(struct MHD_Connection *connection) {
 			ports.push_back(port->c_str());
 		}
 		json["unPhisicalPorts"]=ports;
+		json["externalNetwork"]=Configuration::instance()->getExternalNetwork().c_str();
+		Object floatingIpPool;
+		floatingIpPool["start"]=Configuration::instance()->getStartFloatingIpPool().c_str();
+		floatingIpPool["end"]=Configuration::instance()->getEndFloatingIpPool().c_str();
+		json["floatingIpPool"]=floatingIpPool;
 		stringstream ssj;
 		write_formatted(json, ssj );
 		string sssj = ssj.str();

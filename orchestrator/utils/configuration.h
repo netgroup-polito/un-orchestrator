@@ -36,6 +36,9 @@ public:
     string getScriptPath();
     string getVnfImagesPath();
     string getDescriptionFileName();
+    string getExternalNetwork();
+    string getStartFloatingIpPool();
+    string getEndFloatingIpPool();
     static Configuration *instance();
 
 private:
@@ -57,6 +60,9 @@ private:
     string scriptPath;
     string vnfImagesPath;
     string descriptionFileName;
+    string externalNetwork;
+    string startFloatingIpPool;
+    string endFloatingIpPool;
     static Configuration *s_instance;
     Configuration();
 };
