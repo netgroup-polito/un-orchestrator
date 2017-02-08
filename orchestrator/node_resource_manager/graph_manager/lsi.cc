@@ -420,6 +420,11 @@ void LSI::addEndpointGrevlink(string endpoint, uint64_t vlinkID)
 	endpoints_gre_vlinks[endpoint] = vlinkID;
 }
 
+void LSI::addEndpointHoststackvlink(string endpoint, uint64_t vlinkID)
+{
+	endpoints_hoststack_vlinks[endpoint] = vlinkID;
+}
+
 void LSI::removeNFvlink(string nf_port)
 {
 	if(nfs_vlinks.count(nf_port) == 0)
@@ -508,6 +513,11 @@ void LSI::addGreEndpoint(highlevel::EndPointGre ep)
 	gre_endpoints_ports.push_back(ep);
 }
 
+void LSI::addHoststackEndpoint(highlevel::EndPointHostStack ep)
+{
+	hoststack_endpoints_port.push_back(ep);
+}
+
 int LSI::addVlink(VLink vlink)
 {
 	//TODO: protect the next operation with a mutex
@@ -540,13 +550,27 @@ void LSI::removeNF(string nf_id)
 	}
 }
 
-void LSI::removeEndpoint(string ep)
+void LSI::removeGreEndpoint(string ep)
 {
 	for(list<highlevel::EndPointGre>::iterator endp = gre_endpoints_ports.begin(); endp != gre_endpoints_ports.end(); endp++)
 	{
 		if(endp->getId().compare(ep) == 0)
 		{
 			gre_endpoints_ports.erase(endp);
+			return;
+		}
+	}
+	assert(0);
+	return;
+}
+
+void LSI::removeHoststackEndpoint(string ep)
+{
+	for(list<highlevel::EndPointHostStack>::iterator endp = hoststack_endpoints_port.begin(); endp != hoststack_endpoints_port.end(); endp++)
+	{
+		if(endp->getId().compare(ep) == 0)
+		{
+			hoststack_endpoints_port.erase(endp);
 			return;
 		}
 	}

@@ -721,6 +721,35 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 			ULOG_DBG_INFO("Vlan endpoint %s is already in the graph",(new_vlan)->getVlanId().c_str());
 	}
 
+	// c-5) hoststack endpoints
+	list<highlevel::EndPointHostStack> endpointsHoststack = this->getEndPointsHostStack();
+	//Retrieve the hoststack endpoints required by the update
+	list<highlevel::EndPointHostStack> newEndpointsHoststack = other->getEndPointsHostStack();
+
+
+	for(list<highlevel::EndPointHostStack>::iterator newHoststack = newEndpointsHoststack.begin(); newHoststack != newEndpointsHoststack.end(); newHoststack++)
+	{
+		bool found = false;
+
+		for(list<highlevel::EndPointHostStack>::iterator hoststack = endpointsHoststack.begin(); hoststack != endpointsHoststack.end(); hoststack++)
+		{
+			if((*newHoststack) == (*hoststack))
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if(!found)
+		{
+			ULOG_DBG_INFO("Hoststack endpoint %s is added to the diff graph",newHoststack->getId().c_str());
+			diff->addEndPointHostStack(*newHoststack);
+		}
+		else
+			ULOG_DBG("GRE Hoststack %s is already in the graph",newHoststack->getId().c_str());
+	}
+
+
 	return diff;
 }
 
@@ -751,6 +780,14 @@ bool Graph::addGraphToGraph(highlevel::Graph *other)
 	{
 		//The gre endpoint is not part of the graph
 		this->addEndPointGre(*ep);
+	}
+
+	//Update the hoststack endpoints
+	list<highlevel::EndPointHostStack> hsepp = other->getEndPointsHostStack();
+	for(list<highlevel::EndPointHostStack>::iterator ep = hsepp.begin(); ep != hsepp.end(); ep++)
+	{
+		//The gre endpoint is not part of the graph
+		this->addEndPointHostStack(*ep);
 	}
 
 	//Update the internal endpoints
@@ -811,6 +848,15 @@ list<RuleRemovedInfo> Graph::removeGraphFromGraph(highlevel::Graph *other)
 		//TODO If a gre-tunnel endpoint is still used in a rule, it cannot
 		//be removed! In this case the update is not valid!
 		this->removeEndPointGre(*ep);
+	}
+
+	//Update the hoststack endpoints
+	list<highlevel::EndPointHostStack> hsepp = other->getEndPointsHostStack();
+	for(list<highlevel::EndPointHostStack>::iterator ep = hsepp.begin(); ep != hsepp.end(); ep++)
+	{
+		//TODO If a hoststack endpoint is still used in a rule, it cannot
+		//be removed! In this case the update is not valid!
+		this->removeEndPointHoststack(*ep);
 	}
 
 	//Update the internal endpoints

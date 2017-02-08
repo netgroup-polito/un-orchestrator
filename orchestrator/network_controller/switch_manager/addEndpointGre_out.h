@@ -22,30 +22,30 @@ friend class GraphManager;
 private:
 
 	/**
-	*	@brief: name of the endpoint that have been connected to the lsi
+	*	@brief: id of the endpoint that have been connected to the lsi
 	*/
-	string ep_name;
+	string ep_id;
 
 	/**
-	*	@brief: id of the endpoint
+	*	@brief: openflow id of the connected endpoint
 	*/
-	unsigned int ep_id;
+	unsigned int of_id;
 
 protected:
 
-	string getEPname()
-	{
-		return ep_name;
-	}
-
-	unsigned int getEPid()
+	string getEpId()
 	{
 		return ep_id;
 	}
 
+	unsigned int getOfId()
+	{
+		return of_id;
+	}
+
 public:
-	AddEndpointOut(string ep_name,unsigned int ep_id)
-		: ep_name(ep_name), ep_id(ep_id)
+	AddEndpointOut(string ep_id,unsigned int of_id)
+		: ep_id(ep_id), of_id(of_id)
 	{
 	}
 

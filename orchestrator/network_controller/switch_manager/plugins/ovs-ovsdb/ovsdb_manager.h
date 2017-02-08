@@ -28,7 +28,9 @@ public:
 
 	AddNFportsOut *addNFPorts(AddNFportsIn anpi);
 
-	AddEndpointOut *addEndpoint(AddEndpointIn aepi);
+	AddEndpointOut *addGreEndpoint(AddEndpointIn aepi);
+
+	AddEndpointHoststackOut *addHoststackEndpoint(AddEndpointHoststackIn aepi);
 
 	AddVirtualLinkOut *addVirtualLink(AddVirtualLinkIn avli);
 
@@ -37,6 +39,8 @@ public:
 	void destroyNFPorts(DestroyNFportsIn dnpi);
 
     void destroyEndpoint(DestroyEndpointIn depi);
+
+	void destroyHoststackEndpoint(DestroyHoststackEndpointIn dhepi);
 
 	void destroyVirtualLink(DestroyVirtualLinkIn dvli);
 

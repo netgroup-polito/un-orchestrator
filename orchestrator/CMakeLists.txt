@@ -288,6 +288,10 @@ SET(SOURCES1
 	network_controller/switch_manager/addNFports_out.h
 	network_controller/switch_manager/addVirtualLink_in.h
 	network_controller/switch_manager/addVirtualLink_out.h
+	network_controller/switch_manager/addEndpointGre_in.h
+	network_controller/switch_manager/addEndpointGre_out.h
+	network_controller/switch_manager/addEndpointHoststack_in.h
+	network_controller/switch_manager/addEndpointHoststack_out.h
 	network_controller/switch_manager/createLSIout.h
 	network_controller/switch_manager/destroyNFports_in.h
 	network_controller/switch_manager/destroyVirtualLink_in.h
