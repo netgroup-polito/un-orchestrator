@@ -1062,7 +1062,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 	*	Call a bash script that brings up the interface and disebled offloads on it. The script pools untill such interface
 	*	is created, thus ensuring that, when the VNF will be created, the ports are already attached to OvS.
 	*/
-	if(is_nf_port && ((port_technology == VHOST_PORT) || (port_technology == VETH_PORT)))
+	if((is_nf_port && ((port_technology == VHOST_PORT) || (port_technology == VETH_PORT))) || p.compare(0, 6, "hsport") == 0)
 	{
 		stringstream command;
 		command << getenv("un_script_path") << ACTIVATE_INTERFACE << " " << port_name;

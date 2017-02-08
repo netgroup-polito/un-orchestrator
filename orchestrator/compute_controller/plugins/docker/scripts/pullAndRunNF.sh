@@ -39,7 +39,7 @@ fi
 
 #Check if some port forwarding must be set up
 num_ports=$6
-position_num_forwarding=`expr 4 + $num_ports \* 3 + 1`
+position_num_forwarding=`expr 6 + $num_ports \* 3 + 1`
 num_forwarding=${!position_num_forwarding}
 
 if [ $uri_type != $docker_registry ]
