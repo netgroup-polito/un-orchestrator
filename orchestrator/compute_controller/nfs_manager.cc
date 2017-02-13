@@ -18,3 +18,10 @@ string NFsManager::getCores()
 NFsManager::~NFsManager(){
 
 }
+
+#ifdef ENABLE_HARDWARE
+void NFsManager::setHWAttached(HWManager *hwAttached)
+{
+	this->hwAttached = hwAttached;
+}
+#endif

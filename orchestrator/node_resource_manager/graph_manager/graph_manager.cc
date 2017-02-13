@@ -20,6 +20,9 @@ GraphManager::GraphManager(int core_mask) : switchManager()
 		CheckPhysicalPortsIn cppi(*pp);
 		phyPortsRequired.insert(cppi);
 	}
+#ifdef ENABLE_HARDWARE
+	hwController= new HardwareController();
+#endif
 
 	set<string> phyPorts;//maps the name into the side
 	for(set<CheckPhysicalPortsIn>::iterator pp = phyPortsRequired.begin(); pp != phyPortsRequired.end(); pp++)

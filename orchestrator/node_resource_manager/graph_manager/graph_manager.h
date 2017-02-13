@@ -15,6 +15,10 @@
 #include "../graph/high_level_graph/high_level_graph_vnf.h"
 #include "../interface_manager/InterfaceManager.h"
 
+#ifdef ENABLE_HARDWARE
+#include "../../hardware_controller/hardware_controller.h"
+#endif
+
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"
 	#define SWITCH_MANAGER_IMPLEMENTATION XDPDManager
@@ -214,6 +218,13 @@ private:
 	*	(that can involves the splitting of a rule)
 	*/
 	list<string> getRulesIDForLSITenant(highlevel::Rule rule);
+
+#ifdef ENABLE_HARDWARE
+	/**
+	*	Hardware controller used to implement the NF/network with the hardware
+	*/
+	HardwareController *hwController;
+#endif
 
 public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF

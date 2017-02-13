@@ -11,6 +11,10 @@
 
 #include <typeinfo>
 
+#ifdef ENABLE_HARDWARE
+#include "../hardware_controller/hardware_controller.h"
+#endif
+
 /**
 * @file nfs_manager.h
 *
@@ -21,6 +25,10 @@ using namespace std;
 
 class Description;
 
+#ifdef ENABLE_HARDWARE
+class HWManager;
+#endif
+
 class NFsManager
 {
 protected:
@@ -28,6 +36,14 @@ protected:
 	*	@brief: Description of the network function associated with this manager
 	*/
 	Description *description;
+
+#ifdef ENABLE_HARDWARE
+	/**
+	*	@brief: Object that describe the Hardware attached to the NF it is equal
+			to NULL if no hardware associated
+	**/
+	HWManager *hwAttached;
+#endif
 
 public:
 
@@ -81,6 +97,18 @@ public:
 	*			If an execution environment needs this information this method must be overridden
 	*/
 	virtual string getCores();
+
+#ifdef ENABLE_HARDWARE
+	/**
+	*	@brief: returns the object of the hardware associated to this NF
+	**/
+	const HWManager* getHWAttached(){ return hwAttached;}
+
+	/**
+	*       @brief: set the hardware attached to the NF
+	**/
+	void setHWAttached(HWManager *);
+#endif
 };
 
 class NFsManagerException: public std::exception
