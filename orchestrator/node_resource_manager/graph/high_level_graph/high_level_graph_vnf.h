@@ -62,7 +62,9 @@ private:
 	list<string> groups;
 
 	/**
-	*	@brief: the vnf template of the VNF (e.g., example.json)
+	*	@brief: the vnf template of the VNF (e.g., exampleId)
+	*		this field doesn't point to the complete URL of the template,
+	*		but it contains the id of the template stored in the Datastore
 	*/
 	string vnf_template;
 
@@ -129,6 +131,11 @@ public:
 	*/
 	list<unsigned int> getPortsId();
 
+	/*
+	*	@brief: return true if vnf_template is in NF-FG request
+	*/
+
+	bool checkVnfTemplateField();
 	/*
 	*	@brief: return a mapping of port ID - port configuration, for all the
 	*			ports of the VNF

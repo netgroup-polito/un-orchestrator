@@ -8,6 +8,7 @@
 #include "graph_translator.h"
 #include "../../network_controller/openflow_controller/controller.h"
 #include "../../utils/constants.h"
+#include "../../utils/configuration.h"
 #include "../graph/high_level_graph/high_level_graph.h"
 #include "../graph/low_level_graph/graph.h"
 #include "../graph/high_level_graph/high_level_graph_endpoint_interface.h"
@@ -103,41 +104,11 @@ private:
 	lowlevel::Graph graphLSI0lowLevel; //FIXME: this is a trick for the log
 	lowlevel::Graph graph; //FIXME: this is a trick for default rules
 
-	/**
-	*	Local IP of the LSI0
-	*/
-	string un_address;
-
-	/**
-	*	Netmask of the local IP of the LSI0
-	*/
-	string un_netmask;
-
-	/**
-	*	Orchestrator can be in band (true) or out of band (false)
-	*/
-	bool orchestrator_in_band;
-
-	/**
-	*	Control interface of the node
-	*/
-	string un_interface;
-
-	/**
-	*	IPsec certificate
-	*/
-	string ipsec_certificate;
 
 	/**
 	*	Map containing the graph identifier of each tenant-LSI, and its desciption
 	*/
 	map<string,GraphInfo> tenantLSIs;
-
-	/**
-	*	Name resolver configuration parameters
-	**/
-	string nameResolverIP;
-	int nameResolverPort;
 
 	/**
 	*	The module that interacts with the virtual switch
@@ -248,7 +219,7 @@ public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF
 	//(plus other fields)
 
-	GraphManager(int core_mask,set<string> physical_ports,string un_address,bool control,string un_interface,string ipsec_certificate, string name_resolver_ip, int name_resolver_port);
+	GraphManager(int core_mask);
 	~GraphManager();
 
 	/**
@@ -293,6 +264,12 @@ public:
 	void removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *graph, LSI *lsi);
 
 	void getGraphsNames(std::list<std::string> *l);
+	
+	//Returns the ip address + port of the vnf repository
+	string getVnfRepoEndpoint();
+
+	//Given a graph ID and vnf ID it returns the template ID
+	string getVnfTemplateId(string graphId, string vnfId);
 };
 
 

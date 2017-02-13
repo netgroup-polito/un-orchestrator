@@ -114,10 +114,10 @@ AddNFportsOut *ERFSManager::addNFPorts(AddNFportsIn anpi)
     for(list<struct nf_port_info>::iterator nfp = nfs_ports.begin(); nfp != nfs_ports.end(); nfp++) {
         ULOG_DBG_INFO("\tport: %s", nfp->port_name.c_str());
         unsigned int port_id = nextPort[dpid]++;
-        const char* port_type = "ivshmem"; // TODO: Use nfp->port_type and act accordingly
+        const char* port_technology = "ivshmem"; // TODO: Use nfp->port_technology and act accordingly
         ULOG_DBG_INFO(" NF port \"%s.%s\" = %d (type=%d)", nf.c_str(), nfp->port_name.c_str(), port_id, nf_type);
         stringstream cmd_add;
-        cmd_add << getenv("un_script_path") << CMD_ADD_PORT << " " << dpid << " " << numa_node << " " << port_type << " " << port_id << " auto";
+        cmd_add << getenv("un_script_path") << CMD_ADD_PORT << " " << dpid << " " << numa_node << " " << port_technology << " " << port_id << " auto";
         ULOG_DBG_INFO("Executing command \"%s\"", cmd_add.str().c_str());
         int retVal = system(cmd_add.str().c_str());
         if(retVal != 0) {

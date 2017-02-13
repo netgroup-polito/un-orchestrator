@@ -13,7 +13,7 @@ static string nf_port_name(const string& nf_id, unsigned int port_id)
 }
 
 LSI::LSI(string controllerAddress, unsigned controllerPort, set<string> physical_ports, list<highlevel::VNFs> network_functions,
-	list<highlevel::EndPointGre> gre_endpoints_ports, vector<VLink> virtual_links, map<string, map<unsigned int,PortType> > a_nfs_ports_type,
+	list<highlevel::EndPointGre> gre_endpoints_ports, vector<VLink> virtual_links, map<string, map<unsigned int,PortTechnology> > a_nfs_ports_type,
 	list<highlevel::EndPointHostStack> hoststack_endpoints_port) :
 		controllerAddress(controllerAddress), controllerPort(controllerPort),
 		virtual_links(virtual_links.begin(),virtual_links.end()),
@@ -156,14 +156,14 @@ list<string> LSI::getNetworkFunctionsPortNames(string nf_id)
 	return names;
 }
 
-PortType LSI::getNetworkFunctionPortType(string nf_id, string port_name)
+PortTechnology LSI::getNetworkFunctionPortTechnology(string nf_id, string port_name)
 {
 	map<string, nfData>::iterator nf_it = network_functions.find(nf_id);
 	if (nf_it == network_functions.end())
 		return UNDEFINED_PORT;
 
-	map<string, PortType>& ports = nf_it->second.ports_type;
-	map< string, PortType >::iterator port_it = ports.find(port_name);
+	map<string, PortTechnology>& ports = nf_it->second.ports_type;
+	map< string, PortTechnology >::iterator port_it = ports.find(port_name);
 	if (port_it == ports.end())
 		return UNDEFINED_PORT;
 
@@ -185,7 +185,7 @@ map<string, list< struct nf_port_info> > LSI::getNetworkFunctionsPortsInfo()
 
 			struct nf_port_info pi;
 			pi.port_name = port_name;
-			pi.port_type = getNetworkFunctionPortType(nf_id, port_name);
+			pi.port_technology = getNetworkFunctionPortTechnology(nf_id, port_name);
 			pi.port_id = *port_it;
 			pi_list.push_back(pi); //each element contains the port name and the port type
 		}
@@ -469,7 +469,7 @@ void LSI::removeEndPointGrevlink(string endpoint)
 	endpoints_gre_vlinks.erase(it);
 }
 
-bool LSI::addNF(string nf_id, list< unsigned int> ports, const map<unsigned int, PortType>& a_nf_ports_type)
+bool LSI::addNF(string nf_id, list< unsigned int> ports, const map<unsigned int, PortTechnology>& a_nf_ports_type)
 {
 	//TODO: this assert will not be valid when we will introduce the hotplug.
 	//In that case, this function should be modified so that the nfData (already existing) of the network
@@ -492,7 +492,7 @@ bool LSI::addNF(string nf_id, list< unsigned int> ports, const map<unsigned int,
 
 		nf_data.ports_switch_id[port_name] = 0;	// Until the switch assigns an OpenFlow ID to the NF ports
 
-		map<unsigned int, PortType>::const_iterator pt_it = a_nf_ports_type.find(port_id);
+		map<unsigned int, PortTechnology>::const_iterator pt_it = a_nf_ports_type.find(port_id);
 		if (pt_it == a_nf_ports_type.end())
 			return false;
 		nf_data.ports_type[port_name] = pt_it->second;

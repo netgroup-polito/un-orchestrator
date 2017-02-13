@@ -14,7 +14,7 @@ bool Dpdk::startNF(StartNFIn sni)
 	uint64_t lsiID = sni.getLsiID();
 	string nf_name = sni.getNfId();
 	uint64_t coreMask = sni.getCoreMask();
-
+	NFtemplate *temp = description->getTemplate();
 	map<unsigned int, string> namesOfPortsOnTheSwitch = sni.getNamesOfPortsOnTheSwitch();
 	unsigned int n_ports = namesOfPortsOnTheSwitch.size();
 
@@ -35,23 +35,19 @@ bool Dpdk::startNF(StartNFIn sni)
 		ULOG_WARN("Required %d control connections for VNF '%s'. Control connections are not supported by DPDK type", control_ports.size(),nf_name.c_str());
 #endif
 
-	string uri_image = description->getURI();
 
-	stringstream uri;
-
-	try {
-		DPDKDescription& dpdkDescr = dynamic_cast<DPDKDescription&>(*description);
-		if(dpdkDescr.getLocation() == "local")
-			uri << "file://";
-	} catch (exception& e) {
-		ULOG_DBG_INFO("exception %s", e.what());
+	if(description->getTemplate()->getCores() == 0){
+		ULOG_ERR("Core numbers have not been found in the template for implementation dpdk");
 		return false;
 	}
 
+	string uri_image = temp->getURI();
+
+	stringstream uri;
 	uri << uri_image;
 
 	stringstream command;
-	command << getenv("un_script_path") << PULL_AND_RUN_DPDK_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << coreMask <<  " " << NUM_MEMORY_CHANNELS << " " << n_ports;
+	command << getenv("un_script_path") << RUN_DPDK_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << coreMask <<  " " << NUM_MEMORY_CHANNELS << " " << n_ports;
 
 	for(map<unsigned int, string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)
 		command << " "  << pn->second;
@@ -95,22 +91,11 @@ bool Dpdk::updateNF(UpdateNFIn uni)
 }
 
 string Dpdk::getCores() {
-	string cores;
-	try {
-
-		DPDKDescription& dpdkDescr = dynamic_cast<DPDKDescription&>(*description);
-		cores = dpdkDescr.getCores();
-
-	} catch (exception& e) {
-
-		/*
-		 * Bad cast
-		 * It is not a DPDK description
-		 */
-
-		ULOG_WARN("Exception %s raised! Wrong description treated as dpdk description", e.what());
-		return "";
-	}
-	return cores;
+	string s;
+	int cores = description->getTemplate()->getCores();
+	if(cores==0)
+		return s;
+	s+=cores;
+	return s;
 }
 

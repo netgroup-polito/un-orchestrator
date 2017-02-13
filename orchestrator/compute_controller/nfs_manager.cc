@@ -7,7 +7,7 @@ void NFsManager::setDescription(Description *description)
 
 nf_t NFsManager::getNFType()
 {
-	return description->getType();
+	return description->getTemplate()->getVnfType();
 }
 
 string NFsManager::getCores()

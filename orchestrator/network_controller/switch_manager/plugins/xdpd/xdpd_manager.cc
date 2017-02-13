@@ -279,15 +279,15 @@ string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli, map<string,unsigned
 		Array nf_ports_array;
 		list<struct nf_port_info> nf_ports = cli.getNetworkFunctionsPortsInfo(*nf);
 
-		PortType port_type = UNDEFINED_PORT;
+		PortTechnology port_technology = UNDEFINED_PORT;
 		for(list<struct nf_port_info>::iterator nfp = nf_ports.begin(); nfp != nf_ports.end(); nfp++)
 		{
 			nf_ports_array.push_back(nfp->port_name);
-			port_type = nfp->port_type;
+			port_technology = nfp->port_technology;
 
 			port_name_id_in_graph[nfp->port_name] = nfp->port_id;
 
-			switch (port_type) {
+			switch (port_technology) {
 				case VETH_PORT:
 					assert(nft == DOCKER || nft == NATIVE);
 					if(nft == NATIVE){
@@ -301,12 +301,12 @@ string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli, map<string,unsigned
 				case VHOST_PORT:
 					//XXX xDPd does not expect the port type, but the VNF type
 					nft = DOCKER;
-					ULOG_DBG_INFO("Network function \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",(*nf).c_str(),(NFType::toString(nft)).c_str());
+					ULOG_DBG_INFO("Network function \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",(*nf).c_str(),(vnfTypeToString(nft)).c_str());
 					continue;
 				case IVSHMEM_PORT:
 					//XXX xDPd does not expect the port type, but the VNF type
 					nft = DPDK;
-					ULOG_DBG_INFO("Network function \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",(*nf).c_str(),(NFType::toString(nft)).c_str());
+					ULOG_DBG_INFO("Network function \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",(*nf).c_str(),(vnfTypeToString(nft)).c_str());
 					continue;
 				case USVHOST_PORT:
 					ULOG_WARN("Port type not supported.");
@@ -322,7 +322,7 @@ string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli, map<string,unsigned
 
 		network_function["ports"] = nf_ports_array;
 
-		network_function["type"] = NFType::toString(nft);
+		network_function["type"] = vnfTypeToString(nft);
 
 		nfs_array.push_back(network_function);
 	}
@@ -744,13 +744,13 @@ string XDPDManager::prepareCreateNFPortsRequest(AddNFportsIn anpi)
 
 	Array nf_ports_array;
 	list<struct nf_port_info> nf_ports = anpi.getNetworkFunctionsPorts();
-	PortType port_type = UNDEFINED_PORT;
+	PortTechnology port_technology = UNDEFINED_PORT;
 	for(list<struct nf_port_info>::iterator nfp = nf_ports.begin(); nfp != nf_ports.end(); nfp++)
 	{
 		nf_ports_array.push_back(nfp->port_name);
-		port_type = nfp->port_type;
+		port_technology = nfp->port_technology;
 
-		switch (port_type) {
+		switch (port_technology) {
 			case VETH_PORT:
 				assert(type == DOCKER || type == NATIVE);
 				if(type == NATIVE){
@@ -764,12 +764,12 @@ string XDPDManager::prepareCreateNFPortsRequest(AddNFportsIn anpi)
 			case VHOST_PORT:
 				//XXX xDPd does not exepct the port type, but the VNF type
 				type = DOCKER;
-				ULOG_DBG_INFO("Network function with id \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",anpi.getNfId().c_str(),(NFType::toString(type)).c_str());
+				ULOG_DBG_INFO("Network function with id \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",anpi.getNfId().c_str(),(vnfTypeToString(type)).c_str());
 				continue;
 			case IVSHMEM_PORT:
 				//XXX xDPd does not exepct the port type, but the VNF type
 				type = DPDK;
-				ULOG_DBG_INFO("Network function with id \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",anpi.getNfId().c_str(),(NFType::toString(type)).c_str());
+				ULOG_DBG_INFO("Network function with id \"%s\" (that is a VM) is handled in xDPd as a \"%s\"",anpi.getNfId().c_str(),(vnfTypeToString(type)).c_str());
 				continue;
 			case USVHOST_PORT:
 				ULOG_WARN("Port type not supported.");
@@ -782,7 +782,7 @@ string XDPDManager::prepareCreateNFPortsRequest(AddNFportsIn anpi)
 		}
 	}
 
-	network_function["type"] = NFType::toString(type);
+	network_function["type"] = vnfTypeToString(type);
 
 	network_function["ports"] = nf_ports_array;
 	nfs_array.push_back(network_function);

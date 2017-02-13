@@ -28,7 +28,6 @@ ENDIF()
 
 OPTION(BUILD_ExternalProjects "Build external projects (json-spirit, rofl, ...)" OFF)
 OPTION(BUILD_Orchestrator "Build orchestrator" ON)
-OPTION(BUILD_NameResolver "Build name-resolver" ON)
 OPTION(BUILD_DBInitializer "Build db_initializer (need if you plan to use authentication on the orchestrator)" OFF)
 
 include (ExternalProject)
@@ -44,7 +43,6 @@ ExternalProject_Add(
 )
 ENDIF(BUILD_ExternalProjects)
 
-IF(BUILD_Orchestrator OR BUILD_DBInitializer)
 # inih - https://github.com/benhoyt/inih
 ExternalProject_Add(
 	Inih
@@ -64,16 +62,10 @@ ExternalProject_Add(
 	COMMAND ${CMAKE_COMMAND} -E copy ini.h ${CMAKE_BINARY_DIR}/externals/include/
 	COMMAND ${CMAKE_COMMAND} -E copy cpp/INIReader.h ${CMAKE_BINARY_DIR}/externals/include/
 )
-ENDIF(BUILD_Orchestrator OR BUILD_DBInitializer)
-
 
 IF(BUILD_Orchestrator)
 	ADD_SUBDIRECTORY(orchestrator)
 ENDIF(BUILD_Orchestrator)
-
-IF(BUILD_NameResolver)
-	ADD_SUBDIRECTORY(name-resolver)
-ENDIF(BUILD_NameResolver)
 
 IF(BUILD_DBInitializer)
 	ADD_SUBDIRECTORY(db_initializer)

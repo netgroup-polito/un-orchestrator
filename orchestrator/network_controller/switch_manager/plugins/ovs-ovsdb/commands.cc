@@ -477,7 +477,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 
 			/*for each network function port in the list of nfs_ports*/
 			for(list<struct nf_port_info>::iterator nfp = nfs_ports.begin(); nfp != nfs_ports.end(); nfp++){
-				string name_on_switch = add_port(nfp->port_name, dnumber, true, s, nfp->port_type);
+				string name_on_switch = add_port(nfp->port_name, dnumber, true, s, nfp->port_technology);
 
 				port2.push_back("named-uuid");
 
@@ -685,7 +685,7 @@ string find_free_dpdkr()
 }
 #endif
 
-string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, PortType port_type)
+string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, PortTechnology port_technology)
 {
 	int r = 0;
 	ssize_t nwritten;
@@ -707,7 +707,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 	Array third_object;
 	Array fourth_object;
 
-	ULOG_DBG_INFO("add_port(%s,type=%s)", p.c_str(), portTypeToString(port_type).c_str());
+	ULOG_DBG_INFO("add_port(%s,type=%s)", p.c_str(), portTechnologyToString(port_technology).c_str());
 
 	//connect socket
 	s = cmd_connect();
@@ -746,7 +746,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 
 	/*Insert an Interface*/
 	if (is_nf_port) {
-		switch (port_type) {
+		switch (port_technology) {
 		case IVSHMEM_PORT:
 		case DPDKR_PORT:
 #ifdef ENABLE_OVSDB_DPDK
@@ -811,7 +811,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 		}
 		default:
 			//We are here in case of type "vhost"
-			assert(port_type == VHOST_PORT);
+			assert(port_technology == VHOST_PORT);
 			row["type"] = "internal";
 			break;
 		}
@@ -1062,7 +1062,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 	*	Call a bash script that brings up the interface and disebled offloads on it. The script pools untill such interface
 	*	is created, thus ensuring that, when the VNF will be created, the ports are already attached to OvS.
 	*/
-	if(is_nf_port && ((port_type == VHOST_PORT) || (port_type == VETH_PORT)))
+	if((is_nf_port && ((port_technology == VHOST_PORT) || (port_technology == VETH_PORT))) || p.compare(0, 6, "hsport") == 0)
 	{
 		stringstream command;
 		command << getenv("un_script_path") << ACTIVATE_INTERFACE << " " << port_name;
@@ -1583,7 +1583,7 @@ AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi, int socketNum
 
 	for(list<struct nf_port_info>::iterator pinfo = portInfo.begin(); pinfo != portInfo.end(); pinfo++)
 	{
-		string nameOnSwitch = add_port(pinfo->port_name, datapathNumber, true, socketNumber, pinfo->port_type);
+		string nameOnSwitch = add_port(pinfo->port_name, datapathNumber, true, socketNumber, pinfo->port_technology);
 		ports_name_on_switch.push_back(nameOnSwitch);
 		ports[pinfo->port_name] = rnumber - 1;
 		port_names_and_id[nameOnSwitch] = rnumber - 1;

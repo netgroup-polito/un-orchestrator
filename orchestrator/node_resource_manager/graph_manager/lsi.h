@@ -62,9 +62,9 @@ private:
 		/**
 		*	@brief: Types of the NF ports.
 		*		The map is
-		*			<nf port name, port_type>
+		*			<nf port name, port_technology>
 		*/
-		map<string, PortType> ports_type;
+		map<string, PortTechnology> ports_type;
 
 		/**
 		*	@brief: Names of the ports connected to the LSI and related to the network function
@@ -157,7 +157,7 @@ private:
 public:
 
 	LSI(string controllerAddress, unsigned controllerPort, set<string> physical_ports, list<highlevel::VNFs> network_functions,
-		list<highlevel::EndPointGre> gre_endpoints_ports, vector<VLink> virtual_links, map<string, map<unsigned int, PortType> > nfs_ports_type,
+		list<highlevel::EndPointGre> gre_endpoints_ports, vector<VLink> virtual_links, map<string, map<unsigned int, PortTechnology> > nfs_ports_type,
             list<highlevel::EndPointHostStack> hoststack_endpoints_port);
 
 	string getControllerAddress();
@@ -179,7 +179,7 @@ public:
 	set<string> getNetworkFunctionsId();
 	map<string,unsigned int> getNetworkFunctionsPorts(string nf_id);
 	list<string> getNetworkFunctionsPortNames(string nf_id);
-	PortType getNetworkFunctionPortType(string nf_id, string port);
+	PortTechnology getNetworkFunctionPortTechnology(string nf_id, string port);
 	map<string, list< struct nf_port_info> > getNetworkFunctionsPortsInfo();
 	map<unsigned int, string> getNetworkFunctionsPortsNameOnSwitchMap(string nf_id);
 
@@ -223,7 +223,7 @@ protected:
 	int addVlink(VLink vlink);
 	void removeVlink(uint64_t ID);
 
-	bool addNF(string id, list< unsigned int> ports, const map<unsigned int, PortType>& nf_ports_type);
+	bool addNF(string id, list< unsigned int> ports, const map<unsigned int, PortTechnology>& nf_ports_type);
 	void removeNF(string nf_id);
 
 	void addGreEndpoint(highlevel::EndPointGre);

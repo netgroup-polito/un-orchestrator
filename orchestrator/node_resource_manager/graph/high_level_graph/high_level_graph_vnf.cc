@@ -58,6 +58,10 @@ string VNFs::getName()
 	return name;
 }
 
+bool VNFs::checkVnfTemplateField() {
+	return (vnf_template.compare("") != 0);
+}
+
 list<string> VNFs::getGroups()
 {
 	return groups;

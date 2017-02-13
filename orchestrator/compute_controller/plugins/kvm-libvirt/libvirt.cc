@@ -65,8 +65,113 @@ void Libvirt::disconnect()
 
 bool Libvirt::updateNF(UpdateNFIn uni)
 {
-	ULOG_INFO("Update not supported by this type of functions");
-        return false;
+	xmlDocPtr doc = NULL;
+	xmlNodePtr ifn = NULL; //root_node
+	doc = xmlNewDoc(BAD_CAST "1.0");
+	ifn = xmlNewNode(NULL, BAD_CAST "interface");
+	xmlDocSetRootElement(doc, ifn);
+
+	/* Create NICs */
+	vector< pair<string, string> > ivshmemPorts; // name, alias
+
+	string nf_name = uni.getNfId();
+	map<unsigned int, string> namesOfPortsOnTheSwitch = uni.getNamesOfPortsOnTheSwitch();
+	map<unsigned int, port_network_config_t > portsConfiguration = uni.getPortsConfiguration();
+	list<unsigned int> newPortsToAdd = uni.getNewPortsToAdd();
+
+#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
+	list<port_mapping_t > control_ports = sni.getControlPorts();
+	if(control_ports.size() != 0)
+		UN_LOG(ORCH_WARNING, "Required %d control connections for VNF '%s'. Control connections are not supported by KVM type", control_ports.size(),nf_name.c_str());
+	list<string> environment_variables = sni.getEnvironmentVariables();
+	if(environment_variables.size() != 0)
+		UN_LOG(ORCH_WARNING, "Required %d environment variables for VNF '%s'. Environment variables are not supported by KVM type", environment_variables.size(),nf_name.c_str());
+#endif
+
+	for(list<unsigned int>::iterator p = newPortsToAdd.begin(); p != newPortsToAdd.end(); p++)
+	{
+		const unsigned int port_id = *p;
+		const string& port_name = namesOfPortsOnTheSwitch[port_id];
+
+		PortTechnology port_technology = description->getPortTechnologies().at(port_id);
+		ULOG_DBG_INFO("NF Port \"%s\":%d (%s) is of type %s", nf_name.c_str(), port_id, port_name.c_str(), portTechnologyToString(port_technology).c_str());
+
+#ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
+		/* retrieve ip address */
+		if(!portsConfiguration[port_id].ip_address.empty())
+			UN_LOG(ORCH_WARNING, "Required ip address configuration for VNF '%s'. Ip address configuration are not supported by KVM type", control_ports.size(),nf_name.c_str());
+#endif
+		/* retrieve mac address */
+		string port_mac_address = portsConfiguration[port_id].mac_address;
+
+		ULOG_DBG("Interface \"%s\" associated with MAC address \"%s\"", port_name.c_str(), port_mac_address.c_str());
+
+		if (port_technology == USVHOST_PORT) {
+			xmlNewProp(ifn, BAD_CAST "type", BAD_CAST "vhostuser");
+
+			xmlNodePtr srcn = xmlNewChild(ifn, NULL, BAD_CAST "source", NULL);
+			ostringstream sock_path_os;
+			sock_path_os << OVS_BASE_SOCK_PATH << port_name;
+			xmlNewProp(srcn, BAD_CAST "type", BAD_CAST "unix");
+			xmlNewProp(srcn, BAD_CAST "path", BAD_CAST sock_path_os.str().c_str());
+			xmlNewProp(srcn, BAD_CAST "mode", BAD_CAST "client");
+
+			xmlNodePtr modeln = xmlNewChild(ifn, NULL, BAD_CAST "model", NULL);
+			xmlNewProp(modeln, BAD_CAST "type", BAD_CAST "virtio");
+
+			xmlNodePtr drvn = xmlNewChild(ifn, NULL, BAD_CAST "driver", NULL);
+			xmlNodePtr drv_hostn = xmlNewChild(drvn, NULL, BAD_CAST "host", NULL);
+			xmlNewProp(drv_hostn, BAD_CAST "csum", BAD_CAST "off");
+			xmlNewProp(drv_hostn, BAD_CAST "gso", BAD_CAST "off");
+			xmlNodePtr drv_guestn = xmlNewChild(drvn, NULL, BAD_CAST "guest", NULL);
+			xmlNewProp(drv_guestn, BAD_CAST "tso4", BAD_CAST "off");
+			xmlNewProp(drv_guestn, BAD_CAST "tso6", BAD_CAST "off");
+			xmlNewProp(drv_guestn, BAD_CAST "ecn", BAD_CAST "off");
+		}
+		else if (port_technology == IVSHMEM_PORT) {
+			ULOG_INFO("Update not supported by functions with this type of ports: %s", IVSHMEM_PORT);
+			return false;
+		}
+		else if (port_technology == VHOST_PORT) {
+			xmlNewProp(ifn, BAD_CAST "type", BAD_CAST "direct");
+
+			if(!port_mac_address.empty())
+			{
+				xmlNodePtr mac_addr = xmlNewChild(ifn, NULL, BAD_CAST "mac", NULL);
+				xmlNewProp(mac_addr, BAD_CAST "address", BAD_CAST port_mac_address.c_str());
+			}
+
+			xmlNodePtr srcn = xmlNewChild(ifn, NULL, BAD_CAST "source", NULL);
+			xmlNewProp(srcn, BAD_CAST "dev", BAD_CAST port_name.c_str());
+			xmlNewProp(srcn, BAD_CAST "mode", BAD_CAST "passthrough");
+
+			xmlNodePtr modeln = xmlNewChild(ifn, NULL, BAD_CAST "model", NULL);
+			xmlNewProp(modeln, BAD_CAST "type", BAD_CAST "virtio");
+
+			xmlNodePtr virt = xmlNewChild(ifn, NULL, BAD_CAST "virtualport", NULL);
+			xmlNewProp(virt, BAD_CAST "type", BAD_CAST "openvswitch");
+			}
+			else
+			{
+				assert(0 && "There is a BUG! You cannot be here!");
+				ULOG_ERR("Something went wrong in the creation of the ports for the VNF...");
+				return false;
+			}
+	}
+
+	/* Get resulting document */
+	xmlChar* xml_buf; int xml_bufsz; const char *xmlconfig = NULL;
+	xmlDocDumpMemory(doc, &xml_buf, &xml_bufsz);
+	xmlconfig = (const char *)xml_buf;
+
+	char vm_name[64];
+	sprintf(vm_name, "%" PRIu64 "_%s", uni.getLsiID(), uni.getNfId().c_str());
+	/*update the VM*/
+	if(virDomainAttachDevice(virDomainLookupByName(connection, vm_name),xmlconfig) != 0){
+		ULOG_ERR("failed to update VM. %s", vm_name);
+		return false;
+	}
+	return true;
 }
 
 bool Libvirt::startNF(StartNFIn sni)
@@ -74,14 +179,23 @@ bool Libvirt::startNF(StartNFIn sni)
 	virDomainPtr dom = NULL;
 	char domain_name[64];
 	const char *xmlconfig = NULL;
+	NFtemplate *temp = description->getTemplate();
 
+	if(description->getTemplate()->getCores() == 0){
+		ULOG_ERR("Core numbers have not been found in the template for implementation kvm");
+		return false;
+	}
+	if(description->getTemplate()->getPlatform() == ""){
+		ULOG_ERR("Platform type has not been found in the template for implementation kvm");
+		return false;
+	}
 	string nf_name = sni.getNfId();
-	string uri_image = description->getURI();
+	string uri_image = temp->getURI();
+
+	ULOG_DBG_INFO("Loading base libvirt template '%s'...",BASE_LIBVIRT_TEMPLATE);
 
 	/* Domain name */
 	sprintf(domain_name, "%" PRIu64 "_%s", sni.getLsiID(), nf_name.c_str());
-
-	ULOG_DBG_INFO("Using Libvirt XML template %s", uri_image.c_str());
 	xmlInitParser();
 
 	xmlDocPtr doc;
@@ -89,9 +203,9 @@ bool Libvirt::startNF(StartNFIn sni)
 	xmlXPathObjectPtr xpathObj;
 
 	/* Load XML document */
-	doc = xmlParseFile(uri_image.c_str());
+	doc = xmlParseFile(BASE_LIBVIRT_TEMPLATE);
 	if (doc == NULL) {
-		ULOG_ERR("Unable to parse file \"%s\"", uri_image.c_str());
+		ULOG_ERR("Unable to parse file \"%s\"", BASE_LIBVIRT_TEMPLATE);
 		return 0;
 	}
 
@@ -119,16 +233,16 @@ bool Libvirt::startNF(StartNFIn sni)
 
 	xmlNodeSetPtr nodes = xpathObj->nodesetval;
 	int size = (nodes) ? nodes->nodeNr : 0;
-	ULOG_DBG_INFO("xpath return size: %d", size);
+	ULOG_DBG("xpath return size: %d", size);
 	int i;
 	for(i = size - 1; i >= 0; i--) {
-	  	xmlNodePtr node = nodes->nodeTab[i];
+		xmlNodePtr node = nodes->nodeTab[i];
 
 		if (node != NULL) {
 			switch (node->type) {
 				case XML_ELEMENT_NODE:
 					if (xmlStrcmp(node->name, (xmlChar*)"name") == 0) {
-						xmlNodeSetContent(node, BAD_CAST domain_name);
+						xmlNodeSetContent(node, BAD_CAST domain_name); //set the domain name, which is different for each network function
 						update_flags |= DOMAIN_NAME_UPDATED;
 					}
 					else if (xmlStrcmp(node->name, (xmlChar*)"emulator") == 0) {
@@ -137,6 +251,7 @@ bool Libvirt::startNF(StartNFIn sni)
 							update_flags |= EMULATOR_UPDATED;
 						}
 					}
+#if 0
 					else if (xmlStrcmp(node->name, (xmlChar*)"interface") == 0) {
 						// Currently we just remove any net interface device present in the template and re-create our own
 						// with the exception of bridged interfaces which are handy for managing the VM.
@@ -148,6 +263,7 @@ bool Libvirt::startNF(StartNFIn sni)
 						xmlUnlinkNode(node);
 						xmlFreeNode(node);
 					}
+#endif
 					break;
 				case XML_ATTRIBUTE_NODE:
 					ULOG_ERR("ATTRIBUTE found here");
@@ -183,10 +299,14 @@ bool Libvirt::startNF(StartNFIn sni)
 	/* Cleanup of XPath data */
 	xmlXPathFreeObject(xpathObj);
 
-	/* Add domain name if not present */
+	ULOG_DBG_INFO("Base libvirt template loaded...");
+
+#if 0
+	/* Set the domain name */
 	if (0 == (update_flags & DOMAIN_NAME_UPDATED)) {
 		xmlNewTextChild(xmlDocGetRootElement(doc), NULL, BAD_CAST "name", BAD_CAST domain_name);
 	}
+#endif
 
 	/* Create xpath evaluation context for Libvirt domain/devices */
 	/* Evaluate xpath expression */
@@ -215,6 +335,42 @@ bool Libvirt::startNF(StartNFIn sni)
 
 	/* Create XML for VM */
 
+	ULOG_DBG_INFO("The network function image is available at '%s'...",uri_image.c_str());
+	if(!createImgDisk(uri_image, Configuration::instance()->getVnfImagesPath(), domain_name))
+	{
+		ULOG_DBG_INFO("An error occured during the copy-on-write image disk creation");
+		return false;
+	}
+
+	/* Create disk using the NF image specified in the uri */
+	xmlNodePtr diskn = xmlNewChild(devices, NULL, BAD_CAST "disk", NULL);
+	xmlNewProp(diskn, BAD_CAST "type", BAD_CAST "file");
+	xmlNewProp(diskn, BAD_CAST "device", BAD_CAST "disk");
+
+	xmlNodePtr drivern = xmlNewChild(diskn, NULL, BAD_CAST "driver", NULL);
+	xmlNewProp(drivern, BAD_CAST "name", BAD_CAST "qemu");
+	xmlNewProp(drivern, BAD_CAST "type", BAD_CAST "qcow2"); //FIXME: this must not be fixed, but it should depend on the disk image
+
+	xmlNodePtr sourcen = xmlNewChild(diskn, NULL, BAD_CAST "source", NULL);
+	xmlNewProp(sourcen, BAD_CAST "file", BAD_CAST uri_image.c_str());
+
+	xmlNewChild(diskn, NULL, BAD_CAST "backingStore", NULL);
+
+	xmlNodePtr targetn = xmlNewChild(diskn, NULL, BAD_CAST "target", NULL);
+	xmlNewProp(targetn, BAD_CAST "dev", BAD_CAST "vda");
+	xmlNewProp(targetn, BAD_CAST "bus", BAD_CAST "virtio");
+
+	xmlNodePtr aliasn = xmlNewChild(diskn, NULL, BAD_CAST "alias", NULL);
+	xmlNewProp(aliasn, BAD_CAST "name", BAD_CAST "virtio-disk0");
+
+	xmlNodePtr addressn = xmlNewChild(diskn, NULL, BAD_CAST "address", NULL);
+	xmlNewProp(addressn, BAD_CAST "type", BAD_CAST "pci");
+	xmlNewProp(addressn, BAD_CAST "domain", BAD_CAST "0x0000");
+	xmlNewProp(addressn, BAD_CAST "bus", BAD_CAST "0x00");
+	xmlNewProp(addressn, BAD_CAST "slot", BAD_CAST "0x05");
+	xmlNewProp(addressn, BAD_CAST "function", BAD_CAST "0x0");
+
+
 	/* Create NICs */
 	vector< pair<string, string> > ivshmemPorts; // name, alias
 
@@ -236,8 +392,8 @@ bool Libvirt::startNF(StartNFIn sni)
 		const unsigned int port_id = p->first;
 		const string& port_name = p->second;
 
-		PortType port_type = description->getPortTypes().at(port_id);
-		ULOG_DBG_INFO("NF Port \"%s\":%d (%s) is of type %s", nf_name.c_str(), port_id, port_name.c_str(), portTypeToString(port_type).c_str());
+		PortTechnology port_technology = description->getPortTechnologies().at(port_id);
+		ULOG_DBG_INFO("NF Port \"%s\":%d (%s) is of type %s", nf_name.c_str(), port_id, port_name.c_str(), portTechnologyToString(port_technology).c_str());
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		/* retrieve ip address */
@@ -249,7 +405,7 @@ bool Libvirt::startNF(StartNFIn sni)
 
 		ULOG_DBG("Interface \"%s\" associated with MAC address \"%s\"", port_name.c_str(), port_mac_address.c_str());
 
-		if (port_type == USVHOST_PORT) {
+		if (port_technology == USVHOST_PORT) {
 			xmlNodePtr ifn = xmlNewChild(devices, NULL, BAD_CAST "interface", NULL);
 			xmlNewProp(ifn, BAD_CAST "type", BAD_CAST "vhostuser");
 
@@ -272,13 +428,13 @@ bool Libvirt::startNF(StartNFIn sni)
 			xmlNewProp(drv_guestn, BAD_CAST "tso6", BAD_CAST "off");
 			xmlNewProp(drv_guestn, BAD_CAST "ecn", BAD_CAST "off");
 		}
-		else if (port_type == IVSHMEM_PORT) {
+		else if (port_technology == IVSHMEM_PORT) {
 			ostringstream local_name;  // Name of the port as known by the VNF internally - We set a convention here
 			local_name << "p" << port_id;  // Will result in p<n>_tx and p<n>_rx rings
 
 			ivshmemPorts.push_back(pair<string, string>(port_name, local_name.str()));
 		}
-		else if (port_type == VHOST_PORT) {
+		else if (port_technology == VHOST_PORT) {
 			xmlNodePtr ifn = xmlNewChild(devices, NULL, BAD_CAST "interface", NULL);
 			xmlNewProp(ifn, BAD_CAST "type", BAD_CAST "direct");
 
@@ -426,7 +582,7 @@ bool Libvirt::startNF(StartNFIn sni)
 		return false;
 	}
 
-	ULOG_DBG_INFO("Boot guest");
+	ULOG_DBG_INFO("VM has started");
 
 	virDomainFree(dom);
 
@@ -441,6 +597,10 @@ bool Libvirt::stopNF(StopNFIn sni)
 
 	assert(connection != NULL);
 
+	//destroy image disk
+	string imageDiskPath = Configuration::instance()->getVnfImagesPath() + string("/") + string(vm_name) + string("_img.qcow2");
+	remove(imageDiskPath.c_str());
+
 	/*destroy the VM*/
 	if(virDomainDestroy(virDomainLookupByName(connection, vm_name)) != 0){
 		ULOG_ERR("failed to stop (destroy) VM. %s", vm_name);
@@ -450,3 +610,17 @@ bool Libvirt::stopNF(StopNFIn sni)
 	return true;
 }
 
+bool Libvirt::createImgDisk(string imgBasePath, string folder, string domainName)
+{
+	ULOG_DBG_INFO("A new copy-on-write image from the base image is going to be created ...");
+	string imageDiskPath = folder + string("/") + domainName + string("_img.qcow2");
+	stringstream cmd_create_disk;
+	cmd_create_disk << "qemu-img create -b " << imgBasePath << " -f qcow2 " << imageDiskPath;
+	ULOG_DBG_INFO("Executing command \"%s\"", cmd_create_disk.str().c_str());
+	int retVal = system(cmd_create_disk.str().c_str());
+	retVal = retVal >> 8;
+	if(retVal != 0)
+		return false;
+	ULOG_DBG_INFO("Image disk created successfully");
+	return true;
+}

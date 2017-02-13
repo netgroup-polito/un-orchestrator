@@ -24,7 +24,7 @@ Native::Native(){
 
 		//Validate the configuration file with the schema
 		std::stringstream ss_xsd;
-                ss_xsd << getenv("un_script_path") <<  CAPABILITIES_XSD;
+		ss_xsd << getenv("un_script_path") <<  CAPABILITIES_XSD;
 		schema_doc = xmlReadFile(ss_xsd.str().c_str(), NULL, XML_PARSE_NONET);
 		if (schema_doc == NULL){
 			ULOG_ERR("The schema cannot be loaded or is not well-formed.");
@@ -103,9 +103,8 @@ Native::Native(){
 
 bool Native::isSupported(Description& descr) {
 	try{
-		NativeDescription& nativeDescr = dynamic_cast<NativeDescription&>(descr);
-		std::list<std::string> *requirements = nativeDescr.getRequirements();
-		for(std::list<std::string>::iterator i = requirements->begin(); i != requirements->end(); i++){
+		std::list<std::string> requirements = descr.getTemplate()->getRequirements();
+		for(std::list<std::string>::iterator i = requirements.begin(); i != requirements.end(); i++){
 
 			if(capabilities->find(*i) == capabilities->end()){
 				//not found
@@ -121,24 +120,14 @@ bool Native::isSupported(Description& descr) {
 }
 bool Native::updateNF(UpdateNFIn uni)
 {
+	NFtemplate * temp = description->getTemplate();
 	uint64_t lsiID = uni.getLsiID();
 	std::string nf_name = uni.getNfId();
 	map<unsigned int, string> namesOfPortsOnTheSwitch = uni.getNamesOfPortsOnTheSwitch();
 	list<unsigned int> newPorts = uni.getNewPortsToAdd();
 	unsigned int n_ports = newPorts.size();
-
 	std::stringstream uri;
-
-	try {
-		NativeDescription& nativeDescr = dynamic_cast<NativeDescription&>(*description);
-		if(nativeDescr.getLocation() == "local")
-			uri << "file://";
-	} catch (exception& e) {
-		ULOG_DBG_INFO("exception %s", e.what());
-		return false;
-	}
-
-	std::string uri_script = description->getURI();
+	std::string uri_script = temp->getURI();
 	uri << uri_script;
 
 	std::stringstream command;
@@ -168,23 +157,13 @@ bool Native::startNF(StartNFIn sni) {
 	std::string nf_name = sni.getNfId();
 	map<unsigned int, string> namesOfPortsOnTheSwitch = sni.getNamesOfPortsOnTheSwitch();
 	unsigned int n_ports = namesOfPortsOnTheSwitch.size();
-
+	NFtemplate *temp = description->getTemplate();
 	std::stringstream uri;
-
-	try {
-		NativeDescription& nativeDescr = dynamic_cast<NativeDescription&>(*description);
-		if(nativeDescr.getLocation() == "local")
-			uri << "file://";
-	} catch (exception& e) {
-		ULOG_DBG_INFO("exception %s", e.what());
-		return false;
-	}
-
-	std::string uri_script = description->getURI();
+	std::string uri_script = temp->getURI();
 	uri << uri_script;
 
 	std::stringstream command;
-	command << getenv("un_script_path") << PULL_AND_RUN_NATIVE_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << n_ports;
+	command << getenv("un_script_path") << RUN_NATIVE_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << n_ports;
 
 	//create the names of the ports
 	for(std::map<unsigned int, std::string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)

@@ -31,6 +31,7 @@
 #include "../graph_manager/graph_manager.h"
 #include "../../utils/constants.h"
 #include "../../utils/logger.h"
+#include "../../utils/configuration.h"
 
 #include "../graph/generic_actions/vlan_action.h"
 #include "../graph/output_actions/action_port.h"
@@ -74,6 +75,8 @@ private:
 	static int readGraph(struct MHD_Connection *connection, char *graphID);
 	static int readMultipleGraphs(struct MHD_Connection *connection, user_info_t *usr);
 	static int readMultipleUsers(struct MHD_Connection *connection, user_info_t *usr);
+	static int readConfiguration(struct MHD_Connection *connection);
+	static int retrieveTemplateId(struct MHD_Connection *connection, string graphId, string vnfId);
 
 	static int doPost(struct MHD_Connection *connection, const char *url, void **con_cls, bool client_auth);
 
@@ -130,7 +133,7 @@ private:
 	static int httpResponse(struct MHD_Connection *connection, int code);
 
 public:
-	static bool init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs ,int core_mask, set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string name_resolver_ip, int name_resolver_port);
+	static bool init(SQLiteManager *dbm, int core_mask);
 
 	static void terminate();
 

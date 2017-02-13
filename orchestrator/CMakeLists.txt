@@ -317,6 +317,14 @@ SET(SOURCES1
 	compute_controller/startNF_in.h
 	compute_controller/stopNF_in.h
 
+	compute_controller/template/NFtemplate.h
+        compute_controller/template/NFtemplate.cc
+	compute_controller/template/port.h
+	compute_controller/template/port.cc
+	compute_controller/template/template_parser.h
+	compute_controller/template/template_parser.cc
+	
+
 	node_resource_manager/rest_server/rest_server.h
 	node_resource_manager/rest_server/rest_server.cc
 
@@ -328,13 +336,15 @@ SET(SOURCES1
 	node_resource_manager/security_manager/security_manager.h
 
 	node_resource_manager/interface_manager/InterfaceManager.cc
-	node_resource_manager/interface_manager/InterfaceManager.h
+	node_resource_manager/interface_manager/InterfaceManager.h	
 
 	utils/logger.h
 	utils/logger.c
 	utils/constants.h
 	utils/sockutils.h
 	utils/sockutils.c
+	utils/configuration.h
+	utils/configuration.cc
 )
 
 IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)
@@ -399,8 +409,6 @@ IF(ENABLE_DPDK_PROCESSES)
 	compute_controller/plugins/dpdk/dpdk.h
 	compute_controller/plugins/dpdk/dpdk.cc
 	compute_controller/plugins/dpdk/dpdk_constants.h
-	compute_controller/plugins/dpdk/dpdk_description.cc
-	compute_controller/plugins/dpdk/dpdk_description.h
 	)
 ELSE()
      SET(SOURCES5
@@ -416,8 +424,6 @@ IF(ENABLE_NATIVE)
 	compute_controller/plugins/native/native_constants.h
 	compute_controller/plugins/native/capability.h
 	compute_controller/plugins/native/capability.cc
-	compute_controller/plugins/native/native_description.h
-	compute_controller/plugins/native/native_description.cc
 	)
 ELSE()
      SET(SOURCES6

@@ -6,7 +6,7 @@
 /**
 *	@brief: paths of the bash scripts used to manage DPDK
 */
-#define PULL_AND_RUN_DPDK_NF	"./compute_controller/plugins/dpdk/scripts/pullAndRunNF.sh"
+#define RUN_DPDK_NF	"./compute_controller/plugins/dpdk/scripts/RunNF.sh"
 #define STOP_DPDK_NF			"./compute_controller/plugins/dpdk/scripts/stopNF.sh"
 
 #define NUM_MEMORY_CHANNELS 	2

@@ -119,9 +119,9 @@ class Dhcp(object):
             dict['type'] = interface.type
         else:
             dict['type'] = 'not_defined'
-        if interface.ipv4_address is not None:   
+        if interface.ipv4_address is not None and interface.ipv4_address != "":
             dict['address'] = interface.ipv4_address
-        if interface.default_gw is not None:
+        if interface.default_gw is not None and interface.ipv4_address != "":
             dict['default_gw'] = interface.default_gw
         return dict
     
@@ -137,12 +137,16 @@ class Dhcp(object):
         for interface in if_entries:
             # Set interface
             logging.debug(interface)
-            if interface['default_gw'] == '':
+            if 'default_gw' not in interface:
                 default_gw = None
             else:
                 default_gw = interface['default_gw']
+            if 'address' not in interface:
+                address = None
+            else:
+                address = interface['address']
             new_interface = Interface(name = interface['name'], 
-                                        ipv4_address= interface['address'],
+                                        ipv4_address= address,
                                         _type = interface['type'],
                                         configuration_type= interface['configurationType'],
                                         default_gw = default_gw)
@@ -301,7 +305,7 @@ class Dhcp(object):
             default_gw = ''
             configuration_type = None
             gws = netifaces.gateways()
-            if gws['default'][netifaces.AF_INET][1] == interface:
+            if gws['default'] != {} and gws['default'][netifaces.AF_INET][1] == interface:
                 default_gw = gws['default'][netifaces.AF_INET][0]
             interface_af_link_info = netifaces.ifaddresses(interface)[17]
             if 2 in netifaces.ifaddresses(interface):
