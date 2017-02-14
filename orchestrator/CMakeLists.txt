@@ -334,6 +334,8 @@ SET(SOURCES1
 	utils/constants.h
 	utils/sockutils.h
 	utils/sockutils.c
+	utils/configuration.h
+	utils/configuration.cc
 )
 
 IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)

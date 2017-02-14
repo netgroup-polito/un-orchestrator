@@ -59,6 +59,7 @@ private:
 	list<Port> ports;
 	list<string> requirements;
 	int cores;
+	string id;
 
 public:
 	NFtemplate();
@@ -82,6 +83,8 @@ public:
 	uri_t getURIType();
 	void setURIType(uri_t uriType);
 	list<string> getRequirements();
+	string getId();
+	void setId(string id);
 };
 
 #endif

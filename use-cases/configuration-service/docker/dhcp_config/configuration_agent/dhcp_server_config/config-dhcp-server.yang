@@ -74,8 +74,9 @@ module config-dhcp-server {
 				description "name='Name'";
 				type string; 
 			} 
-			leaf address { 
-				description "name='IP Address'";
+			leaf address {                                 
+				description "name='IP Address'"; 
+                                mandatory "false"; 
 				type inet:ip-address; 
 			} 
 			leaf configurationType { 
@@ -94,10 +95,11 @@ module config-dhcp-server {
 					enum not_defined;
 				} 
 			}
-			leaf default_gw { 
+			leaf default_gw {                         
 				description "name='Default GW'";
-				type string; 
+                                mandatory "false"; 
+				type inet:ip-address;
 			}
-		} 
-	} 
+		}
+	}
 }

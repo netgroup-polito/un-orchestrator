@@ -5,40 +5,56 @@ module config-nat {
 		prefix inet; 
 	} 
 	description "Nat configuration"; 
-	container interfaces { 
+        container staticBindings{
+                list floatingIP {
+ 		      description "name='Floating IP'";
+                      key "public_address";
+                      leaf private_address {
+                               description "name='Private address'";
+                               type inet:ip-address;
+                         }
+                      leaf public_address {
+                               description "name='Public address'";
+                               type inet:ip-address;
+                         }
+                }
+        }
+	container interfaces {
 		description "name='Interfaces list'";
-		list ifEntry { 
+		list ifEntry {
 			description "name='Iface'";
-			key "name"; 
-			leaf name { 
+			key "name";
+			leaf name {
 				description "name='Name'";
-				type string; 
-			} 
-			leaf configurationType { 
+				type string;
+			}
+			leaf configurationType {
 				description "name='Configuration type'";
-				type enumeration { 
-					enum dhcp; 
-					enum static; 
+				type enumeration {
+					enum dhcp;
+					enum static;
 					enum not_defined;
-				} 
-			} 
-			leaf type { 
+				}
+			}
+			leaf type {
 				description "name='Interface type'";
-				type enumeration { 
-					enum lan; 
+				type enumeration {
+					enum lan;
 					enum wan;
 					enum config;
 					enum not_defined;
-				} 
+				}
 			}
-			leaf address { 
+			leaf address {
 				description "name='IP Address'";
-				type inet:ip-address; 
+                                mandatory false;
+				type inet:ip-address;
 			}
-			leaf default_gw { 
+			leaf default_gw {
 				description "name='Default GW'";
-				type string; 
+                                mandatory false;
+				type inet:ip-address;
 			}
-		} 
-	} 
+		}
+	}
 }

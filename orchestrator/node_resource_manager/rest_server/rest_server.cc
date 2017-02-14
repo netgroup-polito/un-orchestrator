@@ -8,22 +8,17 @@ SQLiteManager *dbmanager = NULL;
 
 SecurityManager *secmanager = NULL;
 
-bool client_auth = false;
-
-bool RestServer::init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boot_graphs,int core_mask,set<string> physical_ports, string un_address, bool orchestrator_in_band, char *un_interface, char *ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_images_path)
+bool RestServer::init(SQLiteManager *dbm, int core_mask)
 {
-
 	try
 	{
-		gm = new GraphManager(core_mask,physical_ports,un_address,orchestrator_in_band,string(un_interface),string(ipsec_certificate), vnf_repo_ip, vnf_repo_port,vnf_images_path);
+		gm = new GraphManager(core_mask);
 
 	} catch (...) {
 		return false;
 	}
 
-	client_auth = cli_auth;
-
-	if (client_auth) {
+	if (Configuration::instance()->getUserAuthentication()) {
 		dbmanager = dbm;
 		dbmanager->cleanTables();
 		secmanager = new SecurityManager(dbmanager);
@@ -31,8 +26,9 @@ bool RestServer::init(SQLiteManager *dbm, bool cli_auth, map<string,string> &boo
 
 	sleep(2); //XXX This give time to the controller to be initialized
 
+	map <string,string> bootGraph = Configuration::instance()->getBootGraphs();
 	//Handle the file containing the graphs to be deployed
-	for(map<string,string>::iterator iter = boot_graphs.begin(); iter!=boot_graphs.end(); iter++)
+	for(map<string,string>::iterator iter = bootGraph.begin(); iter!=bootGraph.end(); iter++)
 	{
 		if (!readGraphFromFile(iter->first,iter->second)) {
 			delete gm;
@@ -341,7 +337,7 @@ int RestServer::createUser(char *username, struct MHD_Connection *connection, co
 
 		if(token == NULL) {
 			ULOG_INFO("\"Token\" header not present in the request");
-			return false;
+			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
 		user_info_t *creator = dbmanager->getUserByToken(token);
@@ -637,6 +633,9 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 		}
 		if(strcmp(generic_resource,BASE_URL_GRAPH)==0 && strcmp(resource,URL_STATUS)==0)
 			return doGetStatus(connection,extra_info);
+		else if (strcmp(generic_resource, BASE_URL_TEMPLATE) == 0)
+			return retrieveTemplateId(connection,string(resource),string(extra_info));
+
 	}
 	// PUT, POST, DELETE: currently not supported
 	else if(strcmp(method, POST) == 0) {
@@ -684,7 +683,7 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 	// PUT and POST requests must contain JSON data in their body
 	} else if(strcmp(method, PUT) == 0 || strcmp(method, POST) == 0) {
 		const char *c_type = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Content-Type");
-		if ((c_type == NULL) || (strcmp(c_type, JSON_C_TYPE) != 0)) {
+		if ((c_type == NULL) || (strncmp(c_type, JSON_C_TYPE, strlen(JSON_C_TYPE) != 0))) {
 			ULOG_INFO("Content-Type must be: \"%s\"",JSON_C_TYPE);
 			return httpResponse(connection, MHD_HTTP_UNSUPPORTED_MEDIA_TYPE);
 		}
@@ -706,7 +705,7 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 
 		if(token == NULL) {
 			ULOG_INFO("\"Token\" header not present in the request");
-			return false;
+			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
 		if(!secmanager->isAuthenticated(connection, token)) {
@@ -1028,6 +1027,14 @@ int RestServer::readConfiguration(struct MHD_Connection *connection) {
 	try {
 		Object json;
 		json["datastoreEndpoint"]=datastoreEndpoint.c_str();
+		Array ports;
+		list<string> unPorts = Configuration::instance()->getPhisicalPorts();
+		for(list<string>::iterator port = unPorts.begin(); port != unPorts.end(); port++) {
+			//Object obj;
+			//obj["name"] = *i;
+			ports.push_back(port->c_str());
+		}
+		json["unPhisicalPorts"]=ports;
 		stringstream ssj;
 		write_formatted(json, ssj );
 		string sssj = ssj.str();
@@ -1038,6 +1045,40 @@ int RestServer::readConfiguration(struct MHD_Connection *connection) {
 		MHD_add_response_header (response, "Cache-Control",NO_CACHE);
 		int ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
 		MHD_destroy_response (response);
+		return ret;
+	} catch (...) {
+		ULOG_ERR("An error occurred while retrieving the configuration!");
+		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
+	}
+}
+
+int RestServer::retrieveTemplateId(struct MHD_Connection *connection, string graphId, string vnfId) {
+	struct MHD_Response *response;
+	int ret;
+	string templateId = gm->getVnfTemplateId(graphId, vnfId);
+	try {
+		Object json;
+		if(templateId.empty())
+		{
+			response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
+			ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
+			MHD_destroy_response (response);
+		}
+		else
+		{
+			string templateUrl = gm->getVnfRepoEndpoint() + string("/v2/nf_template/") + templateId;
+			json["templateUrl"]=templateUrl.c_str();
+			stringstream ssj;
+			write_formatted(json, ssj );
+			string sssj = ssj.str();
+			char *aux = (char*)malloc(sizeof(char) * (sssj.length()+1));
+			strcpy(aux,sssj.c_str());
+			response = MHD_create_response_from_buffer (strlen(aux),(void*) aux, MHD_RESPMEM_PERSISTENT);
+			MHD_add_response_header (response, "Content-Type",JSON_C_TYPE);
+			MHD_add_response_header (response, "Cache-Control",NO_CACHE);
+			ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+			MHD_destroy_response (response);
+		}
 		return ret;
 	} catch (...) {
 		ULOG_ERR("An error occurred while retrieving the configuration!");

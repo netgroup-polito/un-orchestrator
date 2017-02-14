@@ -10,12 +10,12 @@ void GraphManager::mutexInit()
 	pthread_mutex_init(&graph_manager_mutex, NULL);
 }
 
-GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_address,bool orchestrator_in_band,string un_interface,string ipsec_certificate, string vnf_repo_ip, int vnf_repo_port,string vnf_images_path) :
-	un_address(un_address), orchestrator_in_band(orchestrator_in_band), un_interface(un_interface), ipsec_certificate(ipsec_certificate), vnfRepoIP(vnf_repo_ip),vnfImagePath(vnf_images_path), switchManager()
+GraphManager::GraphManager(int core_mask) : switchManager()
 {
 	//TODO: this code can be simplified. Why don't providing the set<string> to the switch manager?
+	list<string> phisicalPorts = Configuration::instance()->getPhisicalPorts();
 	set<CheckPhysicalPortsIn> phyPortsRequired;
-	for(set<string>::iterator pp = physical_ports.begin(); pp != physical_ports.end(); pp++)
+	for(list<string>::iterator pp = phisicalPorts.begin(); pp != phisicalPorts.end(); pp++)
 	{
 		CheckPhysicalPortsIn cppi(*pp);
 		phyPortsRequired.insert(cppi);
@@ -31,7 +31,6 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 	uint32_t controllerPort = nextControllerPort;
 	nextControllerPort++;
 	pthread_mutex_unlock(&graph_manager_mutex);
-	vnfRepoPort = vnf_repo_port;
 
 	ULOG_INFO("Checking the available physical interfaces...");
 	try
@@ -88,7 +87,7 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 		assert(lsi->getGreEndpointsPorts().size() == 0);
 		map<string,nf_t>  nf_types;
 		map<string,list<nf_port_info> > netFunctionsPortsInfo;
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort,lsi->getPhysicalPortsName(),lsi->getHostackEndpointID(), nf_types,netFunctionsPortsInfo,lsi->getGreEndpointsDescription(),lsi->getVirtualLinksRemoteLSI(), this->un_address, this->ipsec_certificate);
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort,lsi->getPhysicalPortsName(),lsi->getHostackEndpointID(), nf_types,netFunctionsPortsInfo,lsi->getGreEndpointsDescription(),lsi->getVirtualLinksRemoteLSI(), Configuration::instance()->getUnAddress(), Configuration::instance()->getIpsecCertificate());
 
 		CreateLsiOut *clo = switchManager.createLsi(cli);
 
@@ -150,12 +149,14 @@ GraphManager::GraphManager(int core_mask,set<string> physical_ports,string un_ad
 	ULOG_INFO("LSI-0 and its controller are created");
 
 	ComputeController::setCoreMask(core_mask);
-
+#if 0
 	//if control is in band install the default rules on LSI-0 otherwise skip this code
-	if(orchestrator_in_band && !un_interface.empty() && !un_address.empty())
+	if(Configuration::instance()->getOrchestratorInBand() && !Configuration::instance()->getUnInterface().empty() && !Configuration::instance()->getUnAddress().empty())
 		handleInBandController(lsi,controller);
+#endif
 }
 
+#if 0
 void GraphManager::handleInBandController(LSI *lsi, Controller *controller)
 {
 	ULOG_DBG_INFO("Handling in band controller");
@@ -226,7 +227,7 @@ void GraphManager::handleInBandController(LSI *lsi, Controller *controller)
 
 	printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
 }
-
+#endif
 GraphManager::~GraphManager()
 {
 	//Deleting tenants LSIs
@@ -613,7 +614,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*	0) Check the validity of the graph
 	*/
 	ULOG_DBG_INFO("0) Checking the validity of the graph");
-	ComputeController *computeController = new ComputeController(vnfRepoIP,vnfRepoPort);
+	ComputeController *computeController = new ComputeController();
 
 	if(!checkGraphValidity(graph,computeController))
 	{
@@ -658,7 +659,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*	2) Select an implementation for each network function of the graph
 	*/
 	ULOG_DBG_INFO("2) Select an implementation for each NF of the graph");
-	if(!computeController->selectImplementation(vnfImagePath))
+	if(!computeController->selectImplementation())
 	{
 		//This is an internal error
 		delete(computeController);
@@ -672,7 +673,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*	3) Create the LSI
 	*/
 	ULOG_DBG_INFO("3) Create the LSI");
-
 	list<highlevel::VNFs> network_functions = graph->getVNFs();
 	list<highlevel::EndPointInternal> endpointsInternal = graph->getEndPointsInternal();
 	list<highlevel::EndPointGre> endpointsGre = graph->getEndPointsGre();
@@ -716,7 +716,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		nf_types[nf_id] = computeController->getNFType(nf_id);
 
 		//Gather VNF ports types
-		const Description* descr = computeController->getNFSelectedImplementation(nf_id);
+		Description* descr = computeController->getNFSelectedImplementation(nf_id);
 		map<unsigned int, PortTechnology> nf_ports_type = descr->getPortTechnologies();  // Port types as specified by the retrieved and selected NF implementation
 
 		ULOG_DBG_INFO("NF with id \"%s\" selected implementation (type %d) defines type for %d ports", nf_id.c_str(), nf_types[nf_id], nf_ports_type.size());
@@ -747,7 +747,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	{
 		//Create a new tenant-LSI
 
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(), lsi->getHostackEndpointID(), nf_types, lsi->getNetworkFunctionsPortsInfo(), lsi->getGreEndpointsDescription(), lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), this->ipsec_certificate);
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(), lsi->getHostackEndpointID(), nf_types, lsi->getNetworkFunctionsPortsInfo(), lsi->getGreEndpointsDescription(), lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), Configuration::instance()->getIpsecCertificate());
 
 		clo = switchManager.createLsi(cli);
 
@@ -1169,7 +1169,7 @@ void GraphManager::handleControllerForInternalEndpoint(highlevel::Graph *graph)
 		//In case the internal LSI representing the current internal endpoints has not been yet created, let's create its controller
 		if(!internalLSIsCreated[internal_group])
 		{
-			ULOG_DBG_INFO("4) Create the Openflow controller for the internal endpoint '%s'",internal_group.c_str());
+			ULOG_DBG_INFO("Create the Openflow controller for the internal endpoint '%s'",internal_group.c_str());
 
 			pthread_mutex_lock(&graph_manager_mutex);
 			uint32_t controllerPort = nextControllerPort;
@@ -1214,7 +1214,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 	for(list<highlevel::EndPointInternal>::iterator iep = internalEPs.begin(); iep != internalEPs.end(); iep++)
 	{
 		string internal_group(iep->getGroup());
-		ULOG_DBG_INFO("5) handling the internal LSI representing the internal-group: \"%s\"", internal_group.c_str());
+		ULOG_DBG_INFO("handling the internal LSI representing the internal-group: \"%s\"", internal_group.c_str());
 
 		GraphInfo graphInfoInternalLSI = internalLSIs[internal_group];
 		Controller *controller = graphInfoInternalLSI.getController();
@@ -1253,7 +1253,7 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 				//Create a new internal-LSI
 
 				CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(),
-								lsi->getHostackEndpointID() , dummyNfsPortsTypeForCli, lsi->getNetworkFunctionsPortsInfo(), lsi->getGreEndpointsDescription(), lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), this->ipsec_certificate);
+								lsi->getHostackEndpointID() , dummyNfsPortsTypeForCli, lsi->getNetworkFunctionsPortsInfo(), lsi->getGreEndpointsDescription(), lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), Configuration::instance()->getIpsecCertificate());
 				
 				clo = switchManager.createLsi(cli);
 
@@ -1623,7 +1623,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	*	2) Select an implementation for the new NFs
 	*/
 	ULOG_DBG_INFO("2) Select an implementation for the new NFs");
-	if(!computeController->selectImplementation(vnfImagePath))
+	if(!computeController->selectImplementation())
 	{
 		//This is an internal error
 		delete(computeController);
@@ -1935,15 +1935,10 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	/**
 	*	3-d) condider the internal endpoints
 	*/
-	list<highlevel::EndPointInternal> tmp_internal_endpoints = diff->getEndPointsInternal();
-	ULOG_DBG_INFO("3-d) considering the new internal endpoints (%d)",tmp_internal_endpoints.size());
+	ULOG_DBG_INFO("3-d) considering the new internal endpoints (%d)",diff->getEndPointsInternal().size());
+	handleControllerForInternalEndpoint(diff);
+	handleGraphForInternalEndpoint(diff);
 
-	for(list<highlevel::EndPointInternal>::iterator ep = tmp_internal_endpoints.begin(); ep != tmp_internal_endpoints.end(); ep++)
-	{
-		//TODO: implement the creation of new internal endpoints
-		ULOG_DBG_INFO("The creation of new internal endpoint in the update is not supported yet!");
-		assert(0);
-	}
 
 	/**
 	*	3-e) condider the hoststack endpoints
@@ -2957,7 +2952,37 @@ list<string> GraphManager::getRulesIDForLSITenant(highlevel::Rule rule)
 string GraphManager::getVnfRepoEndpoint()
 {
 	stringstream ss;
-	ss << "http://" << vnfRepoIP << ":" << vnfRepoPort;
+	ss << "http://" << Configuration::instance()->getVnfRepoIp() << ":" << Configuration::instance()->getVnfRepoPort();
 	return ss.str();
+}
+
+string GraphManager::getVnfTemplateId(string graphId, string macAddress)
+{
+	string templateId;
+
+	if(tenantLSIs.count(graphId) == 0)
+		return "";
+
+	GraphInfo graphInfo = (tenantLSIs.find(graphId))->second;
+	ComputeController *computeController = graphInfo.getComputeController();
+	highlevel::Graph *graph = graphInfo.getGraph();
+
+	list<highlevel::VNFs> network_functions = graph->getVNFs();
+	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
+	{
+		list<highlevel::vnf_port_t> ports = nf->getPorts();
+		for(list<highlevel::vnf_port_t>::iterator port = ports.begin(); port != ports.end(); port++)
+			if(port->configuration.mac_address == macAddress)
+			{
+				templateId = nf->getVnfTemplate();
+				if(templateId.empty())
+				{
+					Description *description = computeController->getNFSelectedImplementation(nf->getId());
+					templateId = description->getTemplate()->getId();
+				}
+				break;
+			}
+	}
+	return templateId;
 }
 

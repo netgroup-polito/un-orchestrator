@@ -43,7 +43,7 @@ bool Match::setEndPointInternal(/*string graphID, unsigned int endpoint*/string 
 	strcpy(input,graphID.c_str());*/
 	//this->endpoint = endpoint;
 
-	sscanf(group.c_str(), "%u", &this->endpointInternalGroup);
+	this->endpointInternalGroup = group;
 	type = MATCH_ENDPOINT_INTERNAL;
 
 	return true;
@@ -163,7 +163,7 @@ string Match::getEndPointHoststack()
 	return endpointHoststackID;
 }
 
-unsigned int Match::getEndPointInternal()
+string Match::getEndPointInternal()
 {
 	assert(type == MATCH_ENDPOINT_INTERNAL);
 
