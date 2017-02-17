@@ -26,7 +26,9 @@ to configure/test the un-orchestrator.
   * [config/default-config.ini](config/default-config.ini): 
     configuration file for the un-orchestrator. It allows to specify information such 
     as the TCP port used by the REST server, the list of physical interfaces of 
-    the Universal Node, and more;
+    the Universal Node, and more. Please note that, in case the UN is used with the
+    GUI or it is integrated with the [FROG 4](https://github.com/netgroup-polito/frog4)
+    orchestration framework, the `user_authentication` parameter must be set to `true`;
   * [config/simple_passthrough_nffg.json](config/simple_passthrough_nffg.json): 
     simple graph that implements a simple passthrough function, i.e., traffic is 
     received from a first physical port and sent out from a second physical port, 
