@@ -47,6 +47,7 @@ using namespace json_spirit;
 #define VNF_REPOSITORY_TEMPLATES_URL    "/v2/nf_capability/"
 #define CODE_POSITION				    9
 #define CODE_METHOD_NOT_ALLLOWED	    "405"
+#define CODE_HTTP_NOT_FOUND	    			"404"
 #define CODE_OK						    "200"
 
 /**

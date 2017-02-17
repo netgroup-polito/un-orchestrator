@@ -1,4 +1,5 @@
 #include "NFtemplate.h"
+#include "../compute_controller.h"
 #include <string>
 #include <json_spirit/json_spirit.h>
 #include <json_spirit/value.h>
@@ -21,7 +22,7 @@ public:
 	* 	@param checkVnfTemplate:   flag which allows to check if field vnf_template is in NF-FG
 	*/
 
-	static bool parse(std::list<NFtemplate*>& templates,string data,bool checkVnfTemplate);
+	static nf_manager_ret_t parse(std::list<NFtemplate*>& templates,string data,bool checkVnfTemplate);
 
 public:
 	/**
