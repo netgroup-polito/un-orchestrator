@@ -5,7 +5,6 @@
 #include "../compute_controller/description.h"
 
 using namespace std;
-
 class NF;
 class Description;
 

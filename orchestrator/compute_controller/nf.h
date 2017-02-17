@@ -12,6 +12,8 @@
 #include "nfs_manager.h"
 
 using namespace std;
+class Description;
+class NFsManager;
 
 class NF
 {
