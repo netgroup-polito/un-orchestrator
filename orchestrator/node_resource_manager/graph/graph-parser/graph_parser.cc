@@ -15,6 +15,10 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 	map<string, pair<string, string> > vlan_id;
 	//contains the id of hoststack endpoints
 	list<string> hostStack_id;
+#ifdef ENABLE_NODE_CONFIG
+	//contains the id of default gateway node configuration
+	string nodeConfigDG_id;
+#endif
 	//The following two data structures are used for managing trusted/untrusted VNF ports
 	//for each VNF id, contains the pair port id, trusted/untrusted
 	map<string, map<string, bool> > trusted_ports;
@@ -59,7 +63,10 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 				for(Object::const_iterator fg = forwarding_graph.begin(); fg != forwarding_graph.end(); fg++)
 				{
 					bool e_if = false, e_vlan = false, e_internal = false, e_gre=false;
-
+#ifdef ENABLE_NODE_CONFIG
+                    bool nc_dg = false;
+                    string dgIP;
+#endif
 					string id, v_id, node, iface, e_name, ep_id, interface, in_group;
 
 					const string& fg_name  = fg->first;
@@ -80,6 +87,136 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 						//XXX: currently, this information is ignored
 					}
+#ifdef ENABLE_NODE_CONFIG
+					//Identify the node configurations
+					else if(fg_name == NODE_CONFIG)
+					{
+						try{
+							try
+							{
+								fg_value.getArray();
+							} catch(std::exception& e)
+							{
+								string error = string("The content does not respect the JSON syntax: ") + NODE_CONFIG + " should be an Array";
+								ULOG_WARN(error.c_str());
+								throw new GraphParserException(std::move(error));
+							}
+
+							/**
+							* A node configuration can contain:
+							*	- id
+							*	- type
+							*		- dafault-gateway
+							*
+						    *	- Other information that depend on the type
+							*/
+							const Array& node_configurations_array = fg_value.getArray();
+
+							ULOG_DBG("\"%s\"",NODE_CONFIG);
+
+							//Iterate on the node-configurations
+							set<string> usedNodeConfigurationsID;
+							for( unsigned int nc = 0; nc < node_configurations_array.size(); ++nc )
+							{
+								try{
+									node_configurations_array[nc].getObject();
+								} catch(std::exception& e)
+								{
+									string error = string("The content does not respect the JSON syntax: element of ") + NODE_CONFIG + " should be an Object";
+									ULOG_WARN(error.c_str());
+									throw new GraphParserException(std::move(error));
+								}
+
+								//This is a node configuration, with a type, and a default gateway
+								Object node_configuration = node_configurations_array[nc].getObject();
+								//Iterate on the elements of a node configuration
+								for(Object::const_iterator nodeConfig = node_configuration.begin(); nodeConfig != node_configuration.end(); nodeConfig++)
+								{
+									const string& nc_name  = nodeConfig->first;
+									const Value&  nc_value = nodeConfig->second;
+
+									if(nc_name == _ID)
+									{
+										id = nc_value.getString();
+										//Two node configurations cannot have the same ID
+										if(usedNodeConfigurationsID.count(id) != 0)
+										{
+											string error = string("Found two node configurations with the same ID: ") + id.c_str() + ". This is not valid.";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
+										}
+										usedNodeConfigurationsID.insert(id);
+									}
+									else if(nc_name == NC_TYPE)
+									{
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",NODE_CONFIG,NC_TYPE,nc_value.getString().c_str());
+										string type = nc_value.getString();
+									}
+									//identify default gateway node configuration
+									else if(nc_name == NC_DG)
+									{
+										try
+										{
+											nc_value.getObject();
+										} catch(std::exception& e)
+										{
+											string error = string("The content does not respect the JSON syntax: ") + NC_DG + " should be an Object";
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
+										}
+
+										Object nc_defaultGateway = nc_value.getObject();
+										if(!nc_dg) {
+											nc_dg = true;
+
+											for (Object::const_iterator ncDG = nc_defaultGateway.begin();
+												 ncDG != nc_defaultGateway.end(); ncDG++) {
+												const string &ncDG_name = ncDG->first;
+												const Value &ncDG_value = ncDG->second;
+
+												if (ncDG_name == NC_DG_IP)
+												{
+													ULOG_DBG("\"%s\"->\"%s\": \"%s\"", NC_DG, NC_DG_IP,
+															 ncDG_value.getString().c_str());
+													dgIP = ncDG_value.getString();
+													nodeConfigDG_id = ncDG_value.getString();
+													ULOG_DBG("\"%s\"->\"%s\"", id.c_str(), nodeConfigDG_id.c_str());
+												} else {
+													string error =string("Invalid key ") + ncDG_name.c_str() + " inside " + NC_DG_IP;
+													ULOG_WARN(error.c_str());
+													throw new GraphParserException(std::move(error));
+												}
+											}
+										} else
+										{
+											string error = string("More than one ") + nc_name.c_str() + " key present in an Object of " + NODE_CONFIG;
+											ULOG_WARN(error.c_str());
+											throw new GraphParserException(std::move(error));
+										}
+									}
+									else
+									{
+										string error = string("Invalid key ") + nc_name.c_str() + " in an Object of " + NODE_CONFIG;
+										ULOG_WARN(error.c_str());
+										throw new GraphParserException(std::move(error));
+									}
+								}//End of iteration on the elements of a node configuration
+
+								//add default gateway node configuration
+								if(nc_dg)
+								{
+									highlevel::NodeConfigDefaultGateway nodeConfigDG(id, dgIP);
+									graph.addNodeConfigDefaultGateway(nodeConfigDG);
+								}
+							}//End iteration on the node configurations
+						} catch(std::exception& e)
+						{
+							string error = string("The ") + NODE_CONFIG + " element does not respect the JSON syntax: " + e.what();
+							ULOG_WARN(error.c_str());
+							throw new GraphParserException(error);
+						}
+					}//End if(fg_name == NODE_CONFIG)
+#endif
 					//Identify the VNFs
 					else if(fg_name == VNFS)
 					{

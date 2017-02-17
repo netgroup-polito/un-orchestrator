@@ -594,7 +594,8 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*		5) create the OpenFlow controller for the internal LSIs (if it does not exist yet)
 	*		6) create the internal LSI (if it does not exist yet), with the proper vlinks and download the rules in internal-LSI
 	*		7) download the rules in LSI-0, tenant-LSI
-	*		8) assigne ip address to host-stack endpoint
+	*		8) assign ip address to host-stack endpoint
+	*		9) set the configuration of the node
 	*/
 
 	/**
@@ -1139,7 +1140,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		throw GraphManagerException();
 	}
 
-	// 8) assigne ip address to host-stack endpoint
+	// 8) assign ip address to host-stack endpoint
 	map<string,string> hsPortsName = lsi->getHoststackEndpointPortName();
 	for(list<highlevel::EndPointHostStack>::iterator hs = endpointsHoststack.begin(); hs!=endpointsHoststack.end();hs++)
 	{
@@ -1154,6 +1155,16 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		if(macAddress!="")
 			interfaceManager.setMacAddress(hsPortsName[hs->getId()],macAddress);
 	}
+#ifdef ENABLE_NODE_CONFIG
+    // 9) set the configuration of the node
+	bool setted = configurationAgent.setNodeConfiguration(graph);
+	if (!setted)
+	{
+		ULOG_ERR("An error occurred setting the node configuration");
+		throw GraphManagerException();
+	}
+	//configurationAgent.setNodeConfiguration(graph);
+#endif
 
 	return true;
 }
@@ -1447,6 +1458,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newGraph)
 	*	-	deleted the proper VNFs, VNF ports, gre tunnels, rules from the LSI-0 and tenant LSI, as required by the update
 	*	-	insert in the LSI-0 and tenant LSI the proper rules, as required by the update
 	*	-	assigne ip address to host-stack endpoints
+	*	-   update the node settings
 	*/
 
 	highlevel::Graph *diff_to_add = NULL;
@@ -1495,6 +1507,16 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newGraph)
 		if(macAddress!="")
 			interfaceManager.setMacAddress(hsPortsName[hs->getId()],macAddress);
 	}
+
+	//update the node settings
+#ifdef ENABLE_NODE_CONFIG
+	bool setted = configurationAgent.setNodeConfiguration(newGraph);
+	if (!setted)
+	{
+		ULOG_ERR("An error occurred setting the node configuration");
+		throw GraphManagerException();
+	}
+#endif
 
 	delete(diff_to_add);
 	delete(diff_to_del);
