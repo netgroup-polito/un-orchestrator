@@ -148,6 +148,14 @@ IF(ENABLE_DPDK_PROCESSES)
 	ADD_DEFINITIONS(-DENABLE_DPDK_PROCESSES)
 ENDIF(ENABLE_DPDK_PROCESSES)
 
+OPTION(
+		ENABLE_NODE_CONFIG
+		"Turn on to enable the configuration fo the node"
+		OFF
+)
+IF(ENABLE_NODE_CONFIG)
+	ADD_DEFINITIONS(-DENABLE_NODE_CONFIG)
+ENDIF(ENABLE_NODE_CONFIG)
 
 OPTION(DEBUG_KVM
 	"Turn on the debug of the KVM-libvirt compute plugin"
@@ -274,6 +282,8 @@ SET(SOURCES1
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_vlan.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_hostStack.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_endpoint_hostStack.h
+	node_resource_manager/graph/high_level_graph/high_level_graph_nodeConfigDefaultGateway.cc
+	node_resource_manager/graph/high_level_graph/high_level_graph_nodeConfigDefaultGateway.h
 	node_resource_manager/graph/high_level_graph/high_level_graph_vnf.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph_vnf.h
 	node_resource_manager/graph/high_level_graph/high_level_graph.h
@@ -288,6 +298,10 @@ SET(SOURCES1
 	network_controller/switch_manager/addNFports_out.h
 	network_controller/switch_manager/addVirtualLink_in.h
 	network_controller/switch_manager/addVirtualLink_out.h
+	network_controller/switch_manager/addEndpointGre_in.h
+	network_controller/switch_manager/addEndpointGre_out.h
+	network_controller/switch_manager/addEndpointHoststack_in.h
+	network_controller/switch_manager/addEndpointHoststack_out.h
 	network_controller/switch_manager/createLSIout.h
 	network_controller/switch_manager/destroyNFports_in.h
 	network_controller/switch_manager/destroyVirtualLink_in.h
@@ -327,7 +341,10 @@ SET(SOURCES1
 	node_resource_manager/security_manager/security_manager.h
 
 	node_resource_manager/interface_manager/InterfaceManager.cc
-	node_resource_manager/interface_manager/InterfaceManager.h	
+	node_resource_manager/interface_manager/InterfaceManager.h
+
+        node_resource_manager/configuration_agent/ConfigurationAgent.cc
+        node_resource_manager/configuration_agent/ConfigurationAgent.h
 
 	utils/logger.h
 	utils/logger.c

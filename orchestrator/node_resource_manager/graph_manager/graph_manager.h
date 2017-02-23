@@ -15,6 +15,9 @@
 #include "../graph/high_level_graph/high_level_graph_vnf.h"
 #include "../interface_manager/InterfaceManager.h"
 
+#ifdef ENABLE_NODE_CONFIG
+	#include "../configuration_agent/ConfigurationAgent.h"
+#endif
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"
 	#define SWITCH_MANAGER_IMPLEMENTATION XDPDManager
@@ -73,7 +76,12 @@ private:
 	*	handles L3 ports of the graphs
 	*/
 	InterfaceManager interfaceManager;
-
+#ifdef ENABLE_NODE_CONFIG
+	/**
+	*	handles the condifguration of the node
+	*/
+	ConfigurationAgent configurationAgent;
+#endif
 	/**
 	*	This structure contains information of the number of graphs that use
 	*	an internal endpoint. The first element is the internal group of the

@@ -597,7 +597,8 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*		5) create the OpenFlow controller for the internal LSIs (if it does not exist yet)
 	*		6) create the internal LSI (if it does not exist yet), with the proper vlinks and download the rules in internal-LSI
 	*		7) download the rules in LSI-0, tenant-LSI
-	*		8) assigne ip address to host-stack endpoint
+	*		8) assign ip address to host-stack endpoint
+	*		9) set the configuration of the node
 	*/
 
 	/**
@@ -1146,7 +1147,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		throw GraphManagerException();
 	}
 
-	// 8) assigne ip address to host-stack endpoint
+	// 8) assign ip address to host-stack endpoint
 	map<string,string> hsPortsName = lsi->getHoststackEndpointPortName();
 	for(list<highlevel::EndPointHostStack>::iterator hs = endpointsHoststack.begin(); hs!=endpointsHoststack.end();hs++)
 	{
@@ -1161,6 +1162,16 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		if(macAddress!="")
 			interfaceManager.setMacAddress(hsPortsName[hs->getId()],macAddress);
 	}
+#ifdef ENABLE_NODE_CONFIG
+    // 9) set the configuration of the node
+	bool setted = configurationAgent.setNodeConfiguration(graph);
+	if (!setted)
+	{
+		ULOG_ERR("An error occurred setting the node configuration");
+		throw GraphManagerException();
+	}
+	//configurationAgent.setNodeConfiguration(graph);
+#endif
 
 	return true;
 }
@@ -1453,6 +1464,8 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newGraph)
 	*	-	create the new VNFs, VNF ports, gre tunnels and virtual links
 	*	-	deleted the proper VNFs, VNF ports, gre tunnels, rules from the LSI-0 and tenant LSI, as required by the update
 	*	-	insert in the LSI-0 and tenant LSI the proper rules, as required by the update
+	*	-	assigne ip address to host-stack endpoints
+	*	-   update the node settings
 	*/
 
 	highlevel::Graph *diff_to_add = NULL;
@@ -1483,6 +1496,34 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newGraph)
 		delete(diff_to_del);
 		return false;
 	}
+
+	// assigne ip address to host-stack endpoints
+	LSI *lsi = tenantLSIs[graphID].getLSI();
+	map<string,string> hsPortsName = lsi->getHoststackEndpointPortName();
+	list<highlevel::EndPointHostStack> newHoststackEndpoints = diff_to_add->getEndPointsHostStack();
+	for(list<highlevel::EndPointHostStack>::iterator hs = newHoststackEndpoints.begin(); hs!=newHoststackEndpoints.end();hs++)
+	{
+		if (hs->getConfiguration()==DHCP)
+			interfaceManager.getIpAddressFromDhcp(hsPortsName[hs->getId()]);
+		else if (hs->getConfiguration()==PPPOE)
+			interfaceManager.getIpAddressFromPppoe(hsPortsName[hs->getId()]);
+		else
+			interfaceManager.setStaticIpAddress(hsPortsName[hs->getId()],hs->getIpAddress());
+
+		string macAddress= hs->getMacAddress();
+		if(macAddress!="")
+			interfaceManager.setMacAddress(hsPortsName[hs->getId()],macAddress);
+	}
+
+	//update the node settings
+#ifdef ENABLE_NODE_CONFIG
+	bool setted = configurationAgent.setNodeConfiguration(newGraph);
+	if (!setted)
+	{
+		ULOG_ERR("An error occurred setting the node configuration");
+		throw GraphManagerException();
+	}
+#endif
 
 	delete(diff_to_add);
 	delete(diff_to_del);
@@ -1655,6 +1696,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 	set<string> vlPhyPorts = vlVector[1];
 	set<string> vlEndPointsGre = vlVector[2];
 	set<string> vlEndPointsInternal = vlVector[3];
+	set<string> vlEndPointsHoststack = vlVector[4];
 
 	//TODO: check if a virtual link is already available and can be used (because it is currently used only in one direction)
 	//FIXME: I think the part that calculates the number of vlink required should be rewritten. It should be based on the code of new graph, which is very optimized
@@ -1738,6 +1780,43 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 
 			lsi->addEndpointGrevlink(*ep,vlinkID);
 			ULOG_DBG_INFO("Gre endpoint '%s' uses the vlink '%x'",(*ep).c_str(),vlink.getID());
+		}catch(SwitchManagerException e)
+		{
+			ULOG_ERR("%s",e.what());
+			if(avlo != NULL)
+				delete(avlo);
+			delete(diff);
+			diff = NULL;
+			throw GraphManagerException();
+		}
+	}
+
+	for(set<string>::iterator ep = vlEndPointsHoststack.begin(); ep != vlEndPointsHoststack.end(); ep++)
+	{
+		//FIXME: here I am referring to a vlink through its position. It would be really better to use its ID
+		AddVirtualLinkOut *avlo = NULL;
+		try
+		{
+			ULOG_DBG_INFO(" Adding vlink required to a hoststack endpoint");
+
+			VLink newLink(dpid0);
+			int vlinkPosition = lsi->addVlink(newLink);
+
+			AddVirtualLinkIn avli(dpid,dpid0);
+			avlo = switchManager.addVirtualLink(avli);
+
+			lsi->setVLinkIDs(vlinkPosition,avlo->getIdA(),avlo->getIdB());
+
+			delete(avlo);
+
+			uint64_t vlinkID = newLink.getID();
+
+			VLink vlink = lsi->getVirtualLink(vlinkID);
+			ULOG_DBG_INFO("Virtual link: (ID: %x) %x:%d -> %x:%d",vlink.getID(),dpid,vlink.getLocalID(),vlink.getRemoteDpid(),vlink.getRemoteID());
+			assert(vlinkID == vlink.getID());
+
+			lsi->addEndpointHoststackvlink(*ep,vlinkID);
+			ULOG_DBG_INFO("Hoststack endpoint '%s' uses the vlink '%x'",(*ep).c_str(),vlink.getID());
 		}catch(SwitchManagerException e)
 		{
 			ULOG_ERR("%s",e.what());
@@ -1912,12 +1991,12 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 			lsi->addGreEndpoint(*ep);
 			AddEndpointIn aepi(dpid,ep->getId(),ep_param);
 
-			aepo = switchManager.addEndpoint(aepi);
+			aepo = switchManager.addGreEndpoint(aepi);
 
-			if(!lsi->setGreEndpointPortID(aepo->getEPname(), aepo->getEPid()))
+			if(!lsi->setGreEndpointPortID(aepo->getEpId(), aepo->getOfId()))
 			{
 				ULOG_ERR("A non-required gre endpoint \"%s\" has been attached to the tenant-lsi",ep->getId().c_str());
-				lsi->removeEndpoint(ep->getId());
+				lsi->removeGreEndpoint(ep->getId());
 				delete(aepo);
 				throw GraphManagerException();
 			}
@@ -1926,7 +2005,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 		}catch(SwitchManagerException e)
 		{
 			ULOG_ERR("%s",e.what());
-			lsi->removeEndpoint(ep->getId());
+			lsi->removeGreEndpoint(ep->getId());
 			if(aepo != NULL)
 				delete(aepo);
 			delete(diff);
@@ -1955,9 +2034,34 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 
 	for(list<highlevel::EndPointHostStack>::iterator ep = tmp_hoststack_endpoint.begin(); ep != tmp_hoststack_endpoint.end(); ep++)
 	{
-		//TODO: implement the creation of new hoststack endpoint,
-		ULOG_DBG_INFO("The creation of new hoststack endpoint in the update is not supported yet!");
-		assert(0);
+		AddEndpointHoststackOut *aepo = NULL;
+		try
+		{
+			lsi->addHoststackEndpoint(*ep);
+			AddEndpointHoststackIn aepi(dpid,ep->getId());
+
+			aepo = switchManager.addHoststackEndpoint(aepi);
+
+			if(!lsi->setHoststackEndpointPortID(aepo->getEpId(), aepo->getOfId()))
+			{
+				ULOG_ERR("A non-required hoststack endpoint \"%s\" has been attached to the tenant-lsi",ep->getId().c_str());
+				// TODO: lsi->removeHoststackEndpoint(ep->getId());
+				assert(0);
+				delete(aepo);
+				throw GraphManagerException();
+			}
+			lsi->setHoststackEndpointPortName(aepo->getEpId(), aepo->getEpPortName());
+			delete(aepo);
+		}catch(SwitchManagerException e)
+		{
+			ULOG_ERR("%s",e.what());
+			// TODO: lsi->removeHoststackEndpoint(ep->getId());
+			if(aepo != NULL)
+				delete(aepo);
+			delete(diff);
+			diff = NULL;
+			throw GraphManagerException();
+		}
 	}
 
 	/**
@@ -2153,7 +2257,7 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 	*	The following things must be done
 	*	- 2) delete the flowrules
 	*	- 3) delete the virtual links no longer used. We support virtual link related to each type of endpoint
-	*	- 4) delete the gre-tunnel ports
+	*	- 4) delete the gre-tunnel and hoststack ports
 	*	- 5) delete the interface endpoints (i.e., physical ports)
 	*	- 6) delete the VNFs
 	*/
@@ -2218,10 +2322,10 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 		removeUselessVlinks(*tbr,graph,lsi);
 
 	/**
-	*	4) Delete the gre-tunnel endpoints, as required by the diff
+	*	4a) Delete the gre-tunnel endpoints, as required by the diff
 	*/
 
-	ULOG_DBG_INFO("4) Removing the gre-tunnel endpoints");
+	ULOG_DBG_INFO("4a) Removing the gre-tunnel endpoints");
 
 	list<highlevel::EndPointGre> greEndpoints = diff->getEndPointsGre();
 	for(list<highlevel::EndPointGre>::iterator gep = greEndpoints.begin(); gep != greEndpoints.end(); gep++)
@@ -2233,7 +2337,7 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 		{
 			DestroyEndpointIn depi(lsi->getDpid(),gep->getId());
 			switchManager.destroyEndpoint(depi);
-			lsi->removeEndpoint((gep->getId()));
+			lsi->removeGreEndpoint((gep->getId()));
 		} catch (SwitchManagerException e)
 		{
 			ULOG_ERR("%s",e.what());
@@ -2242,6 +2346,29 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 #else
 		ULOG_WARN("GRE tunnel not supported with the selected virtual switch");
 #endif
+	}
+
+	/**
+	*	4b) Delete the hoststack endpoints, as required by the diff
+	*/
+
+	ULOG_DBG_INFO("4b) Removing the hoststack endpoints");
+
+	list<highlevel::EndPointHostStack> hoststackEndpoints = diff->getEndPointsHostStack();
+	for(list<highlevel::EndPointHostStack>::iterator hsep = hoststackEndpoints.begin(); hsep != hoststackEndpoints.end(); hsep++)
+	{
+		ULOG_DBG_INFO("The hoststack '%s' is no longer part of the graph",(hsep->getId()).c_str());
+
+		try
+		{
+			DestroyHoststackEndpointIn dhepi(lsi->getDpid(),hsep->getId());
+			switchManager.destroyHoststackEndpoint(dhepi);
+			lsi->removeHoststackEndpoint((hsep->getId()));
+		} catch (SwitchManagerException e)
+		{
+			ULOG_ERR("%s",e.what());
+			throw GraphManagerException();
+		}
 	}
 
 	/**
@@ -2290,7 +2417,7 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 
 void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *graph, LSI *lsi)
 {
-
+	// TODO: Deal also with hoststack!
 	map<string, uint64_t> nfs_vlinks = lsi->getNFsVlinks();
 	map<string, uint64_t> ports_vlinks = lsi->getPortsVlinks();
 	map<string, uint64_t> endpoints_internal_vlinks = lsi->getEndPointsVlinks();
@@ -2475,7 +2602,7 @@ void GraphManager::removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *gr
 			list<OutputAction*> outputActions = a->getOutputActions();
 			for(list<OutputAction*>::iterator outputAction = outputActions.begin(); outputAction != outputActions.end(); outputAction++)
 			{
-				if((*outputAction)->getType() == ACTION_ON_PORT && (m.matchOnEndPointGre() || m.matchOnNF()))
+				if((*outputAction)->getType() == ACTION_ON_PORT && (m.matchOnEndPointGre() || m.matchOnNF() || m.matchOnEndPointHoststack()))
 				{
 					if(((ActionPort*)(*outputAction))->getInfo() == rri.port)
 					{
@@ -2746,6 +2873,7 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 	set<string> NFs;
 	set<string> phyPorts;
 	set<string> endPointsGre;
+	set<string> endPointsHoststack;
 	set<string> endPointsInternal;
 
 	list<highlevel::Rule> rules = newPiece->getRules();
@@ -2780,6 +2908,17 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 					ActionEndpointGre *action_ep = (ActionEndpointGre*)(*outputAction);
 					if(endpoints_vlinks.count(action_ep->toString()) == 0)
 						endPointsGre.insert(action_ep->toString());
+				}
+			}
+			else if((*outputAction)->getType() == ACTION_ON_ENDPOINT_HOSTSTACK)
+			{
+				if(match.matchOnPort() || match.matchOnEndPointInternal())
+				{
+					//check if a vlink is required for this gre-tunnel endpoint
+					map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsHoststackVlinks();
+					ActionEndPointHostStack *action_ep = (ActionEndPointHostStack*)(*outputAction);
+					if(endpoints_vlinks.count(action_ep->toString()) == 0)
+						endPointsHoststack.insert(action_ep->toString());
 				}
 			}
 			else if((*outputAction)->getType() == ACTION_ON_PORT)
@@ -2819,6 +2958,9 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 	ULOG_DBG_INFO("Internal endpoints requiring a virtual link:");
 	for(set<string>::iterator e = endPointsInternal.begin(); e != endPointsInternal.end(); e++)
 		ULOG_DBG_INFO("\t%s",(*e).c_str());
+	ULOG_DBG_INFO("Hoststack endpoints requiring a virtual link:");
+	for(set<string>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end(); e++)
+		ULOG_DBG_INFO("\t%s",(*e).c_str());
 
 	//prepare the return value
 	vector<set<string> > retval;
@@ -2831,7 +2973,8 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 	retval.insert(rv,endPointsGre);
 	rv = retval.end();
 	retval.insert(rv,endPointsInternal);
-
+	rv = retval.end();
+	retval.insert(rv,endPointsHoststack);
 	return retval;
 }
 

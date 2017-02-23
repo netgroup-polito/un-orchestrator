@@ -30,9 +30,14 @@ AddNFportsOut *OVSDBManager::addNFPorts(AddNFportsIn anpi){
 	return c->cmd_editconfig_NFPorts(anpi, s);
 }
 
+//implementation of addGreEndpoint
+AddEndpointOut *OVSDBManager::addGreEndpoint(AddEndpointIn aepi){
+	return c->cmd_editconfig_gre_endpoint(aepi, s);
+}
+
 //implementation of addEndpoint
-AddEndpointOut *OVSDBManager::addEndpoint(AddEndpointIn aepi){
-	return c->cmd_editconfig_endpoint(aepi, s);
+AddEndpointHoststackOut *OVSDBManager::addHoststackEndpoint(AddEndpointHoststackIn aepi){
+	return c->cmd_editconfig_hoststack_endpoint(aepi, s);
 }
 
 //implementation of destroyNFPorts
@@ -40,9 +45,14 @@ void OVSDBManager::destroyNFPorts(DestroyNFportsIn dnpi){
 	c->cmd_editconfig_NFPorts_delete(dnpi, s);
 }
 
-//implementation of destroyEndpoint
+//implementation of destroyGreEndpoint
 void OVSDBManager::destroyEndpoint(DestroyEndpointIn depi){
-	c->cmd_editconfig_endpoint_delete(depi, s);
+	c->cmd_editconfig_gre_endpoint_delete(depi, s);
+}
+
+//implementation of destroyGreEndpoint
+void OVSDBManager::destroyHoststackEndpoint(DestroyHoststackEndpointIn dhepi){
+	c->cmd_editconfig_hoststack_endpoint_delete(dhepi, s);
 }
 
 //implementation of destroyVirtualLink

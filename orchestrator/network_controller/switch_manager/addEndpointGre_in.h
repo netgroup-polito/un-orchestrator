@@ -29,7 +29,7 @@ private:
 	uint64_t dpid;
 
 	/**
-	*	@brief: name of the endpoint that must be connected to the lsi
+	*	@brief: id of the endpoint that must be connected to the lsi
 	*/
 	string ep_name;
 

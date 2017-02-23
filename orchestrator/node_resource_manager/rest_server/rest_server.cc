@@ -683,7 +683,7 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 	// PUT and POST requests must contain JSON data in their body
 	} else if(strcmp(method, PUT) == 0 || strcmp(method, POST) == 0) {
 		const char *c_type = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Content-Type");
-		if ((c_type == NULL) || (strcmp(c_type, JSON_C_TYPE) != 0)) {
+		if ((c_type == NULL) || (strncmp(c_type, JSON_C_TYPE, strlen(JSON_C_TYPE) != 0))) {
 			ULOG_INFO("Content-Type must be: \"%s\"",JSON_C_TYPE);
 			return httpResponse(connection, MHD_HTTP_UNSUPPORTED_MEDIA_TYPE);
 		}

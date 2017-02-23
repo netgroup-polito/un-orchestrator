@@ -13,6 +13,7 @@
 #include "high_level_graph_endpoint_gre.h"
 #include "high_level_graph_endpoint_vlan.h"
 #include "high_level_graph_endpoint_hostStack.h"
+#include "high_level_graph_nodeConfigDefaultGateway.h"
 #include "high_level_graph_vnf.h"
 #include "high_level_rule.h"
 #include "../../graph_manager/rule_removed_info.h"
@@ -80,6 +81,11 @@ private:
 	*	@brief: List of VNFs describing the graph
 	*/
 	list<VNFs> vnfs;
+
+    /**
+	*	@brief: Configuration of the defualt gateway
+	*/
+    NodeConfigDefaultGateway ncDG;
 
 	/**
 	*	@brief: Identifier of the graph
@@ -156,6 +162,25 @@ public:
 	*	@param: other	graph with the components to be removed
 	*/
 	list<RuleRemovedInfo> removeGraphFromGraph(highlevel::Graph *other);
+
+    /**
+	*	Functions to manage the "default-gateway" node configuration
+	*/
+
+    /**
+    *	@brief: Add a new "default-gateway" node configuration to the graph
+    */
+    bool addNodeConfigDefaultGateway(NodeConfigDefaultGateway ncDG);
+
+    /**
+    *	@brief: Return the "default-gateway" node configuration of the graph
+    */
+    NodeConfigDefaultGateway getNodeConfigDefaultGateway();
+
+    /**
+    *	@brief: Remove an endpoint "interface" from the graph
+    */
+    void removeNodeConfigDefaultGateway(NodeConfigDefaultGateway ncDG);
 
 	/**
 	*	Functions to manage the "interface" endpoints

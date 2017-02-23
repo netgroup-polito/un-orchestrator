@@ -34,6 +34,8 @@ map<uint64_t, list<string> > gre_endpoint_l;
 map<uint64_t, list<string> > hoststack_endpoint_l;
 // switch id, (gre port id, gre port name)
 map<uint64_t, map<string, string> > gre_endpoints_name;
+// switch id, (hoststack EP ID - name on switch)
+map<uint64_t, map<string, string> > hoststackPortsName;
 /*switch id, list of virtual link name*/
 map<uint64_t, list<string> > vport_l;
 /*switch id, list of ports uuid*/
@@ -163,8 +165,6 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 	map<string,unsigned int> physical_ports;
 	//map [hoststack EP ID - openflow ID]
 	map<string,unsigned int> hoststack_endpoints_ports;
-	//map [hoststack EP ID - name on switch]
-	map<string,string> hoststackPortsName;
 	map<string,map<string, unsigned int> >  network_functions_ports;
 	map<string,unsigned int >  gre_endpoints_ports;
 	list<pair<unsigned int, unsigned int> > virtual_links;
@@ -456,7 +456,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 
 			hoststack_endpoints_ports[(*p)] = rnumber-1;
 
-			hoststackPortsName[(*p)] = port_name;
+			hoststackPortsName[dnumber][(*p)] = port_name;
 
 			hoststack_endpoint_l[dnumber].push_back((*p));
 		}
@@ -589,9 +589,6 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 		pnumber = nfnumber_old;
 	}
 
-	//increment switch number
-	dnumber++;
-
 	root.clear();
 	params.clear();
 	row.clear();
@@ -658,7 +655,10 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 		}
 	}
 
-    	clo = new CreateLsiOut(dnumber_new, physical_ports, network_functions_ports, gre_endpoints_ports, out_nf_ports_name_on_switch, virtual_links, out_nf_ports_name_and_id, hoststack_endpoints_ports, hoststackPortsName);
+    	clo = new CreateLsiOut(dnumber_new, physical_ports, network_functions_ports, gre_endpoints_ports, out_nf_ports_name_on_switch, virtual_links, out_nf_ports_name_and_id, hoststack_endpoints_ports, hoststackPortsName[dnumber]);
+
+	//increment switch number
+	dnumber++;
 
 	return clo;
 }
@@ -1062,7 +1062,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 	*	Call a bash script that brings up the interface and disebled offloads on it. The script pools untill such interface
 	*	is created, thus ensuring that, when the VNF will be created, the ports are already attached to OvS.
 	*/
-	if(is_nf_port && ((port_technology == VHOST_PORT) || (port_technology == VETH_PORT)))
+	if((is_nf_port && ((port_technology == VHOST_PORT) || (port_technology == VETH_PORT))) || p.compare(0, 6, "hsport") == 0)
 	{
 		stringstream command;
 		command << getenv("un_script_path") << ACTIVATE_INTERFACE << " " << port_name;
@@ -1596,7 +1596,7 @@ AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi, int socketNum
 	return anf;
 }
 
-AddEndpointOut *commands::cmd_editconfig_endpoint(AddEndpointIn aepi, int s)
+AddEndpointOut *commands::cmd_editconfig_gre_endpoint(AddEndpointIn aepi, int s)
 {
 	AddEndpointOut *apf = NULL;
 
@@ -1632,6 +1632,24 @@ AddEndpointOut *commands::cmd_editconfig_endpoint(AddEndpointIn aepi, int s)
 	apf = new AddEndpointOut(aepi.getEPname(), rnumber-1);
 
 	return apf;
+}
+
+AddEndpointHoststackOut *commands::cmd_editconfig_hoststack_endpoint(AddEndpointHoststackIn aepi, int s)
+{
+
+	char port_name[BUF_SIZE];
+	sprintf(port_name, "hsport%d", hsnumber++);
+
+	ULOG_DBG_INFO("Hoststack Endpoint -> id: %s - nameOnSwitch: %s",aepi.getEpId().c_str(), port_name);
+
+	add_port(port_name, aepi.getDpid(), false, s);
+
+	//hoststackPortsName[(*p)] = port_name;
+
+	hoststack_endpoint_l[aepi.getDpid()].push_back(aepi.getEpId());
+
+	return new AddEndpointHoststackOut(aepi.getEpId(),rnumber-1, port_name);
+
 }
 
 void commands::cmd_editconfig_NFPorts_delete(DestroyNFportsIn dnpi, int s)
@@ -1835,7 +1853,7 @@ void commands::cmd_editconfig_NFPorts_delete(DestroyNFportsIn dnpi, int s)
 	}
 }
 
-void commands::cmd_editconfig_endpoint_delete(DestroyEndpointIn depi, int s){
+void commands::cmd_editconfig_gre_endpoint_delete(DestroyEndpointIn depi, int s){
 
 	ssize_t nwritten;
 
@@ -2025,6 +2043,185 @@ void commands::cmd_editconfig_endpoint_delete(DestroyEndpointIn depi, int s){
 		system(cmd_tunnel_port.str().c_str());
 		gre_endpoints_name[depi.getDpid()].erase(gre_id);
 #endif
+	}
+}
+
+void commands::cmd_editconfig_hoststack_endpoint_delete(DestroyHoststackEndpointIn dhepi, int s)
+{
+	ssize_t nwritten;
+
+	char read_buf[BUFFER_SIZE];
+
+	int r = 0;
+
+	map<string, unsigned int> ports;
+
+	Object root, first_obj, second_obj, row;
+	Array params, iface, iface1, iface2, where, port1, port2, i_array;
+
+	Array ma;
+	Array maa;
+
+	Array third_object;
+	Array fourth_object;
+
+	//connect socket
+	s = cmd_connect();
+
+	if(dhepi.getEpId() != ""){
+
+		string portsToBeRemoved;
+
+		ULOG_DBG_INFO("hoststack port id to be removed from the switch: %s",dhepi.getEpId().c_str());
+
+		root["method"] = "transact";
+
+		params.push_back("Open_vSwitch");
+
+		first_obj["op"] = "update";
+		first_obj["table"] = "Bridge";
+
+		third_object.push_back("_uuid");
+		third_object.push_back("==");
+
+		fourth_object.push_back("uuid");
+		fourth_object.push_back(switch_uuid[dhepi.getDpid()].c_str());
+
+		third_object.push_back(fourth_object);
+		where.push_back(third_object);
+
+		first_obj["where"] = where;
+
+		where.clear();
+
+		string name_of_port_to_be_removed = hoststackPortsName[dhepi.getDpid()][dhepi.getEpId()];
+
+		list<string>::iterator port_uuid_on_switch = port_uuid[dhepi.getDpid()].begin();
+
+		//should be search in port_l, p....if find it take the index and remove it from the set port-uuid[pi]
+		for(list<string>::iterator u = port_l[dhepi.getDpid()].begin(); u != port_l[dhepi.getDpid()].end(); u++){
+			string port_name_on_switch = (*u);
+
+			if(port_name_on_switch.compare(name_of_port_to_be_removed) == 0){
+				port_l[dhepi.getDpid()].remove(port_name_on_switch);
+				port_uuid[dhepi.getDpid()].remove((*port_uuid_on_switch));
+				break;
+			}
+			port_uuid_on_switch++;
+		}
+
+		for(list<string>::iterator u = port_uuid[dhepi.getDpid()].begin(); u != port_uuid[dhepi.getDpid()].end(); u++)
+		{
+			port2.push_back("uuid");
+
+			port2.push_back((*u));
+
+			port1.push_back(port2);
+
+			port2.clear();
+		}
+
+		for(list<string>::iterator u = vport_uuid[dhepi.getDpid()].begin(); u != vport_uuid[dhepi.getDpid()].end(); u++)
+		{
+			port2.push_back("uuid");
+
+			port2.push_back((*u));
+
+			port1.push_back(port2);
+
+			port2.clear();
+		}
+
+		for(list<string>::iterator u = gport_uuid[dhepi.getDpid()].begin(); u != gport_uuid[dhepi.getDpid()].end(); u++)
+		{
+			port2.push_back("uuid");
+
+			port2.push_back((*u));
+
+			port1.push_back(port2);
+
+			port2.clear();
+		}
+
+		/*Array with two elements*/
+		i_array.push_back("set");
+
+		i_array.push_back(port1);
+
+		row["ports"] = i_array;
+
+		first_obj["row"] = row;
+
+		params.push_back(first_obj);
+
+		second_obj.clear();
+
+		/*Object with four items [op, table, where, mutations]*/
+		second_obj["op"] = "mutate";
+		second_obj["table"] = "Open_vSwitch";
+
+		/*Empty array [where]*/
+		second_obj["where"] = where;
+
+		/*Array with two element*/
+		maa.push_back("next_cfg");
+		maa.push_back("+=");
+		maa.push_back(1);
+
+		ma.push_back(maa);
+
+		second_obj["mutations"] = ma;
+
+		params.push_back(second_obj);
+
+		ma.clear();
+		maa.clear();
+		row.clear();
+		where.clear();
+		first_obj.clear();
+		second_obj.clear();
+		third_object.clear();
+		fourth_object.clear();
+		i_array.clear();
+		iface.clear();
+		iface1.clear();
+		iface2.clear();
+		port1.clear();
+		port2.clear();
+		root["params"] = params;
+
+		root["id"] = tid;
+
+		stringstream ss;
+		write_formatted(root, ss );
+
+		nwritten = sock_send(s, ss.str().c_str(), strlen(ss.str().c_str()), ErrBuf, sizeof(ErrBuf));
+		if (nwritten == sockFAILURE)
+		{
+			ULOG_ERR("Error sending data: %s", ErrBuf);
+			throw commandsException();
+		}
+
+		r = sock_recv(s, read_buf, sizeof(read_buf), SOCK_RECEIVEALL_NO, 0/*no timeout*/, ErrBuf, sizeof(ErrBuf));
+		if (r == sockFAILURE)
+		{
+			ULOG_ERR("Error reading data: %s", ErrBuf);
+			throw commandsException();
+		}
+		read_buf[r] = '\0';
+
+		ULOG_DBG("Message sent to ovs: ");
+		ULOG_DBG(ss.str().c_str());
+		ULOG_DBG("Answer: ");
+		ULOG_DBG(read_buf);
+
+		root.clear();
+		params.clear();
+
+		//Increment transaction id
+		tid++;
+
+		cmd_disconnect(s);
 	}
 }
 

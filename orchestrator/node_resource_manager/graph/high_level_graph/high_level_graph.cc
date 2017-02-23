@@ -25,6 +25,25 @@ string Graph::getName()
 	return name;
 }
 
+bool Graph::addNodeConfigDefaultGateway(NodeConfigDefaultGateway nodeConfigDG)
+{
+    if(ncDG == nodeConfigDG)
+        return false;
+    ncDG=nodeConfigDG;
+
+    return true;
+}
+
+NodeConfigDefaultGateway Graph::getNodeConfigDefaultGateway()
+{
+    return ncDG;
+}
+
+void Graph::removeNodeConfigDefaultGateway(NodeConfigDefaultGateway nodeConfigDG)
+{
+    // TODO
+}
+
 bool Graph::addEndPointInterface(EndPointInterface endpoint)
 {
 	for(list<EndPointInterface>::iterator e = endPointsInterface.begin(); e != endPointsInterface.end(); e++)
@@ -350,7 +369,7 @@ Object Graph::toJSON()
 {
 	Object forwarding_graph, big_switch;
 
-	Array flow_rules, end_points, vnf;
+	Array flow_rules, end_points, vnf, node_configurations;
 	for(list<Rule>::iterator r = rules.begin(); r != rules.end();r++)
 	{
 		flow_rules.push_back(r->toJSON());
@@ -385,13 +404,19 @@ Object Graph::toJSON()
 	{
 		vnf.push_back(v->toJSON());
 	}
-
+#ifdef ENABLE_NODE_CONFIG
+    node_configurations.push_back(ncDG.toJSON());
+#endif
 	forwarding_graph[_ID] = ID;
 	forwarding_graph[_NAME] = name;
 	if(end_points.size() != 0)
 		forwarding_graph[END_POINTS] = end_points;
 	if(vnf.size() != 0)
 		forwarding_graph[VNFS] = vnf;
+#ifdef ENABLE_NODE_CONFIG
+    if(node_configurations.size() != 0)
+        forwarding_graph[NODE_CONFIG] = node_configurations;
+#endif
 	big_switch[FLOW_RULES] = flow_rules;
 
 	forwarding_graph[BIG_SWITCH] = big_switch;
@@ -724,6 +749,47 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 			ULOG_DBG_INFO("Vlan endpoint %s is already in the graph",(new_vlan)->getVlanId().c_str());
 	}
 
+	// c-5) hoststack endpoints
+	list<highlevel::EndPointHostStack> endpointsHoststack = this->getEndPointsHostStack();
+	//Retrieve the hoststack endpoints required by the update
+	list<highlevel::EndPointHostStack> newEndpointsHoststack = other->getEndPointsHostStack();
+
+
+	for(list<highlevel::EndPointHostStack>::iterator newHoststack = newEndpointsHoststack.begin(); newHoststack != newEndpointsHoststack.end(); newHoststack++)
+	{
+		bool found = false;
+
+		for(list<highlevel::EndPointHostStack>::iterator hoststack = endpointsHoststack.begin(); hoststack != endpointsHoststack.end(); hoststack++)
+		{
+			if((*newHoststack) == (*hoststack))
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if(!found)
+		{
+			ULOG_DBG_INFO("Hoststack endpoint %s is added to the diff graph",newHoststack->getId().c_str());
+			diff->addEndPointHostStack(*newHoststack);
+		}
+		else
+			ULOG_DBG("GRE Hoststack %s is already in the graph",newHoststack->getId().c_str());
+	}
+#ifdef ENABLE_NODE_CONFIG
+    // d) Add the new node configurations
+
+    // d-1) default gateway node configuration
+    //Retrieve the node configurations already existing in the graph
+    highlevel::NodeConfigDefaultGateway nodeConfigDG = this->getNodeConfigDefaultGateway();
+    //Retrieve the node configurations required by the update
+    highlevel::NodeConfigDefaultGateway new_nodeConfigDG = other->getNodeConfigDefaultGateway();
+    if(new_nodeConfigDG == nodeConfigDG) ULOG_DBG("Default gateway node configuration %s is already in the graph",(new_nodeConfigDG.getDefaultGateway()).c_str());
+    else {
+        diff->addNodeConfigDefaultGateway(new_nodeConfigDG);
+        ULOG_DBG_INFO("Default gateway node configuration %s is added the to the diff graph", (new_nodeConfigDG.getDefaultGateway()).c_str());
+    }
+#endif
 	return diff;
 }
 
@@ -739,7 +805,11 @@ bool Graph::addGraphToGraph(highlevel::Graph *other)
 			return false;
 		}
 	}
-
+#ifdef ENABLE_NODE_CONFIG
+    //Update the default gateway node configuration
+    NodeConfigDefaultGateway ncDG = other->getNodeConfigDefaultGateway();
+    this->addNodeConfigDefaultGateway(ncDG);
+#endif
 	//Update the interface endpoints
 	list<highlevel::EndPointInterface> iep = other->getEndPointsInterface();
 	for(list<highlevel::EndPointInterface>::iterator ep = iep.begin(); ep != iep.end(); ep++)
@@ -754,6 +824,14 @@ bool Graph::addGraphToGraph(highlevel::Graph *other)
 	{
 		//The gre endpoint is not part of the graph
 		this->addEndPointGre(*ep);
+	}
+
+	//Update the hoststack endpoints
+	list<highlevel::EndPointHostStack> hsepp = other->getEndPointsHostStack();
+	for(list<highlevel::EndPointHostStack>::iterator ep = hsepp.begin(); ep != hsepp.end(); ep++)
+	{
+		//The gre endpoint is not part of the graph
+		this->addEndPointHostStack(*ep);
 	}
 
 	//Update the internal endpoints
@@ -814,6 +892,15 @@ list<RuleRemovedInfo> Graph::removeGraphFromGraph(highlevel::Graph *other)
 		//TODO If a gre-tunnel endpoint is still used in a rule, it cannot
 		//be removed! In this case the update is not valid!
 		this->removeEndPointGre(*ep);
+	}
+
+	//Update the hoststack endpoints
+	list<highlevel::EndPointHostStack> hsepp = other->getEndPointsHostStack();
+	for(list<highlevel::EndPointHostStack>::iterator ep = hsepp.begin(); ep != hsepp.end(); ep++)
+	{
+		//TODO If a hoststack endpoint is still used in a rule, it cannot
+		//be removed! In this case the update is not valid!
+		this->removeEndPointHoststack(*ep);
 	}
 
 	//Update the internal endpoints

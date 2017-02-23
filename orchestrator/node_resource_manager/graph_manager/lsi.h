@@ -206,6 +206,7 @@ public:
 	void removeEndPointvlink(string endpoint);
 	void setEndPointsGreVLinks(map<string, uint64_t> gre_endpoints_vlinks);
 	void addEndpointGrevlink(string endpoint, uint64_t vlinkID);
+	void addEndpointHoststackvlink(string endpoint, uint64_t vlinkID);
 	void setEndPointsHoststackVLinks(map<string, uint64_t> hoststack_endpoints_vlinks);
 	void removeEndPointGrevlink(string endpoint);
 
@@ -227,7 +228,9 @@ protected:
 	void removeNF(string nf_id);
 
 	void addGreEndpoint(highlevel::EndPointGre);
-	void removeEndpoint(string ep);
+	void addHoststackEndpoint(highlevel::EndPointHostStack);
+	void removeGreEndpoint(string ep);
+	void removeHoststackEndpoint(string ep);
 };
 
 #endif //LSI_H_

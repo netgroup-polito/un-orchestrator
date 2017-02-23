@@ -12,9 +12,12 @@
 #include "addVirtualLink_out.h"
 #include "destroyVirtualLink_in.h"
 #include "checkPhysicalPorts_in.h"
-#include "addEndpoint_in.h"
-#include "addEndpoint_out.h"
+#include "addEndpointGre_in.h"
+#include "addEndpointGre_out.h"
+#include "addEndpointHoststack_in.h"
+#include "addEndpointHoststack_out.h"
 #include "destroyEndpoint_in.h"
+#include "destroyHoststackEndpoint_in.h"
 
 #include <stdio.h>
 
@@ -45,13 +48,21 @@ public:
 	virtual AddNFportsOut *addNFPorts(AddNFportsIn anpi) = 0;
 #ifdef VSWITCH_IMPLEMENTATION_OVSDB
 	/**
-	*	@brief: Create endpoint, on a specific lsi
+	*	@brief: Create gre endpoint, on a specific lsi
 	*
-	*	@brief: aepi	Description of the endpoint to be created
-	*	@return:		Information related to the endpoint created
+	*	@brief: aepi	Description of the gre endpoint to be created
+	*	@return:		Information related to the gre endpoint created
 	*/
-	virtual AddEndpointOut *addEndpoint(AddEndpointIn aepi) = 0;
+	virtual AddEndpointOut *addGreEndpoint(AddEndpointIn aepi) = 0;
 #endif
+	/**
+	*	@brief: Create hoststack endpoint, on a specific lsi
+	*
+	*	@brief: aepi	Description of the hoststack endpoint to be created
+	*	@return:		Information related to the hoststack endpoint created
+	*/
+	virtual AddEndpointHoststackOut *addHoststackEndpoint(AddEndpointHoststackIn aepi) = 0;
+
 	/**
 	*	@brief: Connect together two lsis
 	*
@@ -81,6 +92,14 @@ public:
 	*/
 	virtual void destroyEndpoint(DestroyEndpointIn depi) = 0;
 #endif
+
+	/**
+	*	@brief: Destroy hoststack endpoint of a specific lsi
+	*
+	*	@brief: depi	Information related to the hoststack endpoint to be destroyed
+	*/
+	virtual void destroyHoststackEndpoint(DestroyHoststackEndpointIn depi) = 0;
+
 	/**
 	*	@brief: Destroy a connection between two lsis
 	*
