@@ -21,7 +21,8 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         self.tenant_id = None
         self.vnf_name = None
         self.publishable = False
-        
+        self.last_published_status = None
+
         self.vnf = vnf
 
         #  Tenant association phase
@@ -30,11 +31,11 @@ class ConfigurationAgent(clientSafe.ClientSafe):
 
         # New registration with the right tenant id
         self.phase = "NewRegistration"
-        self.new_registration()  
-    
+        self.new_registration()
+
     def registration(self, name, dealerurl, customer, keyfile):
-        super().__init__(name=name.encode('utf8'), 
-                         dealerurl=dealerurl, 
+        super().__init__(name=name.encode('utf8'),
+                         dealerurl=dealerurl,
                          customer=customer.encode('utf8'),
                          keyfile=keyfile)
         thread = Thread(target=self.start)
@@ -51,7 +52,7 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         thread.join()
 
     def new_registration(self):
-        # The VNF has received its own tenant id 
+        # The VNF has received its own tenant id
         # and vnf name, now can register itself
         # to the DD with the right tenant ID
 
@@ -61,7 +62,7 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         thread = self.registration(name = self.vnf.mac_address,
                           dealerurl = constants.dealer,
                           customer = self.tenant_id,
-                          keyfile = constants.keyfile)	
+                          keyfile = constants.keyfile)
 
         while True:
             # Export the status every 15 seconds
@@ -78,10 +79,16 @@ class ConfigurationAgent(clientSafe.ClientSafe):
 
     def configuration_subscription(self):
         self.subscribe('/'+self.vnf.type+'/'+self.vnf_name, 'noscope')
-        
+
     def publish_status(self):
         if self.publishable:
-            self.publish_public('public.status_exportation', self.vnf.get_json_instance())
+            if self.last_published_status is not None:
+                logging.debug("OLD STATUS: " + self.last_published_status)
+                logging.debug("NEW STATUS: " + self.vnf.get_json_instance())
+            if self.last_published_status != self.vnf.get_json_instance():
+                logging.debug("Publishing a new status")
+                self.publish_public('public.status_exportation', self.vnf.get_json_instance())
+                self.last_published_status = self.vnf.get_json_instance()
         
     def configuration(self):
         self.configuration_subscription()
