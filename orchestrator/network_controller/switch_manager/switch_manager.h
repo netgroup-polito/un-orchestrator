@@ -54,7 +54,7 @@ public:
 	*	@return:		Information related to the gre endpoint created
 	*/
 	virtual AddEndpointOut *addGreEndpoint(AddEndpointIn aepi) = 0;
-#endif
+
 	/**
 	*	@brief: Create hoststack endpoint, on a specific lsi
 	*
@@ -62,6 +62,7 @@ public:
 	*	@return:		Information related to the hoststack endpoint created
 	*/
 	virtual AddEndpointHoststackOut *addHoststackEndpoint(AddEndpointHoststackIn aepi) = 0;
+#endif
 
 	/**
 	*	@brief: Connect together two lsis
@@ -91,7 +92,6 @@ public:
 	*	@brief: depi	Information related to the endpoint to be destroyed
 	*/
 	virtual void destroyEndpoint(DestroyEndpointIn depi) = 0;
-#endif
 
 	/**
 	*	@brief: Destroy hoststack endpoint of a specific lsi
@@ -99,6 +99,7 @@ public:
 	*	@brief: depi	Information related to the hoststack endpoint to be destroyed
 	*/
 	virtual void destroyHoststackEndpoint(DestroyHoststackEndpointIn depi) = 0;
+#endif
 
 	/**
 	*	@brief: Destroy a connection between two lsis
