@@ -6,7 +6,6 @@
 #include <sstream>
 #include <stdlib.h>
 #include <fstream>
-#include <signal.h>
 
 #include "../../utils/constants.h"
 #include "../../utils/logger.h"
@@ -20,6 +19,11 @@ class ConfigurationAgent {
 public:
     ConfigurationAgent();
     ~ConfigurationAgent();
+
+    /**
+    *	@brief: callback called after a subscription to the topic of configuration of the DoubleDecker
+    */
+    bool on_configurationEvent(char *graph);
 
     /**
     *	@brief: set the IP address of the default gateway

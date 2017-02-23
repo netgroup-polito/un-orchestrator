@@ -207,6 +207,10 @@ int main(int argc, char *argv[])
 	ResourceManager::publishDescriptionFromFile(Configuration::instance()->getDescriptionFileName());
 #endif
 
+#ifdef ENABLE_DOUBLE_DECKER_CONNECTION
+    DoubleDeckerClient::subscribe(UN_CONFIGURATION);
+#endif
+
 	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, Configuration::instance()->getRestPort(), NULL, NULL,&RestServer::answer_to_connection,
 		NULL, MHD_OPTION_NOTIFY_COMPLETED, &RestServer::request_completed, NULL,MHD_OPTION_END);
 

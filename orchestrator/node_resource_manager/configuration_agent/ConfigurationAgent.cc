@@ -13,6 +13,12 @@ ConfigurationAgent::~ConfigurationAgent()
 
 }
 
+bool ConfigurationAgent::on_configurationEvent(char *message){
+    ULOG_DBG_INFO("Received: '%s'", message);
+    // TODO: parse message and set configuration
+    return true;
+}
+
 bool ConfigurationAgent::setDefaultGateway(string ipAddress)
 {
     stringstream cmd_set_default_gateway;

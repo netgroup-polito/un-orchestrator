@@ -4,7 +4,7 @@
 #include <string>
 #include <list>
 #include <unistd.h>
-
+#include "../configuration_agent/ConfigurationAgent.h"
 #include <czmq.h>
 #include <dd.h>
 
@@ -15,12 +15,26 @@ using namespace std;
 
 typedef enum {
 	FROG_DOMAIN_DESCRIPTION,
+    UN_CONFIGURATION
 	//[+] add here other topics
 }topic_t;
+
+typedef enum {
+	ALL,
+	REGION,
+	CLUSTER,
+	NODE,
+	NOSCOPE
+}scope_t;
 
 struct publish_t{
 	topic_t topic;
 	const char *message;
+};
+
+struct subscribe_t{
+	topic_t topic;
+	scope_t scope;
 };
 
 class DoubleDeckerClient
@@ -48,6 +62,11 @@ private:
 	static list<publish_t> messages;
 
 	/**
+	*	@brief: list contaning topics to which subscribe
+	*/
+	static list<subscribe_t> topics;
+
+	/**
 	*	@brief: semaphore to serialize some operations of the Double Decker
 	*		client
 	*/
@@ -69,6 +88,14 @@ private:
 	*/
 	static char *topicToString(topic_t topic);
 
+	/**
+	*	@brief: given a scope, returns a string to be used on the
+	*		DoubleDecker network
+	*/
+	static char *scopeToString(scope_t scope);
+
+	static ConfigurationAgent configurationAgent;
+
 	DoubleDeckerClient() {}
 
 public:
@@ -89,6 +116,8 @@ public:
 	static void terminate();
 
 	static void publish(topic_t topic, const char *message);
+
+	static void subscribe(topic_t topic/*, scope_t scope*/);
 };
 
 #endif //PUB_SUB_H_ 1
