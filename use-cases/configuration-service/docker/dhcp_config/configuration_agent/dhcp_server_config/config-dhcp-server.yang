@@ -52,6 +52,11 @@ module config-dhcp-server {
 			leaf domainName { 
 				description "name='DNS name', tooltip='Specifies the domain name, option code is 15.'";type string;
 			}
+			leaf mtu {
+			    description "name='MTU'";
+			    type uint64;
+			    mandatory "false";
+			}
 		}
 		list clients {
 			key "mac_address";
