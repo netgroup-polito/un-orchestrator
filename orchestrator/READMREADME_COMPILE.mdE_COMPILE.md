@@ -37,7 +37,7 @@ of the universal node.
 
 	; Install Double Decker (hierarchical messaging system)
 	$ git clone https://github.com/Acreo/DoubleDecker
-	$ cd DobuleDecker/c/
+	$ cd DobuleDecker/
 	
 	; Now install the above library according to the description provided
 	; in the cloned folder
