@@ -221,24 +221,38 @@ class Dhcp(object):
     def parse_dhcpd_dot_conf(self):
         with open('/etc/dhcp/dhcpd.conf') as dhcpd_file:
             dhcpd_lines = dhcpd_file.readlines()
-        
+
         dhcp_server_conf = {}
-        dhcp_server_conf['defaultLeaseTime'] = dhcpd_lines.pop(0).split('default-lease-time ')[1].split(';')[0]
-        dhcp_server_conf['maxLeaseTime'] = dhcpd_lines.pop(0).split('max-lease-time ')[1].split(';')[0]
         dhcp_server_conf['gatewayIp'] = {}
-        dhcp_server_conf['gatewayIp']['gatewayMask'] = dhcpd_lines.pop(0).split('option subnet-mask ')[1].split(';')[0]
-        dhcp_server_conf['gatewayIp']['gatewayIp'] = dhcpd_lines.pop(0).split('option routers ')[1].split(';')[0]
-        dhcp_server_conf['domainNameServer'] = dhcpd_lines.pop(0).split('option domain-name-servers ')[1].split(';')[0]
-        dhcp_server_conf['domainName'] = dhcpd_lines.pop(0).split('option domain-name "')[1].split('";')[0]
-        dhcp_server_conf['sections'] = {}
-        dhcp_server_conf['sections']['section'] = []
-        dhcpd_lines.pop(0)
-        dhcpd_lines.pop(len(dhcpd_lines)-1)
-        for dhcpd_line in dhcpd_lines:
-            section = {}
-            section['sectionStartIp'] = dhcpd_line.split('    range ')[1].split(' ')[0]
-            section['sectionEndIp'] = dhcpd_line.split('    range ')[1].split(' ')[1].split(';')[0]
-            dhcp_server_conf['sections']['section'].append(section)
+
+        for line in dhcpd_lines:
+            command = line.strip().split(' ')[0]
+
+            if command == "default-lease-time":
+                dhcp_server_conf['defaultLeaseTime'] = line.split('default-lease-time ')[1].split(';')[0]
+            elif command == "max-lease-time":
+                dhcp_server_conf['maxLeaseTime'] = line.split('max-lease-time ')[1].split(';')[0]
+            elif command == "option":
+                option = line.strip().split(' ')[1]
+                if option == "routers":
+                    dhcp_server_conf['gatewayIp']['gatewayIp'] = line.split('option routers ')[1].split(';')[0]
+                elif option == "subnet-mask":
+                    dhcp_server_conf['gatewayIp']['gatewayMask'] = line.split('option subnet-mask ')[1].split(';')[0]
+                elif option == "domain-name-servers":
+                    dhcp_server_conf['domainNameServer'] = line.split('option domain-name-servers ')[1].split(';')[0]
+                elif option == "domain-name":
+                    dhcp_server_conf['domainName'] = line.split('option domain-name "')[1].split('";')[0]
+                elif option == "interface-mtu":
+                    dhcp_server_conf['mtu'] = line.split('option interface-mtu "')[1].split('";')[0]
+            elif command == "subnet":
+                dhcp_server_conf['sections'] = {}
+                dhcp_server_conf['sections']['section'] = []
+            elif command == "range":
+                section = {}
+                section['sectionStartIp'] = line.strip().split('range ')[1].split(' ')[0]
+                section['sectionEndIp'] = line.strip().split('range ')[1].split(' ')[1].split(';')[0]
+                dhcp_server_conf['sections']['section'].append(section)
+
         return dhcp_server_conf
            
     def configure_dhcp(self, dhcp_server_conf):
@@ -265,6 +279,8 @@ class Dhcp(object):
             dhcpd_file.write('option routers '+dhcp_server_conf['gatewayIp']['gatewayIp']+';\n')
             dhcpd_file.write('option domain-name-servers '+dhcp_server_conf['domainNameServer']+';\n')
             dhcpd_file.write('option domain-name "'+dhcp_server_conf['domainName']+'";\n')
+            if 'mtu' in dhcp_server_conf:
+                dhcpd_file.write('option interface-mtu "' + str(dhcp_server_conf['mtu']) + '";\n')
             network = str(self.get_network(dhcp_server_conf['gatewayIp']['gatewayMask'], dhcp_server_conf['gatewayIp']['gatewayIp']))
             dhcpd_file.write('subnet '+network+' netmask '+dhcp_server_conf['gatewayIp']['gatewayMask']+' {\n')
             for section in dhcp_server_conf['sections']['section']:

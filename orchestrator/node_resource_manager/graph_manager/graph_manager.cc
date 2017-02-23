@@ -2027,6 +2027,7 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 
 	for(list<highlevel::EndPointHostStack>::iterator ep = tmp_hoststack_endpoint.begin(); ep != tmp_hoststack_endpoint.end(); ep++)
 	{
+#ifdef VSWITCH_IMPLEMENTATION_OVSDB
 		AddEndpointHoststackOut *aepo = NULL;
 		try
 		{
@@ -2055,6 +2056,10 @@ highlevel::Graph *GraphManager::updateGraph_add(string graphID, highlevel::Graph
 			diff = NULL;
 			throw GraphManagerException();
 		}
+#else
+		ULOG_ERR("Hoststack endpoints unavailable with the selected virtual switch");
+		throw GraphManagerException();
+#endif
 	}
 
 	/**
@@ -2345,6 +2350,7 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 	list<highlevel::EndPointHostStack> hoststackEndpoints = diff->getEndPointsHostStack();
 	for(list<highlevel::EndPointHostStack>::iterator hsep = hoststackEndpoints.begin(); hsep != hoststackEndpoints.end(); hsep++)
 	{
+#ifdef VSWITCH_IMPLEMENTATION_OVSDB
 		ULOG_DBG_INFO("The hoststack '%s' is no longer part of the graph",(hsep->getId()).c_str());
 
 		try
@@ -2357,6 +2363,9 @@ highlevel::Graph *GraphManager::updateGraph_remove(string graphID, highlevel::Gr
 			ULOG_ERR("%s",e.what());
 			throw GraphManagerException();
 		}
+#else
+		ULOG_WARN("Hostack endpoints not supported with the selected virtual switch");
+#endif
 	}
 
 	/**
