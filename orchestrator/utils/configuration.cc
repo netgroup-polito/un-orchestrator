@@ -169,9 +169,9 @@ bool Configuration::init(string configurationFile)
         return false;
     }
 
-    externalNetwork = reader.Get("network-info", "external_network", "");
+    externalNetwork = reader.Get("openbaton-info", "external_network", "");
 
-    string floatingIpPool = reader.Get("network-info", "floating_ip_pool", "");
+    string floatingIpPool = reader.Get("openbaton-info", "floating_ip_pool", "");
     if(floatingIpPool != "")
     {
         //the string must start and terminate respectively with [ and ]
@@ -190,6 +190,8 @@ bool Configuration::init(string configurationFile)
         getline(iss, address, ' ');
         endFloatingIpPool=address;
     }
+
+	wanPort = reader.Get("openbaton-info", "wan_port", "");
 
     /* Path of the script file*/
     scriptPath = reader.Get("misc", "script_path", "./").c_str();
@@ -291,6 +293,11 @@ int Configuration::getConfigServicePort()
 string Configuration::getExternalNetwork()
 {
     return externalNetwork;
+}
+
+string Configuration::getWanPort()
+{
+    return wanPort;
 }
 
 string Configuration::getStartFloatingIpPool()

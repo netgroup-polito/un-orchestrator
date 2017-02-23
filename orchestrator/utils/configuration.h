@@ -39,6 +39,7 @@ public:
     string getExternalNetwork();
     string getStartFloatingIpPool();
     string getEndFloatingIpPool();
+    string getWanPort();
     static Configuration *instance();
 
 private:
@@ -63,6 +64,7 @@ private:
     string externalNetwork;
     string startFloatingIpPool;
     string endFloatingIpPool;
+    string wanPort;
     static Configuration *s_instance;
     Configuration();
 };
