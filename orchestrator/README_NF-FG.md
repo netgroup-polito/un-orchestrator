@@ -997,6 +997,7 @@ An example of NF-FG that specifies the coordinates for the elements is the follo
 
 A simple configuration mechanism is supported by the NF-FG formalism. In particular, it is possibile to:
 
+  * assign the IPv4 address of the default gateway of the UN;
   * assign the MAC address, IPv4 address and netmask to a specific VNF interface;
   * set environment variable to the VNF;
   * create ports of the VNF connected to the Internet through the UN control interface, and not through the NF-FG itself. 
@@ -1004,6 +1005,24 @@ A simple configuration mechanism is supported by the NF-FG formalism. In particu
     
 **WARNING**: all the elements starting with the string `unify` only work with Docker containers, and requires that a 
 specific compilation flag for the un-orchestrator is enabled.
+    
+### Configuring the UN default-gateway
+
+This is possible by using the element `node-config` within the description of the of a NF-FG.
+
+The element `node-config` is defined as follow:
+
+	"node-config": [
+	{
+		"id": "1",
+		"type": "default-gateway",
+		"default-gateway": {
+			"ip-address": "10.0.0.254"
+		}
+	}
+	]
+	
+Given this NF-FG, the un-orchestrator configures the VNF ports as specified.
     
 ### Configuring the VNF interface
 
