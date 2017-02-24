@@ -343,8 +343,11 @@ SET(SOURCES1
 	node_resource_manager/interface_manager/InterfaceManager.cc
 	node_resource_manager/interface_manager/InterfaceManager.h
 
-        node_resource_manager/configuration_agent/ConfigurationAgent.cc
-        node_resource_manager/configuration_agent/ConfigurationAgent.h
+    node_resource_manager/configuration_agent/ConfigurationAgent.cc
+    node_resource_manager/configuration_agent/ConfigurationAgent.h
+		node_resource_manager/graph/graph-parser/node_configuration_parser_exception.h
+    node_resource_manager/graph/graph-parser/node_configuration_parser.cc
+    node_resource_manager/graph/graph-parser/node_configuration_parser.cc
 
 	utils/logger.h
 	utils/logger.c
