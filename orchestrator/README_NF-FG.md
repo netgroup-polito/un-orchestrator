@@ -1022,7 +1022,7 @@ The element `node-config` is defined as follow:
 	}
 	]
 	
-Given this NF-FG, the un-orchestrator configures the VNF ports as specified.
+Given this NF-FG, the un-orchestrator configures the default gateway of the UN as specified.
     
 ### Configuring the VNF interface
 
