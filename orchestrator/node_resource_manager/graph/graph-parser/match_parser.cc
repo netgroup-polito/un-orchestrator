@@ -5,7 +5,7 @@
 
 static const char LOG_MODULE_NAME[] = "Match-Parser";
 
-void MatchParser::parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,gre_info_t> &gre_id, list<string> &hostStack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses)
+void MatchParser::parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,gre_info_t> &gre_id, map<string,hoststack_info_t> &hostStack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses)
 {
 	bool foundOne = false;
 	bool foundEndPointID = false, foundProtocolField = false, definedInCurrentGraph = false;
@@ -141,8 +141,8 @@ void MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 					map<string,string>::iterator it1 = internal_id.find(eP);
 					map<string,pair<string,string> >::iterator it2 = vlan_id.find(eP); //check if the endpoint has a vlan ID associated (in this case, the endpoint is a vlan endpoint)
 					map<string,gre_info_t>::iterator it3 = gre_id.find(eP);
-					list<string>::iterator it4 = hostStack_id.begin();
-					for(;*(it4)!=eP && it4!=hostStack_id.end();it4++);
+					map<string,hoststack_info_t>::iterator it4 = hostStack_id.find(eP);
+
 					if(it != iface_id.end())
 					{
 						//physical port
