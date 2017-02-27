@@ -405,7 +405,8 @@ Object Graph::toJSON()
 		vnf.push_back(v->toJSON());
 	}
 #ifdef ENABLE_NODE_CONFIG
-    node_configurations.push_back(ncDG.toJSON());
+    if(!ncDG.getId().empty())
+		node_configurations.push_back(ncDG.toJSON());
 #endif
 	forwarding_graph[_ID] = ID;
 	forwarding_graph[_NAME] = name;
