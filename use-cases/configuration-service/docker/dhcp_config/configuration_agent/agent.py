@@ -21,6 +21,7 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         self.tenant_id = None
         self.vnf_name = None
         self.publishable = False
+        self.last_published_status = None
         
         self.vnf = vnf
 
@@ -81,7 +82,13 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         
     def publish_status(self):
         if self.publishable:
-            self.publish_public('public.status_exportation', self.vnf.get_json_instance())
+            if self.last_published_status is not None:
+                logging.debug("OLD STATUS: " + self.last_published_status)
+                logging.debug("NEW STATUS: " + self.vnf.get_json_instance())
+            if self.last_published_status != self.vnf.get_json_instance():
+                logging.debug("Publishing a new status")
+                self.publish_public('public.status_exportation', self.vnf.get_json_instance())
+                self.last_published_status = self.vnf.get_json_instance()
         
     def configuration(self):
         self.configuration_subscription()

@@ -13,8 +13,8 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 	map<string, gre_info_t> gre_id;
 	//for each endpoint (vlan), contains the pair vlan id, interface
 	map<string, pair<string, string> > vlan_id;
-	//contains the id of hoststack endpoints
-	list<string> hostStack_id;
+	//for each hoststack, contains its informations
+	map<string, hoststack_info_t> hoststack_id;
 #ifdef ENABLE_NODE_CONFIG
 	//contains the id of default gateway node configuration
 	string nodeConfigDG_id;
@@ -62,7 +62,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 				}
 				for(Object::const_iterator fg = forwarding_graph.begin(); fg != forwarding_graph.end(); fg++)
 				{
-					bool e_if = false, e_vlan = false, e_internal = false, e_gre=false;
+					bool e_if = false, e_vlan = false, e_internal = false, e_gre=false, e_hs=false;
 #ifdef ENABLE_NODE_CONFIG
                     bool nc_dg = false;
                     string dgIP;
@@ -1021,6 +1021,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											throw new GraphParserException(std::move(error));
 										}
 
+										e_hs=true;
 
 										//In order to get end-point ID (it wil be parsed later, but i need it now)
 										Object::const_iterator aep2 = aep;
@@ -1036,8 +1037,9 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 										}
 
+										hoststack_info_t hs_info;
 										Object ep_hostStack = ep_value.getObject();
-										hoststack_conf_t configuration=NONE;
+										hs_info.configuration=NONE;
 										string ipAddress,macAddress;
 										for(Object::const_iterator eph = ep_hostStack.begin(); eph != ep_hostStack.end(); eph++)
 										{
@@ -1050,11 +1052,11 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,CONFIGURATION,eph_value.getString().c_str());
 												string confTemp = eph_value.getString();
 												if(strcmp(confTemp.c_str(),CONF_DHCP)==0)
-													configuration=DHCP;
+													hs_info.configuration=DHCP;
 												else if(strcmp(confTemp.c_str(),CONF_STATIC)==0)
-													configuration=STATIC;
+													hs_info.configuration=STATIC;
 												else if(strcmp(confTemp.c_str(),CONF_PPPOE)==0)
-													configuration=PPPOE;
+													hs_info.configuration=PPPOE;
 												else
 												{
 													string error = string("Invalid value ") + confTemp.c_str() + " for key " + eph_name.c_str() + " inside " + EP_HOSTSTACK;
@@ -1065,12 +1067,12 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											else if(eph_name == IP_ADDRESS)
 											{
 												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,IP_ADDRESS,eph_value.getString().c_str());
-												ipAddress=eph_value.getString();
+												hs_info.ipAddress=eph_value.getString();
 											}
 											else if(eph_name == MAC_ADDRESS)
 											{
 												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_HOSTSTACK,MAC_ADDRESS,eph_value.getString().c_str());
-												macAddress=eph_value.getString();
+												hs_info.macAddress=eph_value.getString();
 											}
 											else
 											{
@@ -1080,17 +1082,14 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											}
 										}
 
-										if(configuration==NONE)
+										if(hs_info.configuration==NONE)
 										{
 											string error = string("Keywork ") + CONFIGURATION + " must be present inside " + EP_HOSTSTACK;
 											ULOG_WARN(error.c_str());
 											throw new GraphParserException(std::move(error));
 										}
-										highlevel::EndPointHostStack ep_hs(id, e_name, configuration, ipAddress, macAddress);
-										if(endpointPosition!=NULL)
-											ep_hs.setPosition(endpointPosition);
-										graph.addEndPointHostStack(ep_hs);
-										hostStack_id.push_back(id);
+
+										hoststack_id[id]=hs_info;
 									}
 									else if(ep_name == POSITION)
 									{
@@ -1160,7 +1159,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									graph.addEndPointVlan(ep_vlan);
 									e_vlan = false;
 								}
-									//Add gre-tunnel end-points
+								//Add gre-tunnel end-points
 								else if(e_gre)
 								{
 									gre_info_t gre_info = gre_id[id];
@@ -1169,6 +1168,16 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 										ep_gre.setPosition(endpointPosition);
 									graph.addEndPointGre(ep_gre);
 									e_gre = false;
+								}
+								//Add hoststack end-points
+								else if(e_hs)
+								{
+									hoststack_info_t hoststack_info = hoststack_id[id];
+									highlevel::EndPointHostStack ep_hs(id, e_name, hoststack_info.configuration, hoststack_info.ipAddress, hoststack_info.macAddress);
+									if(endpointPosition!=NULL)
+										ep_hs.setPosition(endpointPosition);
+									graph.addEndPointHostStack(ep_hs);
+									e_hs = false;
 								}
 
 							}//End iteration on the endpoints
@@ -1273,7 +1282,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									{
 										try{
 											foundMatch = true;
-											MatchParser::parseMatch(fr_value.getObject(),match,(*action),iface_id,internal_id,vlan_id,gre_id,hostStack_id,trusted_ports,trusted_ports_mac_addresses);
+											MatchParser::parseMatch(fr_value.getObject(),match,(*action),iface_id,internal_id,vlan_id,gre_id,hoststack_id,trusted_ports,trusted_ports_mac_addresses);
 										} catch(std::exception& e)
 										{
 											string error = string("The ") + MATCH + " element does not respect the JSON syntax: " + e.what();
@@ -1433,8 +1442,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																map<string,string>::iterator it1 = internal_id.find(epID);
 																map<string,pair<string,string> >::iterator it2 = vlan_id.find(epID);
 																map<string,gre_info_t>::iterator it3 = gre_id.find(epID);
-																list<string>::iterator it4 = hostStack_id.begin();
-																for(;*(it4)!=epID && it4!=hostStack_id.end();it4++);
+																map<string,hoststack_info_t>::iterator it4 = hoststack_id.find(epID);
 
 																if(it != iface_id.end())
 																{
@@ -1458,7 +1466,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																	//gre
 																	gre_found = true;
 																}
-																else if(it4 != hostStack_id.end())
+																else if(it4 != hoststack_id.end())
 																{
 																	hostStack_found = true;
 																}
