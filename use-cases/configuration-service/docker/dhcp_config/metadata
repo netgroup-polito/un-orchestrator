@@ -1,0 +1,3 @@
+vnf-name = dhcp
+tenant-id = 123
+vnf-id = 12

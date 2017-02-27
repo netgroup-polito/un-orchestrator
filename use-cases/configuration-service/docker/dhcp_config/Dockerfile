@@ -74,6 +74,16 @@ ADD ./configuration_agent configuration_agent
 RUN echo "configuration_interface='eth0'" > ./configuration_agent/dhcp_server_config/constants.py
 RUN echo "# Configuration Agent - configuration file \ndealer = 'tcp://10.0.0.2:5555' \nkeyfile = '/etc/doubledecker/a-keys.json' " > ./configuration_agent/constants.py
 
+#########################
+#
+# DATADISK EMULATION
+#
+#########################
+
+RUN mkdir datadisk
+ADD ./metadata datadisk/metadata
+chmod 777 datadisk/metadata
+
 #########################################################################
 #									#
 #			Script boot					#
