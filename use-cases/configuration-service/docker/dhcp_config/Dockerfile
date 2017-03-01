@@ -12,14 +12,10 @@ RUN apt-get update && apt-get install -y dnsmasq ssh iptraf
 
 #Prepare the ssh server
 
-RUN mkdir -p /var/run/sshd && \
-	mkdir -p /root/.ssh && \
-	echo 'root:root' | chpasswd
+RUN mkdir -p /var/run/sshd && mkdir -p /root/.ssh && echo 'root:root' | chpasswd
 	
 RUN echo "UseDNS no" >> /etc/ssh/sshd_config
-RUN sed '/PermitRootLogin without-password/d' /etc/ssh/sshd_config > tmp_file && \
-	rm /etc/ssh/sshd_config && \
-	mv tmp_file /etc/ssh/sshd_config
+RUN sed '/PermitRootLogin without-password/d' /etc/ssh/sshd_config > tmp_file && rm /etc/ssh/sshd_config && mv tmp_file /etc/ssh/sshd_config
 
 RUN apt-get install -y isc-dhcp-server
 ADD sysctl.conf /etc/sysctl.conf
@@ -82,7 +78,7 @@ RUN echo "# Configuration Agent - configuration file \ndealer = 'tcp://10.0.0.2:
 
 RUN mkdir datadisk
 ADD ./metadata datadisk/metadata
-chmod 777 datadisk/metadata
+RUN chmod 777 datadisk/metadata
 
 #########################################################################
 #									#

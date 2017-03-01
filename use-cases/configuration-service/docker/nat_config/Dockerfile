@@ -67,7 +67,7 @@ RUN echo "# Configuration Agent - configuration file \ndealer = 'tcp://10.0.0.2:
 
 RUN mkdir datadisk
 ADD ./metadata datadisk/metadata
-chmod 777 datadisk/metadata
+RUN chmod 777 datadisk/metadata
 
 #########################################################################
 #									#
