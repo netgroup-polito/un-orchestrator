@@ -264,10 +264,12 @@ class Nat(object):
         reload(iptc)
         table = iptc.Table(iptc.Table.NAT)
         try:
+            wan_interface = None
             for rule in table.chains[prerouting_index].rules:
                 if rule.out_interface is not None and rule.target.standard_target == 'MASQUERADE':
                     wan_interface = rule.out_interface
-        except:
+        except Exception as e:
+            logging.debug("Error reading nat table...\n" + str(e))
             wan_interface = None
         return wan_interface
 
