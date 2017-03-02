@@ -1,0 +1,3 @@
+vnf-name = nat
+tenant-id = 123
+vnf-id = 11

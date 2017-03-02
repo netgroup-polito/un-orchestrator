@@ -40,7 +40,7 @@ class Nat(object):
     def __init__(self):
         self.interfaces = []
         self.json_instance = {self.yang_module_name+':'+'interfaces': {'ifEntry': []},
-                              self.yang_module_name + ':' + 'parameters': []}
+                              self.yang_module_name + ':' + 'staticBindings': {'floatingIP': []}}
         self.if_entries = self.json_instance[self.yang_module_name+':'+'interfaces']['ifEntry']
         self.yang_model = self.get_yang()
         self.mac_address = utils.get_mac_address(constants.configuration_interface)
