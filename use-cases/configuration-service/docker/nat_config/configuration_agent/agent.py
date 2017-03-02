@@ -110,15 +110,15 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         super().config(name, dealerURL, customer)
 
     def on_data(self, dest, msg):
-        if not self.publishable:
-            self.publishable = True
-
         msg = msg.decode()
         logging.debug("msg received: " + msg + " expected " + "REGISTERED " + self.tenant_id + '.' + self.vnf_id)
         if msg == "REGISTERED " + self.tenant_id + '.' + self.vnf_id:
             self.is_registered_to_cs = True
             self.registered_to_cs.set()
             return
+
+        if not self.publishable:
+            self.publishable = True
         logging.debug('configuring json: '+msg)
         # Validate json
         exit_code, output = utils.validate_json(msg, self.vnf.yang_model)
@@ -159,4 +159,4 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         super().start()
 
     def on_error(self, code, msg):
-        logging.debug(code + ": " + str(msg))
+        logging.debug(str(code) + ": " + str(msg))

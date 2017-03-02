@@ -25,14 +25,38 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         self.tenant_id = None
         self.vnf_name = None
         self.vnf_id = None
+        '''
+        the VNF has to start publishing a status only after receiving a configuration. Otherwise the VNF would export a potentially incoherent state
+        because you can't know which state the VNF has when it starts
+        '''
         self.publishable = False
+        '''
+        last_published_status: you have to publish a status ONLY if the state is actually changed in respect of the last one published.
+        In order to do this you have to compare the last published status with the one you want to publish
+        '''
+        self.last_published_status = None
+        '''
+        is_registered_to_cs is a flag notifying if the agent is already registered to the configuration service
+        Only after such a registration the agent can start exporting its status
+        Registered_to_cs is a condition variable which awakes when the registration with the cs is successfull
+        '''
         self.is_registered_to_cs = False
+        self.registered_to_cs = Event()
+        '''
+        is_registered_to_dd is a flag notifying if the agent is already registered to the message broker
+        Only after such a registration the agent can ask for the configuration service registration
+        registered_to_dd is a condition variable which awakes when the registration with the broker is successfull
+        '''
         self.is_registered_to_dd = False
         self.registered_to_dd = Event()
-        self.registered_to_cs = Event()
-        self.last_published_status = None
+
+        '''
+        datadisk_path contains the path where an external volume is attached to the VNF.
+        Inside such a module you can find a metadata file containing some information about the VNF
+        '''
         self.datadisk_path = "/datadisk"
         self.metadata_file = self.datadisk_path + "/metadata"
+
         self.vnf = vnf
 
         assert os.path.isdir(self.datadisk_path) is True, "datadisk not mounted onto the VNF"
@@ -41,6 +65,12 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         self.start_agent()
 
     def read_data_disk(self, ds_metadata):
+        """
+        It reads the volume attached to the VNF (datadisk) and looks for the information the VNF needs
+        It excpects to find a metadata file describing the VNF's name, ID and tenant ID
+        :param ds_metadata:
+        :return:
+        """
         try:
             metadata = open(ds_metadata, "r")
             for line in metadata.readlines():
@@ -74,6 +104,10 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         return thread
 
     def start_agent(self):
+        """
+        Agent core method. It manages the registrion both to the message broker and to the configuration service
+        :return:
+        """
         self.registered_to_dd.clear()
         self.registered_to_cs.clear()
 
@@ -93,7 +127,7 @@ class ConfigurationAgent(clientSafe.ClientSafe):
                     self.vnf_registration()
         logging.debug("Registration successful")
         while True:
-            # Export the status every 15 seconds
+            # Export the status every 3 seconds
             time.sleep(3)
             self.publish_status()
         thread.join()
@@ -110,15 +144,15 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         super().config(name, dealerURL, customer)
 
     def on_data(self, dest, msg):
-        if not self.publishable:
-            self.publishable = True
-
         msg = msg.decode()
         logging.debug("msg received: " + msg + " expected " + "REGISTERED " + self.tenant_id + '.' + self.vnf_id)
         if msg == "REGISTERED " + self.tenant_id + '.' + self.vnf_id:
             self.is_registered_to_cs = True
             self.registered_to_cs.set()
             return
+
+        if not self.publishable:
+            self.publishable = True
         logging.debug('configuring json: '+msg)
         # Validate json
         exit_code, output = utils.validate_json(msg, self.vnf.yang_model)
@@ -159,4 +193,4 @@ class ConfigurationAgent(clientSafe.ClientSafe):
         super().start()
         
     def on_error(self, code, msg):
-        logging.debug(code + ": " + str(msg))
+        logging.debug(str(code) + ": " + str(msg))
