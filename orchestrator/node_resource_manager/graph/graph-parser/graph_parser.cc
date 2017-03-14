@@ -302,7 +302,6 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									{
 										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNFS,VNF_TEMPLATE,nf_value.getString().c_str());
 										vnf_template = nf_value.getString();
-										ULOG_WARN("Key \"%s\" found. It is ignored in the current implementation of the %s",VNF_TEMPLATE,MODULE_NAME);
 									}
 									else if(nf_name == _ID)
 									{
