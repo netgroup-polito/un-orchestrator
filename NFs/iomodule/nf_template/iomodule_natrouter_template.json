@@ -1,0 +1,31 @@
+{
+  "CPUrequirements": {
+    "platformType": "x86",
+    "socket": [
+      {
+        "coreNumbers": 1
+      }
+    ]
+  },
+  "memory-size": 2048,
+  "name": "natrouter",
+  "functional-capability": "natrouter",
+  "ephemeral-file-system-size": 0,
+  "vnf-type": "iomodule",
+  "uri": "/home/NFimages/iomoduleNatRouter.tar.gz",
+  "swap-disk-size": 0,
+  "uri-type": "local-file",
+  "expandable": false,
+  "ports": [
+    {
+      "name": "eth",
+      "min": "2",
+      "label": "In",
+      "ipv4-config": "none",
+      "position": "0-2",
+      "technology": "vhost",
+      "ipv6-config": "none"
+    }
+  ],
+  "root-file-system-size": 40
+}
