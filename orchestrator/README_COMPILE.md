@@ -212,6 +212,13 @@ Here there are the required steps:
 In order to run VNFs implemented as DPDK processes, no further operations are required,
 since the DPDK library has already been installed together with the vSwitch.
 
+### Iomodule
+
+In order to support the Docker execution environment, follow the instructions
+provided here:
+
+	https://github.com/iovisor/iovisor-ovn/blob/master/README_STANDALONE.md#how-to-use
+
 ## Compile the un-orchestrator
 
 We are now ready to compile the un-orchestrator. 
