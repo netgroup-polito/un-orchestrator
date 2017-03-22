@@ -15,7 +15,7 @@ modules:
   - name: modulename
     type: moduletype
     config:
-      # module configuration
+      module configuration
 
 # links between modules
 links:
