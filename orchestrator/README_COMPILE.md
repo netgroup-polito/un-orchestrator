@@ -214,7 +214,7 @@ since the DPDK library has already been installed together with the vSwitch.
 
 ### Iomodule
 
-In order to support the Docker execution environment, follow the instructions
+In order to use iomodule to deploy network functions, follow the instructions
 provided here:
 
 	https://github.com/iovisor/iovisor-ovn/blob/master/README_STANDALONE.md#how-to-use
