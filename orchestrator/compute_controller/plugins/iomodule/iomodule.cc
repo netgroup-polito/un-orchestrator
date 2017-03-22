@@ -14,7 +14,7 @@ bool IOmodule::isSupported(Description&)
 
 	if(retVal == 0)
 	{
-		ULOG_DBG_INFO("One or more constraints to run iomodule are not satisfied");
+		ULOG_WARNING("One or more constraints to run iomodule are not satisfied");
 		return false;
 	}	
 
@@ -48,7 +48,7 @@ bool IOmodule::updateNF(UpdateNFIn uni)
 		return false;
 	*/
 	
-	ULOG_DBG_INFO("For now is impossible to update a NF implemented by iomodule");
+	ULOG_WARNING("For now is impossible to update a NF implemented by iomodule");
 	return false;
 }
 

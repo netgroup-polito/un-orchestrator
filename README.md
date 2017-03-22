@@ -94,12 +94,12 @@ file [compute_controller/README.md](compute_controller/README.md).
 The following table shows the execution environments that
 are supported with the different vSwitches.
 
-|                            |   Docker      |    KVM   |   KVM-DPDK (ivshmem)   |     DPDK processes     |  Native   |
-|----------------------------|---------------|----------|------------------------|------------------------|-----------|
-| **xDPd-DPDK**              |    **Yes***   | **Yes*** |          No            |         **Yes**        | **Yes**   |
-| **OvS (OVSDB / OFconfig)** |    **Yes**    | **Yes**  | No (requires OvS-DPDK) | No (requires OvS-DPDK) | **Yes**   |
-| **OvS-DPDK**               |    **Yes***   | **Yes**  |        **Yes**         |         **Yes**        | **Yes***  |
-| **ERFS**                   |    **Yes***   | **No**   |        **Yes**         |         **Yes**        | **No**    |
+|                            |   Docker      |    KVM   |   KVM-DPDK (ivshmem)   |     DPDK processes     |  Native   | Iomodule |
+|----------------------------|---------------|----------|------------------------|------------------------|-----------|----------|
+| **xDPd-DPDK**              |    **Yes***   | **Yes*** |          No            |         **Yes**        | **Yes**   | **No**   |
+| **OvS (OVSDB / OFconfig)** |    **Yes**    | **Yes**  | No (requires OvS-DPDK) | No (requires OvS-DPDK) | **Yes**   | **Yes**  |
+| **OvS-DPDK**               |    **Yes***   | **Yes**  |        **Yes**         |         **Yes**        | **Yes***  | **No**   | 		
+| **ERFS**                   |    **Yes***   | **No**   |        **Yes**         |         **Yes**        | **No**    | **No**   |
 
 \* In this case the packet exchange between the virtual switch and the execution
 environment is not optimized.
