@@ -10,6 +10,7 @@ All the file must be inserted in a tar.gz archive.
 ## Yaml file
 The yaml file is composed of three sections: modules, links and external_interfaces:
 
+```
 # list of modules to be deployed
 modules:
   - name: modulename
@@ -26,6 +27,7 @@ links:
 external_interfaces:
   - module: moduleName
     iface: interface name
+```
 
 1. **modules**: This section contains the modules to be deployed.
 The name and type are mandatory, while the configuration is optional and different for each kind of iomodules.

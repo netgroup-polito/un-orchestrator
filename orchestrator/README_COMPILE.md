@@ -212,6 +212,13 @@ Here there are the required steps:
 In order to run VNFs implemented as DPDK processes, no further operations are required,
 since the DPDK library has already been installed together with the vSwitch.
 
+### Iomodule
+
+In order to use iomodule to deploy network functions, follow the instructions
+provided here:
+
+	https://github.com/iovisor/iovisor-ovn/blob/master/README_STANDALONE.md
+
 ## Compile the un-orchestrator
 
 We are now ready to compile the un-orchestrator. 
