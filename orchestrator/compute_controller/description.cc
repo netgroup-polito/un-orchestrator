@@ -116,6 +116,11 @@ nf_t stringToVnfType(const std::string& type){
         return NATIVE;
     }
 
+	else if(!type.compare("iomodule"))
+    {
+        return IOMODULE;
+    }	
+	
 	return UNDEFINED;
 
 
@@ -162,6 +167,10 @@ string vnfTypeToString(nf_t type)
 #ifdef ENABLE_NATIVE
 	if(type == NATIVE)
 			return string("native");
+#endif
+#ifdef ENABLE_IOMODULE
+	if(type == IOMODULE)
+			return string("iomodule");
 #endif
 
 	//[+] Add here other implementations for the execution environment

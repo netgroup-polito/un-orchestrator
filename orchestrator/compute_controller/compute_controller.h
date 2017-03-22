@@ -38,6 +38,9 @@
 #ifdef ENABLE_NATIVE
 	#include "plugins/native/native.h"
 #endif
+#ifdef ENABLE_IOMODULE
+	#include "plugins/iomodule/iomodule.h"
+#endif
 //[+] Add here other implementations for the execution environment
 
 using namespace std;

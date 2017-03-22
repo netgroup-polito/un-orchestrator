@@ -231,6 +231,22 @@ void ComputeController::checkSupportedDescriptions() {
 				}
 					break;
 #endif
+
+#ifdef ENABLE_IOMODULE
+					//Manage IOMODULE execution environment
+				case IOMODULE:
+				{
+					NFsManager *iomoduleManager = new IOmodule();
+					if(iomoduleManager->isSupported(**descr)){ //segmentation fault
+						(*descr)->setSupported(true);
+						ULOG_DBG_INFO("Iomodule description of NF \"%s\" is supported.",(current->getName()).c_str());
+					} else {
+						ULOG_DBG_INFO("Iomodule description of NF \"%s\" is not supported.",(current->getName()).c_str());
+					}
+					delete iomoduleManager;
+				}
+					break;
+#endif
 					//[+] Add here other implementations for the execution environment
 
 				default:
@@ -334,6 +350,28 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 					}
 				Description *descr = new Description(*temp, port_technologies);
 				possibleDescriptions.push_back(descr);
+#endif
+		}
+		
+		if ((*temp)->getVnfType() == IOMODULE) {
+#ifdef ENABLE_IOMODULE
+			for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
+					int begin, end;
+					port->splitPortsRangeInInt(begin, end);
+					if(end != -1){
+						for(int i = begin;i<=end;i++){
+							//In case of native function, the port type is fixed
+							port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, VETH_PORT));
+						}
+						number_of_ports -= (end-begin)+1;
+					}
+					else //case UNBOUNDED
+						for(int i = begin;i<=number_of_ports;i++){
+							//In case of native function, the port type is fixed
+							port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, VETH_PORT));
+						}
+			}
+			possibleDescriptions.push_back(new Description(*temp,port_technologies));
 #endif
 		}
 		//[+] insert other implementations
@@ -507,6 +545,28 @@ NFsManager* ComputeController::selectNFImplementation(list<Description*> descrip
 					ULOG_DBG_INFO("exception %s has been thrown", e.what());
 					delete nativeManager;
 				}
+			}
+				break;
+#endif
+
+#ifdef ENABLE_IOMODULE
+				//Manage IOMODULE execution environment
+			case IOMODULE:
+			{
+				NFsManager *iomoduleManager = new IOmodule();
+				iomoduleManager->setDescription(*descr);
+				
+				selected = true;
+				ULOG_DBG_INFO("Iomodule description has been selected.");
+				if((*descr)->getTemplate()->getURIType() == REMOTE_FILE){
+						downloadSuccess = downloadImage(*descr,Configuration::instance()->getVnfImagesPath());
+						assert(downloadSuccess);
+						if(!downloadSuccess){
+							ULOG_ERR("Download failed!");
+							return NULL;
+						}
+				}
+				return iomoduleManager;
 			}
 				break;
 #endif

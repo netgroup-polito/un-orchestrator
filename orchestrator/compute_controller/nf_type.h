@@ -5,6 +5,7 @@ typedef enum{
 	DOCKER,
 	KVM,
 	NATIVE,
+	IOMODULE,
 	UNDEFINED
 	//[+] Add here other implementations for the execution environment
 }nf_t;

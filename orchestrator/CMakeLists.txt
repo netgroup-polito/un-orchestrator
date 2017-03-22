@@ -139,6 +139,14 @@ IF(ENABLE_NATIVE)
 	ADD_DEFINITIONS(-DENABLE_NATIVE)
 ENDIF(ENABLE_NATIVE)
 
+OPTION(
+	ENABLE_IOMODULE
+	"Turn on the support of NFs implemented in iomodule form"
+	OFF
+)
+IF(ENABLE_IOMODULE)
+	ADD_DEFINITIONS(-DENABLE_IOMODULE)
+ENDIF(ENABLE_IOMODULE)
 
 OPTION(ENABLE_DPDK_PROCESSES
 	"Turn on the support of NFs implemented in as DPDK processes"
@@ -439,28 +447,41 @@ ELSE()
     	)
 ENDIF(ENABLE_NATIVE)
 
-IF(ENABLE_DOUBLE_DECKER_CONNECTION)
-	SET(SOURCES7
+IF(ENABLE_IOMODULE)
+    SET(SOURCES7
     ${SOURCES6}
+	compute_controller/plugins/iomodule/iomodule.cc
+	compute_controller/plugins/iomodule/iomodule.h
+	compute_controller/plugins/iomodule/iomodule_constants.h
+	)
+ELSE()
+     SET(SOURCES7
+         ${SOURCES6}
+    	)
+ENDIF(ENABLE_IOMODULE)
+
+IF(ENABLE_DOUBLE_DECKER_CONNECTION)
+	SET(SOURCES8
+    ${SOURCES7}
     node_resource_manager/pub_sub/pub_sub_constants.h
     node_resource_manager/pub_sub/pub_sub.h
     node_resource_manager/pub_sub/pub_sub.cc
     )
 ELSE()
-	SET(SOURCES7
-    	${SOURCES6}
+	SET(SOURCES8
+    	${SOURCES7}
     )
 ENDIF(ENABLE_DOUBLE_DECKER_CONNECTION)
 
 IF(ENABLE_RESOURCE_MANAGER)
-	SET(SOURCES8
-    ${SOURCES7}
+	SET(SOURCES9
+    ${SOURCES8}
     node_resource_manager/resource_manager/resource_manager.h
     node_resource_manager/resource_manager/resource_manager.cc
     )
 ELSE()
-	SET(SOURCES8
-		${SOURCES7}
+	SET(SOURCES9
+		${SOURCES8}
     )
 ENDIF(ENABLE_RESOURCE_MANAGER)
 
@@ -479,7 +500,7 @@ LINK_DIRECTORIES(
 # Create the executable
 ADD_EXECUTABLE(
 	node-orchestrator
-	${SOURCES8}
+	${SOURCES9}
 )
 
 IF(BUILD_ExternalProjects)
@@ -561,10 +582,10 @@ IF(ENABLE_DPDK_PROCESSES AND ( ${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2) )
 	message(FATAL_ERROR "OvS not supported with Dpdk processes")
 ENDIF(ENABLE_DPDK_PROCESSES AND ( ${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2) )
 
-IF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) AND (NOT ENABLE_KVM) )
+IF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) AND (NOT ENABLE_KVM) AND (NOT ENABLE_IOMODULE) )
 	#No execution environment is selected
 	message(FATAL_ERROR "At least one execution environmnet must be enabled")
-ENDIF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) AND (NOT ENABLE_KVM) )
+ENDIF( (NOT ENABLE_DOCKER) AND (NOT ENABLE_NATIVE) AND (NOT ENABLE_DPDK_PROCESSES) AND (NOT ENABLE_KVM) AND (NOT ENABLE_IOMODULE) )
 
 ###############################################################################
 

@@ -395,6 +395,9 @@ ULOG_INFO( "************************************");
 #ifdef ENABLE_NATIVE
 	executionenvironment.push_back("native functions");
 #endif
+#ifdef ENABLE_IOMODULE
+	executionenvironment.push_back("iomodule");
+#endif
 	ULOG_INFO( "* Execution environments supported:");
 	for(list<string>::iterator ee = executionenvironment.begin(); ee != executionenvironment.end(); ee++)
 		ULOG_INFO( "* \t'%s'",ee->c_str());
