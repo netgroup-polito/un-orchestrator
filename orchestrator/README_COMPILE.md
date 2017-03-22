@@ -217,7 +217,7 @@ since the DPDK library has already been installed together with the vSwitch.
 In order to use iomodule to deploy network functions, follow the instructions
 provided here:
 
-	https://github.com/iovisor/iovisor-ovn/blob/master/README_STANDALONE.md#how-to-use
+	https://github.com/iovisor/iovisor-ovn/blob/master/README_STANDALONE.md
 
 ## Compile the un-orchestrator
 
