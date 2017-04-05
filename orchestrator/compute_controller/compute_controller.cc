@@ -49,6 +49,83 @@ string ComputeController::buildUrl(highlevel::VNFs vnfDescription) {
 	return tmp.str();
 }
 
+list<string> ComputeController::retrieveFileList(string tenant_id, string graph_id, string vnf_id)
+{
+    string ip = Configuration::instance()->getConfigServiceIp().c_str();
+    int port = Configuration::instance()->getConfigServicePort();
+    string endpoint = "http://" + ip + ":" + to_string(port) + "/";
+
+    string uri = endpoint + "config/file/"+tenant_id+"/"+graph_id+"/"+vnf_id+"/";
+    http_response response;
+    try{
+        //ULOG_DBG_INFO("retriveFileList, perform get to uri:  %s", uri.c_str());
+        http_client client(U(uri));
+        response = client.request(methods::GET).get();
+    }catch(const std::exception &e)
+    {
+        throw;
+    }
+    list<string> fileList;
+    if(response.status_code() == status_codes::OK){
+        const json::value& json_resp = response.extract_json().get();
+        for(auto iter = json_resp.as_array().begin(); iter != json_resp.as_array().end(); ++iter){
+            string filename = (*iter).as_string();
+            fileList.push_back(filename);
+        }
+    }
+    return fileList;
+}
+
+string ComputeController::retrieveFile(string tenant_id, string graph_id, string vnf_id, string filename, string dst_path){
+
+    string ip = Configuration::instance()->getConfigServiceIp().c_str();
+    int port = Configuration::instance()->getConfigServicePort();
+    string endpoint = "http://" + ip + ":" + to_string(port) + "/";
+
+    string path_file = dst_path+"/"+filename;
+    string uri = endpoint + "config/file/"+tenant_id+"/"+graph_id+"/"+vnf_id+"/"+filename+"/";
+
+    auto fileStream = std::make_shared<concurrency::streams::ostream>();
+
+    // Open stream to output file.
+    pplx::task<void> requestTask = concurrency::streams::fstream::open_ostream(path_file).then([=](concurrency::streams::ostream outFile)
+    {
+        *fileStream = outFile;
+
+        // Create http_client to send the request.
+        http_client client(uri);
+        //ULOG_DBG_INFO("retriveFile, perform get to uri:  %s", uri.c_str());
+        return client.request(methods::GET);
+    })
+    // Handle response headers arriving.
+    .then([=](http_response response)
+    {
+        if(response.status_code() == status_codes::OK){
+            // Write response body into the file.
+            return response.body().read_to_end(fileStream->streambuf());
+        }
+        else
+            throw runtime_error("Received response status code: " + to_string(response.status_code()));
+    })
+    // Close the file stream.
+    .then([=](size_t)
+    {
+        return fileStream->close();
+
+    });
+
+    // Wait for all the outstanding I/O to complete and handle any exceptions
+    try
+    {
+        requestTask.wait();
+        return path_file;
+    }
+    catch (const std::exception &e)
+    {
+        throw;
+    }
+}
+
 nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescription)
 {
 
@@ -262,7 +339,7 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 					number_of_ports -= (end-begin)+1;
 				}
 				else
-					for(int i = begin;i<=number_of_ports;i++){  //case UNBOUNDED
+					for(int i = begin; i <= number_of_ports; i++){  //case UNBOUNDED
 						//In case of DPDK process, the port type is fixed
 						port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, DPDKR_PORT));
 					}
@@ -282,7 +359,7 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 						number_of_ports -= (end-begin)+1;
 					}
 					else //case UNBOUNDED
-						for(int i = begin;i<=number_of_ports;i++){
+						for(int i = begin; i <= number_of_ports; i++){
 							//In case of native function, the port type is fixed
 							port_technologies.insert(map<unsigned int, PortTechnology>::value_type(i, VETH_PORT));
 						}
@@ -304,7 +381,7 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 						number_of_ports -= (end-begin)+1;
 					}
 					else {//case UNBOUNDED
-						for (int i = begin; i <= number_of_ports; i++) {
+						for (int i = begin; i <= number_of_ports ; i++) {
 							//In case of docker, the port type is fixed
 							port_technologies.insert(map<unsigned int, PortTechnology> ::value_type(i, VETH_PORT));
 						}
@@ -328,7 +405,7 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 						number_of_ports -= (end-begin) +1;
 					}
 					else
-						for (int i = begin; i <= number_of_ports; i++) {
+						for (int i = begin; i <= number_of_ports ; i++) {
 							port_technologies.insert(map <unsigned int, PortTechnology> ::value_type(i, port->getTechnology()));
 						}
 					}
@@ -635,9 +712,21 @@ bool ComputeController::startNF(string nf_id, map<unsigned int, string> namesOfP
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	, list<port_mapping_t > controlConfiguration, list<string> environmentVariables
 #endif
+    ,string dir_to_mount, string dst_path
 	)
 {
 	ULOG_INFO("Starting the NF with id \"%s\"", nf_id.c_str());
+
+	if(dir_to_mount=="" && dst_path==""){
+	    dir_to_mount = "None";
+	    dst_path = "None";
+	}
+	else{
+	    ULOG_DBG_INFO("\tThere is a datadisk to mount");
+	    ULOG_DBG_INFO("\tHost dir to mount: %s", dir_to_mount.c_str());
+	    ULOG_DBG_INFO("\tDestination path: %s", dst_path.c_str());
+	}
+
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	if(!controlConfiguration.empty())
 	{
@@ -684,10 +773,11 @@ bool ComputeController::startNF(string nf_id, map<unsigned int, string> namesOfP
 	NF *nf = nfs[nf_id];
 	NFsManager *nfsManager = nf->getSelectedDescription();
 
-	StartNFIn sni(lsiID, nf_id, namesOfPortsOnTheSwitch, portsConfiguration,
+	StartNFIn sni(lsiID, nf_id, namesOfPortsOnTheSwitch, portsConfiguration, dir_to_mount, dst_path,
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		controlConfiguration, environmentVariables,
 #endif
+
 		calculateCoreMask(nfsManager->getCores()));
 
 	if(!nfsManager->startNF(sni))
