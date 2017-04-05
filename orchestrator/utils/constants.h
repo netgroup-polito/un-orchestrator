@@ -26,10 +26,10 @@
 /*
 *	Rest methods
 */
-#define PUT					"PUT"
-#define GET					"GET"
-#define DELETE				"DELETE"
-#define POST				"POST"
+#define _PUT				"PUT"
+#define _GET				"GET"
+#define _DELETE				"DELETE"
+#define _POST				"POST"
 
 /*
 *	HTTP headers

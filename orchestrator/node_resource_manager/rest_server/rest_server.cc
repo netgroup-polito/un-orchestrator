@@ -69,7 +69,7 @@ bool RestServer::isLoginRequest(const char *method, const char *url) {
 	 * Checking method name and url is enough because the REST server
 	 * already verifies that the request is well-formed.
 	 */
-	return (strcmp(method, POST) == 0 && url[0] == '/'
+	return (strcmp(method, _POST) == 0 && url[0] == '/'
 			&& strncmp(url + sizeof(char), BASE_URL_LOGIN,
 					sizeof(char) * strlen(BASE_URL_LOGIN)) == 0);
 }
@@ -110,11 +110,11 @@ int RestServer::answer_to_connection(void *cls,
 		if (NULL == con_info)
 			return MHD_NO;
 
-		if ((0 == strcmp(method, PUT)) || (0 == strcmp(method, POST))
-				|| (0 == strcmp(method, DELETE))) {
+		if ((0 == strcmp(method, _PUT)) || (0 == strcmp(method, _POST))
+				|| (0 == strcmp(method, _DELETE))) {
 			con_info->message = (char*) malloc(REQ_SIZE * sizeof(char));
 			con_info->length = 0;
-		} else if (0 == strcmp(method, GET))
+		} else if (0 == strcmp(method, _GET))
 			con_info->length = 0;
 		else {
 			con_info->message = (char*) malloc(REQ_SIZE * sizeof(char));
@@ -127,11 +127,11 @@ int RestServer::answer_to_connection(void *cls,
 
 	// Process request
 
-	if (0 == strcmp(method, GET))
-		return doOperation(connection, con_cls, GET, url);
+	if (0 == strcmp(method, _GET))
+		return doOperation(connection, con_cls, _GET, url);
 
-	if ((0 == strcmp(method, PUT)) || (0 == strcmp(method, POST))
-			|| (0 == strcmp(method, DELETE))) {
+	if ((0 == strcmp(method, _PUT)) || (0 == strcmp(method, _POST))
+			|| (0 == strcmp(method, _DELETE))) {
 
 		struct connection_info_struct *con_info =
 				(struct connection_info_struct *) (*con_cls);
@@ -144,12 +144,12 @@ int RestServer::answer_to_connection(void *cls,
 
 		} else if (NULL != con_info->message) {
 			con_info->message[con_info->length] = '\0';
-			if (0 == strcmp(method, PUT))
-				return doOperation(connection, con_cls, PUT, url);
-			else if (0 == strcmp(method, POST))
-				return doOperation(connection, con_cls, POST, url);
+			if (0 == strcmp(method, _PUT))
+				return doOperation(connection, con_cls, _PUT, url);
+			else if (0 == strcmp(method, _POST))
+				return doOperation(connection, con_cls, _POST, url);
 			else
-				return doOperation(connection, con_cls, DELETE, url);
+				return doOperation(connection, con_cls, _DELETE, url);
 		}
 	} else {
 		// Methods not implemented
@@ -521,7 +521,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 		return httpResponse(connection, MHD_HTTP_NOT_FOUND);
 	}
 
-	if(strcmp(method, GET) == 0) {
+	if(strcmp(method, _GET) == 0) {
 		// If security is required, check READ permission on the generic resource
 		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _READ, generic_resource)) {
 			ULOG_INFO("User not authorized to execute %s \"%s\"", method, generic_resource);
@@ -539,13 +539,13 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 			return readConfiguration(connection);
 
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
-	} else if(strcmp(method, PUT) == 0) {
+	} else if(strcmp(method, _PUT) == 0) {
 		ULOG_INFO("There are no operations using PUT with generic resources");
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
-	} else if(strcmp(method, DELETE) == 0) {
+	} else if(strcmp(method, _DELETE) == 0) {
 		ULOG_INFO("There are no operations using DELETE with generic resources");
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
-	} else if(strcmp(method, POST) == 0) {
+	} else if(strcmp(method, _POST) == 0) {
 		ULOG_INFO("There are no operations using POST with generic resources");
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	}
@@ -560,7 +560,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct connection_info_struct *con_info, user_info_t *usr, const char *method, const char *generic_resource, const char *resource) {
 
 	// GET: can be only read... at the moment!
-	if(strcmp(method, GET) == 0) {
+	if(strcmp(method, _GET) == 0) {
 
 		// If security is required, check READ authorization
 		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _READ, generic_resource, resource)) {
@@ -575,7 +575,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 			return readUser(connection, (char *) resource);
 
 	// PUT: for single resource, it can be only creation... at the moment!
-	} else if(strcmp(method, PUT) == 0) {
+	} else if(strcmp(method, _PUT) == 0) {
 
 		// If security is required, check CREATE authorization
 		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _CREATE, generic_resource, resource)) {
@@ -588,10 +588,10 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 			return createGroup(connection, con_info, (char *) resource, usr);;
 
 	// DELETE: for single resource, it can be only deletion... at the moment!
-	} else if(strcmp(method, DELETE) == 0) {
+	} else if(strcmp(method, _DELETE) == 0) {
 
 		// Check authorization for deleting the single resource
-		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _DELETE, generic_resource, resource)) {
+		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _DELETE_, generic_resource, resource)) {
 			ULOG_ERR("User not authorized to execute %s on %s", method, resource);
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
@@ -603,7 +603,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 		else if(strcmp(generic_resource, BASE_URL_GROUP) == 0)
 			return deleteGroup(connection, (char *) resource);
 
-	} else if(strcmp(method, POST) == 0) {
+	} else if(strcmp(method, _POST) == 0) {
 
 		if(strcmp(generic_resource, BASE_URL_USER) == 0) {
 			// Check authorization
@@ -624,7 +624,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct connection_info_struct *con_info, user_info_t *usr, const char *method, const char *generic_resource, const char *resource, const char *extra_info) {
 
 	// GET: can be only read... at the moment!
-	if(strcmp(method, GET) == 0) {
+	if(strcmp(method, _GET) == 0) {
 
 		// If security is required, check READ authorization
 		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _READ, generic_resource, resource)) {
@@ -638,7 +638,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 
 	}
 	// PUT, POST, DELETE: currently not supported
-	else if(strcmp(method, POST) == 0) {
+	else if(strcmp(method, _POST) == 0) {
 		ULOG_ERR("Error: POST on /%s/%s/%s not implemented!", generic_resource, resource, extra_info);
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	}
@@ -674,14 +674,14 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 	}
 
 	// HTTP body must be empty in GET and DELETE requests
-	if(strcmp(method, GET) == 0 || strcmp(method, DELETE) == 0) {
+	if(strcmp(method, _GET) == 0 || strcmp(method, _DELETE) == 0) {
 		if (con_info->length != 0) {
 			ULOG_INFO("%s with body is not allowed", method);
 			return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 		}
 
 	// PUT and POST requests must contain JSON data in their body
-	} else if(strcmp(method, PUT) == 0 || strcmp(method, POST) == 0) {
+	} else if(strcmp(method, _PUT) == 0 || strcmp(method, _POST) == 0) {
 		const char *c_type = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Content-Type");
 		if ((c_type == NULL) || (strncmp(c_type, JSON_C_TYPE, strlen(JSON_C_TYPE) != 0))) {
 			ULOG_INFO("Content-Type must be: \"%s\"",JSON_C_TYPE);
@@ -775,7 +775,7 @@ int RestServer::readGraph(struct MHD_Connection *connection, char *graphID)
 		ULOG_INFO("The required resource does not exist!");
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Allow", PUT);
+		MHD_add_response_header(response, "Allow", _PUT);
 		ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND,
 				response);
 		MHD_destroy_response(response);
@@ -815,7 +815,7 @@ int RestServer::readUser(struct MHD_Connection *connection, char *username) {
 		ULOG_INFO("Method GET is not supported for this resource (i.e. it does not exist)");
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Allow", PUT);
+		MHD_add_response_header(response, "Allow", _PUT);
 		ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED,
 				response);
 		MHD_destroy_response(response);
@@ -861,7 +861,7 @@ int RestServer::readMultipleGroups(struct MHD_Connection *connection, user_info_
 		ULOG_INFO("The generic resource %s does not exist in the local database", BASE_URL_GROUP);
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Allow", PUT);
+		MHD_add_response_header(response, "Allow", _PUT);
 		ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED,
 				response);
 		MHD_destroy_response(response);
@@ -917,7 +917,7 @@ int RestServer::readMultipleUsers(struct MHD_Connection *connection, user_info_t
 		ULOG_INFO("The generic resource %s does not exist in the local database", BASE_URL_GRAPH);
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Allow", PUT);
+		MHD_add_response_header(response, "Allow", _PUT);
 		ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED,
 				response);
 		MHD_destroy_response(response);
@@ -976,7 +976,7 @@ int RestServer::readMultipleGraphs(struct MHD_Connection *connection, user_info_
 		ULOG_INFO("The generic resource %s does not exist in the local database", BASE_URL_GRAPH);
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Allow", PUT);
+		MHD_add_response_header(response, "Allow", _PUT);
 		ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED,
 				response);
 		MHD_destroy_response(response);
@@ -1228,7 +1228,7 @@ int RestServer::deleteGraph(struct MHD_Connection *connection, char *resource) {
 	if(dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_GRAPH, resource)) {
 		ULOG_INFO("Cannot delete a non-existing graph in the database!");
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header (response, "Allow", PUT);
+		MHD_add_response_header (response, "Allow", _PUT);
 		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
 		MHD_destroy_response (response);
 		return ret;
@@ -1238,7 +1238,7 @@ int RestServer::deleteGraph(struct MHD_Connection *connection, char *resource) {
 	if (!gm->graphExists(resource)) {
 		ULOG_INFO("Cannot delete a non-existing graph in the manager!");
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header (response, "Allow", PUT);
+		MHD_add_response_header (response, "Allow", _PUT);
 		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
 		MHD_destroy_response (response);
 		return ret;
@@ -1278,7 +1278,7 @@ int RestServer::deleteGroup(struct MHD_Connection *connection, char *group) {
 	if(!dbmanager->resourceExists(BASE_URL_GROUP, group)) {
 		ULOG_INFO("Cannot delete a non-existing group in the database!");
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header (response, "Allow", PUT);
+		MHD_add_response_header (response, "Allow", _PUT);
 		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
 		MHD_destroy_response (response);
 		return ret;
@@ -1305,7 +1305,7 @@ int RestServer::deleteUser(struct MHD_Connection *connection, char *username) {
 	if(dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_USER, username)) {
 		ULOG_INFO("Cannot delete a non-existing user in the database!");
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header (response, "Allow", PUT);
+		MHD_add_response_header (response, "Allow", _PUT);
 		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
 		MHD_destroy_response (response);
 		return ret;

@@ -31,7 +31,7 @@ using namespace json_spirit;
 typedef enum {
 	_READ,
 	_UPDATE,
-	_DELETE,
+	_DELETE_,
 	_CREATE
 } opcode_t;
 
