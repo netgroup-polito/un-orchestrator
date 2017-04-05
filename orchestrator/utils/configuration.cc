@@ -146,6 +146,24 @@ bool Configuration::init(string configurationFile)
         return false;
     }
 
+    configServiceIp = reader.Get("configuration-service", "ip_address", "");
+    if(configServiceIp == ""){
+        ULOG_ERR("Error in configuration file '%'s. Mandatory parameter 'ip_address' is missing",configurationFile.c_str());
+        return false;
+    }
+
+    configServicePort = reader.GetInteger("configuration-service", "port", -1);
+    if(configServicePort == -1) {
+        ULOG_ERR("Error in configuration file '%'s. Mandatory parameter 'port' is missing",configurationFile.c_str());
+        return false;
+    }
+
+    datadiskDestPath = reader.Get("datadisk", "destination_path", "");
+    if(datadiskDestPath == ""){
+        ULOG_ERR("Error in configuration file '%'s. Mandatory parameter 'ip_address' is missing",configurationFile.c_str());
+        return false;
+    }
+
     vnfImagesPath = reader.Get("misc", "IMAGE_DIR", "");
     if(vnfImagesPath == "") {
         ULOG_ERR("Error in configuration file '%'s. Mandatory parameter 'IMAGE_DIR' is missing",configurationFile.c_str());
@@ -227,6 +245,20 @@ string Configuration::getVnfRepoIp()
 int Configuration::getVnfRepoPort()
 {
     return vnfRepoPort;
+}
+
+string Configuration::getConfigServiceIp()
+{
+    return configServiceIp;
+}
+
+int Configuration::getConfigServicePort()
+{
+    return configServicePort;
+}
+
+string Configuration::getDatadiskDestPath(){
+    return datadiskDestPath;
 }
 
 string Configuration::getScriptPath()
