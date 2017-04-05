@@ -11,9 +11,11 @@
 #$3 path				(e.g., NFimages/archive.gz)
 #$4 NF name				(e.g., firewall)
 #$5 URI type				(e.g., docker-registry)
-#$6 number_of_ports			(e.g., 2)
-		
-#The next $6 *3 parameters are:
+#$6 host_dir_to_mount   (it must be an absolute path, e.g., /home/myDir)
+#$7 dst_path            (it can be a relative path, e.g., /datadisk)
+#$8 number_of_ports			(e.g., 2)
+
+#The next $8 *3 parameters are:
 #	* the port name to be provided to the container (e.g., vEth0)
 #	* the MAC address to be assigned to the port (e.g., aa:bb:cc:dd:ee:ff)
 #	* the IP addres/netmask to be assigned to the port (e.g., 10.0.0.1/24)
@@ -25,6 +27,7 @@
 #bridge
 #The next parameter is a number indicated how many environment variable must be set up. If
 #not zero, the next N elements are in the form "env_variable_name=value"
+
 
 tmp_file="$1_$2_tmp"
 path=$3
@@ -38,8 +41,8 @@ then
 fi
 
 #Check if some port forwarding must be set up
-num_ports=$6
-position_num_forwarding=`expr 6 + $num_ports \* 3 + 1`
+num_ports=$8F
+position_num_forwarding=`expr 8 + $num_ports \* 3 + 1`
 num_forwarding=${!position_num_forwarding}
 
 if [ $uri_type != $docker_registry ]
@@ -60,8 +63,12 @@ then
 fi
 
 
-
 echo -ne "sudo docker run -d -i --name $1_$2 "   > $tmp_file
+
+#Check if there is a dir to mount
+if [[ $6 != "None" && $7 != "None" ]]; then
+    echo -ne "-v $6:$7 " >> $tmp_file
+fi
 
 if [ $num_forwarding != 0 ]
 then
@@ -84,13 +91,13 @@ then
 	done
 	
 	firstnicname=1
-	lastnicname=`expr $6 + 1`
+	lastnicname=`expr $8 + 1`
 else
 	# The NIC connected to the docker0 is not needed
 	echo -ne "--net=\"none\" " >> $tmp_file
 	
 	firstnicname=0
-	lastnicname=$6
+	lastnicname=$8
 fi
 
 #Check if some environment variables myust be set up
@@ -150,7 +157,7 @@ PID=`docker inspect --format '{{ .State.Pid }}' $ID`
 sudo mkdir -p /var/run/netns
 sudo ln -s /proc/$PID/ns/net /var/run/netns/$PID
 	
-current=7
+current=9
 current_mac=`expr $current + 1`
 current_ip=`expr $current + 2`
 
