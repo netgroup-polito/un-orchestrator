@@ -1011,9 +1011,9 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	    string dir_to_mount = "";
 	    string dst_path = "";
 	    try{
-	        ULOG_WARN("Trying to retrieve VNF's file list of: %s...", nf->getId().c_str());
+	        ULOG_DBG_INFO("Trying to retrieve VNF's file list of: %s...", nf->getId().c_str());
 	        fileList = computeController->retrieveFileList(tenant_id, graph->getID().c_str(), nf->getId().c_str());
-            ULOG_WARN("Trying to retrieve VNF's file list of: %s...Done! Found %d file!", nf->getId().c_str(), fileList.size());
+            ULOG_DBG_INFO("Trying to retrieve VNF's file list of: %s...Done! Found %d file!", nf->getId().c_str(), fileList.size());
             if(fileList.size()>0){
                 vnf_file_path = vnf_file_root_path+"/"+tenant_id+"_"+graph->getID()+"_"+nf->getId();
                 fs::create_directory(vnf_file_path);
@@ -1021,14 +1021,14 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
                 dst_path = Configuration::instance()->getDatadiskDestPath();
                 string path_file = "";
                 for(string filename : fileList){
-                    ULOG_WARN("\tTrying to retrieve file: %s...", filename.c_str());
+                    ULOG_DBG_INFO("\tTrying to retrieve file: %s...", filename.c_str());
                     try{
                         path_file = computeController->retrieveFile(tenant_id, graph->getID().c_str(), nf->getId(), filename, vnf_file_path);
                     }catch(const std::exception &e){
-                        ULOG_DBG_INFO("\tTrying to retrieve file: %s...Error! Exception: %s", filename.c_str(), e.what());
+                        ULOG_WARN("\tTrying to retrieve file: %s...Error! Exception: %s", filename.c_str(), e.what());
                         throw;
                     }
-                    ULOG_WARN("\tTrying to retrieve file: %s...Done! Saved in: %s", filename.c_str(), path_file.c_str());
+                    ULOG_DBG_INFO("\tTrying to retrieve file: %s...Done! Saved in: %s", filename.c_str(), path_file.c_str());
                 }
                 ULOG_DBG_INFO("NF %s will be start with a datadisk", nf->getId().c_str());
                 ULOG_DBG_INFO("\tHost dir to mount: %s", dir_to_mount.c_str());
