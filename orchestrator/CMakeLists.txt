@@ -503,11 +503,13 @@ TARGET_LINK_LIBRARIES( node-orchestrator
 	json_spirit
 	inih
 	boost_system
+	boost_filesystem
 	xml2
 	sqlite3
 	crypto
 	pistache
 	rt
+	cpprest
 )
 
 IF(ENABLE_DOUBLE_DECKER_CONNECTION)
