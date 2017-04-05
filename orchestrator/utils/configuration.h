@@ -31,6 +31,9 @@ public:
     string getIpsecCertificate();
     string getVnfRepoIp();
     int getVnfRepoPort();
+    string getConfigServiceIp();
+    int getConfigServicePort();
+    string getDatadiskDestPath();
     string getScriptPath();
     string getVnfImagesPath();
     string getDescriptionFileName();
@@ -50,6 +53,9 @@ private:
     string ipsecCertificate;
     string vnfRepoIp;
     int vnfRepoPort;
+    string configServiceIp;
+    int configServicePort;
+    string datadiskDestPath;
     string scriptPath;
     string vnfImagesPath;
     string descriptionFileName;
