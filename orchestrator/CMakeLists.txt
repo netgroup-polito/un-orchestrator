@@ -499,10 +499,12 @@ TARGET_LINK_LIBRARIES( node-orchestrator
 	inih
 	microhttpd
 	boost_system
+	boost_filesystem
 	xml2
 	sqlite3
 	crypto
 	rt
+	cpprest
 )
 
 IF(ENABLE_DOUBLE_DECKER_CONNECTION)
