@@ -318,6 +318,7 @@ bool GraphManager::deleteGraph(string graphID)
 	*		2) delete the LSI, the virtual links and the
 	*			ports related to NFs
 	*		3) handle the internal LSI associated with the internal endpoints that are part of the graph
+	*       4) if present, remove temp dir which contains VNF's file (used for the datadisk)
 	*/
 
 	ULOG_INFO("Deleting graph '%s'...",graphID.c_str());
@@ -464,6 +465,18 @@ bool GraphManager::deleteGraph(string graphID)
 		ULOG_DBG_INFO("The internal graph associated with the internal group '%s' is still used by %d other graphs",internal_group.c_str(),timesUsedEndPointsInternal[internal_group]);
 	}//end iteration on the internal endpoints
 
+	/**
+	*    4) if present, remove temp dir which contains VNF's file (used for the datadisk)
+    */
+	string current_path = fs::current_path().string();
+    string path = current_path+"/"+DIR_TO_SAVE_VNF_FILE;
+    if(fs::exists(path) && fs::is_directory(path)){
+        fs::path p = path;
+        fs::remove_all(p);
+        ULOG_DBG_INFO("Deleting dir %s", path.c_str());
+    }
+
+
 	delete(highLevelGraph);
 	highLevelGraph = NULL;
 
@@ -570,6 +583,7 @@ void *startNF(void *arguments)
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		, args->controlConfiguration, args->environmentVariables
 #endif
+        ,args->dir_to_mount, args->dst_path
 	))
 		return (void*) 0;
 	else
@@ -982,8 +996,51 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	to_thread_t thr[network_functions.size()];
 	int i = 0;
 
+	string current_path = fs::current_path().string();
+	string vnf_file_root_path = current_path+"/"+DIR_TO_SAVE_VNF_FILE;
+	if(!(fs::exists(vnf_file_root_path) && fs::is_directory(vnf_file_root_path)))
+	    fs::create_directory(vnf_file_root_path);
+	string vnf_file_path = "";
+
+    // Iterate for each network functions
 	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 	{
+	    //Ask to Config Service if there are file associated to NF
+	    string tenant_id = "33";
+	    list<string> fileList;
+	    string dir_to_mount = "";
+	    string dst_path = "";
+	    try{
+	        ULOG_WARN("Trying to retrieve VNF's file list of: %s...", nf->getId().c_str());
+	        fileList = computeController->retrieveFileList(tenant_id, graph->getID().c_str(), nf->getId().c_str());
+            ULOG_WARN("Trying to retrieve VNF's file list of: %s...Done! Found %d file!", nf->getId().c_str(), fileList.size());
+            if(fileList.size()>0){
+                vnf_file_path = vnf_file_root_path+"/"+tenant_id+"_"+graph->getID()+"_"+nf->getId();
+                fs::create_directory(vnf_file_path);
+                dir_to_mount = vnf_file_path+"/";
+                dst_path = Configuration::instance()->getDatadiskDestPath();
+                string path_file = "";
+                for(string filename : fileList){
+                    ULOG_WARN("\tTrying to retrieve file: %s...", filename.c_str());
+                    try{
+                        path_file = computeController->retrieveFile(tenant_id, graph->getID().c_str(), nf->getId(), filename, vnf_file_path);
+                    }catch(const std::exception &e){
+                        ULOG_DBG_INFO("\tTrying to retrieve file: %s...Error! Exception: %s", filename.c_str(), e.what());
+                        throw;
+                    }
+                    ULOG_WARN("\tTrying to retrieve file: %s...Done! Saved in: %s", filename.c_str(), path_file.c_str());
+                }
+                ULOG_DBG_INFO("NF %s will be start with a datadisk", nf->getId().c_str());
+                ULOG_DBG_INFO("\tHost dir to mount: %s", dir_to_mount.c_str());
+	            ULOG_DBG_INFO("\tDestination path: %s", dst_path.c_str());
+            }
+	    }catch(const std::exception &e){
+	        ULOG_WARN("Trying to retrieve VNF's file of: %s...Error! Exception: %s", nf->getId().c_str(), e.what());
+	        dir_to_mount = "";
+	        dst_path = "";
+	        ULOG_DBG_INFO("NF %s will be start without datadisk", nf->getId().c_str());
+	    }
+
 		thr[i].nf_id = nf->getId();
 		thr[i].computeController = computeController;
 		thr[i].namesOfPortsOnTheSwitch = lsi->getNetworkFunctionsPortsNameOnSwitchMap(nf->getId());
@@ -992,6 +1049,8 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		thr[i].controlConfiguration = nf->getControlPorts();
 		thr[i].environmentVariables = nf->getEnvironmentVariables();
 #endif
+        thr[i].dir_to_mount = dir_to_mount;
+        thr[i].dst_path = dst_path;
 
 #ifdef STARTVNF_SINGLE_THREAD
 		startNF((void *) &thr[i]);

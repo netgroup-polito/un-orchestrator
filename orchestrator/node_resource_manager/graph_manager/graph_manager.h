@@ -1,6 +1,8 @@
 #ifndef GRAPH_MANAGER_H_
 #define GRAPH_MANAGER_H_ 1
 
+#define DIR_TO_SAVE_VNF_FILE "vnfFileTmp"
+
 #pragma once
 
 #include "graph_info.h"
@@ -37,10 +39,12 @@
 #include <string>
 #include <sstream>
 #include <pthread.h>
+#include <boost/filesystem.hpp>
 
 #include <stdexcept>
 
 using namespace std;
+namespace fs = boost::filesystem;
 
 typedef struct
 	{
@@ -54,6 +58,8 @@ typedef struct
 		list<port_mapping_t > controlConfiguration;
 		list<string> environmentVariables;
 #endif
+        string dir_to_mount;
+        string dst_path;
 	}to_thread_t;
 
 class GraphManager

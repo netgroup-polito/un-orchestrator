@@ -47,6 +47,16 @@ private:
 	*/
 	map<unsigned int, port_network_config_t > portsConfiguration;
 
+    /**
+	*	@brief: host directory to mount into the NF as datadisk
+	*/
+	string dir_to_mount;
+
+	/**
+	*	@brief: path where the datadisk has to be mounted into the NF
+	*/
+	string dst_path;
+
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 	/**
 	*	@brief: list of control ports associated with the network function
@@ -60,20 +70,21 @@ private:
 #endif
 
 	/**
-	*	@brief: mask of the cores to be assigned to the network functon.
+	*	@brief: mask of the cores to be assigned to the network function.
 	*			0x0 means that no binding has to be done
 	*/
 	uint64_t coreMask;
 
+
 protected:
 
 
-	StartNFIn(uint64_t lsiID, string nf_id, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration,
+	StartNFIn(uint64_t lsiID, string nf_id, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration, string dir_to_mount, string dst_path,
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 			list<port_mapping_t > controlPorts, list<string> environmentVariables,
 #endif
 			  uint64_t coreMask = 0x0)
-			: lsiID(lsiID), nf_id(nf_id), namesOfPortsOnTheSwitch(namesOfPortsOnTheSwitch), portsConfiguration(portsConfiguration),
+			: lsiID(lsiID), nf_id(nf_id), namesOfPortsOnTheSwitch(namesOfPortsOnTheSwitch), portsConfiguration(portsConfiguration), dir_to_mount(dir_to_mount), dst_path(dst_path),
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 			controlPorts(controlPorts), environmentVariables(environmentVariables),
 #endif
@@ -120,6 +131,14 @@ public:
 	uint64_t getCoreMask() const
 	{
 		return coreMask;
+	}
+
+	string getDirToMount(){
+	    return dir_to_mount;
+	}
+
+	string getDstPath(){
+	    return dst_path;
 	}
 };
 
