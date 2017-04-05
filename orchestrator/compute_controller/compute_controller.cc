@@ -53,13 +53,13 @@ list<string> ComputeController::retrieveFileList(string tenant_id, string graph_
 {
     string ip = Configuration::instance()->getConfigServiceIp().c_str();
     int port = Configuration::instance()->getConfigServicePort();
-    string endpoint = "http://" + ip + ":" + to_string(port) + "/";
+    string endpoint = "http://" + ip + ":" + to_string(port);
 
-    string uri = endpoint + "config/file/"+tenant_id+"/"+graph_id+"/"+vnf_id+"/";
+    string url = endpoint + CONFIG_SERVICE_FILELIST_URL+tenant_id+"/"+graph_id+"/"+vnf_id+"/";
     http_response response;
     try{
-        //ULOG_DBG_INFO("retriveFileList, perform get to uri:  %s", uri.c_str());
-        http_client client(U(uri));
+        ULOG_DBG_INFO("retrieveFileList, perform get to url:  %s", url.c_str());
+        http_client client(U(url));
         response = client.request(methods::GET).get();
     }catch(const std::exception &e)
     {
@@ -80,10 +80,10 @@ string ComputeController::retrieveFile(string tenant_id, string graph_id, string
 
     string ip = Configuration::instance()->getConfigServiceIp().c_str();
     int port = Configuration::instance()->getConfigServicePort();
-    string endpoint = "http://" + ip + ":" + to_string(port) + "/";
+    string endpoint = "http://" + ip + ":" + to_string(port);
 
     string path_file = dst_path+"/"+filename;
-    string uri = endpoint + "config/file/"+tenant_id+"/"+graph_id+"/"+vnf_id+"/"+filename+"/";
+    string url = endpoint + CONFIG_SERVICE_FILE_URL+tenant_id+"/"+graph_id+"/"+vnf_id+"/"+filename+"/";
 
     auto fileStream = std::make_shared<concurrency::streams::ostream>();
 
@@ -93,8 +93,8 @@ string ComputeController::retrieveFile(string tenant_id, string graph_id, string
         *fileStream = outFile;
 
         // Create http_client to send the request.
-        http_client client(uri);
-        //ULOG_DBG_INFO("retriveFile, perform get to uri:  %s", uri.c_str());
+        http_client client(url);
+        ULOG_DBG_INFO("retrieveFile, perform get to url:  %s", url.c_str());
         return client.request(methods::GET);
     })
     // Handle response headers arriving.
@@ -126,7 +126,48 @@ string ComputeController::retrieveFile(string tenant_id, string graph_id, string
     }
 }
 
-nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescription)
+nf_manager_ret_t ComputeController::retrieveDescription(highlevel::VNFs vnfDescription){
+
+        string resp;
+		list<NFtemplate *> templates;
+		nf_manager_ret_t retVal;
+		ULOG_DBG_INFO("Considering the NF with ID \"%s\"",vnfDescription.getId().c_str());
+
+		string ip = Configuration::instance()->getVnfRepoIp().c_str();
+        int port = Configuration::instance()->getVnfRepoPort();
+        string endpoint = "http://" + ip + ":" + to_string(port);
+
+        string url = endpoint;
+        if(vnfDescription.checkVnfTemplateField())
+            url += VNF_REPOSITORY_TEMPLATE_URL + vnfDescription.getVnfTemplate()+"/";
+	    else
+		    url += VNF_REPOSITORY_TEMPLATES_URL + vnfDescription.getName()+"/";
+
+        http_response response;
+        try{
+            ULOG_DBG_INFO("retrieveDescription, perform get to url:  %s", url.c_str());
+            http_client client(U(url));
+            response = client.request(methods::GET).get();
+        }catch(const std::exception &e)
+        {
+            return NFManager_SERVER_ERROR;
+        }
+
+        resp = response.extract_string().get();
+        //ULOG_DBG_INFO("resp: %s",resp.c_str());
+        retVal = Template_Parser::parse(templates,resp,vnfDescription.checkVnfTemplateField() /*add eventual additional checks with ||*/);
+        if(retVal != NFManager_OK)
+            return retVal;
+
+        if(!addImplementations(templates,vnfDescription.getId(),vnfDescription.getPortsId().size()))
+            return NFManager_NO_NF;
+
+        return NFManager_OK;
+
+}
+
+
+nf_manager_ret_t ComputeController::retrieveDescriptionOLD(highlevel::VNFs vnfDescription)
 {
 
 		string translation;

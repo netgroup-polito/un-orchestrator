@@ -53,7 +53,9 @@ using namespace web::http;
 using namespace web::http::client;
 
 #define VNF_REPOSITORY_TEMPLATE_URL    "/v2/nf_template/"
-#define VNF_REPOSITORY_TEMPLATES_URL    "/v2/nf_capability/"
+#define VNF_REPOSITORY_TEMPLATES_URL   "/v2/nf_capability/"
+#define CONFIG_SERVICE_FILELIST_URL    "/config/file/"
+#define CONFIG_SERVICE_FILE_URL        "/config/file/"
 #define CODE_POSITION				    9
 #define CODE_METHOD_NOT_ALLLOWED	    "405"
 #define CODE_HTTP_NOT_FOUND	    			"404"
@@ -168,7 +170,7 @@ public:
 	*	@param:	vnf   object representing a vnf
 	*/
 
-
+    nf_manager_ret_t retrieveDescriptionOLD(highlevel::VNFs vnf);
 	nf_manager_ret_t retrieveDescription(highlevel::VNFs vnf);
 
 
