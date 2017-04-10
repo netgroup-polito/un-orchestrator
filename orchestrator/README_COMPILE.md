@@ -12,7 +12,7 @@ In order to execute the un-orchestrator, we need to setup different components, 
 
 In addition to the libraries already listed in the main [../README_COMPILE.md](../README_COMPILE.md),
 some more components are required to compile the un-orchestrator.
-In the following we list the steps required on an **Ubuntu 14.04**.
+In the following we list the steps required on an **Ubuntu 14.04 - 64nit**.
 
 	; - sqlite3: command line interface for SQLite 3
 	; - libsqlite3-dev: SQLite 3 development files
