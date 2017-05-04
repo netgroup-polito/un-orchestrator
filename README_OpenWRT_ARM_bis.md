@@ -1,0 +1,303 @@
+# Porting of the UN to the OpenWRT platform
+
+This document contains the instructions required to compile the UN for the OpenWRT platform.
+
+In this page there is the list of all devices that are supported by OpenWrt, with the reference to a device page.
+https://wiki.openwrt.org/toh/start
+
+# How to compile the un-orchestrator for ARM architecture
+
+In order to cross compile the un-orchestrator, it need to have at least 50 MB of available storage space on the device and it need to follow the following steps.
+
+## Preliminary operations
+
+Ensure that the following libraries are installed on the PC:
+
+```sh
+; - build-essential: it includes GCC, basic libraries, etc
+; - cmake: to create cross-platform makefiles
+; - cmake-curses-gui: nice 'gui' to edit cmake files
+; - libboost-all-dev: nice c++ library with tons of useful functions
+; - libmicrohttpd-dev: embedded micro http server
+; - libxml2-dev: nice library to parse and create xml
+; - ethtool: utilities to set some parameters on the NICs (e.g., disable TCP offloading)
+; - libncurses-dev
+; - subversion
+; - git, gawk, libssl-dev
+$ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libmicrohttpd-dev libxml2-dev ethtool libncurses-dev subversion git gawk libssl-dev
+```
+
+```sh
+$ install ccache:
+$ sudo apt-get install -y ccache && echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc && source ~/.bashrc && echo $PATH
+```
+
+## Set up a cross-compilation toolchain
+
+The version of the SDK used for our tests is: 
+OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.
+
+Download source code for OpenWrt e orchestrator
+
+```sh
+$ git clone https://github.com/netgroup-polito/un-orchestrator
+$ wget https://downloads.openwrt.org/chaos_calmer/15.05.1/bcm53xx/generic/OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
+$ tar -jxvf OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
+```
+
+Execute the following commands to compile the Openwrt Environment:
+```sh
+$ export UN=[un-orchestrator]
+$ export OPENWRT=[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
+$ export PATH=$PATH:${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/bin
+$ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi
+$ cd $OPENWRT
+$ ./scripts/feeds update -a
+$ ./scripts/feeds install libmicrohttpd
+$ ./scripts/feeds install libxml2
+$ ./scripts/feeds install boost-system
+```
+
+If the following warning occurs
+```sh
+WARNING: No feed for package 'expat' found, maybe it's already part of the standard packages?
+```
+add a new source to file [OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/feeds/packages.index
+
+```sh
+cat >> ${OPENWRT}/feeds/packages.index
+
+Source-Makefile: feeds/packages/libs/expat/Makefile
+Package: expat
+Version: 2.1.0-3
+Depends: +libc +SSP_SUPPORT:libssp +USE_GLIBC:librt +USE_GLIBC:libpthread 
+Conflicts: 
+Menu-Depends: 
+Provides: 
+Build-Types: host
+Section: libs
+Category: Libraries
+Title: An XML parsing library
+Maintainer: Steven Barth <cyrus@openwrt.org>
+Source: expat-2.1.0.tar.gz
+License: MIT
+LicenseFiles: COPYING
+Type: ipkg
+Description:  A fast, non-validating, stream-oriented XML parsing library.
+http://expat.sourceforge.net/
+Steven Barth <cyrus@openwrt.org>
+@@
+
+; press Ctrl+D to end cat input
+```
+
+then execute
+
+```sh
+$ ./scripts/feeds uninstall -a
+$ ./scripts/feeds install libmicrohttpd
+$ ./scripts/feeds install boost-system
+$ ./scripts/feeds install libxml2
+</pre></div>```
+
+Compile the Openwrt Environment
+```sh
+$ make -j4 V=99
+```
+
+
+The following guide details how to compile both the universal-node and the required libraries.
+For each package you can find a Makefile and patches that prevent some compilation error, moreover (for future support) the documentation explains how patches have been created.
+
+
+## Compilation of the json-spirit library
+Execute the following commands:
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/libjson-spirit ${OPENWRT}/package
+$ make package/libjson-spirit/compile V=99
+```
+
+## Compilation of the rofl library
+Execute the following commands:
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/librofl ${OPENWRT}/package
+
+$ cd ${OPENWRT}/dl
+$ wget https://github.com/toanju/rofl-common/archive/885dc70b53ad4b9cd349b5c512be0992d420d3b3.zip
+$ unzip 885dc70b53ad4b9cd349b5c512be0992d420d3b3
+$ mv rofl-common-885dc70b53ad4b9cd349b5c512be0992d420d3b3 librofl-0.10.9
+$ tar -cvzf librofl-0.10.9.tar.gz librofl-0.10.9
+
+$ mv ${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin/libtoolize ${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin/libtoolize.b
+$ cp -f ${OPENWRT}/staging_dir/host/bin/libtoolize ${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin/libtoolize 
+$ cd ${OPENWRT}
+$ make package/librofl/compile V=99
+```
+
+#### How to patch librofl
+Performe the preliminary commands:
+```sh
+$ make package/librofl/{clean,prepare} V=99 QUILT=1
+```
+---
+To fix error due to missing include create a new patch:
+
+```sh
+$ cd build_dir/target-*/librofl-*
+$ quilt new 001-missing_cstdio_include.patch
+```
+edit the file using the quilt command (to map editing to a patch):
+```sh
+$ quit edit src/rofl/common/caddress.cc
+```
+and add the following include:
+```sh
+#include <cstdio>
+```
+Save the changes and repeat the same operation to files:
+```sh
+src/rofl/common/openflow/cofdescstats.cc
+src/rofl/common/openflow/coftablestats.cc
+```
+the `quilt diff` command show the changes performed, if it looks ok save the patch:
+```sh
+$ quilt refresh
+```
+---
+To fix error due to less recent kernel version create a new patch:
+
+```sh
+$ quilt new 002-eventfd_function.patch
+$ quilt edit src/rofl/common/cthread.cpp
+```
+substitute the following line to:
+```sh
+-	event_fd = eventfd(0, EFD_NONBLOCK);
++	event_fd = eventfd(0, 0);
+```
+save the patch:
+```sh
+$ quilt refresh
+```
+---
+To fix error due to useless include create a new patch:
+
+```sh
+$ quilt new 003-execinfo.patch
+$ quilt edit examples/ethswctld/cunixenv.h
+```
+remove the include:
+```sh
+#include <execinfo.h>
+```
+save the patch:
+```sh
+$ quilt refresh
+```
+apply the patches and rebuild the package:
+```sh
+$ cd ${OPENWRT}
+$ make package/librofl/update V=99
+$ make package/librofl/{clean,compile} package/index V=99
+```
+
+## Compilation of the universal-node
+Execute the following commands:
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/un-orchestrator ${OPENWRT}/package
+$ make package/un-orchestrator/compile V=99
+```
+
+The compilation may abort due to incorrect configuration options; if it happens you have to select the desired configuration (remember that only native functions can run on Openwrt):
+```sh
+$ cd build_dir/target-*/un-orchestrator-*
+$ ccmake .
+```
+compile the UN:
+```sh
+$ cd ${OPENWRT}
+$ make package/un-orchestrator/compile V=99
+```
+
+If the following or similar error occurs
+```sh
+[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:45: error: expected ')' before 'SCNd16'
+    if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
+                                             ^
+[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:60: error: spurious trailing '%' in format [-Werror=format=]
+    if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
+                                                            ^
+[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:60: error: too many arguments for format [-Werror=format-extra-args]
+```
+then edit the following file
+
+```sh
+gedit $OPENWRT/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc
+```
+
+removing the following include
+
+```sh
+#include <inttypes.h>
+```
+
+and adding AT THE TOP of the file the following lines
+
+```sh
+#ifndef __STDC_FORMAT_MACROS
+	#define __STDC_FORMAT_MACROS
+	#include <inttypes.h>
+	#undef __STDC_FORMAT_MACROS
+#else
+	#include <inttypes.h>
+#endif
+```
+
+
+If the following or similar error occurs
+```sh
+[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc: In member function 'void Port::splitPortsRangeInInt(int&, int&)':
+[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc:30:30: error: 'atoi' was not declared in this scope
+    begin = atoi(token.c_str());
+```
+then edit the following file
+
+```sh
+gedit $OPENWRT/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc
+```
+
+and add the following include
+
+```sh
+#include <stdlib.h>
+```
+
+#### How to patch the un-orchestrator
+
+To fix error due to useless include:
+
+```sh
+$ make package/un-orchestrator/{clean,prepare} V=99 QUILT=1
+
+$ cd build_dir/target-*/un-orchestrator-*
+$ quilt new 001-execinfo.patch
+
+$ quilt edit orchestrator/node_orchestrator.cc
+```
+remove the following include:
+```sh
+#include <execinfo.h>
+```
+Save the changes and apply the patch
+```sh
+$ quilt refresh
+$ cd ${OPENWRT}
+$ make package/un-orchestrator/update V=99
+```
+
+### Set up OpenWrt environment for Tiesse Imola
+
+Check README_OpenWRT_ARM.md

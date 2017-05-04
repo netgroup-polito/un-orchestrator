@@ -1,7 +1,14 @@
+#ifndef __STDC_FORMAT_MACROS
+	#define __STDC_FORMAT_MACROS
+	#include <inttypes.h>
+	#undef __STDC_FORMAT_MACROS
+#else
+	#include <inttypes.h>
+#endif
 #include "match_parser.h"
 
 #include <stdio.h>
-#include <inttypes.h>
+//#include <inttypes.h>
 
 static const char LOG_MODULE_NAME[] = "Match-Parser";
 

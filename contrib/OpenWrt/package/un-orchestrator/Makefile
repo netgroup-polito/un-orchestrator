@@ -48,12 +48,12 @@ endef
 
 define Package/un-orchestrator/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/name-resolver/name-resolver $(1)/usr/sbin
+#	$(INSTALL_BIN) $(PKG_BUILD_DIR)/name-resolver/name-resolver $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/orchestrator/node-orchestrator $(1)/usr/sbin
 	
-	$(INSTALL_DIR) $(1)/cfg/name-resolver/config
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/name-resolver/config/example.xml $(1)/cfg/name-resolver/config
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/name-resolver/config/network-functions.xsd $(1)/cfg/name-resolver/config
+#	$(INSTALL_DIR) $(1)/cfg/name-resolver/config
+#	$(INSTALL_BIN) $(PKG_BUILD_DIR)/name-resolver/config/example.xml $(1)/cfg/name-resolver/config
+#	$(INSTALL_BIN) $(PKG_BUILD_DIR)/name-resolver/config/network-functions.xsd $(1)/cfg/name-resolver/config
 	$(INSTALL_DIR) $(1)/cfg/orchestrator/config
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/orchestrator/config/default-config.ini $(1)/cfg/orchestrator/config
 endef
