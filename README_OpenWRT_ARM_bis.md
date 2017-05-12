@@ -35,23 +35,24 @@ $ sudo apt-get install -y ccache && echo 'export PATH="/usr/lib/ccache:$PATH"' |
 ## Set up a cross-compilation toolchain
 
 The version of the SDK used for our tests is: 
-OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.
+OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.
 
 Download source code for OpenWrt e orchestrator
 
 ```sh
 $ git clone https://github.com/netgroup-polito/un-orchestrator
-$ wget https://downloads.openwrt.org/chaos_calmer/15.05.1/bcm53xx/generic/OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
-$ tar -jxvf OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
+$ wget https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
+$ tar -jxvf OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
 ```
 
 Execute the following commands to compile the Openwrt Environment:
 ```sh
 $ export UN=[un-orchestrator]
-$ export OPENWRT=[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
+$ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
 $ export PATH=$PATH:${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/bin
 $ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi
 $ cd $OPENWRT
+$ sed -i -e '1isrc-git base https://git.openwrt.org/15.05/openwrt.git\' feeds.conf.default
 $ ./scripts/feeds update -a
 $ ./scripts/feeds install libmicrohttpd
 $ ./scripts/feeds install libxml2
@@ -62,7 +63,7 @@ If the following warning occurs
 ```sh
 WARNING: No feed for package 'expat' found, maybe it's already part of the standard packages?
 ```
-add a new source to file [OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/feeds/packages.index
+add a new source to file [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/feeds/packages.index
 
 ```sh
 cat >> ${OPENWRT}/feeds/packages.index
@@ -98,7 +99,7 @@ $ ./scripts/feeds uninstall -a
 $ ./scripts/feeds install libmicrohttpd
 $ ./scripts/feeds install boost-system
 $ ./scripts/feeds install libxml2
-</pre></div>```
+```
 
 Compile the Openwrt Environment
 ```sh
@@ -213,7 +214,7 @@ $ make package/un-orchestrator/compile V=99
 
 The compilation may abort due to incorrect configuration options; if it happens you have to select the desired configuration (remember that only native functions can run on Openwrt):
 ```sh
-$ cd build_dir/target-*/un-orchestrator-*
+$ cd ${OPENWRT}/build_dir/target-*/un-orchestrator-*
 $ ccmake .
 ```
 compile the UN:
@@ -222,15 +223,16 @@ $ cd ${OPENWRT}
 $ make package/un-orchestrator/compile V=99
 ```
 
-If the following or similar error occurs
+---
+If the following or similar errors occur
 ```sh
-[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:45: error: expected ')' before 'SCNd16'
+[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:45: error: expected ')' before 'SCNd16'
     if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
                                              ^
-[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:60: error: spurious trailing '%' in format [-Werror=format=]
+[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:60: error: spurious trailing '%' in format [-Werror=format=]
     if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
                                                             ^
-[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:60: error: too many arguments for format [-Werror=format-extra-args]
+[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:60: error: too many arguments for format [-Werror=format-extra-args]
 ```
 then edit the following file
 
@@ -256,11 +258,11 @@ and adding AT THE TOP of the file the following lines
 #endif
 ```
 
-
+---
 If the following or similar error occurs
 ```sh
-[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc: In member function 'void Port::splitPortsRangeInInt(int&, int&)':
-[OpenWrt-SDK-15.05.1-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc:30:30: error: 'atoi' was not declared in this scope
+[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc: In member function 'void Port::splitPortsRangeInInt(int&, int&)':
+[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc:30:30: error: 'atoi' was not declared in this scope
     begin = atoi(token.c_str());
 ```
 then edit the following file
@@ -298,6 +300,127 @@ $ cd ${OPENWRT}
 $ make package/un-orchestrator/update V=99
 ```
 
-### Set up OpenWrt environment for Tiesse Imola
+## Compilation of double decker
+Double Decker is an extra module that is not necessary to compile the un-orchestrator. Procede if you intend to add double decker support, otherwise jump to the set up of OpenWrt environment
 
-Check README_OpenWRT_ARM.md
+Execute the following commands:
+```sh
+$ cd ${OPENWRT}
+$ cp -rf ${UN}/contrib/OpenWrt/package/libsodium/Makefile ${OPENWRT}/feeds/packages/libs/libsodium
+$ ./scripts/feeds install libzmq
+```
+
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/czmq ${OPENWRT}/package
+$ make package/czmq/compile V=99
+```
+---
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/userspace-rcu ${OPENWRT}/package
+$ make package/userspace-rcu/compile V=99
+```
+---
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/doubledecker ${OPENWRT}/package
+$ make package/doubledecker/compile V=99
+```
+
+#### Enable Double Decker connection on the orchestrator
+You will need to recompile the orchestrator. Execute the following commands
+```sh
+$ cp -f ${UN}/contrib/OpenWrt/package/un-orchestrator-dd/Makefile ${OPENWRT}/package/un-orchestrator
+$ cd ${OPENWRT}
+$ make package/un-orchestrator/compile V=99
+```
+
+Compilation will probably stop due to an error. You need to change the configuration of the UN to use native implementation of NFs.  To enable Double Decker, turn on  Double Decker Connection and Resource Manager too.
+```sh
+$ cd ${OPENWRT}/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0 
+$ ccmake .
+```
+Before compiling the orchestrator, edit default configuration file and uncomment lines relative to resource manager and double decker. The DD keys json files are stored in /cfg/dd/keys/.
+
+
+Finally execute
+```sh
+$ cd ${OPENWRT}
+$ make package/un-orchestrator/compile V=99
+```
+
+## Set up OpenWrt environment for Netgear R6300
+
+Execute the following commands
+
+```sh
+$ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
+$ export PACK=${OPENWRT}/bin/bcm53xx/packages
+$ export R_IP=[IP_of_your_router]
+```
+
+```sh
+$ ssh-keygen -f "/home/$(whoami)/.ssh/known_hosts" -R $R_IP
+$ ssh root@$R_IP
+```
+
+```sh
+$ mkdir -p /pkg
+$ exit
+```
+
+```sh
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/libjson-spirit_1.0.0-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/librofl_0.10.9-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/un-orchestrator_1.0.0-1_bcm53xx.ipk root@$R_IP:/pkg
+```
+If you compiled DoubleDecker, then copy also these packages
+```sh
+$ scp ${OPENWRT}/bin/bcm53xx/packages/packages/libsodium_1.0.11-2_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/packages/libzmq-nc_4.1.1-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/czmq_3.0.2-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/liburcu_0.9.2-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/DoubleDecker_0.4-1_bcm53xx.ipk root@$R_IP:/pkg
+```
+---
+Execute the following commands
+```sh
+$ ssh root@$R_IP
+$ opkg update
+$ cd /pkg
+```
+
+Install UN dependencies
+```sh
+$ opkg install libjson-spirit_1.0.0-1_bcm53xx.ipk
+$ opkg install librofl_0.10.9-1_bcm53xx.ipk
+$ opkg install openvswitch
+```
+
+If you compiled DoubleDecker, install also these packages
+```sh
+$ opkg install libsodium_1.0.11-2_bcm53xx.ipk
+$ opkg install libzmq-nc_4.1.1-1_bcm53xx.ipk
+$ opkg install czmq_3.0.2-1_bcm53xx.ipk
+$ opkg install liburcu_0.9.2-1_bcm53xx.ipk
+$ opkg install DoubleDecker_0.4-1_bcm53xx.ipk
+```
+
+Finally install the orchestrator
+```sh
+$ opkg install un-orchestrator_1.0.0-1_bcm53xx.ipk
+```
+
+
+## Execute the orchestrator
+To execute the orchestrator you will need to start the ovs server first.
+```sh
+$ ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632
+```
+Then run the orchestrator
+```sh
+$ cd /cfg/orchestrator
+$ node-orchestrator
+```
+Now orchestrator is running.
