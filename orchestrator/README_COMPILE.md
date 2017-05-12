@@ -22,7 +22,7 @@ In the following we list the steps required on an **Ubuntu 14.04 - 64 bit**.
 	; Install ROFL-common (library to parse OpenFlow messages)
 	; Alternatively, a copy of ROFL-common is provided in `[un-orchestrator]/contrib/rofl-common.zip`
 
-	$ git clone https://github.com/toanju/rofl-common
+	$ git clone https://github.com/bisdn/rofl-common
 	$ cd rofl-common/
 
 	; Now install the above library according to the description provided
