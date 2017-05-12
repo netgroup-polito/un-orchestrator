@@ -3,6 +3,21 @@ set -ev	#print every line before executing it and exit if one command fails
 
 BASE=`pwd`
 
+# glog
+cd $HOME
+if [ ! -d "glog" ]; then
+	git clone https://github.com/google/glog
+	cd glog
+	./autogen.sh 
+	./configure 
+	make -j2
+else
+	echo "glog exists"
+	cd glog
+fi
+
+sudo make install
+
 # rofl
 cd $HOME
 ls
