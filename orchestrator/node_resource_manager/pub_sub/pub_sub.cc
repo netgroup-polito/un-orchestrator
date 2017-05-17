@@ -2,7 +2,7 @@
 
 static const char LOG_MODULE_NAME[] = "Double-Decker-Client";
 
-zactor_t *DoubleDeckerClient::client = NULL;
+dd_t *DoubleDeckerClient::client = NULL;
 bool DoubleDeckerClient::connected = false;
 list<publish_t> DoubleDeckerClient::messages;
 pthread_mutex_t DoubleDeckerClient::connected_mutex;
@@ -12,6 +12,65 @@ char *DoubleDeckerClient::brokerAddress;
 char *DoubleDeckerClient::keyPath;
 bool keep_looping = true;
 
+
+int pipe_fd[2];
+
+//callback function
+void on_reg(void *args) {
+	dd_t *dd = (dd_t *)args;
+	(void) dd;	
+//	printf("\nRegistered with broker %s!\n", dd_get_endpoint(dd));
+	dd_un_msg_t msg=reg_dd_un_msg;
+	write(pipe_fd[1], &msg, sizeof(dd_un_msg_t));
+	fflush(stdout);
+}
+
+void on_discon(void *args) {
+	dd_t *dd = (dd_t *)args;
+	(void) dd;	
+//	printf("\nGot disconnected from broker %s!\n", dd_get_endpoint(dd));
+	dd_un_msg_t msg=discon_dd_un_msg;
+	write(pipe_fd[1], &msg, sizeof(dd_un_msg_t));
+	fflush(stdout);
+}
+
+void on_pub(char *source, char *topic, unsigned char *data, int length, void *args) {
+	dd_t *dd = (dd_t *)args;
+	(void) dd;	
+//	printf("\nPUB S: %s T: %s L: %d D: '%s'", source, topic, length, data);
+	dd_un_msg_t msg=pub_dd_un_msg;
+	write(pipe_fd[1], &msg, sizeof(dd_un_msg_t));
+	fflush(stdout);
+}
+
+void on_data(char *source, unsigned char *data, int length, void *args) {
+	dd_t *dd = (dd_t *)args;
+	(void) dd;	
+//	printf("\nDATA S: %s L: %d D: '%s'", source, length, data);
+	dd_un_msg_t msg=pub_dd_un_msg;
+	write(pipe_fd[1], &msg, sizeof(dd_un_msg_t));
+	fflush(stdout);
+}
+
+void on_error(int error_code, char *error_message, void *args) {
+	switch (error_code) {
+	case DD_ERROR_NODST:
+		printf("Error - no destination: %s\n", error_message);
+		break;
+	case DD_ERROR_REGFAIL:
+		printf("Error - registration failed: %s\n", error_message);
+		break;
+	case DD_ERROR_VERSION:
+		printf("Error - version: %s\n", error_message);
+		break;
+	default:
+		printf("Error - unknown error!\n");
+		break;
+	}
+	dd_un_msg_t msg=err_dd_un_msg;
+	write(pipe_fd[1], &msg, sizeof(dd_un_msg_t));
+	fflush(stdout);
+}
 bool DoubleDeckerClient::init(char *_clientName, char *_brokerAddress, char *_keyPath)
 {
 	ULOG_INFO("Inizializing the Double-Decker-Client");
@@ -22,6 +81,11 @@ bool DoubleDeckerClient::init(char *_clientName, char *_brokerAddress, char *_ke
 	DoubleDeckerClient::clientName = _clientName;
 	brokerAddress = _brokerAddress;
 	keyPath = _keyPath;
+
+	if(pipe(pipe_fd)!=0){
+		ULOG_DBG_INFO("Failed opening pipe");
+		return false;
+	}
 
 	pthread_mutex_init(&connected_mutex, NULL);
 	//Start a new thread that waits for events
@@ -37,102 +101,61 @@ bool DoubleDeckerClient::init(char *_clientName, char *_brokerAddress, char *_ke
 
 void *DoubleDeckerClient::loop(void *param)
 {
-	ULOG_DBG_INFO("DoubleDeckerClient thread started");
+	//ULOG_DBG_INFO("DoubleDeckerClient thread started");
 	// create a ddactor
-	client = ddactor_new(clientName, brokerAddress, keyPath);
-
-	// create internal socket for easy termination
-	zsock_t *notify = zsock_new(ZMQ_PULL);
-	zsock_bind(notify, "inproc://ddterm");
-
-	// add client and notify to poller
-	zpoller_t *poller = zpoller_new(client, notify, NULL);
-
+	client = dd_new(clientName, brokerAddress, keyPath, on_reg, on_discon, on_data, on_pub, on_error);
+	
+	dd_un_msg_t event;
 	while(keep_looping)
 	{
-		// wait for either ddmsg or notification
-		zsock_t *which = (zsock_t *)zpoller_wait(poller, -1);
+		// wait for event
+		read(pipe_fd[0], &event, sizeof(dd_un_msg_t));
+		
+		//if control reach here, there is an event
+		switch(event){
+		case reg_dd_un_msg:
+			pthread_mutex_lock(&connected_mutex);
+			connected = true;
+			pthread_mutex_unlock(&connected_mutex);
+			ULOG_INFO("Succcessfully registered on the Double Decker network!");
 
-		// if message from ddactor
-		if (which == (zsock_t *)client)
-		{
-			zmsg_t *msg = zmsg_recv(client);
-			if (msg == NULL)
-			{
-				ULOG_INFO("DDClient:loop:zmsg_recv() returned NULL, was probably interrupted");
-			}
-			// TODO could break out all this message handling to separate function
-			//retrieve the event
-			char *event = zmsg_popstr(msg);
-			if(streq("reg",event))
-			{
-				//When the registration is successful
-				pthread_mutex_lock(&connected_mutex);
-				connected = true;
-				pthread_mutex_unlock(&connected_mutex);
-				ULOG_INFO("Succcessfully registered on the Double Decker network!");
-				free(event);
-
-				//Let's send all the messages stored in the list
-				for(list<publish_t>::iterator m = messages.begin(); m != messages.end(); m++)
-					publish(m->topic,m->message);
-			}
-			else if (streq("discon",event))
-			{
-				ULOG_WARN("Connection with the Double Decker network has been lost!");
-				free(event);
-				//TODO: what to do in this case?
-			}
-			else if (streq("pub",event))
-			{
-				ULOG_WARN("Received a 'publication' event. This event is ignored");
-				free(event);
-				//TODO: add here a callback that handle the proper event
-			}
-			else if (streq("data",event))
-			{
-				ULOG_WARN("Received a 'data' event. This event is ignored");
-				free(event);
-			}
-			else if (streq("$TERM",event))
-			{
-				char * error = zmsg_popstr(msg);
-				ULOG_ERR("Error while trying to connect to the Double Decker network: '%s'",error);
-				free(event);
-	//			ULOG_ERR("This situation is not handled by the code. Please reboot the orchestrator and check if the broker is running!");
-	//			signal(SIGALRM,sigalarm_handler);
-	//			alarm(1);
-				keep_looping = false;
-				break;
-			}
-		} // - if(which == client) -
-
-		// if inproc notification
-		if(which == notify)
-		{
-			//stop the loop
+			//Let's send all the messages stored in the list
+			for(list<publish_t>::iterator m = messages.begin(); m != messages.end(); m++)
+				publish(m->topic,m->message);
+			break;
+		case discon_dd_un_msg:
+			pthread_mutex_lock(&connected_mutex);
+			connected = false;
+			pthread_mutex_unlock(&connected_mutex);
+			ULOG_WARN("Connection with the Double Decker network has been lost!");	
+			break;			
+		case pub_dd_un_msg:
+			ULOG_WARN("Received a 'publication' event. This event is ignored");
+			break;
+		case data_dd_un_msg:
+			ULOG_WARN("Received a 'data' event. This event is ignored");
+			break;
+		case err_dd_un_msg:
+			ULOG_ERR("Error while trying to connect to the Double Decker network.");
 			keep_looping = false;
+			break;
+		default:
+			ULOG_ERR("Unknown pipe data.");
 			break;
 		}
 	} // - while (keep_looping) -
-
-	ULOG_INFO("Terminating DoubleDecker connection...");
-	zpoller_destroy(&poller);
-	zactor_destroy(&client);
-	zsock_destroy(&notify);
-	ULOG_INFO("DoubleDecker connection terminated");
-
 	return NULL;
 }
 
 void DoubleDeckerClient::terminate()
 {
-	keep_looping = false;
-	// Connect to the internal notification socket and message the thread to shut down
 	ULOG_INFO("Stopping the Double Decker client");
-	zsock_t *sig = zsock_new_push("inproc://ddterm");
-	zsock_send(sig, "s", "shutdown!");
-	zsock_destroy(&sig);
+	keep_looping = false;
+	
+	
+	ULOG_INFO("Terminating DoubleDecker connection...");
+	dd_destroy(&client);
+	ULOG_INFO("DoubleDecker connection terminated");
 }
 
 void DoubleDeckerClient::publish(topic_t topic, const char *message)
@@ -156,8 +179,12 @@ void DoubleDeckerClient::publish(topic_t topic, const char *message)
 	ULOG_INFO("Publishing on topic '%s'",topicToString(topic));
 	ULOG_INFO("Publishing message '%s'", message);
 
-	int len = strlen(message);
-	zsock_send(client,"sssb", "publish", topicToString(topic), message,&len, sizeof(len));
+
+
+	char *msg=strdup(message);
+	int len = strlen(msg);
+	dd_publish(client, topicToString(topic), msg, len);
+	free(msg);
 }
 
 char *DoubleDeckerClient::topicToString(topic_t topic)

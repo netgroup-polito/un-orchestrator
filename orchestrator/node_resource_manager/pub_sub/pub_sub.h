@@ -18,6 +18,13 @@ typedef enum {
 	//[+] add here other topics
 }topic_t;
 
+typedef enum {
+	reg_dd_un_msg,
+	discon_dd_un_msg,
+	pub_dd_un_msg,
+	data_dd_un_msg,
+	err_dd_un_msg,
+} dd_un_msg_t;
 struct publish_t{
 	topic_t topic;
 	const char *message;
@@ -30,7 +37,7 @@ private:
 	*	@brief: this is the client that interacts with the Double
 	*		Decker bus
 	*/
-	static zactor_t *client;
+	static dd_t *client;
 
 	/**
 	*	@brief: this variable is true when the connection with the
