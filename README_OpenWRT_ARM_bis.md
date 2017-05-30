@@ -120,20 +120,25 @@ $ make package/libjson-spirit/compile V=99
 ```
 
 ## Compilation of the rofl library
+
+### Compile glog
 Execute the following commands:
 ```sh
 $ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/glog ${OPENWRT}/package
+$ make package/glog/compile V=99
+```
+Glog seems to being installed with a wrong path to a dependency. To fix it just execute the folowing command
+```sh
+$ sed -i "s|/home/buildbot/slave-local/bcm53xx_generic/build/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/arm-openwrt-linux-uclibcgnueabi|$OPENWRT/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi|g" $OPENWRT/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/usr/lib/libglog.la
+```
+
+### Compile librofl
+
+```sh
+
 $ cp -r ${UN}/contrib/OpenWrt/package/librofl ${OPENWRT}/package
-
-$ cd ${OPENWRT}/dl
-$ wget https://github.com/toanju/rofl-common/archive/885dc70b53ad4b9cd349b5c512be0992d420d3b3.zip
-$ unzip 885dc70b53ad4b9cd349b5c512be0992d420d3b3
-$ mv rofl-common-885dc70b53ad4b9cd349b5c512be0992d420d3b3 librofl-0.10.9
-$ tar -cvzf librofl-0.10.9.tar.gz librofl-0.10.9
-
-$ mv ${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin/libtoolize ${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin/libtoolize.b
-$ cp -f ${OPENWRT}/staging_dir/host/bin/libtoolize ${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin/libtoolize 
-$ cd ${OPENWRT}
+$ cp -f ${OPENWRT}/staging_dir/host/bin/libtoolize ${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin/libtoolize
 $ make package/librofl/compile V=99
 ```
 
@@ -151,7 +156,7 @@ $ quilt new 001-missing_cstdio_include.patch
 ```
 edit the file using the quilt command (to map editing to a patch):
 ```sh
-$ quit edit src/rofl/common/caddress.cc
+$ quilt edit src/rofl/common/caddress.cc
 ```
 and add the following include:
 ```sh
@@ -197,6 +202,25 @@ save the patch:
 ```sh
 $ quilt refresh
 ```
+---
+To fix error due to unknown function pthread_setname_np create a new patch:
+
+```sh
+$ quilt new 004-thread_name.patch
+$ quilt edit src/rofl/common/cthread.cpp
+```
+remove these lines:
+```sh
+if (thread_name.length() && thread_name.length() < 16)
+	pthread_setname_np(tid, thread_name.c_str());
+```
+
+save the patch:
+```sh
+$ quilt refresh
+```
+---
+
 apply the patches and rebuild the package:
 ```sh
 $ cd ${OPENWRT}
@@ -351,12 +375,13 @@ $ make package/un-orchestrator/compile V=99
 ```
 
 ## Set up OpenWrt environment for Netgear R6300
+You can get the Firmware OpenWrt source code for Netgear R6300 from https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/openwrt-15.05-bcm53xx-netgear-r6300-v2-squashfs.chk
+
 
 Execute the following commands
 
 ```sh
 $ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
-$ export PACK=${OPENWRT}/bin/bcm53xx/packages
 $ export R_IP=[IP_of_your_router]
 ```
 
@@ -370,9 +395,11 @@ $ mkdir -p /pkg
 $ exit
 ```
 
+Copy fundamental packages
 ```sh
 $ scp ${OPENWRT}/bin/bcm53xx/packages/base/libjson-spirit_1.0.0-1_bcm53xx.ipk root@$R_IP:/pkg
-$ scp ${OPENWRT}/bin/bcm53xx/packages/base/librofl_0.10.9-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/glog_v0.3.4-1_bcm53xx.ipk root@R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/librofl_0.11.1-1_bcm53xx.ipk root@$R_IP:/pkg
 $ scp ${OPENWRT}/bin/bcm53xx/packages/base/un-orchestrator_1.0.0-1_bcm53xx.ipk root@$R_IP:/pkg
 ```
 If you compiled DoubleDecker, then copy also these packages
@@ -394,7 +421,8 @@ $ cd /pkg
 Install UN dependencies
 ```sh
 $ opkg install libjson-spirit_1.0.0-1_bcm53xx.ipk
-$ opkg install librofl_0.10.9-1_bcm53xx.ipk
+$ opkg install glog_v0.3.4-1_bcm53xx.ipk
+$ opkg install librofl_0.11.1-1_bcm53xx.ipk
 $ opkg install openvswitch
 ```
 
