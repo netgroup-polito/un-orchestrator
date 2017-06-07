@@ -47,8 +47,8 @@ Execute the following commands to compile the Openwrt Environment:
 ```sh
 $ git clone https://github.com/netgroup-polito/un-orchestrator
 $ export UN=[un-orchestrator]
-$ export PATH=$PATH:${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/bin
-$ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi
+$ export PATH=$PATH:${OPENWRT}/staging_dir/toolchain-*/bin
+$ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-*
 $ cd $OPENWRT
 $ sed -i -e '1isrc-git base https://git.openwrt.org/15.05/openwrt.git\' feeds.conf.default
 $ ./scripts/feeds update -a
@@ -61,7 +61,7 @@ If the following warning occurs
 ```sh
 WARNING: No feed for package 'expat' found, maybe it's already part of the standard packages?
 ```
-add a new source to file [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/feeds/packages.index
+add a new source to file ${OPENWRT}/feeds/packages.index
 
 ```sh
 cat >> ${OPENWRT}/feeds/packages.index
