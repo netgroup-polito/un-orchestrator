@@ -100,7 +100,7 @@ else
 	lastnicname=$8
 fi
 
-#Check if some environment variables myust be set up
+#Check if some environment variables must be set up
 position_num_env_var=`expr $position_num_forwarding + $num_forwarding \* 2 + 1`
 num_env_var=${!position_num_env_var}
 if [ $num_env_var != 0 ]
@@ -190,8 +190,8 @@ do
 done
 
 # Start the script "start.sh" inside the container
-echo [`date`]"[$0] Executing command 'sudo docker exec $1_$2 ./start.sh &> $1_$2.log &'"
-sudo docker exec $1_$2 ./start.sh &> $1_$2.log &
+echo [`date`]"[$0] Executing command 'sudo docker exec $1_$2 ./start.sh docker $7 &> $1_$2.log &'"
+sudo docker exec $1_$2 ./start.sh docker $7 &> $1_$2.log &
 echo [`date`]"[$0] VNF log available in file '$1_$2.log'"
 
 exit 1
