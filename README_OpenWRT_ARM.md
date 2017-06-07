@@ -41,6 +41,8 @@ Download source code for OpenWrt e orchestrator and set the proper environment v
 $ wget https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
 $ tar -jxvf OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
 $ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
+$ export TARGET=target-arm_cortex-a9_uClibc-0.9.33.2_eabi
+$ export TOOLCHAIN=toolchain-arm_cortex-a9_uClibc-0.9.33.2_eabi
 ```
 
 From here, the procedure is not related to a specific ARM platform.
@@ -49,8 +51,8 @@ Execute the following commands to compile the Openwrt Environment:
 ```sh
 $ git clone https://github.com/netgroup-polito/un-orchestrator
 $ export UN=[un-orchestrator]
-$ export PATH=$PATH:${OPENWRT}/staging_dir/toolchain-*/bin
-$ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-*
+$ export PATH=$PATH:${OPENWRT}/staging_dir/${TOOLCHAIN}/bin
+$ export STAGING_DIR=${OPENWRT}/staging_dir/${TOOLCHAIN}
 $ cd $OPENWRT
 # The following line must be executed only in case of OpenWRT 15.5
 $ sed -i -e '1isrc-git base https://git.openwrt.org/15.05/openwrt.git\' feeds.conf.default
@@ -138,7 +140,7 @@ $ sed -i "s|/home/buildbot/slave-local/bcm53xx_generic/build/staging_dir/toolcha
 ```sh
 
 $ cp -r ${UN}/contrib/OpenWrt/package/librofl ${OPENWRT}/package
-$ cp -f ${OPENWRT}/staging_dir/host/bin/libtoolize ${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin/libtoolize
+$ cp -f ${OPENWRT}/staging_dir/host/bin/libtoolize ${OPENWRT}/staging_dir/${TARGET}/host/bin/libtoolize
 $ make package/librofl/compile V=99
 ```
 
