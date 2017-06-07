@@ -43,6 +43,8 @@ $ tar -jxvf OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-
 $ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
 ```
 
+From here, the procedure is not related to a specific ARM platform.
+
 Execute the following commands to compile the Openwrt Environment:
 ```sh
 $ git clone https://github.com/netgroup-polito/un-orchestrator
@@ -50,13 +52,13 @@ $ export UN=[un-orchestrator]
 $ export PATH=$PATH:${OPENWRT}/staging_dir/toolchain-*/bin
 $ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-*
 $ cd $OPENWRT
+# The following line must be executed only in case of OpenWRT 15.5
 $ sed -i -e '1isrc-git base https://git.openwrt.org/15.05/openwrt.git\' feeds.conf.default
 $ ./scripts/feeds update -a
 $ ./scripts/feeds install libmicrohttpd
 $ ./scripts/feeds install libxml2
 $ ./scripts/feeds install boost-system
 ```
-
 If the following warning occurs
 ```sh
 WARNING: No feed for package 'expat' found, maybe it's already part of the standard packages?
