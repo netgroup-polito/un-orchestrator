@@ -34,21 +34,19 @@ $ sudo apt-get install -y ccache && echo 'export PATH="/usr/lib/ccache:$PATH"' |
 
 ## Set up a cross-compilation toolchain
 
-The version of the SDK used for our tests is: 
-OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.
+Although the process described in the following is generic (i.e., it is valid for each ARM platform), we have first to download the SDK for a specific ARM platform. In particular, we used the SDN `OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64`, which is specific for the Netgear 6300v2.
 
-Download source code for OpenWrt e orchestrator
-
+Download source code for OpenWrt e orchestrator and set the proper environment variable:
 ```sh
-$ git clone https://github.com/netgroup-polito/un-orchestrator
 $ wget https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
 $ tar -jxvf OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
+$ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
 ```
 
 Execute the following commands to compile the Openwrt Environment:
 ```sh
+$ git clone https://github.com/netgroup-polito/un-orchestrator
 $ export UN=[un-orchestrator]
-$ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
 $ export PATH=$PATH:${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/bin
 $ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi
 $ cd $OPENWRT
