@@ -374,7 +374,7 @@ $ cd ${OPENWRT}
 $ make package/un-orchestrator/compile V=99
 ```
 
-## Set up OpenWrt environment for Netgear R6300
+# Set up OpenWrt environment for Netgear R6300
 You can get the Firmware OpenWrt source code for Netgear R6300 from https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/openwrt-15.05-bcm53xx-netgear-r6300-v2-squashfs.chk
 
 
@@ -441,7 +441,7 @@ $ opkg install un-orchestrator_1.0.0-1_bcm53xx.ipk
 ```
 
 
-## Execute the orchestrator
+# Execute the orchestrator
 To execute the orchestrator you will need to start the ovs server first.
 ```sh
 $ ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632
