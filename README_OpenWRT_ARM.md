@@ -294,7 +294,7 @@ If the following or similar error occurs
 then edit the following file
 
 ```sh
-gedit $OPENWRT/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc
+gedit $OPENWRT/build_dir/${TARGET}/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc
 ```
 
 and add the following include
@@ -364,7 +364,7 @@ $ make package/un-orchestrator/compile V=99
 
 Compilation will probably stop due to an error. You need to change the configuration of the UN to use native implementation of NFs.  To enable Double Decker, turn on  Double Decker Connection and Resource Manager too.
 ```sh
-$ cd ${OPENWRT}/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0 
+$ cd ${OPENWRT}/build_dir/${TARGET}/un-orchestrator-1.0.0 
 $ ccmake .
 ```
 Before compiling the orchestrator, edit default configuration file and uncomment lines relative to resource manager and double decker. The DD keys json files are stored in /cfg/dd/keys/.
