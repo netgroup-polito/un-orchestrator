@@ -34,15 +34,13 @@ $ sudo apt-get install -y ccache && echo 'export PATH="/usr/lib/ccache:$PATH"' |
 
 ## Set up a cross-compilation toolchain
 
-Although the process described in the following is generic (i.e., it is valid for each ARM platform), we have first to download the SDK for a specific ARM platform. In particular, we used the SDN `OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64`, which is specific for the Netgear 6300v2.
+Although the process described in the following is generic (i.e., it is valid for each platform), we have first to download the SDK for a specific platform. In particular, we used the SDK `OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64`, which is specific for the Netgear 6300v2.
 
 Download source code for OpenWrt e orchestrator and set the proper environment variable:
 ```sh
 $ wget https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
 $ tar -jxvf OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
 $ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
-$ export TARGET=target-arm_cortex-a9_uClibc-0.9.33.2_eabi
-$ export TOOLCHAIN=toolchain-arm_cortex-a9_uClibc-0.9.33.2_eabi
 ```
 
 From here, the procedure is not related to a specific ARM platform.
@@ -51,16 +49,17 @@ Execute the following commands to compile the Openwrt Environment:
 ```sh
 $ git clone https://github.com/netgroup-polito/un-orchestrator
 $ export UN=[un-orchestrator]
-$ export PATH=$PATH:${OPENWRT}/staging_dir/${TOOLCHAIN}/bin
-$ export STAGING_DIR=${OPENWRT}/staging_dir/${TOOLCHAIN}
+$ export PATH=$PATH:${OPENWRT}/staging_dir/toolchain-*/bin
+$ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-*
 $ cd $OPENWRT
-# The following line must be executed only in case of OpenWRT 15.5
+# The following line must be executed only in case of OpenWRT 15.05. It seems that this version is missing base feed source.
 $ sed -i -e '1isrc-git base https://git.openwrt.org/15.05/openwrt.git\' feeds.conf.default
 $ ./scripts/feeds update -a
 $ ./scripts/feeds install libmicrohttpd
 $ ./scripts/feeds install libxml2
 $ ./scripts/feeds install boost-system
 ```
+
 If the following warning occurs
 ```sh
 WARNING: No feed for package 'expat' found, maybe it's already part of the standard packages?
@@ -108,7 +107,9 @@ Compile the Openwrt Environment
 $ make -j4 V=99
 ```
 
+---
 
+---
 The following guide details how to compile both the universal-node and the required libraries.
 For each package you can find a Makefile and patches that prevent some compilation error, moreover (for future support) the documentation explains how patches have been created.
 
@@ -130,7 +131,10 @@ $ cd ${OPENWRT}
 $ cp -r ${UN}/contrib/OpenWrt/package/glog ${OPENWRT}/package
 $ make package/glog/compile V=99
 ```
-Glog seems to being installed with a wrong path to a dependency. To fix it just execute the folowing command
+
+Cross compiling glog we experienced an error releted to a wrong path. In case you experience the same error, you'll need to edit the file `$OPENWRT/staging_dir/target-*/usr/lib/libglog.la` and set the proper path.
+
+*In our specific case* (Netgear 6300v2), we solved the problem executing the following line
 ```sh
 $ sed -i "s|/home/buildbot/slave-local/bcm53xx_generic/build/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/arm-openwrt-linux-uclibcgnueabi|$OPENWRT/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi|g" $OPENWRT/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/usr/lib/libglog.la
 ```
@@ -138,9 +142,8 @@ $ sed -i "s|/home/buildbot/slave-local/bcm53xx_generic/build/staging_dir/toolcha
 ### Compile librofl
 
 ```sh
-
 $ cp -r ${UN}/contrib/OpenWrt/package/librofl ${OPENWRT}/package
-$ cp -f ${OPENWRT}/staging_dir/host/bin/libtoolize ${OPENWRT}/staging_dir/${TARGET}/host/bin/libtoolize
+$ cp -f ${OPENWRT}/staging_dir/host/bin/libtoolize ${OPENWRT}/staging_dir/target-*/host/bin/libtoolize
 $ make package/librofl/compile V=99
 ```
 
@@ -249,59 +252,6 @@ $ cd ${OPENWRT}
 $ make package/un-orchestrator/compile V=99
 ```
 
----
-If the following or similar errors occur
-```sh
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:45: error: expected ')' before 'SCNd16'
-    if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
-                                             ^
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:60: error: spurious trailing '%' in format [-Werror=format=]
-    if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
-                                                            ^
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:60: error: too many arguments for format [-Werror=format-extra-args]
-```
-then edit the following file
-
-```sh
-gedit $OPENWRT/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc
-```
-
-removing the following include
-
-```sh
-#include <inttypes.h>
-```
-
-and adding AT THE TOP of the file the following lines
-
-```sh
-#ifndef __STDC_FORMAT_MACROS
-	#define __STDC_FORMAT_MACROS
-	#include <inttypes.h>
-	#undef __STDC_FORMAT_MACROS
-#else
-	#include <inttypes.h>
-#endif
-```
-
----
-If the following or similar error occurs
-```sh
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc: In member function 'void Port::splitPortsRangeInInt(int&, int&)':
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc:30:30: error: 'atoi' was not declared in this scope
-    begin = atoi(token.c_str());
-```
-then edit the following file
-
-```sh
-gedit $OPENWRT/build_dir/${TARGET}/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc
-```
-
-and add the following include
-
-```sh
-#include <stdlib.h>
-```
 
 #### How to patch the un-orchestrator
 
@@ -364,7 +314,7 @@ $ make package/un-orchestrator/compile V=99
 
 Compilation will probably stop due to an error. You need to change the configuration of the UN to use native implementation of NFs.  To enable Double Decker, turn on  Double Decker Connection and Resource Manager too.
 ```sh
-$ cd ${OPENWRT}/build_dir/${TARGET}/un-orchestrator-1.0.0 
+$ cd ${OPENWRT}/build_dir/target-*/un-orchestrator-1.0.0 
 $ ccmake .
 ```
 Before compiling the orchestrator, edit default configuration file and uncomment lines relative to resource manager and double decker. The DD keys json files are stored in /cfg/dd/keys/.
@@ -443,7 +393,7 @@ $ opkg install un-orchestrator_1.0.0-1_bcm53xx.ipk
 ```
 
 
-# Execute the orchestrator
+# Execute the orchestrator on Netgear 6300v2
 To execute the orchestrator you will need to start the ovs server first.
 ```sh
 $ ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632
