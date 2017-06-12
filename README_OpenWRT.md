@@ -281,7 +281,7 @@ $ make package/un-orchestrator/update V=99
 
 ## Compilation of double decker
 
-** *WARNING:* ** *Double decker compiles correctly, but interaction with the orchestrator did not work during out tests on Netgear 6300v2.*
+**WARNING:** *Double decker compiles correctly, but interaction with the orchestrator did not work during out tests on Netgear 6300v2.*
 
 Double Decker is an extra module that is not necessary to compile the un-orchestrator. Procede if you intend to add double decker support, otherwise jump to the set up of OpenWrt environment
 
@@ -502,5 +502,5 @@ $root@imolaSDN ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632
 Now you can run the orchestrator.
 
 
-** *WARNING:* ** *Tiesse Imola lose all installations on shutdown. In /cfg/orchestrator/ you find a script that clean up previous installation, re-install packages and execute the preliminary commandss to startup of the orchestrator.*
+**WARNING:** *Tiesse Imola lose all installations on shutdown. In /cfg/orchestrator/ you find a script that clean up previous installation, re-install packages and execute the preliminary commandss to startup of the orchestrator.*
 
