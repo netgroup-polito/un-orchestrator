@@ -336,7 +336,8 @@ bool Libvirt::startNF(StartNFIn sni)
 	/* Create XML for VM */
 
 	ULOG_DBG_INFO("The network function image is available at '%s'...",uri_image.c_str());
-	if(!createImgDisk(uri_image, Configuration::instance()->getVnfImagesPath(), domain_name))
+	string copy_on_write_disk = createImgDisk(uri_image, Configuration::instance()->getVnfImagesPath(), domain_name);
+	if(copy_on_write_disk.length() <= 0 )
 	{
 		ULOG_DBG_INFO("An error occured during the copy-on-write image disk creation");
 		return false;
@@ -352,7 +353,7 @@ bool Libvirt::startNF(StartNFIn sni)
 	xmlNewProp(drivern, BAD_CAST "type", BAD_CAST "qcow2"); //FIXME: this must not be fixed, but it should depend on the disk image
 
 	xmlNodePtr sourcen = xmlNewChild(diskn, NULL, BAD_CAST "source", NULL);
-	xmlNewProp(sourcen, BAD_CAST "file", BAD_CAST uri_image.c_str());
+	xmlNewProp(sourcen, BAD_CAST "file", BAD_CAST copy_on_write_disk.c_str());
 
 	xmlNewChild(diskn, NULL, BAD_CAST "backingStore", NULL);
 
@@ -610,7 +611,7 @@ bool Libvirt::stopNF(StopNFIn sni)
 	return true;
 }
 
-bool Libvirt::createImgDisk(string imgBasePath, string folder, string domainName)
+string Libvirt::createImgDisk(string imgBasePath, string folder, string domainName)
 {
 	ULOG_DBG_INFO("A new copy-on-write image from the base image is going to be created ...");
 	string imageDiskPath = folder + string("/") + domainName + string("_img.qcow2");
@@ -620,7 +621,7 @@ bool Libvirt::createImgDisk(string imgBasePath, string folder, string domainName
 	int retVal = system(cmd_create_disk.str().c_str());
 	retVal = retVal >> 8;
 	if(retVal != 0)
-		return false;
+		return "";
 	ULOG_DBG_INFO("Image disk created successfully");
-	return true;
+	return imageDiskPath;
 }
