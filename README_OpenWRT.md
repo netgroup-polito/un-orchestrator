@@ -33,25 +33,29 @@ $ sudo apt-get install -y ccache && echo 'export PATH="/usr/lib/ccache:$PATH"' |
 ```
 
 ## Set up a cross-compilation toolchain
+#### Selection of the correct SDK
+Although the process described in the following is generic (i.e., it is valid for each platform), we have first to download the SDK for a specific platform.
 
-The version of the SDK used for our tests is: 
-OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.
-
-Download source code for OpenWrt e orchestrator
-
+In particular, we used the SDK `OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64`, which is specific for the Netgear 6300v2. Download source code for OpenWrt e orchestrator and set the proper environment variable:
 ```sh
-$ git clone https://github.com/netgroup-polito/un-orchestrator
 $ wget https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
 $ tar -jxvf OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
+$ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
 ```
+
+The procedure has also been tested, except for Double Decker, on the SDK `OpenWrt-SDK-imola5-for-linux-x86_64-gcc-4.8.3_uClibc-0.9.33.2`, which is specific for Tiesse Imola.
+
+#### Toolchain setup
+From here, the procedure is not related to a specific ARM platform.
 
 Execute the following commands to compile the Openwrt Environment:
 ```sh
+$ git clone https://github.com/netgroup-polito/un-orchestrator
 $ export UN=[un-orchestrator]
-$ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
-$ export PATH=$PATH:${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/bin
-$ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi
+$ export PATH=$PATH:${OPENWRT}/staging_dir/toolchain-*/bin
+$ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-*
 $ cd $OPENWRT
+# The following line must be executed only in case of OpenWRT 15.05. It seems that this version is missing base feed source.
 $ sed -i -e '1isrc-git base https://git.openwrt.org/15.05/openwrt.git\' feeds.conf.default
 $ ./scripts/feeds update -a
 $ ./scripts/feeds install libmicrohttpd
@@ -63,7 +67,7 @@ If the following warning occurs
 ```sh
 WARNING: No feed for package 'expat' found, maybe it's already part of the standard packages?
 ```
-add a new source to file [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/feeds/packages.index
+add a new source to file ${OPENWRT}/feeds/packages.index
 
 ```sh
 cat >> ${OPENWRT}/feeds/packages.index
@@ -106,7 +110,9 @@ Compile the Openwrt Environment
 $ make -j4 V=99
 ```
 
+---
 
+---
 The following guide details how to compile both the universal-node and the required libraries.
 For each package you can find a Makefile and patches that prevent some compilation error, moreover (for future support) the documentation explains how patches have been created.
 
@@ -120,20 +126,27 @@ $ make package/libjson-spirit/compile V=99
 ```
 
 ## Compilation of the rofl library
+
+### Compile glog
 Execute the following commands:
 ```sh
 $ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/glog ${OPENWRT}/package
+$ make package/glog/compile V=99
+```
+
+Cross compiling glog we experienced an error releted to a wrong path. In case you experience the same error, you'll need to edit the file `$OPENWRT/staging_dir/target-*/usr/lib/libglog.la` and set the proper path.
+
+*In our specific case* (Netgear 6300v2), we solved the problem executing the following line
+```sh
+$ sed -i "s|/home/buildbot/slave-local/bcm53xx_generic/build/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/arm-openwrt-linux-uclibcgnueabi|$OPENWRT/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi|g" $OPENWRT/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/usr/lib/libglog.la
+```
+
+### Compile librofl
+
+```sh
 $ cp -r ${UN}/contrib/OpenWrt/package/librofl ${OPENWRT}/package
-
-$ cd ${OPENWRT}/dl
-$ wget https://github.com/toanju/rofl-common/archive/885dc70b53ad4b9cd349b5c512be0992d420d3b3.zip
-$ unzip 885dc70b53ad4b9cd349b5c512be0992d420d3b3
-$ mv rofl-common-885dc70b53ad4b9cd349b5c512be0992d420d3b3 librofl-0.10.9
-$ tar -cvzf librofl-0.10.9.tar.gz librofl-0.10.9
-
-$ mv ${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin/libtoolize ${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin/libtoolize.b
-$ cp -f ${OPENWRT}/staging_dir/host/bin/libtoolize ${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin/libtoolize 
-$ cd ${OPENWRT}
+$ cp -f ${OPENWRT}/staging_dir/host/bin/libtoolize ${OPENWRT}/staging_dir/target-*/host/bin/libtoolize
 $ make package/librofl/compile V=99
 ```
 
@@ -151,7 +164,7 @@ $ quilt new 001-missing_cstdio_include.patch
 ```
 edit the file using the quilt command (to map editing to a patch):
 ```sh
-$ quit edit src/rofl/common/caddress.cc
+$ quilt edit src/rofl/common/caddress.cc
 ```
 and add the following include:
 ```sh
@@ -197,6 +210,25 @@ save the patch:
 ```sh
 $ quilt refresh
 ```
+---
+To fix error due to unknown function pthread_setname_np create a new patch:
+
+```sh
+$ quilt new 004-thread_name.patch
+$ quilt edit src/rofl/common/cthread.cpp
+```
+remove these lines:
+```sh
+if (thread_name.length() && thread_name.length() < 16)
+	pthread_setname_np(tid, thread_name.c_str());
+```
+
+save the patch:
+```sh
+$ quilt refresh
+```
+---
+
 apply the patches and rebuild the package:
 ```sh
 $ cd ${OPENWRT}
@@ -223,59 +255,6 @@ $ cd ${OPENWRT}
 $ make package/un-orchestrator/compile V=99
 ```
 
----
-If the following or similar errors occur
-```sh
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:45: error: expected ')' before 'SCNd16'
-    if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
-                                             ^
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:60: error: spurious trailing '%' in format [-Werror=format=]
-    if((sscanf(value.getString().c_str(),"%" SCNd16,&ipProto) != 1) || (ipProto > 255) )
-                                                            ^
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc:739:60: error: too many arguments for format [-Werror=format-extra-args]
-```
-then edit the following file
-
-```sh
-gedit $OPENWRT/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/node_resource_manager/graph/graph-parser/match_parser.cc
-```
-
-removing the following include
-
-```sh
-#include <inttypes.h>
-```
-
-and adding AT THE TOP of the file the following lines
-
-```sh
-#ifndef __STDC_FORMAT_MACROS
-	#define __STDC_FORMAT_MACROS
-	#include <inttypes.h>
-	#undef __STDC_FORMAT_MACROS
-#else
-	#include <inttypes.h>
-#endif
-```
-
----
-If the following or similar error occurs
-```sh
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc: In member function 'void Port::splitPortsRangeInInt(int&, int&)':
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc:30:30: error: 'atoi' was not declared in this scope
-    begin = atoi(token.c_str());
-```
-then edit the following file
-
-```sh
-gedit $OPENWRT/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0/orchestrator/compute_controller/template/port.cc
-```
-
-and add the following include
-
-```sh
-#include <stdlib.h>
-```
 
 #### How to patch the un-orchestrator
 
@@ -301,6 +280,9 @@ $ make package/un-orchestrator/update V=99
 ```
 
 ## Compilation of double decker
+
+**WARNING:** *Double decker compiles correctly, but interaction with the orchestrator did not work during out tests on Netgear 6300v2.*
+
 Double Decker is an extra module that is not necessary to compile the un-orchestrator. Procede if you intend to add double decker support, otherwise jump to the set up of OpenWrt environment
 
 Execute the following commands:
@@ -338,10 +320,10 @@ $ make package/un-orchestrator/compile V=99
 
 Compilation will probably stop due to an error. You need to change the configuration of the UN to use native implementation of NFs.  To enable Double Decker, turn on  Double Decker Connection and Resource Manager too.
 ```sh
-$ cd ${OPENWRT}/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/un-orchestrator-1.0.0 
+$ cd ${OPENWRT}/build_dir/target-*/un-orchestrator-1.0.0 
 $ ccmake .
 ```
-Before compiling the orchestrator, edit default configuration file and uncomment lines relative to resource manager and double decker. The DD keys json files are stored in /cfg/dd/keys/.
+Before compiling the orchestrator, edit the default configuration file and uncomment lines relative to resource manager and double decker. The DD keys json files are stored in /cfg/dd/keys/.
 
 
 Finally execute
@@ -350,13 +332,15 @@ $ cd ${OPENWRT}
 $ make package/un-orchestrator/compile V=99
 ```
 
-## Set up OpenWrt environment for Netgear R6300
+# Netgear R6300v2
+### Set up OpenWrt environment
+You can get the Firmware OpenWrt source code for Netgear R6300 from https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/openwrt-15.05-bcm53xx-netgear-r6300-v2-squashfs.chk
+
 
 Execute the following commands
 
 ```sh
 $ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
-$ export PACK=${OPENWRT}/bin/bcm53xx/packages
 $ export R_IP=[IP_of_your_router]
 ```
 
@@ -370,9 +354,11 @@ $ mkdir -p /pkg
 $ exit
 ```
 
+Copy fundamental packages
 ```sh
 $ scp ${OPENWRT}/bin/bcm53xx/packages/base/libjson-spirit_1.0.0-1_bcm53xx.ipk root@$R_IP:/pkg
-$ scp ${OPENWRT}/bin/bcm53xx/packages/base/librofl_0.10.9-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/glog_v0.3.4-1_bcm53xx.ipk root@R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/librofl_0.11.1-1_bcm53xx.ipk root@$R_IP:/pkg
 $ scp ${OPENWRT}/bin/bcm53xx/packages/base/un-orchestrator_1.0.0-1_bcm53xx.ipk root@$R_IP:/pkg
 ```
 If you compiled DoubleDecker, then copy also these packages
@@ -394,7 +380,8 @@ $ cd /pkg
 Install UN dependencies
 ```sh
 $ opkg install libjson-spirit_1.0.0-1_bcm53xx.ipk
-$ opkg install librofl_0.10.9-1_bcm53xx.ipk
+$ opkg install glog_v0.3.4-1_bcm53xx.ipk
+$ opkg install librofl_0.11.1-1_bcm53xx.ipk
 $ opkg install openvswitch
 ```
 
@@ -411,9 +398,25 @@ Finally install the orchestrator
 ```sh
 $ opkg install un-orchestrator_1.0.0-1_bcm53xx.ipk
 ```
+### Port configuration on Netgear R6300
+ 
+ To use UN on the router, you have to modify port configuration.
+ 
+ Access the web interface of router typing its address in the browser bar. First, go on Network -> Switch. Here it will be the configuration of VLAN 1 and 2; you need to create three other VLAN typing the add button below, so that every physical port of the router refers to a different VLAN. For what concern the VLAN 1 that already existed, leave unchanged the field related to "port1" and "CPU", while for the other fields select "off": it means that VLAN 1 will be connected to port 1. Make the same procedure for all other VLAN connecting them to the corresponding port; don't forget to set the CPU field "tagged".
+ 
+ This is an example of how the final configuration should be:
+ 
+ ![vlan-configuration](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/vlan_configuration_OpenWRT_NetGear.png)
+ 
+ 
+ After doing this, go on Network -> Interfaces. Here you have to create a new interfaces for each new VLAN created in the previous step (so in this particular case you have to insert 3 interfaces) clicking on “add new interface” button. Select "unmanaged" under protocol.
+ 
+ This is an example of the final result:
+ 
+ ![interfaces-configuration](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/interface_configuration_OpenWRT_NetGear.png)
+ 
 
-
-## Execute the orchestrator
+### Start node-orchestrator
 To execute the orchestrator you will need to start the ovs server first.
 ```sh
 $ ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632
@@ -424,3 +427,80 @@ $ cd /cfg/orchestrator
 $ node-orchestrator
 ```
 Now orchestrator is running.
+
+#Tiesse Imola
+
+### Set up OpenWrt environment for Tiesse Imola
+
+The firmware OpenWRT should be already installed on the router.
+
+Access the router via ssh connecting the Ethernet cable to the eth0 port. The default IP address is 192.168.1.97, the default password should be empty. 
+```sh
+$ ssh root@192.168.1.97:
+$root@imolaSDN: password: 
+```
+
+Create the orchestrator folder inside /cfg because the root partition does not have enough memory to install the orchestrator and its libraries
+```sh
+$root@imolaSDN: mkdir /cfg/orchestrator
+$root@imolaSDN: exit
+```
+
+Copy the system libraries compiled for the router (found offline) needed to install the orchestrator
+```sh
+$ scp libstdcpp_4.8.3-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp boost-system_1_51_0-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp boost-chrono_1_51_0-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp boost-thread_1_51_0-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp libxml2_2.9.2-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp libmicrohttpd_0.9.19-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp libsqlite3_3070701-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+
+$ scp ${OPENWRT}/bin/imola5/packages/base/libjson-spirit_1.0.0-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+
+$ scp ${OPENWRT}/bin/imola5/packages/base/librofl_0.10.9-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+
+$ scp ${OPENWRT}/bin/imola5/packages/base/un-orchestrator_1.0.0-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+```
+
+Now enter the router and install the libraries
+```sh
+$ ssh root@192.168.1.97
+
+$root@imolaSDN cd /cfg/orchestrator
+$root@imolaSDN opkg install libstdcpp_4.8.3-1_imola5.ipk
+$root@imolaSDN opkg install boost-system_1_51_0-1_imola5.ipk
+$root@imolaSDN opkg install boost-chrono_1_51_0-1_imola5.ipk
+$root@imolaSDN opkg install boost-thread_1_51_0-1_imola5.ipk
+$root@imolaSDN opkg install libxml2_2.9.2-1_imola5.ipk
+$root@imolaSDN opkg install libmicrohttpd_0.9.19-1_imola5.ipk
+$root@imolaSDN opkg install libsqlite3_3070701-1_imola5.ipk
+
+$root@imolaSDN opkg install libjson-spirit_1.0.0-1_imola5.ipk
+$root@imolaSDN opkg install librofl_0.10.9-1_imola5.ipk
+$root@imolaSDN opkg install node-orchestrator_0.0.1-1_bcm53xx.ipk
+```
+
+### Start node-orchestrator
+
+Disable openvswitch on the router
+```sh
+$root@imolaSDN openvswitch off
+```
+
+There should be no need to map the switch ports with VLAN as you normally do in openwrt. The imola driver already supports the mapping between the operating system side of the network interfaces and the physical switch ports. Typing:
+```sh
+$root@imolaSDN ifconfig -a 
+```
+you should see at least four interfaces (port1, port2, port3, Port4).
+
+Start ovsdb-server:
+```sh
+$root@imolaSDN ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632
+```
+
+Now you can run the orchestrator.
+
+
+**WARNING:** *Tiesse Imola lose all installations on shutdown. In /cfg/orchestrator/ you find a script that clean up previous installation, re-install packages and execute the preliminary commandss to startup of the orchestrator.*
+

@@ -139,7 +139,7 @@
 				#define MPLS_LABEL		"mpls_label"
 				#define MPLS_TC			"mpls_tc"
 				#define ACTIONS			"actions"
-				#define OUTPUT				"output_to_port"
+				#define OUTPUTX				"output_to_port"
 					#define	PORT				"port"
 					//#define	VNF_ID				"id"
 					#define ENDPOINT			"endpoint"

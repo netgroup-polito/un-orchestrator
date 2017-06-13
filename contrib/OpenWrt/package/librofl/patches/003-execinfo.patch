@@ -1,12 +1,12 @@
-Index: librofl-0.10.9/examples/ethswctld/cunixenv.h
+Index: librofl-0.11.1/examples/ethswctld/cunixenv.h
 ===================================================================
---- librofl-0.10.9.orig/examples/ethswctld/cunixenv.h	2016-09-21 10:10:03.000000000 +0200
-+++ librofl-0.10.9/examples/ethswctld/cunixenv.h	2016-09-22 10:50:30.526140670 +0200
-@@ -11,7 +11,6 @@
- #include <stdlib.h>
- #include <unistd.h>
- #include <getopt.h>
--#include <execinfo.h>
+--- librofl-0.11.1.orig/examples/ethswctld/cunixenv.h	2017-05-30 00:53:45.000000000 +0200
++++ librofl-0.11.1/examples/ethswctld/cunixenv.h	2017-05-30 01:56:34.722030999 +0200
+@@ -6,7 +6,6 @@
+ #define CUNIXENV_H 1
+ 
  #include <errno.h>
- #include <sys/time.h>
- #include <sys/resource.h>
+-#include <execinfo.h>
+ #include <getopt.h>
+ #include <iostream>
+ #include <signal.h>

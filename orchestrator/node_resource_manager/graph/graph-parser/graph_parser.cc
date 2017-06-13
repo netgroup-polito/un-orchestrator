@@ -1304,7 +1304,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													const string& a_name  = a->first;
 													const Value&  a_value = a->second;
 
-													if(a_name == OUTPUT)
+													if(a_name == OUTPUTX)
 													{
 														//The action is "output_to_port"
 
@@ -1616,7 +1616,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 											if(!foundOneOutputToPort)
 											{
 												//"output_to_port" is a mandatory action
-												string error = string("Key ") + OUTPUT + " not found in " + ACTIONS;
+												string error = string("Key ") + OUTPUTX + " not found in " + ACTIONS;
 												ULOG_WARN(error.c_str());
 												throw new GraphParserException(std::move(error));
 											}

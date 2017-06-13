@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=librofl
-PKG_VERSION:=0.10.9
+PKG_VERSION:=0.11.1
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=https://github.com/toanju/rofl-common.git
+PKG_SOURCE_URL:=https://github.com/bisdn/rofl-common.git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_VERSION:=885dc70b53ad4b9cd349b5c512be0992d420d3b3
+PKG_SOURCE_VERSION:=03dcdef188d745ba8bc294ef4a8c913f0f07bdbc
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 
@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/librofl
   CATEGORY:=Libraries
   TITLE:=OpenFlow C++ library 
-  DEPENDS:=+libstdcpp +librt +libopenssl +libpthread
+  DEPENDS:=+libstdcpp +librt +libopenssl +libpthread +libglog
 endef
 
 define Package/librofl/description

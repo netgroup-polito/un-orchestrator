@@ -67,6 +67,6 @@ string ActionEndpointInternal::toString()
 Object ActionEndpointInternal::toJSON()
 {
     Object action;
-    action[OUTPUT] = endpointName.c_str();
+    action[OUTPUTX] = endpointName.c_str();
     return action;
 }

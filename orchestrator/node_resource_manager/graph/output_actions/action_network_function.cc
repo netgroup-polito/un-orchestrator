@@ -38,6 +38,6 @@ Object ActionNetworkFunction::toJSON()
     Object action;
     stringstream network_function;
     network_function << nfId << ":" << port;
-    action[OUTPUT] = endpointPortName.c_str();
+    action[OUTPUTX] = endpointPortName.c_str();
     return action;
 }
