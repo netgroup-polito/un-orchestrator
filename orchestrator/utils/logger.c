@@ -68,6 +68,11 @@ extern void logger(int LoggingLevel, const char *ModuleName, const char *File, i
 #endif
 
 	fflush(DestFile);
+
+#ifdef LOG_ON_FILE	
+	fclose(DestFile);
+#endif
+
 }
 
 extern void coloredLogger(char *color, int LoggingLevel, const char *ModuleName, const char *File, int Line, const char *Format, ...)

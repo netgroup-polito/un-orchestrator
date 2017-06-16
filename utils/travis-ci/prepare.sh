@@ -3,11 +3,26 @@ set -ev	#print every line before executing it and exit if one command fails
 
 BASE=`pwd`
 
+# glog
+cd $HOME
+if [ ! -d "glog" ]; then
+	git clone https://github.com/google/glog
+	cd glog
+	./autogen.sh 
+	./configure 
+	make -j2
+else
+	echo "glog exists"
+	cd glog
+fi
+
+sudo make install
+
 # rofl
 cd $HOME
 ls
 if [ ! -d "rofl-common/build" ]; then
-	git clone https://github.com/toanju/rofl-common -b fix-ovs
+	git clone https://github.com/bisdn/rofl-common
 	cd rofl-common/
 	./autogen.sh
 	cd build

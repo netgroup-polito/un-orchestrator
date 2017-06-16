@@ -7,28 +7,31 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=librofl
-PKG_VERSION:=0.11.1
+PKG_NAME:=czmq
+PKG_VERSION:=3.0.2
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=https://github.com/bisdn/rofl-common.git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_VERSION:=03dcdef188d745ba8bc294ef4a8c913f0f07bdbc
+PKG_SOURCE_URL:=https://github.com/zeromq/czmq
+PKG_SOURCE_VERSION:=v3.0.2
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+EXTRA_CFLAGS:=-std=gnu99
 
-PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/cmake.mk
 
-define Package/librofl
-  CATEGORY:=Libraries
-  TITLE:=OpenFlow C++ library 
-  DEPENDS:=+libstdcpp +librt +libopenssl +libpthread +libglog
+
+define Package/czmq
+  CATEGORY:=Utility
+  TITLE:=High-level C binding for ØMQ
+  DEPENDS:= +libzmq
+  PROVIDES:=libczmq
 endef
 
-define Package/librofl/description
-  Revised OpenFlow Library (ROFL) is a C++ library that helps on writing OpenFlow endpoints (OF agents), for controllers, proxy controllers and datapaths
+define Package/czmq/description
+  High-level C binding for ØMQ
 endef
 
 define Build/Configure
@@ -45,12 +48,13 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include
 	
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/librofl_common.so* $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libczmq.so $(1)/usr/lib
 endef
 
-define Package/librofl/install
+define Package/czmq/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/librofl_common.so* $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libczmq.so $(1)/usr/lib
 endef
 
-$(eval $(call BuildPackage,librofl))
+$(eval $(call BuildPackage,czmq))
+

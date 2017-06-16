@@ -12,7 +12,7 @@ In order to execute the un-orchestrator, we need to setup different components, 
 
 In addition to the libraries already listed in the main [../README_COMPILE.md](../README_COMPILE.md),
 some more components are required to compile the un-orchestrator.
-In the following we list the steps required on an **Ubuntu 14.04**.
+In the following we list the steps required on an **Ubuntu 14.04 - 64 bit**.
 
 	; - sqlite3: command line interface for SQLite 3
 	; - libsqlite3-dev: SQLite 3 development files
@@ -22,7 +22,7 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 	; Install ROFL-common (library to parse OpenFlow messages)
 	; Alternatively, a copy of ROFL-common is provided in `[un-orchestrator]/contrib/rofl-common.zip`
 
-	$ git clone https://github.com/toanju/rofl-common -b fix-ovs
+	$ git clone https://github.com/bisdn/rofl-common
 	$ cd rofl-common/
 
 	; Now install the above library according to the description provided

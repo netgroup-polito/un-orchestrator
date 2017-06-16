@@ -1,17 +1,15 @@
 # Porting of the UN to the OpenWRT platform
 
-This document contains the instructions required to compile the UN for the OpenWrt platform.
+This document contains the instructions required to compile the UN for the OpenWRT platform.
 
-Warning: The current status of the porting is very preliminary; not all the components have been compiled so far, nor we are sure that the software behaves properly. Therefore this document should be intended as an initial proof-of-concept.
+In this page there is the list of all devices that are supported by OpenWrt, with the reference to a device page.
+https://wiki.openwrt.org/toh/start
 
-This [page](https://wiki.openwrt.org/toh/start) contains a list of devices supported by OpenWRT. In particular, we tested the above instructions on a [Netgear R6300v2](https://wiki.openwrt.org/toh/netgear/netgear_r6300_v2 "Netgear R6300v2").
-
-
-## How to cross-compile the un-orchestrator for ARM architecture
+# How to compile the un-orchestrator for ARM architecture
 
 In order to cross compile the un-orchestrator, it need to have at least 50 MB of available storage space on the device and it need to follow the following steps.
 
-### Preliminary operations
+## Preliminary operations
 
 Ensure that the following libraries are installed on the PC:
 
@@ -25,289 +23,384 @@ Ensure that the following libraries are installed on the PC:
 ; - ethtool: utilities to set some parameters on the NICs (e.g., disable TCP offloading)
 ; - libncurses-dev
 ; - subversion
-$ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libmicrohttpd-dev libxml2-dev ethtool libncurses-dev subversion
+; - git, gawk, libssl-dev
+$ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libmicrohttpd-dev libxml2-dev ethtool libncurses-dev subversion git gawk libssl-dev
 ```
 
-```sh
-; - sqlite3: command line interface for SQLite 3
-; - libsqlite3-dev: SQLite 3 development files
-; - libssl-dev: SSL development libraries, header files and documentation
-$ sudo apt-get install sqlite3 libsqlite3-dev libssl-dev
-```
-
-```sh
-; Install ROFL-common (library to parse OpenFlow messages)
-; Alternatively, a copy of ROFL-common is provided in `[un-orchestrator]/contrib/rofl-common.zip`
-; Please note that you have to use version 0.6; newer versions have a different API that
-; is not compatible with our code.
-
-$ git clone https://github.com/bisdn/rofl-common
-$ cd rofl-common/
-$ git checkout stable-0.6
-
-; Now install the above library according to the description provided
-; in the cloned folder
-```
 ```sh
 $ install ccache:
-$ sudo apt-get install -y ccache &&\
-$ echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc &&\
-$ source ~/.bashrc && echo $PATH
+$ sudo apt-get install -y ccache && echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc && source ~/.bashrc && echo $PATH
 ```
 
+## Set up a cross-compilation toolchain
+
+Although the process described in the following is generic (i.e., it is valid for each platform), we have first to download the SDK for a specific platform. In particular, we used the SDK `OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64`, which is specific for the Netgear 6300v2.
+
+Download source code for OpenWrt e orchestrator and set the proper environment variable:
 ```sh
-; Install inih (a nice library used to read the configuration file)
-$ cd [un-orchestrator]/contrib
-$ unzip inih.zip
-$ cd inih
-$ cp * ../../orchestrator/node_resource_manager/database_manager/SQLite
+$ wget https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
+$ tar -jxvf OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
+$ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
 ```
-### Set up a cross-compilation toolchain
 
-The version of the SDK used for our tests, for the Netgear R6300v23 box, is the following: 
-OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.
+From here, the procedure is not related to a specific ARM platform.
 
-At first, download the OpenWrt SDK Barries Breaker source code from:
-https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
-
-Then execute the following commands:
+Execute the following commands to compile the Openwrt Environment:
 ```sh
-$ cd [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
+$ git clone https://github.com/netgroup-polito/un-orchestrator
+$ export UN=[un-orchestrator]
+$ export PATH=$PATH:${OPENWRT}/staging_dir/toolchain-*/bin
+$ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-*
+$ cd $OPENWRT
+# The following line must be executed only in case of OpenWRT 15.05. It seems that this version is missing base feed source.
+$ sed -i -e '1isrc-git base https://git.openwrt.org/15.05/openwrt.git\' feeds.conf.default
 $ ./scripts/feeds update -a
+$ ./scripts/feeds install libmicrohttpd
+$ ./scripts/feeds install libxml2
+$ ./scripts/feeds install boost-system
+```
+
+If the following warning occurs
+```sh
+WARNING: No feed for package 'expat' found, maybe it's already part of the standard packages?
+```
+add a new source to file ${OPENWRT}/feeds/packages.index
+
+```sh
+cat >> ${OPENWRT}/feeds/packages.index
+
+Source-Makefile: feeds/packages/libs/expat/Makefile
+Package: expat
+Version: 2.1.0-3
+Depends: +libc +SSP_SUPPORT:libssp +USE_GLIBC:librt +USE_GLIBC:libpthread 
+Conflicts: 
+Menu-Depends: 
+Provides: 
+Build-Types: host
+Section: libs
+Category: Libraries
+Title: An XML parsing library
+Maintainer: Steven Barth <cyrus@openwrt.org>
+Source: expat-2.1.0.tar.gz
+License: MIT
+LicenseFiles: COPYING
+Type: ipkg
+Description:  A fast, non-validating, stream-oriented XML parsing library.
+http://expat.sourceforge.net/
+Steven Barth <cyrus@openwrt.org>
+@@
+
+; press Ctrl+D to end cat input
+```
+
+then execute
+
+```sh
+$ ./scripts/feeds uninstall -a
 $ ./scripts/feeds install libmicrohttpd
 $ ./scripts/feeds install boost-system
 $ ./scripts/feeds install libxml2
-$ ./scripts/feeds install libpthread
 ```
 
-It may happen that the files to be copied (execinfo.h, iconv.h, inttypes.h) are in /usr/include/.
-In that case first copy them in usr/local/include/ and then move forward.
+Compile the Openwrt Environment
+```sh
+$ make -j4 V=99
+```
+
+---
+
+---
+The following guide details how to compile both the universal-node and the required libraries.
+For each package you can find a Makefile and patches that prevent some compilation error, moreover (for future support) the documentation explains how patches have been created.
+
+
+## Compilation of the json-spirit library
+Execute the following commands:
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/libjson-spirit ${OPENWRT}/package
+$ make package/libjson-spirit/compile V=99
+```
+
+## Compilation of the rofl library
+
+### Compile glog
+Execute the following commands:
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/glog ${OPENWRT}/package
+$ make package/glog/compile V=99
+```
+
+Cross compiling glog we experienced an error releted to a wrong path. In case you experience the same error, you'll need to edit the file `$OPENWRT/staging_dir/target-*/usr/lib/libglog.la` and set the proper path.
+
+*In our specific case* (Netgear 6300v2), we solved the problem executing the following line
+```sh
+$ sed -i "s|/home/buildbot/slave-local/bcm53xx_generic/build/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/arm-openwrt-linux-uclibcgnueabi|$OPENWRT/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi|g" $OPENWRT/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/usr/lib/libglog.la
+```
+
+### Compile librofl
 
 ```sh
-$ cp -r /usr/local/include/rofl [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/include
-$ cp /usr/local/include/execinfo.h [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/include
-$ cp /usr/local/include/iconv.h [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/include
-$ cp /usr/local/include/inttypes.h [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/include
+$ cp -r ${UN}/contrib/OpenWrt/package/librofl ${OPENWRT}/package
+$ cp -f ${OPENWRT}/staging_dir/host/bin/libtoolize ${OPENWRT}/staging_dir/target-*/host/bin/libtoolize
+$ make package/librofl/compile V=99
 ```
 
-It may happen that the source files in the OpenWRT folder are not updated with the latest changes on UN. So you have to check it.
+#### How to patch librofl
+Performe the preliminary commands:
 ```sh
-$ cd [un-orchestrator]/orchestrator
-; copy the paths present in the SOURCES1 variable of the CMakeLists.txt file and past it in the SOURCES variable of
-[un-orchestrator]/contrib/OpenWrt/orchestrator/CMakeLists.txt
-
-$ cd [un-orchestrator]/name-resolver
-; copy the paths present in the SOURCES variable of the CMakeLists.txt and past it in the SOURCES variable of
-[un-orchestrator]/contrib/OpenWrt/name-resolver/CMakeLists.txt
+$ make package/librofl/{clean,prepare} V=99 QUILT=1
 ```
-Now you can move forward:
+---
+To fix error due to missing include create a new patch:
+
 ```sh
-$ cd [un-orchestrator]/contrib/OpenWrt/orchestrator
-$ cp * ../../../orchestrator
-
-$ cd [un-orchestrator]/contrib/OpenWrt/name-resolver
-$ cp * ../../../name-resolver
-
-$ cp -r [un-orchestrator]/name-resolver [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/package
-$ cp -r [un-orchestrator]/orchestrator [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/package
-
-; comments row 152 ("$(CheckDependencies)") in
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/include/package-ipkg.mk
-
-
-$ cd [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
-$ make V=99
-; the compilation should be successful until the linking process with the json-spirit and rofl libraries. Then continue with the cross-compilation of the libraries.
+$ cd build_dir/target-*/librofl-*
+$ quilt new 001-missing_cstdio_include.patch
 ```
-
-If such an error appears during compilation:
+edit the file using the quilt command (to map editing to a patch):
 ```sh
-$ ERROR: gettext infrastructure mismatch: using a Makefile.in.in from gettext version 0.18 but the autoconf macros are from getteext version 0.19
+$ quilt edit src/rofl/common/caddress.cc
 ```
-change row 12 of
+and add the following include:
 ```sh
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/gdbm-1.11/po/Makefile.in.in
+#include <cstdio>
 ```
-as well:
+Save the changes and repeat the same operation to files:
 ```sh
-GETTEXT_MACRO_VERSION = 0.19 
+src/rofl/common/openflow/cofdescstats.cc
+src/rofl/common/openflow/coftablestats.cc
 ```
-
-### Cross-compilation of the json-spirit library
-At first, set the following environment variables:
+the `quilt diff` command show the changes performed, if it looks ok save the patch:
 ```sh
-$ export STAGING_DIR=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/bin
-$ export PATH=$PATH:${STAGING_DIR}
+$ quilt refresh
 ```
-Then compile json-spirit 
+---
+To fix error due to less recent kernel version create a new patch:
+
 ```sh
-$ cd [un-orchestrator]/contrib
-$ unzip json-spirit
-
-$ cd OpenWrt/json-spirit-arm
-; in "CMakeLists.txt" file in the variable "Boost_ROOT" (line 60) substitute [OPENWRT] with the full directory path of
-[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
-; check whether the version of the boost-library is the same installed by you. If not, change the path in accordance with the right version
-;
-; in "openwrt-toolchain.cmake" file replace [KERNEL]
-; with the full directory path of
-; [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/linux-bcm53xx/linux-3.18.20
-
-; [json-spirit] refers to the folder unzipped with the command $ unzip json-spirit
-$ cp * [json-spirit]/build
-
-; copy [json-spirit] in the home directory
-$ cp [json-spirit] ~/
-$ cd [json-spirit]/build
-; Run CMake and check output for errors.
-$ cmake . -DCMAKE_TOOLCHAIN_FILE=~/json-spirit/build/openwrt-toolchain.cmake
-$ make
-
-$ cp libjson_spirit.so [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/lib
+$ quilt new 002-eventfd_function.patch
+$ quilt edit src/rofl/common/cthread.cpp
 ```
-
-### Cross-compilation of the rofl-common library
-
-Have to use a rofl-common patched presents in [un-orchestrator]/contrib/OpenWrt folder.
+substitute the following line to:
 ```sh
-$ cd [un-orchestrator]/contrib
-$ unzip rofl-common
-
-; copy [rofl-common] in the home directory
-cp -r [rofl-common] ~/
+-	event_fd = eventfd(0, EFD_NONBLOCK);
++	event_fd = eventfd(0, 0);
 ```
-Set the following environment variables:
+save the patch:
+```sh
+$ quilt refresh
+```
+---
+To fix error due to useless include create a new patch:
+
+```sh
+$ quilt new 003-execinfo.patch
+$ quilt edit examples/ethswctld/cunixenv.h
+```
+remove the include:
+```sh
+#include <execinfo.h>
+```
+save the patch:
+```sh
+$ quilt refresh
+```
+---
+To fix error due to unknown function pthread_setname_np create a new patch:
+
+```sh
+$ quilt new 004-thread_name.patch
+$ quilt edit src/rofl/common/cthread.cpp
+```
+remove these lines:
+```sh
+if (thread_name.length() && thread_name.length() < 16)
+	pthread_setname_np(tid, thread_name.c_str());
+```
+
+save the patch:
+```sh
+$ quilt refresh
+```
+---
+
+apply the patches and rebuild the package:
+```sh
+$ cd ${OPENWRT}
+$ make package/librofl/update V=99
+$ make package/librofl/{clean,compile} package/index V=99
+```
+
+## Compilation of the universal-node
+Execute the following commands:
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/un-orchestrator ${OPENWRT}/package
+$ make package/un-orchestrator/compile V=99
+```
+
+The compilation may abort due to incorrect configuration options; if it happens you have to select the desired configuration (remember that only native functions can run on Openwrt):
+```sh
+$ cd ${OPENWRT}/build_dir/target-*/un-orchestrator-*
+$ ccmake .
+```
+compile the UN:
+```sh
+$ cd ${OPENWRT}
+$ make package/un-orchestrator/compile V=99
+```
+
+
+#### How to patch the un-orchestrator
+
+To fix error due to useless include:
+
+```sh
+$ make package/un-orchestrator/{clean,prepare} V=99 QUILT=1
+
+$ cd build_dir/target-*/un-orchestrator-*
+$ quilt new 001-execinfo.patch
+
+$ quilt edit orchestrator/node_orchestrator.cc
+```
+remove the following include:
+```sh
+#include <execinfo.h>
+```
+Save the changes and apply the patch
+```sh
+$ quilt refresh
+$ cd ${OPENWRT}
+$ make package/un-orchestrator/update V=99
+```
+
+## Compilation of double decker
+Double Decker is an extra module that is not necessary to compile the un-orchestrator. Procede if you intend to add double decker support, otherwise jump to the set up of OpenWrt environment
+
+Execute the following commands:
+```sh
+$ cd ${OPENWRT}
+$ cp -rf ${UN}/contrib/OpenWrt/package/libsodium/Makefile ${OPENWRT}/feeds/packages/libs/libsodium
+$ ./scripts/feeds install libzmq
+```
+
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/czmq ${OPENWRT}/package
+$ make package/czmq/compile V=99
+```
+---
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/userspace-rcu ${OPENWRT}/package
+$ make package/userspace-rcu/compile V=99
+```
+---
+```sh
+$ cd ${OPENWRT}
+$ cp -r ${UN}/contrib/OpenWrt/package/doubledecker ${OPENWRT}/package
+$ make package/doubledecker/compile V=99
+```
+
+#### Enable Double Decker connection on the orchestrator
+You will need to recompile the orchestrator. Execute the following commands
+```sh
+$ cp -f ${UN}/contrib/OpenWrt/package/un-orchestrator-dd/Makefile ${OPENWRT}/package/un-orchestrator
+$ cd ${OPENWRT}
+$ make package/un-orchestrator/compile V=99
+```
+
+Compilation will probably stop due to an error. You need to change the configuration of the UN to use native implementation of NFs.  To enable Double Decker, turn on  Double Decker Connection and Resource Manager too.
+```sh
+$ cd ${OPENWRT}/build_dir/target-*/un-orchestrator-1.0.0 
+$ ccmake .
+```
+Before compiling the orchestrator, edit default configuration file and uncomment lines relative to resource manager and double decker. The DD keys json files are stored in /cfg/dd/keys/.
+
+
+Finally execute
+```sh
+$ cd ${OPENWRT}
+$ make package/un-orchestrator/compile V=99
+```
+
+# Set up OpenWrt environment for Netgear R6300
+You can get the Firmware OpenWrt source code for Netgear R6300 from https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/openwrt-15.05-bcm53xx-netgear-r6300-v2-squashfs.chk
+
+
+Execute the following commands
+
 ```sh
 $ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
-$ export KERNEL=${OPENWRT}/build_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/linux-bcm53xx/linux-3.18.20
-$ export TOOLCHAIN_DIR=${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi
-$ export STAGING_DIR=${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/bin
-$ export INCLUDE_DIR=${OPENWRT}/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/include
-
-$ export HOST=${OPENWRT}/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/host/bin
-
-$ export HOST1=${OPENWRT}/staging_dir/host/bin
-
-$ export PATH=${HOST}:${STAGING_DIR}:${STAGING_DIR}:${HOST1}:${STAGING_DIR}:${HOST1}:${HOST1}:${INCLUDE_DIR}:$PATH
-
-$ export CROSS=arm-openwrt-linux-
-
-$ export CFLAGS=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/include
-$ export LDFLAGS=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/lib/ld-uClibc.so.0
-```
-Then compile rofl-common
-```sh
-$ cd [un-orchestrator]/contrib
-$ unzip rofl-common
-
-; copy [rofl-common] in the home directory
-cp -r rofl-common ~/
-
-$ cd ~/rofl-common
-$ sudo ./autogen.sh
-$ cd build  
-
-$ sudo ../configure --target=arm-openwrt-linux --host=arm-openwrt-linux --build=x86_64-linux-gnu --includedir=$INCLUDE_DIR STAGING_DIR=${STAGING_DIR} PATH=${PATH} CC=${CROSS}gcc AR=${CROSS}ar AS=${CROSS}as STRIP=${CROSS}strip LD=${CROSS}ld RANLIB=${CROSS}ranlib CPP=${CROSS}cpp NM_PATH=${CROSS}nm NM=${CROSS}nm --program-prefix= --program-suffix= --prefix=/usr --exec-prefix=/usr --bindir=/usr/bin --sbindir=/usr/sbin --with-gnu-ld --libexecdir=/usr/lib --sysconfdir=/etc --datadir=/usr/share --localstatedir=/var --mandir=/usr/man --infodir=/usr/info --enable-shared --enable-static 
-
-$ sudo make -j4 CFLAGS=${CFLAGS} LDFLAGS=${LDFLAGS} STAGING_DIR=${STAGING_DIR} PATH=${PATH} CC=${CROSS}gcc AR=${CROSS}ar AS=${CROSS}as STRIP=${CROSS}strip LD=${CROSS}ld RANLIB=${CROSS}ranlib CPP=${CROSS}cpp NM_PATH=${CROSS}nm NM=${CROSS}nm
-```
-If such an error appears during compilation:
-```sh
-$ rofl-common/src/rofl/platform/unix/cunixenv.h
-In file included from ../../../../../src/rofl/platform/unix/cunixenv.cc:5:0:
-../../../../../src/rofl/platform/unix/cunixenv.h:14:22: fatal error: execinfo.h: No such file or directory
- #include <execinfo.h>
-                      ^
-compilation terminated
-```
-change row 14 of 
-```sh
-[rofl-common]/src/rofl/platform/unix/cunixenv.h
-```
-as well:
-```sh
-#include </usr/local/include/execinfo.h>
-```
-In different linux installation that file can be in /usr/include/
-
-Then copy rofl-common in the OpenWRT folder
-```sh
-$ cp [rofl-common]/build/src/rofl/.libs/librofl_common.so [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/lib
-$ cp [rofl-common]/build/src/rofl/.libs/librofl_common.so.0 [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/lib
-$ cp [rofl-common]/build/src/rofl/.libs/librofl_common.so.0.1.1 [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/toolchain-arm_cortex-a9_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/lib
+$ export R_IP=[IP_of_your_router]
 ```
 
-### Complete the compilation of the UN
-Now you can complete the compilation
 ```sh
-$ cd [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
-$ make V=99
+$ ssh-keygen -f "/home/$(whoami)/.ssh/known_hosts" -R $R_IP
+$ ssh root@$R_IP
 ```
 
-In order to clean and/or compile only a package you can run:
 ```sh
-; package-name: name of your specific package
-$ make package/[package-name]/clean V=99
-$ make package/[package-name]/compile V=99 (if you want to compile in debug mode, add CONFIG_DEBUG=y)
+$ mkdir -p /pkg
+$ exit
 ```
 
-### Set up OpenWrt environment for Netgear R6300
-
-At first, download the Firmware OpenWrt source code for Netgear R6300 from:
-https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/openwrt-15.05-bcm53xx-netgear-r6300-v2-squashfs.chk
-then install it on the Netgear R6300.
-Link for an image with the UN already compiled and ready for using the native functions:
-https://owncloud.ipv6.polito.it:9090/index.php/s/VhQ5gvAlupeU0Hd
-
-At second, login to OpenWrt: https://wiki.openwrt.org/doc/howto/firstlogin
-
-then execute the following commands:
+Copy fundamental packages
 ```sh
-$ scp [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/lib/libjson_spirit.so root@192.168.1.1:/lib
-$ scp [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/lib/librofl_common.so.0.1.1 root@192.168.1.1:/lib
-$ scp [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/staging_dir/target-arm_cortex-a9_uClibc-0.9.33.2_eabi/usr/lib/libsqlite3.so.0.8.6 root@192.168.1.1:/lib
-
-$ scp [OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]/bin/bcm53xx/packages/base/node-orchestrator_0.0.1-1_bcm53xx.ipk root@192.168.1.1:
-
-$ scp -r [un-orchestrator]/orchestrator/config root@192.168.1.1:
-
-$ ssh root@192.168.1.1
-
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/libjson-spirit_1.0.0-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/glog_v0.3.4-1_bcm53xx.ipk root@R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/librofl_0.11.1-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/un-orchestrator_1.0.0-1_bcm53xx.ipk root@$R_IP:/pkg
+```
+If you compiled DoubleDecker, then copy also these packages
+```sh
+$ scp ${OPENWRT}/bin/bcm53xx/packages/packages/libsodium_1.0.11-2_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/packages/libzmq-nc_4.1.1-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/czmq_3.0.2-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/liburcu_0.9.2-1_bcm53xx.ipk root@$R_IP:/pkg
+$ scp ${OPENWRT}/bin/bcm53xx/packages/base/DoubleDecker_0.4-1_bcm53xx.ipk root@$R_IP:/pkg
+```
+---
+Execute the following commands
+```sh
+$ ssh root@$R_IP
 $ opkg update
-$ opkg install libmicrohttpd
-$ opkg install boost-system
-$ opkg install libxml2
-$ opkg install libpthread
-
-$ cd /lib
-$ ln -s librofl_common.so.0.1.1 librofl_common.so.0
-$ ln -s librofl_common.so.0.1.1 librofl_common.so
-$ ln -s libsqlite3.so.0.8.6 libsqlite3.so.0
-$ ln -s libsqlite3.so.0.8.6 libsqlite3.so
-
-$ cd /root
-$ opkg install node-orchestrator_0.0.1-1_bcm53xx.ipk
+$ cd /pkg
 ```
 
-For native functions support it is needed to install sudo and bash
+Install UN dependencies
+```sh
+$ opkg install libjson-spirit_1.0.0-1_bcm53xx.ipk
+$ opkg install glog_v0.3.4-1_bcm53xx.ipk
+$ opkg install librofl_0.11.1-1_bcm53xx.ipk
+$ opkg install openvswitch
 ```
-$ opkg install sudo bash
+
+If you compiled DoubleDecker, install also these packages
+```sh
+$ opkg install libsodium_1.0.11-2_bcm53xx.ipk
+$ opkg install libzmq-nc_4.1.1-1_bcm53xx.ipk
+$ opkg install czmq_3.0.2-1_bcm53xx.ipk
+$ opkg install liburcu_0.9.2-1_bcm53xx.ipk
+$ opkg install DoubleDecker_0.4-1_bcm53xx.ipk
 ```
 
-### Port configuration on Netgear R6300
-
-To use UN on the router, you have to modify port configuration.
-
-Access the web interface of router typing its address in the browser bar. First, go on Network -> Switch. Here it will be the configuration of VLAN 1 and 2; you need to create three other VLAN typing the add button below, so that every physical port of the router refers to a different VLAN. For what concern the VLAN 1 that already existed, leave unchanged the field related to "port1" and "CPU", while for the other fields select "off": it means that VLAN 1 will be connected to port 1. Make the same procedure for all other VLAN connecting them to the corresponding port; don't forget to set the CPU field "tagged".
-
-This is an example of how the final configuration should be:
-
-![vlan-configuration](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/vlan_configuration_OpenWRT_NetGear.png)
+Finally install the orchestrator
+```sh
+$ opkg install un-orchestrator_1.0.0-1_bcm53xx.ipk
+```
 
 
-After doing this, go on Network -> Interfaces. Here you have to create a new interfaces for each new VLAN created in the previous step (so in this particular case you have to insert 3 interfacecs) clicking on “add new interface” button.
-
-This is an example of the final result:
-
-![interfaces-configuration](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/interface_configuration_OpenWRT_NetGear.png)
-
+# Execute the orchestrator on Netgear 6300v2
+To execute the orchestrator you will need to start the ovs server first.
+```sh
+$ ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632
+```
+Then run the orchestrator
+```sh
+$ cd /cfg/orchestrator
+$ node-orchestrator
+```
+Now orchestrator is running.

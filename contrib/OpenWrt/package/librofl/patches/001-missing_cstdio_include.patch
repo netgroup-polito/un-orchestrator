@@ -1,39 +1,36 @@
-Index: librofl-0.10.9/src/rofl/common/caddress.cc
+Index: librofl-0.11.1/src/rofl/common/caddress.cc
 ===================================================================
---- librofl-0.10.9.orig/src/rofl/common/caddress.cc	2016-09-21 10:10:03.000000000 +0200
-+++ librofl-0.10.9/src/rofl/common/caddress.cc	2016-09-21 11:26:08.179262141 +0200
-@@ -3,7 +3,7 @@
+--- librofl-0.11.1.orig/src/rofl/common/caddress.cc	2017-05-30 02:07:47.000000000 +0200
++++ librofl-0.11.1/src/rofl/common/caddress.cc	2017-05-30 02:12:26.866030999 +0200
+@@ -3,6 +3,7 @@
   * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
  #include "caddress.h"
--
 +#include <cstdio>
+ 
  using namespace rofl;
  
- 
-Index: librofl-0.10.9/src/rofl/common/openflow/cofdescstats.cc
+Index: librofl-0.11.1/src/rofl/common/openflow/cofdescstats.cc
 ===================================================================
---- librofl-0.10.9.orig/src/rofl/common/openflow/cofdescstats.cc	2016-09-21 10:10:03.000000000 +0200
-+++ librofl-0.10.9/src/rofl/common/openflow/cofdescstats.cc	2016-09-21 11:31:04.139272251 +0200
-@@ -3,7 +3,7 @@
+--- librofl-0.11.1.orig/src/rofl/common/openflow/cofdescstats.cc	2017-05-30 02:07:47.000000000 +0200
++++ librofl-0.11.1/src/rofl/common/openflow/cofdescstats.cc	2017-05-30 02:12:52.490030999 +0200
+@@ -3,6 +3,7 @@
   * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
  #include "rofl/common/openflow/cofdescstats.h"
--
 +#include <cstdio>
+ 
  using namespace rofl::openflow;
  
- 
-Index: librofl-0.10.9/src/rofl/common/openflow/coftablestats.cc
+Index: librofl-0.11.1/src/rofl/common/openflow/coftablestats.cc
 ===================================================================
---- librofl-0.10.9.orig/src/rofl/common/openflow/coftablestats.cc	2016-09-21 10:10:03.000000000 +0200
-+++ librofl-0.10.9/src/rofl/common/openflow/coftablestats.cc	2016-09-21 11:31:30.395273148 +0200
-@@ -3,7 +3,7 @@
+--- librofl-0.11.1.orig/src/rofl/common/openflow/coftablestats.cc	2017-05-30 02:07:47.000000000 +0200
++++ librofl-0.11.1/src/rofl/common/openflow/coftablestats.cc	2017-05-30 02:13:24.258030999 +0200
+@@ -3,6 +3,7 @@
   * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
  #include "rofl/common/openflow/coftablestats.h"
--
 +#include <cstdio>
- using namespace rofl::openflow;
  
+ using namespace rofl::openflow;
  

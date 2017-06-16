@@ -1,0 +1,13 @@
+Index: DoubleDecker-0.4/include/dd_classes.h
+===================================================================
+--- DoubleDecker-0.4.orig/include/dd_classes.h	2017-05-06 12:20:39.901316000 +0200
++++ DoubleDecker-0.4/include/dd_classes.h	2017-05-06 12:21:11.833316000 +0200
+@@ -9,7 +9,7 @@
+ #include <czmq.h>
+ #include <czmq.h>
+ #include <err.h>
+-#include <execinfo.h>
++//#include <execinfo.h>
+ #include <fcntl.h>
+ #include <signal.h>
+ #include <sodium.h>

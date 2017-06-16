@@ -1,0 +1,12 @@
+Index: librofl-0.11.1/src/rofl/common/cthread.cpp
+===================================================================
+--- librofl-0.11.1.orig/src/rofl/common/cthread.cpp	2017-05-30 04:04:23.000000000 +0200
++++ librofl-0.11.1/src/rofl/common/cthread.cpp	2017-05-30 18:47:51.798173999 +0200
+@@ -332,8 +332,6 @@
+                      __LINE__);
+     }
+ 
+-    if (thread_name.length() && thread_name.length() < 16)
+-      pthread_setname_np(tid, thread_name.c_str());
+ 
+     state = STATE_RUNNING;

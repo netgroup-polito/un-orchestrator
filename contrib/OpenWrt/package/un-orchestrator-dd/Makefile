@@ -27,8 +27,7 @@ define Package/un-orchestrator
   TITLE:=Name resolver 
   URL:==https://github.com/netgroup-polito/un-orchestrator
   MAINTAINER:=PoliTO
-  DEPENDS:= +librofl +libjson-spirit +libxml2 +libmicrohttpd +libstdcpp +libsqlite3
-# +libczmq +libdd
+  DEPENDS:= +librofl +libjson-spirit +libxml2 +libmicrohttpd +libstdcpp +libsqlite3 +libczmq +libdd
 # +libboost_system
 endef
 
@@ -57,6 +56,9 @@ define Package/un-orchestrator/install
 #	$(INSTALL_BIN) $(PKG_BUILD_DIR)/name-resolver/config/network-functions.xsd $(1)/cfg/name-resolver/config
 	$(INSTALL_DIR) $(1)/cfg/orchestrator/config
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/orchestrator/config/default-config.ini $(1)/cfg/orchestrator/config
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/orchestrator/config/universal-node-description.json $(1)/cfg/orchestrator/config
+	
+	
 endef
 
 $(eval $(call BuildPackage,un-orchestrator))
