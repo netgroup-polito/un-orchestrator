@@ -63,7 +63,7 @@ private:
 	/**
 	*	@brief: Create the copy-on-write disk starting from the image base
 	*/
-	bool createImgDisk(string imgBasePath, string folder, string domainName);
+	string createImgDisk(string imgBasePath, string folder, string domainName);
 
 public:
 

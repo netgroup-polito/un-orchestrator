@@ -33,16 +33,19 @@ $ sudo apt-get install -y ccache && echo 'export PATH="/usr/lib/ccache:$PATH"' |
 ```
 
 ## Set up a cross-compilation toolchain
+#### Selection of the correct SDK
+Although the process described in the following is generic (i.e., it is valid for each platform), we have first to download the SDK for a specific platform.
 
-Although the process described in the following is generic (i.e., it is valid for each platform), we have first to download the SDK for a specific platform. In particular, we used the SDK `OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64`, which is specific for the Netgear 6300v2.
-
-Download source code for OpenWrt e orchestrator and set the proper environment variable:
+In particular, we used the SDK `OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64`, which is specific for the Netgear 6300v2. Download source code for OpenWrt e orchestrator and set the proper environment variable:
 ```sh
 $ wget https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
 $ tar -jxvf OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64.tar.bz2
 $ export OPENWRT=[OpenWrt-SDK-15.05-bcm53xx_gcc-4.8-linaro_uClibc-0.9.33.2_eabi.Linux-x86_64]
 ```
 
+The procedure has also been tested, except for Double Decker, on the SDK `OpenWrt-SDK-imola5-for-linux-x86_64-gcc-4.8.3_uClibc-0.9.33.2`, which is specific for Tiesse Imola.
+
+#### Toolchain setup
 From here, the procedure is not related to a specific ARM platform.
 
 Execute the following commands to compile the Openwrt Environment:
@@ -277,6 +280,9 @@ $ make package/un-orchestrator/update V=99
 ```
 
 ## Compilation of double decker
+
+**WARNING:** *Double decker compiles correctly, but interaction with the orchestrator did not work during out tests on Netgear 6300v2.*
+
 Double Decker is an extra module that is not necessary to compile the un-orchestrator. Procede if you intend to add double decker support, otherwise jump to the set up of OpenWrt environment
 
 Execute the following commands:
@@ -317,7 +323,7 @@ Compilation will probably stop due to an error. You need to change the configura
 $ cd ${OPENWRT}/build_dir/target-*/un-orchestrator-1.0.0 
 $ ccmake .
 ```
-Before compiling the orchestrator, edit default configuration file and uncomment lines relative to resource manager and double decker. The DD keys json files are stored in /cfg/dd/keys/.
+Before compiling the orchestrator, edit the default configuration file and uncomment lines relative to resource manager and double decker. The DD keys json files are stored in /cfg/dd/keys/.
 
 
 Finally execute
@@ -326,7 +332,8 @@ $ cd ${OPENWRT}
 $ make package/un-orchestrator/compile V=99
 ```
 
-# Set up OpenWrt environment for Netgear R6300
+# Netgear R6300v2
+### Set up OpenWrt environment
 You can get the Firmware OpenWrt source code for Netgear R6300 from https://downloads.openwrt.org/chaos_calmer/15.05/bcm53xx/generic/openwrt-15.05-bcm53xx-netgear-r6300-v2-squashfs.chk
 
 
@@ -391,9 +398,25 @@ Finally install the orchestrator
 ```sh
 $ opkg install un-orchestrator_1.0.0-1_bcm53xx.ipk
 ```
+### Port configuration on Netgear R6300
+ 
+ To use UN on the router, you have to modify port configuration.
+ 
+ Access the web interface of router typing its address in the browser bar. First, go on Network -> Switch. Here it will be the configuration of VLAN 1 and 2; you need to create three other VLAN typing the add button below, so that every physical port of the router refers to a different VLAN. For what concern the VLAN 1 that already existed, leave unchanged the field related to "port1" and "CPU", while for the other fields select "off": it means that VLAN 1 will be connected to port 1. Make the same procedure for all other VLAN connecting them to the corresponding port; don't forget to set the CPU field "tagged".
+ 
+ This is an example of how the final configuration should be:
+ 
+ ![vlan-configuration](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/vlan_configuration_OpenWRT_NetGear.png)
+ 
+ 
+ After doing this, go on Network -> Interfaces. Here you have to create a new interfaces for each new VLAN created in the previous step (so in this particular case you have to insert 3 interfaces) clicking on “add new interface” button. Select "unmanaged" under protocol.
+ 
+ This is an example of the final result:
+ 
+ ![interfaces-configuration](https://raw.githubusercontent.com/netgroup-polito/un-orchestrator/master/images/interface_configuration_OpenWRT_NetGear.png)
+ 
 
-
-# Execute the orchestrator on Netgear 6300v2
+### Start node-orchestrator
 To execute the orchestrator you will need to start the ovs server first.
 ```sh
 $ ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632
@@ -404,3 +427,80 @@ $ cd /cfg/orchestrator
 $ node-orchestrator
 ```
 Now orchestrator is running.
+
+#Tiesse Imola
+
+### Set up OpenWrt environment for Tiesse Imola
+
+The firmware OpenWRT should be already installed on the router.
+
+Access the router via ssh connecting the Ethernet cable to the eth0 port. The default IP address is 192.168.1.97, the default password should be empty. 
+```sh
+$ ssh root@192.168.1.97:
+$root@imolaSDN: password: 
+```
+
+Create the orchestrator folder inside /cfg because the root partition does not have enough memory to install the orchestrator and its libraries
+```sh
+$root@imolaSDN: mkdir /cfg/orchestrator
+$root@imolaSDN: exit
+```
+
+Copy the system libraries compiled for the router (found offline) needed to install the orchestrator
+```sh
+$ scp libstdcpp_4.8.3-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp boost-system_1_51_0-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp boost-chrono_1_51_0-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp boost-thread_1_51_0-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp libxml2_2.9.2-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp libmicrohttpd_0.9.19-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+$ scp libsqlite3_3070701-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+
+$ scp ${OPENWRT}/bin/imola5/packages/base/libjson-spirit_1.0.0-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+
+$ scp ${OPENWRT}/bin/imola5/packages/base/librofl_0.10.9-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+
+$ scp ${OPENWRT}/bin/imola5/packages/base/un-orchestrator_1.0.0-1_imola5.ipk root@192.168.1.97:/cfg/orchestrator
+```
+
+Now enter the router and install the libraries
+```sh
+$ ssh root@192.168.1.97
+
+$root@imolaSDN cd /cfg/orchestrator
+$root@imolaSDN opkg install libstdcpp_4.8.3-1_imola5.ipk
+$root@imolaSDN opkg install boost-system_1_51_0-1_imola5.ipk
+$root@imolaSDN opkg install boost-chrono_1_51_0-1_imola5.ipk
+$root@imolaSDN opkg install boost-thread_1_51_0-1_imola5.ipk
+$root@imolaSDN opkg install libxml2_2.9.2-1_imola5.ipk
+$root@imolaSDN opkg install libmicrohttpd_0.9.19-1_imola5.ipk
+$root@imolaSDN opkg install libsqlite3_3070701-1_imola5.ipk
+
+$root@imolaSDN opkg install libjson-spirit_1.0.0-1_imola5.ipk
+$root@imolaSDN opkg install librofl_0.10.9-1_imola5.ipk
+$root@imolaSDN opkg install node-orchestrator_0.0.1-1_bcm53xx.ipk
+```
+
+### Start node-orchestrator
+
+Disable openvswitch on the router
+```sh
+$root@imolaSDN openvswitch off
+```
+
+There should be no need to map the switch ports with VLAN as you normally do in openwrt. The imola driver already supports the mapping between the operating system side of the network interfaces and the physical switch ports. Typing:
+```sh
+$root@imolaSDN ifconfig -a 
+```
+you should see at least four interfaces (port1, port2, port3, Port4).
+
+Start ovsdb-server:
+```sh
+$root@imolaSDN ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632
+```
+
+Now you can run the orchestrator.
+
+
+**WARNING:** *Tiesse Imola lose all installations on shutdown. In /cfg/orchestrator/ you find a script that clean up previous installation, re-install packages and execute the preliminary commandss to startup of the orchestrator.*
+

@@ -69,6 +69,12 @@ private:
 	string vnf_template;
 
 	/**
+	*	@brief: the functional_capability of the VNF (e.g., nat,firewall,dhcp)
+	*		this field describes the functional capability of the network function
+	*/
+	string functional_capability;
+
+	/**
 	*	@brief: the list of ports  of the VNF
 	*/
 	list<vnf_port_t> ports;
@@ -106,9 +112,9 @@ private:
 public:
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-	VNFs(string id, string name, list<string> groups, string vnf_template, list<vnf_port_t> ports, list<port_mapping_t> control_ports, list<string> environment_variables);
+	VNFs(string id, string name, list<string> groups, string vnf_template, string functional_capability, list<vnf_port_t> ports, list<port_mapping_t> control_ports, list<string> environment_variables);
 #else
-	VNFs(string id, string name, list<string> groups, string vnf_template, list<vnf_port_t> ports);
+	VNFs(string id, string name, list<string> groups, string vnf_template, string functional_capability, list<vnf_port_t> ports);
 #endif
 
 	/**
@@ -120,6 +126,7 @@ public:
 	string getName();
 	list<string> getGroups();
 	string getVnfTemplate();
+	string getFunctionalCapability();
 
 	/*
 	*	@brief: return the list of ports of the VNF
