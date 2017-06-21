@@ -258,6 +258,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								*		- id
 								*		- name	(mandatory)
 								*		- vnf_template
+								 *		- functional-capability
 								*		- domain
 								*		- ports
 								*			- id
@@ -272,7 +273,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 
 								bool foundName = false;
 
-								string id, name, vnf_template, port_id, port_name;
+								string id, name, vnf_template, functional_capability, port_id, port_name;
 								list<string> groups;
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 								int vnf_tcp_port = 0, host_tcp_port = 0;
@@ -302,6 +303,11 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									{
 										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNFS,VNF_TEMPLATE,nf_value.getString().c_str());
 										vnf_template = nf_value.getString();
+									}
+									else if(nf_name == FUNCTIONAL_CAPABILITY)
+									{
+										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNFS,FUNCTIONAL_CAPABILITY,nf_value.getString().c_str());
+										functional_capability = nf_value.getString();
 									}
 									else if(nf_name == _ID)
 									{
@@ -654,9 +660,9 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								}
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-								highlevel::VNFs vnfs(id, name, groups, vnf_template, portS, controlPorts,environmentVariables);
+								highlevel::VNFs vnfs(id, name, groups, vnf_template, functional_capability, portS, controlPorts,environmentVariables);
 #else
-								highlevel::VNFs vnfs(id, name, groups, vnf_template, portS);
+								highlevel::VNFs vnfs(id, name, groups, vnf_template, functional_capability, portS);
 #endif
 
 								//update information on the trusted status of VNF ports

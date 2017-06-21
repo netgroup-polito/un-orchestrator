@@ -50,6 +50,7 @@
 	#define VNFS 				"VNFs"
 		//#define VNF_NAME			"name"
 		#define	VNF_TEMPLATE		"vnf_template"
+		#define FUNCTIONAL_CAPABILITY "functional-capability"
 		#define UNIFY_CONTROL			"unify-control"
 			#define HOST_PORT			"host-tcp-port"
 			#define VNF_PORT			"vnf-tcp-port"
