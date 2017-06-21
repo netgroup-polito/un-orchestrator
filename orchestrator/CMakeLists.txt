@@ -510,6 +510,7 @@ TARGET_LINK_LIBRARIES( node-orchestrator
 	pistache
 	rt
 	cpprest
+	ssl
 )
 
 IF(ENABLE_DOUBLE_DECKER_CONNECTION)
