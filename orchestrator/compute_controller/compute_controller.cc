@@ -55,7 +55,7 @@ list<string> ComputeController::retrieveFileList(string tenant_id, string graph_
     int port = Configuration::instance()->getConfigServicePort();
     string endpoint = "http://" + ip + ":" + to_string(port);
 
-    string url = endpoint + CONFIG_SERVICE_FILELIST_URL+tenant_id+"/"+graph_id+"/"+vnf_id+"/";
+    string url = endpoint + CONFIG_SERVICE_FILELIST_URL+tenant_id+"/"+graph_id+"/"+vnf_id+"";
     http_response response;
     try{
         ULOG_DBG_INFO("retrieveFileList, perform get to url:  %s", url.c_str());
@@ -83,7 +83,7 @@ string ComputeController::retrieveFile(string tenant_id, string graph_id, string
     string endpoint = "http://" + ip + ":" + to_string(port);
 
     string path_file = dst_path+"/"+filename;
-    string url = endpoint + CONFIG_SERVICE_FILE_URL+tenant_id+"/"+graph_id+"/"+vnf_id+"/"+filename+"/";
+    string url = endpoint + CONFIG_SERVICE_FILE_URL+tenant_id+"/"+graph_id+"/"+vnf_id+"/"+filename+"";
 
     auto fileStream = std::make_shared<concurrency::streams::ostream>();
 

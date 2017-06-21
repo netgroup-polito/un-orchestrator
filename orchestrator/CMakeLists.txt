@@ -505,6 +505,7 @@ TARGET_LINK_LIBRARIES( node-orchestrator
 	crypto
 	rt
 	cpprest
+	ssl
 )
 
 IF(ENABLE_DOUBLE_DECKER_CONNECTION)

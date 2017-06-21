@@ -54,8 +54,8 @@ using namespace web::http::client;
 
 #define VNF_REPOSITORY_TEMPLATE_URL    "/v2/nf_template/"
 #define VNF_REPOSITORY_TEMPLATES_URL   "/v2/nf_capability/"
-#define CONFIG_SERVICE_FILELIST_URL    "/config/file/"
-#define CONFIG_SERVICE_FILE_URL        "/config/file/"
+#define CONFIG_SERVICE_FILELIST_URL    "/config/files/"
+#define CONFIG_SERVICE_FILE_URL        "/config/files/"
 #define CODE_POSITION				    9
 #define CODE_METHOD_NOT_ALLLOWED	    "405"
 #define CODE_HTTP_NOT_FOUND	    			"404"
