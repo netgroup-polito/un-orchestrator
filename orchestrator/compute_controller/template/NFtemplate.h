@@ -14,9 +14,9 @@
 {
 	"name": "switch",
 	"functional-capability" : "l2-switch",
-	"uri": "http://localhost:8081/v2/nf_image/1",
+	"uri-image": "http://localhost:8081/v2/nf_image/1",
 	"vnf-type": "virtual-machine-kvm",
-	"uri-type": "remote-file",
+	"uri-image-type": "remote-file",
 	"ports": [
 		{
 			"position": "1-2",
