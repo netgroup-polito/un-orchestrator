@@ -73,8 +73,13 @@ bool Docker::startNF(StartNFIn sni)
     string uri_type = uriTypeToString(temp->getURIType());
 	map<unsigned int, string> namesOfPortsOnTheSwitch = sni.getNamesOfPortsOnTheSwitch();
 	unsigned int n_ports = namesOfPortsOnTheSwitch.size();
+#ifdef ENABLE_NFs_CONFIGURATION
 	string dir_to_mount = sni.getDirToMount();
-	string dst_path = sni.getDstPath();
+	string datadisk_dst_path = sni.getDatadiskDstPath();
+#else
+	string dir_to_mount = "None";
+	string datadisk_dst_path = "None";
+#endif
 
 	map<unsigned int, port_network_config_t > portsConfiguration = sni.getPortsConfiguration();
 	for(map<unsigned int, port_network_config_t >::iterator configuration = portsConfiguration.begin(); configuration != portsConfiguration.end(); configuration++)
@@ -90,9 +95,11 @@ bool Docker::startNF(StartNFIn sni)
 	}
 
 	stringstream command;
+#ifdef ENABLE_NFs_CONFIGURATION
 	ULOG_DBG_INFO("host_dir_to_mount: %s", dir_to_mount.c_str());
-	ULOG_DBG_INFO("dest_path: %s", dst_path.c_str());
-	command << getenv("un_script_path") << PULL_AND_RUN_DOCKER_NF << " " << lsiID << " " << nf_id << " " << uri_image << " " << nf_name << " " << uri_type << " " << dir_to_mount << " " << dst_path << " " << n_ports ;
+	ULOG_DBG_INFO("datadisk_dest_path: %s", datadisk_dst_path.c_str());
+#endif
+	command << getenv("un_script_path") << PULL_AND_RUN_DOCKER_NF << " " << lsiID << " " << nf_id << " " << uri_image << " " << nf_name << " " << uri_type << " " << dir_to_mount << " " << datadisk_dst_path << " " << n_ports ;
 	assert(portsConfiguration.size() == namesOfPortsOnTheSwitch.size());
 	//map<unsigned int, port_network_config_t >::iterator configuration = portsConfiguration.begin();
 	for(map<unsigned int, string>::iterator pn = namesOfPortsOnTheSwitch.begin(); pn != namesOfPortsOnTheSwitch.end(); pn++)

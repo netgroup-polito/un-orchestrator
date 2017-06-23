@@ -465,17 +465,18 @@ bool GraphManager::deleteGraph(string graphID)
 		ULOG_DBG_INFO("The internal graph associated with the internal group '%s' is still used by %d other graphs",internal_group.c_str(),timesUsedEndPointsInternal[internal_group]);
 	}//end iteration on the internal endpoints
 
+#ifdef ENABLE_NFs_CONFIGURATION
 	/**
 	*    4) if present, remove temp dir which contains VNF's file (used for the datadisk)
     */
 	string current_path = fs::current_path().string();
-    string path = current_path+"/"+DIR_TO_SAVE_VNF_FILE;
+    string path = current_path+"/"+DIR_TO_SAVE_NF_FILE;
     if(fs::exists(path) && fs::is_directory(path)){
         fs::path p = path;
         fs::remove_all(p);
         ULOG_DBG_INFO("Deleting dir %s", path.c_str());
     }
-
+#endif
 
 	delete(highLevelGraph);
 	highLevelGraph = NULL;
@@ -583,7 +584,9 @@ void *startNF(void *arguments)
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		, args->controlConfiguration, args->environmentVariables
 #endif
-        ,args->dir_to_mount, args->dst_path
+#ifdef ENABLE_NFs_CONFIGURATION
+        ,args->dir_to_mount, args->datadisk_dst_path
+#endif
 	))
 		return (void*) 0;
 	else
@@ -996,50 +999,90 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	to_thread_t thr[network_functions.size()];
 	int i = 0;
 
+#ifdef ENABLE_NFs_CONFIGURATION
 	string current_path = fs::current_path().string();
-	string vnf_file_root_path = current_path+"/"+DIR_TO_SAVE_VNF_FILE;
-	if(!(fs::exists(vnf_file_root_path) && fs::is_directory(vnf_file_root_path)))
-	    fs::create_directory(vnf_file_root_path);
-	string vnf_file_path = "";
+	string nf_file_root_path = current_path+"/"+DIR_TO_SAVE_NF_FILE;
+	if(!(fs::exists(nf_file_root_path) && fs::is_directory(nf_file_root_path)))
+	    fs::create_directory(nf_file_root_path);
+	string nf_file_path = "";
+#endif
 
     // Iterate for each network functions
 	for(list<highlevel::VNFs>::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 	{
-	    //Ask to Config Service if there are file associated to NF
-	    string tenant_id = "33";
-	    list<string> fileList;
+
+#ifdef ENABLE_NFs_CONFIGURATION
+        //Ask to the configuration-orchestrator if there are file associated to NF
 	    string dir_to_mount = "";
-	    string dst_path = "";
-	    try{
-	        ULOG_DBG_INFO("Trying to retrieve VNF's file list of: %s...", nf->getId().c_str());
-	        fileList = computeController->retrieveFileList(tenant_id, graph->getID().c_str(), nf->getId().c_str());
-            ULOG_DBG_INFO("Trying to retrieve VNF's file list of: %s...Done! Found %d file!", nf->getId().c_str(), fileList.size());
-            if(fileList.size()>0){
-                vnf_file_path = vnf_file_root_path+"/"+tenant_id+"_"+graph->getID()+"_"+nf->getId();
-                fs::create_directory(vnf_file_path);
-                dir_to_mount = vnf_file_path+"/";
-                dst_path = Configuration::instance()->getDatadiskDestPath();
-                string path_file = "";
-                for(string filename : fileList){
-                    ULOG_DBG_INFO("\tTrying to retrieve file: %s...", filename.c_str());
-                    try{
-                        path_file = computeController->retrieveFile(tenant_id, graph->getID().c_str(), nf->getId(), filename, vnf_file_path);
-                    }catch(const std::exception &e){
-                        ULOG_WARN("\tTrying to retrieve file: %s...Error! Exception: %s", filename.c_str(), e.what());
-                        throw;
-                    }
-                    ULOG_DBG_INFO("\tTrying to retrieve file: %s...Done! Saved in: %s", filename.c_str(), path_file.c_str());
+	    string datadisk_dst_path = "";
+	    string tenant_id = "admin";
+	    string graph_id = graph->getID();
+	    string nf_id = nf->getId();
+	    string nf_functional_capability = nf->getFunctionalCapability();
+
+	    if(strcmp(nf_functional_capability.c_str(), "")==0){
+	        ULOG_DBG_INFO("NF_ID %s is not configurable, so will be start without datadisk", nf_id.c_str());
+        }
+        else{
+            try{
+                list<string> fileList;
+                try{
+                    ULOG_DBG_INFO("Trying to retrieve NF's file list for functional capability: %s...", nf_functional_capability.c_str());
+                    fileList = computeController->retrieveFileList(nf_functional_capability);
+                    ULOG_DBG_INFO("Trying to retrieve NF's file list for functional capability: %s...Done! Found %d file!", nf_functional_capability.c_str(), fileList.size());
+                }catch(const runtime_error& error){
+                	ULOG_DBG_INFO("Trying to retrieve NF's file list for functional capability: %s...Error! Exception: %s", nf_functional_capability.c_str(), error.what());
+                	throw;
+                }catch(const std::exception &e){
+                    ULOG_DBG_INFO("Trying to retrieve NF's file list for functional capability: %s...Error! Exception: %s", nf_functional_capability.c_str(), e.what());
+                    throw;
                 }
-                ULOG_DBG_INFO("NF %s will be start with a datadisk", nf->getId().c_str());
-                ULOG_DBG_INFO("\tHost dir to mount: %s", dir_to_mount.c_str());
-	            ULOG_DBG_INFO("\tDestination path: %s", dst_path.c_str());
+                if(fileList.size()==0){
+                    ULOG_DBG_INFO("NF_ID %s %s will be start without datadisk", nf_id.c_str(), nf_functional_capability.c_str());
+                }
+                else{
+                    nf_file_path = nf_file_root_path+"/"+tenant_id+"_"+graph_id+"_"+nf_id;
+                    fs::create_directory(nf_file_path);
+                    dir_to_mount = nf_file_path+"/";
+                    datadisk_dst_path = DATADISK_DESTINATION_PATH;
+                    string path_file = "";
+                    for(string filename : fileList){
+                        try{
+                            ULOG_DBG_INFO("Trying to retrieve file %s for : %s/%s/%s...", filename.c_str(), tenant_id.c_str(), graph_id.c_str(), nf_id.c_str());
+                            path_file = computeController->retrieveFile(tenant_id, graph_id.c_str(), nf_id.c_str(), filename.c_str(), nf_file_path.c_str());
+                            ULOG_DBG_INFO("Trying to retrieve file %s for : %s/%s/%s...Done! Saved in: %s", filename.c_str(), tenant_id.c_str(), graph_id.c_str(), nf_id.c_str(), path_file.c_str());
+                        }catch(const runtime_error &error){
+                        	if (strcmp(error.what(), "404")==0){
+                        		ULOG_DBG_INFO("Trying to retrieve file %s for : %s/%s/%s...No file found", filename.c_str(), tenant_id.c_str(), graph_id.c_str(), nf_id.c_str());
+								ULOG_DBG_INFO("Trying to retrieve file %s using the functional capability: %s...", filename.c_str(), nf_functional_capability.c_str());
+								try{
+									path_file = computeController->retrieveFileDefault(nf->getFunctionalCapability(), filename, nf_file_path);
+									ULOG_DBG_INFO("Trying to retrieve file %s using the functional capability: %s...Done! Saved in: %s", filename.c_str(), nf_functional_capability.c_str(), path_file.c_str());
+								}catch(const std::exception &e){
+									ULOG_DBG_INFO("Trying to retrieve file %s using the functional capability: %s...Error!", filename.c_str(), nf_functional_capability.c_str());
+									throw;
+								}
+                        	}else{
+                        		throw new std::exception(error);
+                        	}
+                        }
+                        catch(const std::exception &e){
+                            ULOG_DBG_INFO("Non dovrei essere qui");
+                            ULOG_WARN("Trying to retrieve file: %s...Error! Exception: %s", filename.c_str(), e.what());
+                            throw;
+                        }
+                    }
+                    ULOG_DBG_INFO("NF_ID %s %s will be start with a datadisk", nf_id.c_str(), nf_functional_capability.c_str());
+            		ULOG_DBG_INFO("\tHost dir to mount: %s", dir_to_mount.c_str());
+	        		ULOG_DBG_INFO("\tDatadisk destination path: %s", datadisk_dst_path.c_str());
+                }
+            }catch(const std::exception &e){
+                string dir_to_mount = "";
+	            string datadisk_dst_path = "";
+                ULOG_DBG_INFO("NF_ID %s %s will be start without datadisk", nf_id.c_str(), nf_functional_capability.c_str());
             }
-	    }catch(const std::exception &e){
-	        ULOG_WARN("Trying to retrieve VNF's file of: %s...Error! Exception: %s", nf->getId().c_str(), e.what());
-	        dir_to_mount = "";
-	        dst_path = "";
-	        ULOG_DBG_INFO("NF %s will be start without datadisk", nf->getId().c_str());
-	    }
+        }
+#endif
 
 		thr[i].nf_id = nf->getId();
 		thr[i].computeController = computeController;
@@ -1049,8 +1092,11 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		thr[i].controlConfiguration = nf->getControlPorts();
 		thr[i].environmentVariables = nf->getEnvironmentVariables();
 #endif
+#ifdef ENABLE_NFs_CONFIGURATION
         thr[i].dir_to_mount = dir_to_mount;
-        thr[i].dst_path = dst_path;
+        thr[i].datadisk_dst_path = datadisk_dst_path;
+#endif
+
 
 #ifdef STARTVNF_SINGLE_THREAD
 		startNF((void *) &thr[i]);
