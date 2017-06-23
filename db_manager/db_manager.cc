@@ -90,8 +90,8 @@ void handle_init(SQLiteManager *dbm){
     char *hash_pwd = NULL;
 
     printf("Insert a password for the default 'admin' user: ");
-    scanf("%s", password);
-    getchar();
+    if( scanf("%s", password) > 0)
+        getchar();
 
 	hash_pwd = hash_password(password);
 	if(!initDB(dbm, hash_pwd))
@@ -108,11 +108,11 @@ void handle_add_user(SQLiteManager *dbm){
 	char *hash_pwd = NULL;
 
 	printf("Username: ");
-	scanf("%s", username);
-	getchar();
+	if(scanf("%s", username) >0)
+	    getchar();
 	printf("Password: ");
-	scanf("%s", password);
-    getchar();
+	if(scanf("%s", password) >0)
+        getchar();
 
 	hash_pwd = hash_password(password);
     if (dbm->userExists(username, hash_pwd)) {
@@ -133,11 +133,11 @@ void handle_delete_user(SQLiteManager *dbm){
 	char *hash_pwd = NULL;
 
     printf("Username: ");
-    scanf("%s", username);
-    getchar();
+    if(scanf("%s", username)>0)
+        getchar();
     printf("Password: ");
-    scanf("%s", password);
-    getchar();
+    if(scanf("%s", password)>0)
+        getchar();
 
 	hash_pwd = hash_password(password);
     if (dbm->userExists(username, hash_pwd)) {
