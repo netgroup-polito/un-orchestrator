@@ -133,7 +133,7 @@ string ComputeController::retrieveFile(string tenant_id, string graph_id, string
 string ComputeController::retrieveFileDefault(string nf_functional_capability, string filename, string dst_path){
 
 	string config_orch_endpoint = Configuration::instance()->getConfigOrchEndpoint().c_str();
-	string url = config_orch_endpoint + CONFIG_ORCH_FILE_URL+nf_functional_capability;
+	string url = config_orch_endpoint + CONFIG_ORCH_FILE_URL+nf_functional_capability+"/"+filename;
 
 	string path_file = dst_path+"/"+filename;
 
