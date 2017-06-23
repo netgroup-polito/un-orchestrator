@@ -12,22 +12,28 @@
 #include "../orchestrator/utils/constants.h"
 #include "../orchestrator/utils/logger.h"
 
-bool initDB(SQLiteManager *dbm, char *pass)
-{
+char* hash_password(char *plain_password){
 	unsigned char *hash_token = new unsigned char[HASH_SIZE];
 	char *hash_pwd = new char[BUFFER_SIZE];
 	char *tmp = new char[HASH_SIZE];
 	char *pwd = new char[HASH_SIZE];
 
+	strcpy(pwd, plain_password);
+	SHA256((const unsigned char*)pwd, strlen(pwd), hash_token);
+
+	for (int i = 0; i < HASH_SIZE; i++) {
+		sprintf(tmp, "%.2x", hash_token[i]);
+		strcat(hash_pwd, tmp);
+	}
+	return hash_pwd;
+}
+
+bool initDB(SQLiteManager *dbm, char *pass)
+{
+
 	if(dbm->createTables()){
-		strcpy(pwd, pass);
 
-		SHA256((const unsigned char*)pwd, strlen(pwd), hash_token);
-
-		for (int i = 0; i < HASH_SIZE; i++) {
-			sprintf(tmp, "%.2x", hash_token[i]);
-			strcat(hash_pwd, tmp);
-	    }
+		char *hash_pwd = hash_password(pass);
 
 		// insert generic resources
 		dbm->insertResource(BASE_URL_GRAPH);
@@ -80,11 +86,76 @@ bool initDB(SQLiteManager *dbm, char *pass)
 	return false;
 }
 
+void handle_init(SQLiteManager *dbm){
+
+    char password[20];
+    printf("Insert a password for the default 'admin' user: ");
+    scanf("%s", password);
+    getchar();
+
+	if(!initDB(dbm, password)) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Database already initialized.");
+		exit(EXIT_FAILURE);
+	}
+
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Database initialized successfully.");
+    getchar();
+}
+
+void handle_add_user(SQLiteManager *dbm){
+
+	char username[20];
+	char password[20];
+	char *hash_pwd = NULL;
+
+	printf("Username: ");
+	scanf("%s", username);
+	getchar();
+	printf("Password: ");
+	scanf("%s", password);
+    getchar();
+
+	hash_pwd = hash_password(password);
+    if (dbm->userExists(username, hash_pwd)) {
+        logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "User already exists.");
+    }
+    else{
+        dbm->insertUser(username, hash_pwd, ADMIN);
+        logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "User added successfully.");
+    }
+    getchar();
+
+}
+
+void handle_delete_user(SQLiteManager *dbm){
+
+    char username[20];
+    char password[20];
+	char *hash_pwd = NULL;
+
+    printf("Username: ");
+    scanf("%s", username);
+    getchar();
+    printf("Password: ");
+    scanf("%s", password);
+    getchar();
+
+	hash_pwd = hash_password(password);
+    if (dbm->userExists(username, hash_pwd)) {
+		dbm->deleteUser(username);
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "User deleted successfully.");
+	}
+	else{
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "User not found.");
+	}
+    getchar();
+
+}
+
 int main(int argc, char *argv[]) {
 
 	SQLiteManager *dbm = NULL;
 	char db_name[BUFFER_SIZE];
-	char *pwd = NULL;
 
 	// Check for root privileges
 	if(geteuid() != 0) {
@@ -92,22 +163,36 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	// Check for arguments
-	if(argc < 2) {
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Initialize local database and set the password for the default 'admin' user.");
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Usage: sudo ./db_initializer admin_password\n");
-		exit(EXIT_FAILURE);
-	}
-
-	pwd = argv[1];
 	sprintf(db_name, "../orchestrator/%s", DB_NAME);
 
-	dbm = new SQLiteManager(db_name);
+	int cmd;
+	do{
+		cout << "1. Initialize database\n";
+		cout << "2. Add user\n";
+		cout << "3. Delete user\n";
+		cout << "0. Exit\n";
+		cout << "Choose: ";
+		cin >> cmd;
 
-	if(!initDB(dbm, pwd)) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Database already initialized.");
-		exit(EXIT_FAILURE);
-	}
+        if(cmd!=0)
+            dbm = new SQLiteManager(db_name);
 
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Database initialized successfully.");
+		switch(cmd){
+			case 1:
+				handle_init(dbm);
+				break;
+			case 2:
+				handle_add_user(dbm);
+				break;
+			case 3:
+				handle_delete_user(dbm);
+				break;
+			case 0:
+				break;
+			default:
+				cout << "Invalid command!\n";
+		}
+	}while(cmd!=0);
+
+
 }
