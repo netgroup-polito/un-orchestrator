@@ -126,7 +126,8 @@ Object VNFs::toJSON()
 	vnf[_ID] = id.c_str();
 	vnf[_NAME] = name.c_str();
 	vnf[VNF_TEMPLATE] = vnf_template.c_str();
-	vnf[FUNCTIONAL_CAPABILITY] = functional_capability.c_str();
+	if(strcmp(functional_capability.c_str(),"")!=0)
+		vnf[FUNCTIONAL_CAPABILITY] = functional_capability.c_str();
 	for(list<string>::iterator it = groups.begin(); it != groups.end(); it++)
 		groups_Array.push_back((*it).c_str());
 	if(groups.size()!=0)
