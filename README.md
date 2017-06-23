@@ -45,7 +45,7 @@ Please check individual README's in each subfolder for more information.
 
 ### The network controller
 
-The network controller is the sub-module that interacts with the vSwitch.
+The *network controller* is the sub-module that interacts with the vSwitch.
 It consists of two parts:
 
   * the Openflow controller(s): a new Openflow controller is created for each
