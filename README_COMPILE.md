@@ -25,7 +25,7 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 	; - ethtool: utilities to set some parameters on the NICs (e.g., disable TCP offloading)
 	; - gitL utility to download the source code of the universal node and of other libraries
 	
-	$ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libmicrohttpd-dev libxml2-dev ethtool
+	$ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libmicrohttpd-dev libxml2-dev ethtool git
 	
 	; Install JSON Spirit (nice library to parse JSON files)
 	; Alternatively, a copy of JSON Spirit is provided in `[un-orchestrator]/contrib/json-spirit.zip`
