@@ -39,12 +39,6 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 	; Update the dynamic libraries cache
 	$ sudo ldconfig
 
-Some components of the UN are available as git submodules. To retrieve such modules, type the
-following commands
-
-	$ cd [un-orchestrator]
-	$ git submodule update --init --recursive
-
 ## Getting the code
 
 The UN source code can be downloaded in two ways, depending on whether
@@ -61,6 +55,11 @@ Getting the code through GIT:
 	$ git clone https://github.com/netgroup-polito/un-orchestrator.git
 	
 	; Your code is now in the `un-orchestrator` folder.
+		
+	$ cd [un-orchestrator]
+	; Update the submodules
+	$ git submodule update --init --recursive
+	
 
 Simply downloading source code:
 
