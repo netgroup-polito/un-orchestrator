@@ -1,0 +1,73 @@
+{
+  "netgroup-domain:informations": {
+    "id":"00000001",
+    "name": "universal-node-example",
+    "management-address": "130.192.225.182:8080",
+    "type": "UN",
+    "hardware-informations": {
+      "interfaces": {
+        "interface": [
+         {
+            "index": 1,
+            "name": "130.192.225.182/eth1",
+            "netgroup-neighbor:neighbors": {
+              "netgroup-neighbor:neighbor": [
+                {
+                  "remote-interface": "130.192.225.183/eth1",
+                  "domain-name": "isp",
+                  "neighbor-type": "access-network"
+                }
+              ]
+            },
+            "subinterfaces": {
+              "subinterface": [
+                {
+                  "index": 1,
+                  "netgroup-if-capabilities:capabilities": {
+                    "netgroup-if-capabilities:gre": false
+                  },
+                  "netgroup-if-gre:gre": [],
+                  "config": {
+                    "name": "eth1"
+                  }
+                }
+              ]
+            },
+            "config": {
+              "enabled": true
+            }
+          }
+        ]
+      }
+    },
+    "capabilities": {
+      "infrastructural-capabilities": {
+        "infrastructural-capability": [
+          {
+            "name": "x86-64",
+            "type": "cpu_architecture"
+          }
+
+        ]
+      },
+      "functional-capabilities": {
+        "functional-capability": [
+          {
+            "type": "nat",
+            "name": "nat",
+            "ready": true,
+            "template": "nat.json",
+            "family": "Network"
+          },
+            {
+            "type": "dhcp",
+            "name": "dhcp",
+            "ready": true,
+            "template": "dhcp.json",
+            "family": "Network"
+          }
+        ]
+      }
+    }
+  }
+}
