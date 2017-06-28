@@ -57,7 +57,10 @@
             "name": "nat",
             "ready": true,
             "template": "nat.json",
-            "family": "Network"
+            "family": "Network",
+            "function-specifications": {
+              "function-specification": []
+            }
           },
             {
             "type": "dhcp",
