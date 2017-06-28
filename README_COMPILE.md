@@ -2,6 +2,8 @@
 
 ## Automatic set up
 
+Note (June 2017): the automatic setup is broken and needs to be fixed.
+
 It is possible to set up the Universal Node (UN) in two ways:
 
   * by compiling each component by hand; this allows to have the complete control on the UN set up.
