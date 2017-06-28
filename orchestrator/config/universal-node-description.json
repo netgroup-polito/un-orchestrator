@@ -2,7 +2,7 @@
   "netgroup-domain:informations": {
     "id":"00000001",
     "name": "universal-node-example",
-    "management-address": "127.0.0.1:8080",
+    "management-address": "192.168.0.25:8080",
     "type": "UN",
     "hardware-informations": {
       "interfaces": {
