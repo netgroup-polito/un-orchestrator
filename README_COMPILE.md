@@ -42,6 +42,7 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 	$ sudo apt-get install zlib1g-dev libssl-dev 
 	; Download cpprestsdk
 	$ git clone https://github.com/Microsoft/cpprestsdk.git casablanca
+	$ cd casablanca
 	$ git checkout 089f5a4002a854ef6ceb10274b0316ddf2db07f3
 	; Then execute the following commands:
 	$ cd casablanca/Release
@@ -49,6 +50,7 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 	$ cd build.debug
 	$ cmake .. -DCMAKE_BUILD_TYPE=Debug
 	$ make
+	$ sudo make install
 	
 	; Update the dynamic libraries cache
 	$ sudo ldconfig
