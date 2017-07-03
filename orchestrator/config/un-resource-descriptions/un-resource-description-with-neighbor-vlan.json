@@ -26,7 +26,10 @@
                   "netgroup-if-capabilities:capabilities": {
                     "netgroup-if-capabilities:gre": false
                   },
-                  "netgroup-if-gre:gre": []
+                  "netgroup-if-gre:gre": [],
+                  "config": {
+                    "name": "eth1"
+                  }
                 }
               ]
             },
