@@ -3,7 +3,7 @@
 
 ## Overview
 
-Database Initializer is the module responsible for creating and populating the database of the Universal Node orchestrator. The tables involved are briefly described below:
+Database Manager is the module responsible for creating and populating the database of the Universal Node orchestrator. The tables involved are briefly described below:
 - Users: specifies information about users (e.g. password, group, ...)
 - Login: includes the users currently authenticated with login information
 - User creation permissions: for each user, it defines the permission to create a resource belonging to a particular class
