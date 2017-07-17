@@ -2,7 +2,7 @@
 
 ## Automatic set up
 
-Note (June 2017): the automatic setup is broken and needs to be fixed.
+**WARNING (June 2017)**: the automatic setup is broken and needs to be fixed.
 
 It is possible to set up the Universal Node (UN) in two ways:
 
