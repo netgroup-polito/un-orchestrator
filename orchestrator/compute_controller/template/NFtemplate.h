@@ -56,7 +56,7 @@ private:
 	bool expandable;
 	int memorySize;
 	string platformType;
-	list<Port> ports;
+	list<TPort> ports;
 	list<string> requirements;
 	int cores;
 	string id;
@@ -74,8 +74,8 @@ public:
 	void setURI(string uri);
 	string getURI();
 	void setVnfType(nf_t type);
-	void addPort(Port port);
-	list<Port>& getPorts();
+	void addPort(TPort port);
+	list<TPort>& getPorts();
 	void setCores(int cores);
 	int getCores();
 	void setPlatform(string platform);

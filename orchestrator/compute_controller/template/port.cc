@@ -1,27 +1,27 @@
 #include "port.h"
 #include <sstream>
 #include <stdlib.h>
-Port::Port() {}
+TPort::TPort() {}
 
 
-void Port::setPortsRange(string portsRange){
+void TPort::setPortsRange(string portsRange){
 	this->portsRange = portsRange;
 }
 
-void Port::setTechnology(PortTechnology technology) {
+void TPort::setTechnology(PortTechnology technology) {
 	this->technology = technology;
 }
 
-string Port::getPortsRange() {
+string TPort::getPortsRange() {
 	return  this->portsRange;
 }
 
-PortTechnology Port::getTechnology() {
+PortTechnology TPort::getTechnology() {
 	return this->technology;
 }
 
 
-void Port::splitPortsRangeInInt(int& begin, int& end){
+void TPort::splitPortsRangeInInt(int& begin, int& end){
 	string token;
 	stringstream is(this->portsRange);
 	int i = 0;

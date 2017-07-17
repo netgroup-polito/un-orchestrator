@@ -251,7 +251,7 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 	for(list<NFtemplate*>::iterator temp = templates.begin(); temp != templates.end(); temp++){
 		if ((*temp)->getVnfType() == DPDK) {
 #ifdef ENABLE_DPDK_PROCESSES
-			for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
+			for(list<TPort>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 				int begin, end;
 				port->splitPortsRangeInInt(begin, end);
 				if(end != -1){
@@ -271,7 +271,7 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 #endif
 		} else if ((*temp)->getVnfType() == NATIVE) {
 #ifdef ENABLE_NATIVE
-			for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
+			for(list<TPort>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
 					if(end != -1){
@@ -293,7 +293,7 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 
 		if ((*temp)->getVnfType() == DOCKER) {
 #ifdef ENABLE_DOCKER
-				for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
+				for(list<TPort>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
 					if(end != -1){
@@ -318,7 +318,7 @@ bool ComputeController::addImplementations(list<NFtemplate *>& templates, string
 		}
 		if ((*temp)->getVnfType() == KVM) {
 #ifdef ENABLE_KVM
-				for(list<Port>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
+				for(list<TPort>::iterator port = (*temp)->getPorts().begin(); port != (*temp)->getPorts().end(); port++) {
 					int begin, end;
 					port->splitPortsRangeInInt(begin, end);
 					if(end != -1){

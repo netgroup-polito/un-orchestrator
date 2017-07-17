@@ -157,7 +157,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate *temp,Object obj)
 
 bool Template_Parser::parsePort(NFtemplate* temp, Object obj) {
 	PortTechnology port_technology = UNDEFINED_PORT;
-	Port port;
+	TPort port;
 	for( Object::const_iterator port_el = obj.begin(); port_el != obj.end(); ++port_el ) {
 		const string &pel_name = port_el->first;
 		const Value &pel_value = port_el->second;
