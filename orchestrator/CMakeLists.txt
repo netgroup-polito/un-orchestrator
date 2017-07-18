@@ -323,7 +323,7 @@ SET(SOURCES1
 	compute_controller/stopNF_in.h
 
 	compute_controller/template/NFtemplate.h
-        compute_controller/template/NFtemplate.cc
+    compute_controller/template/NFtemplate.cc
 	compute_controller/template/port.h
 	compute_controller/template/port.cc
 	compute_controller/template/template_parser.h
@@ -332,6 +332,8 @@ SET(SOURCES1
 
 	node_resource_manager/rest_server/rest_server.h
 	node_resource_manager/rest_server/rest_server.cc
+	node_resource_manager/rest_server/x-auth-token-header.h
+	node_resource_manager/rest_server/x-auth-token-header.cc
 
 	node_resource_manager/database_manager/SQLite/SQLiteManager.h
 	node_resource_manager/database_manager/SQLite/SQLiteManager.cc

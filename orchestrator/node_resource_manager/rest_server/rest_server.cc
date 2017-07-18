@@ -36,6 +36,9 @@ bool RestServer::init(SQLiteManager *dbm, int core_mask)
 		}
 	}
 	
+	//Register new HTTP haders not defined in the pistache library
+	Header::Registry::registerHeader<XAuthToken>();
+	
 	//Actually inizialize the server
 	auto opts = Http::Endpoint::options()
             .threads(1) 	//we use just a single thread
@@ -93,8 +96,6 @@ void RestServer::setupRoutes() {
 /*
 *	HTTP methods
 */
-
-//int RestServer::login(struct MHD_Connection *connection, void **con_cls) {
 
 // /login
 void RestServer::login(const Rest::Request& request, Http::ResponseWriter response) 
@@ -216,6 +217,7 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 	}
 }
 
+// /users/:name
 void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter response) 
 {
 	ULOG_INFO("Received the request of creating a new user");
@@ -239,8 +241,23 @@ void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter r
 	auto headers = request.headers();
 	auto host = headers.get<Http::Header::Host>();
 	string h = host->host();
-	ULOG_DBG_INFO("Header host: %s", h.c_str());
+	ULOG_DBG_INFO("Header 'Host': %s", h.c_str());
 	//If the header is not in the request, the server returns authomatically
+	
+	//TODO: extract the token from the request
+	auto token_header = headers.get<XAuthToken>();
+	string t = token_header->token();
+	ULOG_DBG_INFO("Header 'X-Auth-Token: %s", t.c_str());
+
+	char *token = NULL; /*(char *) MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Auth-Token");*/
+#if 0
+	if(token == NULL) {
+		ULOG_INFO("\"X-Auth-Token\" header not found in the request");
+		//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
+		response.send(Http::Code::Unauthorized);
+		return;
+	}
+#endif
 
 	if (!parsePostBody(req, NULL, &password, &group)) 
 	{
@@ -285,16 +302,6 @@ void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter r
 		}
 		
 		//FIXME: I'm not sure that the HTTP code used are appropriate
-
-		//TODO: extract the token from the request
-		char *token = NULL; /*(char *) MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Auth-Token");*/
-
-		if(token == NULL) {
-			ULOG_INFO("\"X-Auth-Token\" header not found in the request");
-			//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
-			response.send(Http::Code::Unauthorized);
-			return;
-		}
 
 		user_info_t *creator = dbmanager->getUserByToken(token);
 

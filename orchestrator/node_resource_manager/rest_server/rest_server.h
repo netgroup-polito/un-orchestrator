@@ -26,6 +26,8 @@
 #include <pistache/net.h>
 #include <pistache/peer.h>
 
+#include "x-auth-token-header.h"
+
 using namespace Pistache;
 
 
