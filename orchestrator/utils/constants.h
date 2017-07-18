@@ -29,7 +29,6 @@
 #define PUT					"PUT"
 #define GET					"GET"
 #define DELETE				"DELETE"
-#define POST				"POST"
 
 /*
 *	HTTP headers

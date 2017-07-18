@@ -87,8 +87,7 @@ void RestServer::setupRoutes() {
 	
 	Routes::Post(router, "/login", Routes::bind(&RestServer::login, this));
 	Routes::Post(router, "/users/:name", Routes::bind(&RestServer::createUser, this));
-	
-	
+	Routes::Get(router, "/users/:name", Routes::bind(&RestServer::getUser, this));
 }
 
 /************************************************/
@@ -97,7 +96,7 @@ void RestServer::setupRoutes() {
 *	HTTP methods
 */
 
-// /login
+// POST /login
 void RestServer::login(const Rest::Request& request, Http::ResponseWriter response) 
 {
 	ULOG_INFO("Received a 'login' request");
@@ -217,7 +216,7 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 	}
 }
 
-// /users/:name
+// POST /users/:name
 void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter response) 
 {
 	ULOG_INFO("Received the request of creating a new user");
@@ -244,20 +243,11 @@ void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter r
 	ULOG_DBG_INFO("Header 'Host': %s", h.c_str());
 	//If the header is not in the request, the server returns authomatically
 	
-	//TODO: extract the token from the request
 	auto token_header = headers.get<XAuthToken>();
 	string t = token_header->token();
 	ULOG_DBG_INFO("Header 'X-Auth-Token: %s", t.c_str());
 
-	char *token = NULL; /*(char *) MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Auth-Token");*/
-#if 0
-	if(token == NULL) {
-		ULOG_INFO("\"X-Auth-Token\" header not found in the request");
-		//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
-		response.send(Http::Code::Unauthorized);
-		return;
-	}
-#endif
+	char *token = (char*)t.c_str();
 
 	if (!parsePostBody(req, NULL, &password, &group)) 
 	{
@@ -272,7 +262,6 @@ void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter r
 	try {
 		if (username.c_str() == NULL || group == NULL || password == NULL) {
 			ULOG_ERR("Client unathorized!");
-			//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 			//FIXME: does this make sense? Username cannot be NULL, otherwise the router does not bring the request
 			//to this method. Group and pwd cannot be NULL, since we have already checked that the content of the 
 			//request is correct
@@ -331,7 +320,55 @@ void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter r
 	}
 }
 
+// GET /users/:name
+void RestServer::getUser(const Rest::Request& request, Http::ResponseWriter response) 
+{
+	//Retrieve the username from the URL
+	auto username = request.param(":name").as<std::string>();
+	
+	ULOG_INFO("Received the request related to user: %s",(char*)username.c_str());
 
+	assert(dbmanager != NULL);
+
+	// Check whether the user exists
+	if (!dbmanager->resourceExists(BASE_URL_USER, username.c_str())) {
+		ULOG_INFO("Method GET is not supported for this resource (i.e. it does not exist)");
+	
+		response.headers()
+			.add<Pistache::Http::Header::Allow>(Http::Method::Post);
+		
+		response.send(Http::Code::Method_Not_Allowed);
+		return;
+	}
+
+	try {
+		json_spirit::Object json;
+
+		user_info_t *usr = dbmanager->getUserByName((char*)username.c_str());
+
+		json["username"] = usr->user;
+		json["group"] = usr->group;
+
+		stringstream ssj;
+		write_formatted(json, ssj);
+		string sssj = ssj.str();
+		
+		Pistache::Http::CacheDirective cd(Pistache::Http::CacheDirective::NoCache);
+		Pistache::Http::Header::CacheControl cc(cd);
+		response.headers()
+			.add<Pistache::Http::Header::CacheControl>(cd)
+			.add<Pistache::Http::Header::ContentType>(MIME(Text,Json));
+			
+		ULOG_INFO("User has been correctly authenticated!");
+
+		response.send(Http::Code::Ok, sssj);
+		return;
+	} catch (...) {
+		ULOG_ERR("An error occurred while retrieving the user description!");
+		response.send(Http::Code::Internal_Server_Error);
+		return;
+	}
+}
 
 /*
 *	Helper methods
@@ -444,9 +481,11 @@ bool RestServer::isLoginRequest(const char *method, const char *url) {
 	 * Checking method name and url is enough because the REST server
 	 * already verifies that the request is well-formed.
 	 */
-	return (strcmp(method, POST) == 0 && url[0] == '/'
+	 //FIXME: Ivano - commented to compile the code
+/*	return (strcmp(method, POST) == 0 && url[0] == '/'
 			&& strncmp(url + sizeof(char), BASE_URL_LOGIN,
-					sizeof(char) * strlen(BASE_URL_LOGIN)) == 0);
+					sizeof(char) * strlen(BASE_URL_LOGIN)) == 0);*/
+					return true;
 }
 
 void RestServer::request_completed(void *cls, struct MHD_Connection *connection,
@@ -485,8 +524,9 @@ int RestServer::answer_to_connection(void *cls,
 		if (NULL == con_info)
 			return MHD_NO;
 
-		if ((0 == strcmp(method, PUT)) || (0 == strcmp(method, POST))
-				|| (0 == strcmp(method, DELETE))) {
+		if ((0 == strcmp(method, PUT))) /*|| (0 == strcmp(method, POST)*///)//IVANO removed to make the code compile
+			//	|| (0 == strcmp(method, DELETE))) {
+		{
 			con_info->message = (char*) malloc(REQ_SIZE * sizeof(char));
 			con_info->length = 0;
 		} else if (0 == strcmp(method, GET))
@@ -505,7 +545,7 @@ int RestServer::answer_to_connection(void *cls,
 	if (0 == strcmp(method, GET))
 		return doOperation(connection, con_cls, GET, url);
 
-	if ((0 == strcmp(method, PUT)) || (0 == strcmp(method, POST))
+	if ((0 == strcmp(method, PUT)) /*|| (0 == strcmp(method, POST)*///)//IVANO removed to make the code compile
 			|| (0 == strcmp(method, DELETE))) {
 
 		struct connection_info_struct *con_info =
@@ -521,8 +561,8 @@ int RestServer::answer_to_connection(void *cls,
 			con_info->message[con_info->length] = '\0';
 			if (0 == strcmp(method, PUT))
 				return doOperation(connection, con_cls, PUT, url);
-			else if (0 == strcmp(method, POST))
-				return doOperation(connection, con_cls, POST, url);
+			/*else if (0 == strcmp(method, POST))
+				return doOperation(connection, con_cls, POST, url);*//*|| (0 == strcmp(method, POST)*///)//IVANO removed to make the code compile
 			else
 				return doOperation(connection, con_cls, DELETE, url);
 		}
@@ -642,10 +682,10 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 	} else if(strcmp(method, DELETE) == 0) {
 		ULOG_INFO("There are no operations using DELETE with generic resources");
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
-	} else if(strcmp(method, POST) == 0) {
+	}/* else if(strcmp(method, POST) == 0) {
 		ULOG_INFO("There are no operations using POST with generic resources");
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
-	}
+	}*///IVANO removed to make the code compile
 
 	ULOG_INFO("Method %s is currently not supported to operate on generic resources", method);
 	return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
@@ -668,8 +708,8 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 		// Cases currently implemented
 		if(strcmp(generic_resource, BASE_URL_GRAPH) == 0)
 			return readGraph(connection, (char *) resource);
-		else if(strcmp(generic_resource, BASE_URL_USER) == 0)
-			return readUser(connection, (char *) resource);
+		//else if(strcmp(generic_resource, BASE_URL_USER) == 0)
+		//	return readUser(connection, (char *) resource);//IVANO implmented in the proper function
 
 	// PUT: for single resource, it can be only creation... at the moment!
 	} else if(strcmp(method, PUT) == 0) {
@@ -700,7 +740,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 		else if(strcmp(generic_resource, BASE_URL_GROUP) == 0)
 			return deleteGroup(connection, (char *) resource);
 
-	} else if(strcmp(method, POST) == 0) {
+	} //else if(strcmp(method, POST) == 0) {/*|| (0 == strcmp(method, POST)*/)//IVANO removed to make the code compile
 
 //XXX this operation is not done into the proper method
 #if 0
@@ -714,8 +754,8 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 		}
 #endif
 
-		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
-	}
+//		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
+//	}
 
 	ULOG_ERR("Error: %s on /%s/%s not implemented!", method, generic_resource, resource);
 	return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
@@ -738,10 +778,10 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 
 	}
 	// PUT, POST, DELETE: currently not supported
-	else if(strcmp(method, POST) == 0) {
+	/*else if(strcmp(method, POST) == 0) {
 		ULOG_ERR("Error: POST on /%s/%s/%s not implemented!", generic_resource, resource, extra_info);
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
-	}
+	}*/
 
 	ULOG_ERR("Error: %s on /%s/%s/%s not implemented!", method, generic_resource, resource, extra_info);
 	return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
@@ -779,15 +819,18 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 			ULOG_INFO("%s with body is not allowed", method);
 			return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 		}
+	}
 
 	// PUT and POST requests must contain JSON data in their body
-	} else if(strcmp(method, PUT) == 0 || strcmp(method, POST) == 0) {
+#if 0
+	} else if(strcmp(method, PUT) == 0) /*|| strcmp(method, POST) == 0) {*//*|| (0 == strcmp(method, POST)*///)//IVANO removed to make the code compile
 		const char *c_type = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Content-Type");
 		if ((c_type == NULL) || (strncmp(c_type, JSON_C_TYPE, strlen(JSON_C_TYPE) != 0))) {
 			ULOG_INFO("Content-Type must be: \"%s\"",JSON_C_TYPE);
 			return httpResponse(connection, MHD_HTTP_UNSUPPORTED_MEDIA_TYPE);
 		}
 	}
+#endif
 
 	// ...end of routine HTTP requests checks
 
@@ -866,6 +909,7 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 	return ret;
 }
 
+
 int RestServer::readGraph(struct MHD_Connection *connection, char *graphID)
 {
 	struct MHD_Response *response;
@@ -905,51 +949,7 @@ int RestServer::readGraph(struct MHD_Connection *connection, char *graphID)
 	}
 }
 
-int RestServer::readUser(struct MHD_Connection *connection, char *username) {
-	assert(dbmanager != NULL);
 
-	struct MHD_Response *response;
-	int ret;
-
-	ULOG_INFO("Required resource: %s", username);
-
-	// Check whether the user exists
-	if (!dbmanager->resourceExists(BASE_URL_USER, username)) {
-		ULOG_INFO("Method GET is not supported for this resource (i.e. it does not exist)");
-		response = MHD_create_response_from_buffer(0, (void*) "",
-				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Allow", PUT);
-		ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED,
-				response);
-		MHD_destroy_response(response);
-		return ret;
-	}
-
-	try {
-		json_spirit::Object json;
-
-		user_info_t *usr = dbmanager->getUserByName(username);
-
-		json["username"] = usr->user;
-		json["group"] = usr->group;
-
-		stringstream ssj;
-		write_formatted(json, ssj);
-		string sssj = ssj.str();
-		char *aux = (char*) malloc(sizeof(char) * (sssj.length() + 1));
-		strcpy(aux, sssj.c_str());
-		response = MHD_create_response_from_buffer(strlen(aux), (void*) aux,
-				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Content-Type", JSON_C_TYPE);
-		MHD_add_response_header(response, "Cache-Control", NO_CACHE);
-		ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-		MHD_destroy_response(response);
-		return ret;
-	} catch (...) {
-		ULOG_ERR("An error occurred while retrieving the user description!");
-		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
-	}
-}
 
 int RestServer::readMultipleGroups(struct MHD_Connection *connection, user_info_t *usr) {
 	assert(usr != NULL && dbmanager != NULL);

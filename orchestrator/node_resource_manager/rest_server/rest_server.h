@@ -21,6 +21,7 @@
 //XXX the follwing includes are for the new server
 #include <pistache/http.h>
 #include <pistache/http_headers.h>
+#include <pistache/http_defs.h>
 #include <pistache/router.h>
 #include <pistache/endpoint.h>
 #include <pistache/net.h>
@@ -120,7 +121,7 @@ private:
 
 	static int readMultipleGroups(struct MHD_Connection *connection, user_info_t *usr);
 
-	static int readUser(struct MHD_Connection *connection, char *username);
+
 
 
 	/**
@@ -171,6 +172,8 @@ private:
 	void login(const Rest::Request& request, Http::ResponseWriter response);
 	// POST /users/:username
 	void createUser(const Rest::Request& request, Http::ResponseWriter response);
+	// GET /users/:username
+	void getUser(const Rest::Request& request, Http::ResponseWriter response);
 	
 	bool readGraphFromFile(const string &nffgResourceName, string &nffgFileName);
 	int createGraphFromFile(const string &graphID, string toBeCreated);
