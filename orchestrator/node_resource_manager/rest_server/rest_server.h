@@ -78,11 +78,6 @@ private:
 
 #if 0
 	static int readMultipleUsers(struct MHD_Connection *connection, user_info_t *usr);
-	static int readConfiguration(struct MHD_Connection *connection);
-	static int retrieveTemplateId(struct MHD_Connection *connection, string graphId, string vnfId);
-
-
-
 
 	static int createGroup(struct MHD_Connection *connection, struct connection_info_struct *con_info, char *resource, user_info_t *usr);
 
