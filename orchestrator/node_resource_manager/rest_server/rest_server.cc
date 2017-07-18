@@ -219,10 +219,10 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 // POST /users/:name
 void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter response) 
 {
-	ULOG_INFO("Received the request of creating a new user");
-
 	//Retrieve the username from the URL
 	auto username = request.param(":name").as<std::string>();
+	
+	ULOG_INFO("Received the request of creating a new user: '%s'");
 
 	char *group = NULL, *password = NULL;
 
@@ -278,6 +278,7 @@ void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter r
 			strcat(hash_pwd, tmp);
 		}
 
+		//FIXME: here, we should only check the username, not also the password
 		if(dbmanager->userExists((char*)(username.c_str()), hash_pwd)) {
 			ULOG_ERR("User creation failed: already existing!");
 			response.send(Http::Code::Unauthorized);
@@ -287,6 +288,7 @@ void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter r
 		if(!dbmanager->resourceExists(BASE_URL_GROUP, t_group)) {
 			ULOG_ERR("User creation failed! The group '%s' cannot be recognized!", t_group);
 			response.send(Http::Code::Unauthorized);
+			//TODO: the returned code is probably wrong
 			return;
 		}
 		
@@ -308,13 +310,11 @@ void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter r
 
 		delete t_group;
 
-		//return httpResponse(connection, MHD_HTTP_ACCEPTED);
 		response.send(Http::Code::Accepted);
 		return;
 
 	} catch (...) {
 		ULOG_ERR("An error occurred during user login!");
-//		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 		response.send(Http::Code::Internal_Server_Error);
 		return;
 	}
