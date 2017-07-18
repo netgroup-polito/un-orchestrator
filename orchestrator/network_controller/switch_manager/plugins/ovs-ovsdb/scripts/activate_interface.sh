@@ -28,7 +28,7 @@ echo "[$0] Activatig interface $1"
 sudo ethtool --offload $1 rx off tx off &> /dev/null
 sudo ethtool -K $1 gso off &> /dev/null
 
-# Remove the ip address from the interface(rofl
+# Remove the ip address from the interface
 sudo ifconfig $1 0
 
 # Disable the network manager on the interface
