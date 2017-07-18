@@ -88,6 +88,8 @@ void RestServer::setupRoutes() {
 	Routes::Post(router, "/login", Routes::bind(&RestServer::login, this));
 	Routes::Post(router, "/users/:name", Routes::bind(&RestServer::createUser, this));
 	Routes::Get(router, "/users/:name", Routes::bind(&RestServer::getUser, this));
+	
+	Routes::Put(router, "/NF-FG/:graphID", Routes::bind(&RestServer::putGraph, this));
 }
 
 /************************************************/
@@ -384,6 +386,142 @@ void RestServer::getUser(const Rest::Request& request, Http::ResponseWriter resp
 	}
 }
 
+// PUT /NF-FG/:graphID
+void RestServer::putGraph(const Rest::Request& request, Http::ResponseWriter response) 
+{
+	ULOG_INFO("Received a PUT request for a graph");
+
+	//Retrieve the graphID
+	auto gID = request.param(":graphID").as<std::string>();
+	
+	user_info_t *usr = NULL;
+
+	//Authenticate the user, if needed
+	if(dbmanager != NULL)
+	{
+		auto headers = request.headers();
+		auto token_header = headers.get<XAuthToken>();
+		string t = token_header->token();
+		ULOG_DBG_INFO("Header 'X-Auth-Token: %s", t.c_str());
+		
+		usr = dbmanager->getUserByToken(t.c_str());
+		
+		if(usr==NULL)
+		{
+			ULOG_INFO("The token is not valid");
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+		
+		
+		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _READ, /*generic_resource*/"NF-FG", gID.c_str()))
+		{
+			ULOG_INFO("User not authorized to execute the PUT on NF-FG '%s'",gID.c_str());
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+		
+		
+	}
+
+	//TODO check other headers?
+
+	
+	// If security is required, check whether the graph already exists in the database
+
+	/* this check prevent updates!
+	if(dbmanager != NULL && dbmanager->resourceExists(BASE_URL_GRAPH, resource)) {
+		ULOG_ERR("Error: cannot deploy an already existing graph in the database!");
+		return httpResponse(connection, MHD_HTTP_FORBIDDEN);
+	}
+
+	// The same check within the graph manager
+	if(gm->graphExists(resource)) {
+		ULOG_ERR("Error: cannot deploy an already existing graph in the manager!");
+		return httpResponse(connection, MHD_HTTP_FORBIDDEN);
+	}*/
+
+	highlevel::Graph *graph = new highlevel::Graph(gID);
+
+	ULOG_INFO("Resource to be created/updated: %s/%s", BASE_URL_GRAPH, gID.c_str());
+	
+	string req = request.body();
+
+	ULOG_INFO("Content:");
+	ULOG_INFO("%s", req.c_str());
+
+	bool newGraph = true;
+
+	// Check whether the body is well formed
+	try
+	{
+		parsePutBody(req, *graph, newGraph);
+	}catch(GraphParserException* e)
+	{
+		ULOG_INFO("Malformed content");
+		Object json;
+		json["module"]=e->getModule();
+		json["message"]=e->what();
+		stringstream ssj;
+		write_formatted(json, ssj);
+		string sssj = ssj.str();
+	
+		Pistache::Http::CacheDirective cd(Pistache::Http::CacheDirective::NoCache);
+		Pistache::Http::Header::CacheControl cc(cd);
+		response.headers()
+			.add<Pistache::Http::Header::CacheControl>(cd)
+			.add<Pistache::Http::Header::ContentType>(MIME(Text,Json));
+		
+		response.send(Http::Code::Bad_Request,sssj);
+		return;
+	}
+
+	graph->print();
+
+	try {
+		if(gm->graphExists(gID.c_str())) {
+			ULOG_INFO("An existing graph must be updated");
+			if (!gm->updateGraph(gID,graph)) {
+				ULOG_INFO("The graph description is not valid!");
+				response.send(Http::Code::Bad_Request);
+				return;
+			}
+			ULOG_INFO("The graph has been properly updated!");
+			ULOG_INFO("");
+		}else{
+			ULOG_INFO("A new graph must be created");
+			if (!gm->newGraph(graph)) {
+				ULOG_INFO("The graph description is not valid!");
+				response.send(Http::Code::Bad_Request);
+				return;
+			}
+			ULOG_INFO("The graph has been properly created!");
+			ULOG_INFO("");
+		}
+	}
+	catch (...) {
+		ULOG_ERR("An error occurred during the creation of the graph!");
+		response.send(Http::Code::Internal_Server_Error);
+		return;
+	}
+
+	// If security is required, update database
+	if(dbmanager != NULL)
+		dbmanager->insertResource(BASE_URL_GRAPH, gID.c_str(), usr->user);
+
+	//TODO: put the proper content in the answer
+	stringstream absolute_url;
+	absolute_url << REST_URL << ":" << REST_PORT << "/" << BASE_URL_GRAPH << "/" << gID;
+	
+	Pistache::Http::Header::Location l(absolute_url.str());
+	response.headers()
+		.add<Pistache::Http::Header::Location>(l);
+	
+	response.send(Http::Code::Created);
+	return;
+}
+
+
 /*
 *	Helper methods
 */
@@ -484,6 +622,16 @@ bool RestServer::parseUserCreationForm(Value value, char **pwd, char **group)
 	}
 
 	return true;
+}
+
+
+//TODO: remove this method and put the code in the caller
+void RestServer::parsePutBody(string content, highlevel::Graph &graph, bool newGraph) 
+{
+	Value value;
+	read(content, value);
+	GraphParser::parseGraph(value, graph, newGraph, gm);
+	return;
 }
 
 
@@ -644,13 +792,6 @@ void RestServer::parseGraphFromFile(string toBeCreated, highlevel::Graph &graph,
 	return;
 }
 
-void RestServer::parsePutBody(struct connection_info_struct &con_info,
-		highlevel::Graph &graph, bool newGraph) {
-	Value value;
-	read(con_info.message, value);
-	GraphParser::parseGraph(value, graph, newGraph, gm);
-	return;
-}
 
 /*
  * Version on generic resources
@@ -724,10 +865,12 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 			ULOG_ERR("User not authorized to execute %s on %s", method, resource);
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
+#if 0
 		if(strcmp(generic_resource, BASE_URL_GRAPH) == 0)
 			return deployNewGraph(connection, con_info, (char *) resource, usr);
 		else if(strcmp(generic_resource, BASE_URL_GROUP) == 0)
 			return createGroup(connection, con_info, (char *) resource, usr);;
+#endif //IVANO this has been put in the proper function
 
 	// DELETE: for single resource, it can be only deletion... at the moment!
 	} else if(strcmp(method, DELETE) == 0) {
@@ -1230,100 +1373,6 @@ int RestServer::createGroup(struct MHD_Connection *connection, struct connection
 	return ret;
 }
 
-int RestServer::deployNewGraph(struct MHD_Connection *connection, struct connection_info_struct *con_info, char *resource, user_info_t *usr) {
-
-	int ret = 0;
-	struct MHD_Response *response;
-
-	ULOG_INFO("Received request for deploying %s/%s", BASE_URL_GRAPH, resource);
-	// If security is required, check whether the graph already exists in the database
-
-	/* this check prevent updates!
-	if(dbmanager != NULL && dbmanager->resourceExists(BASE_URL_GRAPH, resource)) {
-		ULOG_ERR("Error: cannot deploy an already existing graph in the database!");
-		return httpResponse(connection, MHD_HTTP_FORBIDDEN);
-	}
-
-	// The same check within the graph manager
-	if(gm->graphExists(resource)) {
-		ULOG_ERR("Error: cannot deploy an already existing graph in the manager!");
-		return httpResponse(connection, MHD_HTTP_FORBIDDEN);
-	}*/
-
-	string gID(resource);
-
-	highlevel::Graph *graph = new highlevel::Graph(gID);
-
-	ULOG_INFO("Resource to be created/updated: %s/%s", BASE_URL_GRAPH, resource);
-	ULOG_INFO("Content:");
-	ULOG_INFO("%s", con_info->message);
-
-	bool newGraph = true;
-
-	// Check whether the body is well formed
-	try
-	{
-		parsePutBody(*con_info, *graph, newGraph);
-	}catch(GraphParserException* e)
-	{
-		ULOG_INFO("Malformed content");
-		Object json;
-		json["module"]=e->getModule();
-		json["message"]=e->what();
-		stringstream ssj;
-		write_formatted(json, ssj);
-		string sssj = ssj.str();
-		char *aux = (char*) malloc(sizeof(char) * (sssj.length() + 1));
-		strcpy(aux, sssj.c_str());
-		response = MHD_create_response_from_buffer(strlen(aux), (void*) aux,
-				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Content-Type", JSON_C_TYPE);
-		MHD_add_response_header(response, "Cache-Control", NO_CACHE);
-		ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
-		MHD_destroy_response(response);
-		return ret;
-	}
-
-	graph->print();
-
-	try {
-		if(gm->graphExists(resource)) {
-			ULOG_INFO("An existing graph must be updated");
-			if (!gm->updateGraph(gID,graph)) {
-				ULOG_INFO("The graph description is not valid!");
-				return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
-			}
-			ULOG_INFO("The graph has been properly updated!");
-			ULOG_INFO("");
-		}else{
-			ULOG_INFO("A new graph must be created");
-			if (!gm->newGraph(graph)) {
-				ULOG_INFO("The graph description is not valid!");
-				return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
-			}
-			ULOG_INFO("The graph has been properly created!");
-			ULOG_INFO("");
-		}
-	}
-	catch (...) {
-		ULOG_ERR("An error occurred during the creation of the graph!");
-		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
-	}
-
-	// If security is required, update database
-	if(dbmanager != NULL)
-		dbmanager->insertResource(BASE_URL_GRAPH, resource, usr->user);
-
-	//TODO: put the proper content in the answer
-	response = MHD_create_response_from_buffer(0, (void*) "", MHD_RESPMEM_PERSISTENT);
-	stringstream absolute_url;
-	absolute_url << REST_URL << ":" << REST_PORT << "/" << BASE_URL_GRAPH << "/" << resource;
-	MHD_add_response_header(response, "Location", absolute_url.str().c_str());
-	ret = MHD_queue_response(connection, MHD_HTTP_CREATED, response);
-
-	MHD_destroy_response(response);
-	return ret;
-}
 
 int RestServer::deleteGraph(struct MHD_Connection *connection, char *resource) {
 

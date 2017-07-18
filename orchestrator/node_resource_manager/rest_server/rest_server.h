@@ -99,7 +99,7 @@ private:
 	
 
 	static int doPut(struct MHD_Connection *connection, const char *url, void **con_cls);
-	static void parsePutBody(struct connection_info_struct &con_info,highlevel::Graph &graph, bool newGraph);
+	
 
 	static int doDelete(struct MHD_Connection *connection,const char *url, void **con_cls);
 
@@ -109,8 +109,6 @@ private:
 	
 
 	static bool isLoginRequest(const char *method, const char *url);
-
-	static int deployNewGraph(struct MHD_Connection *connection, struct connection_info_struct *con_info, char *resource, user_info_t *usr);
 
 	static int createGroup(struct MHD_Connection *connection, struct connection_info_struct *con_info, char *resource, user_info_t *usr);
 
@@ -175,6 +173,9 @@ private:
 	// GET /users/:username
 	void getUser(const Rest::Request& request, Http::ResponseWriter response);
 	
+	// PUT /NF-FG/:graphID
+	void putGraph(const Rest::Request& request, Http::ResponseWriter response);
+	
 	bool readGraphFromFile(const string &nffgResourceName, string &nffgFileName);
 	int createGraphFromFile(const string &graphID, string toBeCreated);
 	void parseGraphFromFile(string toBeCreated,highlevel::Graph &graph, bool newGraph);
@@ -183,6 +184,8 @@ private:
 	bool parseLoginForm(Value value, char *user, char *pwd);
 	bool parsePostBody(string content, char **user, char **pwd, char **group);
 	bool parseUserCreationForm(Value value, char **pwd, char **group);
+	
+	void parsePutBody(string content, highlevel::Graph &graph, bool newGraph) ;
 };
 
 #endif //REST_SERVER_H_
