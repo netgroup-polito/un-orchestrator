@@ -81,10 +81,7 @@ private:
 		size_t length;
 	};
 
-	static int doOperation(struct MHD_Connection *connection, void **con_cls, const char *method, const char *url);
-
-	static int doGetStatus(struct MHD_Connection *connection,const char *graphID);
-	
+	static int doOperation(struct MHD_Connection *connection, void **con_cls, const char *method, const char *url);	
 	
 	static int readMultipleGraphs(struct MHD_Connection *connection, user_info_t *usr);
 	static int readMultipleUsers(struct MHD_Connection *connection, user_info_t *usr);
@@ -177,6 +174,9 @@ private:
 	void getGraph(const Rest::Request& request, Http::ResponseWriter response);
 	// GET /NF-FG/:graphID
 	void deleteGraph(const Rest::Request& request, Http::ResponseWriter response);
+	// GET /NF-FG/status/:graphID
+	void getGraphStatus(const Rest::Request& request, Http::ResponseWriter response);
+
 	
 	bool readGraphFromFile(const string &nffgResourceName, string &nffgFileName);
 	int createGraphFromFile(const string &graphID, string toBeCreated);
@@ -187,7 +187,7 @@ private:
 	bool parsePostBody(string content, char **user, char **pwd, char **group);
 	bool parseUserCreationForm(Value value, char **pwd, char **group);
 	
-	void parsePutBody(string content, highlevel::Graph &graph, bool newGraph) ;
+	void parsePutBody(string content, highlevel::Graph &graph, bool newGraph);
 };
 
 #endif //REST_SERVER_H_

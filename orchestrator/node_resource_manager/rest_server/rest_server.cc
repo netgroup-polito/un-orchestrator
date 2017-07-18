@@ -92,6 +92,7 @@ void RestServer::setupRoutes() {
 	Routes::Put(router, "/NF-FG/:graphID", Routes::bind(&RestServer::putGraph, this));
 	Routes::Get(router, "/NF-FG/:graphID", Routes::bind(&RestServer::getGraph, this));
 	Routes::Delete(router, "/NF-FG/:graphID", Routes::bind(&RestServer::deleteGraph, this));
+	Routes::Get(router, "/NF-FG/status/:graphID", Routes::bind(&RestServer::getGraphStatus, this));
 }
 
 /************************************************/
@@ -681,6 +682,72 @@ void RestServer::deleteGraph(const Rest::Request& request, Http::ResponseWriter 
 	return;
 }
 
+// GET /NF-FG/status/:graphID
+void RestServer::getGraphStatus(const Rest::Request& request, Http::ResponseWriter response)
+{
+
+	ULOG_INFO("Received a GET status request for a graph");
+
+	//Retrieve the graphID
+	auto graphID = request.param(":graphID").as<std::string>();
+	
+	user_info_t *usr = NULL;
+
+	//Authenticate the user, if needed
+	if(dbmanager != NULL)
+	{
+		auto headers = request.headers();
+		auto token_header = headers.get<XAuthToken>();
+		string t = token_header->token();
+		ULOG_DBG_INFO("Header 'X-Auth-Token: %s", t.c_str());
+		
+		usr = dbmanager->getUserByToken(t.c_str());
+		
+		if(usr==NULL)
+		{
+			ULOG_INFO("The token is not valid");
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+		
+		
+		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _READ, /*generic_resource*/"NF-FG", graphID.c_str()))
+		{
+			ULOG_INFO("User not authorized to execute the GET on NF-FG '%s'",graphID.c_str());
+			response.send(Http::Code::Unauthorized);
+			return;
+		}		
+	}
+
+	ULOG_INFO("Required NF-FG: %s", graphID.c_str());
+
+
+	ULOG_INFO("Required get status for NF-FG: %s",graphID.c_str());
+
+	if(!gm->graphExists(graphID.c_str()))
+	{
+		ULOG_INFO("Resource \"%s\" does not exist", graphID.c_str());
+		response.send(Http::Code::Not_Found);
+		return;
+	}
+
+	Object json;
+	json["status"]="complete";
+	json["percentage_completed"]=100;
+	stringstream ssj;
+	write_formatted(json, ssj );
+	string sssj = ssj.str();
+	
+	Pistache::Http::CacheDirective cd(Pistache::Http::CacheDirective::NoCache);
+		Pistache::Http::Header::CacheControl cc(cd);
+		response.headers()
+			.add<Pistache::Http::Header::CacheControl>(cd)
+			.add<Pistache::Http::Header::ContentType>(MIME(Text,Json));
+		
+	response.send(Http::Code::Ok,sssj);
+	return;
+
+}
 
 /*
 *	Helper methods
@@ -1082,9 +1149,9 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 			ULOG_INFO("User not authorized to execute %s on %s", method, resource);
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
-		if(strcmp(generic_resource,BASE_URL_GRAPH)==0 && strcmp(resource,URL_STATUS)==0)
-			return doGetStatus(connection,extra_info);
-		else if (strcmp(generic_resource, BASE_URL_TEMPLATE) == 0)
+/*		if(strcmp(generic_resource,BASE_URL_GRAPH)==0 && strcmp(resource,URL_STATUS)==0)
+			return doGetStatus(connection,extra_info); //IVANO moved in the proper function
+		else*/ if (strcmp(generic_resource, BASE_URL_TEMPLATE) == 0)
 			return retrieveTemplateId(connection,string(resource),string(extra_info));
 
 	}
@@ -1558,37 +1625,4 @@ int RestServer::deleteUser(struct MHD_Connection *connection, char *username) {
 	ULOG_INFO("The user has been properly deleted!");
 
 	return httpResponse(connection, MHD_HTTP_NO_CONTENT);
-}
-
-int RestServer::doGetStatus(struct MHD_Connection *connection,const char *graphID)
-{
-	struct MHD_Response *response;
-	int ret;
-
-	ULOG_INFO("Required get status for resource: %s",graphID);
-
-	if(!gm->graphExists(graphID))
-	{
-		ULOG_INFO("Resource \"%s\" does not exist", graphID);
-		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
-		ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
-		MHD_destroy_response (response);
-		return ret;
-	}
-
-	Object json;
-	json["status"]="complete";
-	json["percentage_completed"]=100;
-	stringstream ssj;
-	write_formatted(json, ssj );
-	string sssj = ssj.str();
-	char *aux = (char*)malloc(sizeof(char) * (sssj.length()+1));
-	strcpy(aux,sssj.c_str());
-	response = MHD_create_response_from_buffer (strlen(aux),(void*) aux, MHD_RESPMEM_PERSISTENT);
-	MHD_add_response_header (response, "Content-Type",JSON_C_TYPE);
-	MHD_add_response_header (response, "Cache-Control",NO_CACHE);
-	ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-	MHD_destroy_response (response);
-	return ret;
-
 }
