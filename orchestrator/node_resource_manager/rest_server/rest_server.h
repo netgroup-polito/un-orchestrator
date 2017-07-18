@@ -110,7 +110,7 @@ private:
 
 	static int createGroup(struct MHD_Connection *connection, struct connection_info_struct *con_info, char *resource, user_info_t *usr);
 
-	static int deleteGraph(struct MHD_Connection *connection, char *resource);
+	
 	static int deleteUser(struct MHD_Connection *connection, char *username);
 
 	static int deleteGroup(struct MHD_Connection *connection, char *group);
@@ -175,6 +175,8 @@ private:
 	void putGraph(const Rest::Request& request, Http::ResponseWriter response);
 	// GET /NF-FG/:graphID
 	void getGraph(const Rest::Request& request, Http::ResponseWriter response);
+	// GET /NF-FG/:graphID
+	void deleteGraph(const Rest::Request& request, Http::ResponseWriter response);
 	
 	bool readGraphFromFile(const string &nffgResourceName, string &nffgFileName);
 	int createGraphFromFile(const string &graphID, string toBeCreated);

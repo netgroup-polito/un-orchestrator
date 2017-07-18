@@ -91,6 +91,7 @@ void RestServer::setupRoutes() {
 	
 	Routes::Put(router, "/NF-FG/:graphID", Routes::bind(&RestServer::putGraph, this));
 	Routes::Get(router, "/NF-FG/:graphID", Routes::bind(&RestServer::getGraph, this));
+	Routes::Delete(router, "/NF-FG/:graphID", Routes::bind(&RestServer::deleteGraph, this));
 }
 
 /************************************************/
@@ -593,6 +594,93 @@ void RestServer::getGraph(const Rest::Request& request, Http::ResponseWriter res
 	}
 }
 
+// DELETE /NF-FG/:graphID
+void RestServer::deleteGraph(const Rest::Request& request, Http::ResponseWriter response)
+{
+	ULOG_INFO("Received a DELETE request for a graph");
+
+	//Retrieve the graphID
+	auto graphID = request.param(":graphID").as<std::string>();
+	
+	user_info_t *usr = NULL;
+
+	//Authenticate the user, if needed
+	if(dbmanager != NULL)
+	{
+		auto headers = request.headers();
+		auto token_header = headers.get<XAuthToken>();
+		string t = token_header->token();
+		ULOG_DBG_INFO("Header 'X-Auth-Token: %s", t.c_str());
+		
+		usr = dbmanager->getUserByToken(t.c_str());
+		
+		if(usr==NULL)
+		{
+			ULOG_INFO("The token is not valid");
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+		
+		
+		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _READ, /*generic_resource*/"NF-FG", graphID.c_str()))
+		{
+			ULOG_INFO("User not authorized to execute the DELETE the NF-FG '%s'",graphID.c_str());
+			response.send(Http::Code::Unauthorized);
+			return;
+		}		
+	}
+
+	ULOG_INFO("Received request for deleting %s/%s", BASE_URL_GRAPH, graphID.c_str());
+
+	// If security is required, check whether the graph does exist in the database
+	if(dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_GRAPH, graphID.c_str())) {
+		ULOG_INFO("Cannot delete a non-existing graph in the database!");
+		
+		response.headers()
+			.add<Pistache::Http::Header::Allow>(Http::Method::Put);
+		
+		response.send(Http::Code::Method_Not_Allowed);//TODO change with Not found?
+		return;
+	}
+
+	// Check whether the graph does exist in the graph manager
+	if (!gm->graphExists(graphID.c_str())) {
+		ULOG_INFO("Cannot delete a non-existing graph in the manager!");
+	
+		response.headers()
+			.add<Pistache::Http::Header::Allow>(Http::Method::Put);
+		
+		response.send(Http::Code::Method_Not_Allowed);//TODO change with Not found?
+		return;
+	}
+	//FIXME:not sure if it is possible, with authentication enabled, that the graph is only in the GM or in the database
+
+	try {
+
+		// Delete the graph
+		if (!gm->deleteGraph(graphID.c_str())) {
+			ULOG_ERR("deleteGraph returns false!");		
+		
+			response.send(Http::Code::Bad_Request);
+			return;
+		}
+
+		// If security is required, update database
+		if(dbmanager != NULL)
+			dbmanager->deleteResource(BASE_URL_GRAPH, (char*) graphID.c_str());
+
+	} catch (...) {
+		ULOG_ERR("An error occurred during the destruction of the graph!");
+		response.send(Http::Code::Internal_Server_Error);
+		return;
+	}
+
+	ULOG_INFO("The graph has been properly deleted!");
+
+	response.send(Http::Code::No_Content);
+	return;
+}
+
 
 /*
 *	Helper methods
@@ -956,7 +1044,8 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 		}
 
 		if(strcmp(generic_resource, BASE_URL_GRAPH) == 0)
-			return deleteGraph(connection, (char *) resource);
+//			return deleteGraph(connection, (char *) resource);
+			return true; //IVANO put in the proper location
 		else if(strcmp(generic_resource, BASE_URL_USER) == 0)
 			return deleteUser(connection, (char *) resource);
 		else if(strcmp(generic_resource, BASE_URL_GROUP) == 0)
@@ -1409,54 +1498,6 @@ int RestServer::createGroup(struct MHD_Connection *connection, struct connection
 }
 
 
-int RestServer::deleteGraph(struct MHD_Connection *connection, char *resource) {
-
-	int ret = 0;
-	struct MHD_Response *response;
-
-	ULOG_INFO("Received request for deleting %s/%s", BASE_URL_GRAPH, resource);
-
-	// If security is required, check whether the graph does exist in the database
-	if(dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_GRAPH, resource)) {
-		ULOG_INFO("Cannot delete a non-existing graph in the database!");
-		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header (response, "Allow", PUT);
-		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
-		MHD_destroy_response (response);
-		return ret;
-	}
-
-	// Check whether the graph does exist in the graph manager
-	if (!gm->graphExists(resource)) {
-		ULOG_INFO("Cannot delete a non-existing graph in the manager!");
-		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header (response, "Allow", PUT);
-		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
-		MHD_destroy_response (response);
-		return ret;
-	}
-
-	try {
-
-		// Delete the graph
-		if (!gm->deleteGraph(resource)) {
-			ULOG_ERR("deleteGraph returns false!");
-			return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
-		}
-
-		// If security is required, update database
-		if(dbmanager != NULL)
-			dbmanager->deleteResource(BASE_URL_GRAPH, resource);
-
-	} catch (...) {
-		ULOG_ERR("An error occurred during the destruction of the graph!");
-		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
-	}
-
-	ULOG_INFO("The graph has been properly deleted!");
-
-	return httpResponse(connection, MHD_HTTP_NO_CONTENT);
-}
 
 int RestServer::deleteGroup(struct MHD_Connection *connection, char *group) {
 	assert(dbmanager != NULL);
