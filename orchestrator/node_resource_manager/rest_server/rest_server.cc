@@ -93,6 +93,8 @@ void RestServer::setupRoutes() {
 	Routes::Get(router, "/NF-FG/:graphID", Routes::bind(&RestServer::getGraph, this));
 	Routes::Delete(router, "/NF-FG/:graphID", Routes::bind(&RestServer::deleteGraph, this));
 	Routes::Get(router, "/NF-FG/status/:graphID", Routes::bind(&RestServer::getGraphStatus, this));
+	Routes::Get(router, "/NF-FG", Routes::bind(&RestServer::getGraphs, this));
+
 }
 
 /************************************************/
@@ -739,14 +741,87 @@ void RestServer::getGraphStatus(const Rest::Request& request, Http::ResponseWrit
 	string sssj = ssj.str();
 	
 	Pistache::Http::CacheDirective cd(Pistache::Http::CacheDirective::NoCache);
+	Pistache::Http::Header::CacheControl cc(cd);
+	response.headers()
+		.add<Pistache::Http::Header::CacheControl>(cd)
+		.add<Pistache::Http::Header::ContentType>(MIME(Text,Json));
+		
+	response.send(Http::Code::Ok,sssj);
+	return;
+}
+
+// GET /NF-FG/
+void RestServer::getGraphs(const Rest::Request& request, Http::ResponseWriter response)
+{
+
+	ULOG_INFO("Received a GET request for all graphs");
+	user_info_t *usr = NULL;
+
+	//Authenticate the user, if needed
+	if(dbmanager != NULL)
+	{
+		auto headers = request.headers();
+		auto token_header = headers.get<XAuthToken>();
+		string t = token_header->token();
+		ULOG_DBG_INFO("Header 'X-Auth-Token: %s", t.c_str());
+		
+		usr = dbmanager->getUserByToken(t.c_str());
+		
+		if(usr==NULL)
+		{
+			ULOG_INFO("The token is not valid");
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+	}
+
+
+	if((dbmanager != NULL) && !dbmanager->resourceExists(BASE_URL_GRAPH)) 
+	{
+		ULOG_INFO("The generic resource %s does not exist in the local database", BASE_URL_GRAPH);
+		response.headers()
+			.add<Pistache::Http::Header::Allow>(Http::Method::Put);
+		
+		response.send(Http::Code::Method_Not_Allowed);//TODO change with Not found?
+		return;
+	}
+
+	try {
+		Object nffg;
+		Array nffg_array;
+		std::list<std::string> names;
+
+		// If security is required, search the names in the database
+		if(dbmanager != NULL)
+			dbmanager->getAllowedResourcesNames(usr, _READ, BASE_URL_GRAPH, &names);
+		else
+			// Otherwise, retrieve all the NF-FGs
+			gm->getGraphsNames(&names);
+
+		std::list<std::string>::iterator i;
+
+		for(i = names.begin(); i != names.end(); ++i)
+			nffg_array.push_back(gm->toJSON(*i));
+
+		nffg[BASE_URL_GRAPH] = nffg_array;
+
+		stringstream ssj;
+		write_formatted(nffg, ssj);
+		string sssj = ssj.str();
+		
+		Pistache::Http::CacheDirective cd(Pistache::Http::CacheDirective::NoCache);
 		Pistache::Http::Header::CacheControl cc(cd);
 		response.headers()
 			.add<Pistache::Http::Header::CacheControl>(cd)
 			.add<Pistache::Http::Header::ContentType>(MIME(Text,Json));
 		
-	response.send(Http::Code::Ok,sssj);
-	return;
-
+		response.send(Http::Code::Ok,sssj);
+		return;
+	} catch (...) {
+		ULOG_ERR("An error occurred while retrieving the graph description!");
+		response.send(Http::Code::Internal_Server_Error);
+		return;;
+	}
 }
 
 /*
@@ -1038,10 +1113,13 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
+/*
 		// Case currently implemented: read a graph
 		if (strcmp(generic_resource, BASE_URL_GRAPH) == 0)
 			return readMultipleGraphs(connection, usr);
-		else if (strcmp(generic_resource, BASE_URL_USER) == 0)
+		else 
+		*/ //IVANO put in the proper method
+		if (strcmp(generic_resource, BASE_URL_USER) == 0)
 			return readMultipleUsers(connection, usr);
 		else if (strcmp(generic_resource, BASE_URL_GROUP) == 0)
 			return readMultipleGroups(connection, usr);
@@ -1405,62 +1483,7 @@ int RestServer::readMultipleUsers(struct MHD_Connection *connection, user_info_t
 	}
 }
 
-int RestServer::readMultipleGraphs(struct MHD_Connection *connection, user_info_t *usr) {
-	assert(usr != NULL);
 
-	struct MHD_Response *response;
-	int ret;
-
-	ULOG_INFO("Required resource: %s", BASE_URL_GRAPH);
-
-	// Check whether NF-FG exists as a generic resourse in the local database
-	if (!dbmanager->resourceExists(BASE_URL_GRAPH)) {
-		ULOG_INFO("The generic resource %s does not exist in the local database", BASE_URL_GRAPH);
-		response = MHD_create_response_from_buffer(0, (void*) "",
-				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Allow", PUT);
-		ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED,
-				response);
-		MHD_destroy_response(response);
-		return ret;
-	}
-
-	try {
-		Object nffg;
-		Array nffg_array;
-		std::list<std::string> names;
-
-		// If security is required, search the names in the database
-		if(dbmanager != NULL)
-			dbmanager->getAllowedResourcesNames(usr, _READ, BASE_URL_GRAPH, &names);
-		else
-			// Otherwise, retrieve all the NF-FGs
-			gm->getGraphsNames(&names);
-
-		std::list<std::string>::iterator i;
-
-		for(i = names.begin(); i != names.end(); ++i)
-			nffg_array.push_back(gm->toJSON(*i));
-
-		nffg[BASE_URL_GRAPH] = nffg_array;
-
-		stringstream ssj;
-		write_formatted(nffg, ssj);
-		string sssj = ssj.str();
-		char *aux = (char*) malloc(sizeof(char) * (sssj.length() + 1));
-		strcpy(aux, sssj.c_str());
-		response = MHD_create_response_from_buffer(strlen(aux), (void*) aux,
-				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Content-Type", JSON_C_TYPE);
-		MHD_add_response_header(response, "Cache-Control", NO_CACHE);
-		ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-		MHD_destroy_response(response);
-		return ret;
-	} catch (...) {
-		ULOG_ERR("An error occurred while retrieving the graph description!");
-		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
-	}
-}
 
 int RestServer::readConfiguration(struct MHD_Connection *connection) {
 
