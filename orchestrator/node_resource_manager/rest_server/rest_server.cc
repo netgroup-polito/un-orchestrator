@@ -123,7 +123,7 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 	auto headers = request.headers();
 	auto host = headers.get<Http::Header::Host>();
 	string h = host->host();
-	ULOG_INFO("Header host: %s", h.c_str());
+	ULOG_DBG_INFO("Header host: %s", h.c_str());
 	//If the header is not in the request, the server returns authomatically
 	
 	if (!parsePostBody(req, username, password)) 
@@ -162,16 +162,6 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 			pUI = dbmanager->getLoggedUserByName(user_tmp);
 			token = pUI->token;
 
-			/*
-			response = MHD_create_response_from_buffer (strlen(token),(void*) token, MHD_RESPMEM_PERSISTENT);
-			MHD_add_response_header (response, "Content-Type",TOKEN_TYPE);
-			MHD_add_response_header (response, "Cache-Control",NO_CACHE);
-			ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-			MHD_destroy_response (response);
-
-			return ret;
-			*/
-
 			Pistache::Http::CacheDirective cd(Pistache::Http::CacheDirective::NoCache);
 			Pistache::Http::Header::CacheControl cc(cd);
 			response.headers()
@@ -208,17 +198,6 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 		// Insert login information into the database
 		dbmanager->insertLogin(user_tmp, nonce, timestamp);
 
-	/*
-		response = MHD_create_response_from_buffer (strlen((char *)nonce),(void*) nonce, MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header (response, "Content-Type",TOKEN_TYPE);
-		MHD_add_response_header (response, "Cache-Control",NO_CACHE);
-		ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-		MHD_destroy_response (response);
-
-		return ret;
-	*/
-
-		//TODO: set the HTTP headers
 		Pistache::Http::CacheDirective cd(Pistache::Http::CacheDirective::NoCache);
 		Pistache::Http::Header::CacheControl cc(cd);
 		response.headers()
@@ -256,21 +235,16 @@ void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter r
 	ULOG_INFO("Content:");
 	ULOG_INFO("%s", req.c_str());
 
-	//TODO: check whether the header is correct
-/*
-	if (MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host") == NULL) 
-	{
-		ULOG_INFO("\"Host\" header not present in the request");
-		//return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
-		response.send(Http::Code::Bad_Request);
-		return;
-	}
-*/
+	//Extract the 'host' header
+	auto headers = request.headers();
+	auto host = headers.get<Http::Header::Host>();
+	string h = host->host();
+	ULOG_DBG_INFO("Header host: %s", h.c_str());
+	//If the header is not in the request, the server returns authomatically
 
 	if (!parsePostBody(req, NULL, &password, &group)) 
 	{
 		ULOG_INFO("Create user error: Malformed content");
-		//return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 		response.send(Http::Code::Bad_Request);
 		return;
 	}
@@ -300,14 +274,12 @@ void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter r
 
 		if(dbmanager->userExists((char*)(username.c_str()), hash_pwd)) {
 			ULOG_ERR("User creation failed: already existing!");
-			//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 			response.send(Http::Code::Unauthorized);
 			return;
 		}
 
 		if(!dbmanager->resourceExists(BASE_URL_GROUP, t_group)) {
 			ULOG_ERR("User creation failed! The group '%s' cannot be recognized!", t_group);
-			//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 			response.send(Http::Code::Unauthorized);
 			return;
 		}
