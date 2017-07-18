@@ -75,7 +75,7 @@ bool RestServer::readGraphFromFile(const string &nffgResourceName, string &nffgF
 	return true;
 }
 
-void RestServer::terminate() {
+void RestServer::terminate() { //TODO: probably this is not enough
 	delete (gm);
 }
 
@@ -83,6 +83,9 @@ void RestServer::setupRoutes() {
 	using namespace Rest;
 	
 	Routes::Post(router, "/login", Routes::bind(&RestServer::login, this));
+	Routes::Post(router, "/users/:name", Routes::bind(&RestServer::createUser, this));
+	
+	
 }
 
 /************************************************/
@@ -104,9 +107,6 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 	unsigned char hash_token[HASH_SIZE], temp[BUFFER_SIZE];
 	char hash_pwd[BUFFER_SIZE], nonce[BUFFER_SIZE], timestamp[BUFFER_SIZE], tmp[BUFFER_SIZE], user_tmp[BUFFER_SIZE];
 
-/*	struct connection_info_struct *con_info = (struct connection_info_struct *) (*con_cls);
-	assert(con_info != NULL);*/
-
 	if (dbmanager == NULL) {
 		ULOG_INFO("Login can be performed only if authentication is enabled through the configuration file");
 		//return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
@@ -118,23 +118,17 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 
 	ULOG_INFO("Content:");
 	ULOG_INFO("%s", req.c_str());
-
-	//TODO: do the check
-	//check that the request includes the "host" header
-	/*
-	if (MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host") == NULL) 
-	{
-		ULOG_INFO("\"Host\" header not present in the request");
-		//return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
-		response.send(Http::Code::Bad_Request);
-		return;
-	}*/
-
+	
+	//Extract the 'host' header
+	auto headers = request.headers();
+	auto host = headers.get<Http::Header::Host>();
+	string h = host->host();
+	ULOG_INFO("Header host: %s", h.c_str());
+	//If the header is not in the request, the server returns authomatically
 	
 	if (!parsePostBody(req, username, password)) 
 	{
 		ULOG_INFO("Login error: Malformed content");
-		//return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
 		response.send(Http::Code::Bad_Request);
 		return;
 	}
@@ -157,7 +151,6 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 		if(!dbmanager->userExists(user_tmp, hash_pwd)) 
 		{
 			ULOG_ERR("Login failed: wrong username or password!");
-			//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 			response.send(Http::Code::Unauthorized);
 			return;
 		}
@@ -178,8 +171,13 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 
 			return ret;
 			*/
-			//TODO: set the HTTP headers
-			
+
+			Pistache::Http::CacheDirective cd(Pistache::Http::CacheDirective::NoCache);
+			Pistache::Http::Header::CacheControl cc(cd);
+			response.headers()
+				.add<Pistache::Http::Header::CacheControl>(cd)
+				.add<Pistache::Http::Header::ContentType>(MIME(Text,Plain));
+						
 			ULOG_INFO("User has been correctly authenticated!");
 			
 			response.send(Http::Code::Ok, token);
@@ -189,7 +187,6 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 		rc = RAND_bytes(temp, sizeof(temp));
 		if (rc != 1) {
 			ULOG_ERR("An error occurred while generating nonce!");
-			//return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 			response.send(Http::Code::Internal_Server_Error);
 			return;
 		}
@@ -210,8 +207,6 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 
 		// Insert login information into the database
 		dbmanager->insertLogin(user_tmp, nonce, timestamp);
-		
-		ULOG_INFO("User has been correctly authenticated!");
 
 	/*
 		response = MHD_create_response_from_buffer (strlen((char *)nonce),(void*) nonce, MHD_RESPMEM_PERSISTENT);
@@ -222,13 +217,136 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 
 		return ret;
 	*/
+
 		//TODO: set the HTTP headers
+		Pistache::Http::CacheDirective cd(Pistache::Http::CacheDirective::NoCache);
+		Pistache::Http::Header::CacheControl cc(cd);
+		response.headers()
+			.add<Pistache::Http::Header::CacheControl>(cd)
+			.add<Pistache::Http::Header::ContentType>(MIME(Text,Plain));
+			
+		ULOG_INFO("User has been correctly authenticated!");
+
 		response.send(Http::Code::Ok, nonce);
 		return;
 
 	} catch (...) {
 		ULOG_ERR("An error occurred during user login!");
-		//return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
+		response.send(Http::Code::Internal_Server_Error);
+		return;
+	}
+}
+
+void RestServer::createUser(const Rest::Request& request, Http::ResponseWriter response) 
+{
+	ULOG_INFO("Received the request of creating a new user");
+
+	//Retrieve the username from the URL
+	auto username = request.param(":name").as<std::string>();
+
+	char *group = NULL, *password = NULL;
+
+	unsigned char *hash_token = new unsigned char[HASH_SIZE]();
+	char *hash_pwd = new char[BUFFER_SIZE]();
+	char *tmp = new char[HASH_SIZE]();
+	char *pwd = new char[HASH_SIZE]();
+
+	string req = request.body();
+
+	ULOG_INFO("Content:");
+	ULOG_INFO("%s", req.c_str());
+
+	//TODO: check whether the header is correct
+/*
+	if (MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host") == NULL) 
+	{
+		ULOG_INFO("\"Host\" header not present in the request");
+		//return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
+		response.send(Http::Code::Bad_Request);
+		return;
+	}
+*/
+
+	if (!parsePostBody(req, NULL, &password, &group)) 
+	{
+		ULOG_INFO("Create user error: Malformed content");
+		//return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
+		response.send(Http::Code::Bad_Request);
+		return;
+	}
+
+	char *t_group = new char[strlen(group)+1]();
+	strncpy(t_group, group, strlen(group));
+
+	try {
+		if (username.c_str() == NULL || group == NULL || password == NULL) {
+			ULOG_ERR("Client unathorized!");
+			//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
+			//FIXME: does this make sense? Username cannot be NULL, otherwise the router does not bring the request
+			//to this method. Group and pwd cannot be NULL, since we have already checked that the content of the 
+			//request is correct
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+
+		strncpy(pwd, password, strlen(password));
+
+		SHA256((const unsigned char*)pwd, strlen(pwd), hash_token);
+
+		for (int i = 0; i < HASH_SIZE; i++) {
+			sprintf(tmp, "%.2x", hash_token[i]);
+			strcat(hash_pwd, tmp);
+		}
+
+		if(dbmanager->userExists((char*)(username.c_str()), hash_pwd)) {
+			ULOG_ERR("User creation failed: already existing!");
+			//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+
+		if(!dbmanager->resourceExists(BASE_URL_GROUP, t_group)) {
+			ULOG_ERR("User creation failed! The group '%s' cannot be recognized!", t_group);
+			//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+		
+		//FIXME: I'm not sure that the HTTP code used are appropriate
+
+		//TODO: extract the token from the request
+		char *token = NULL; /*(char *) MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Auth-Token");*/
+
+		if(token == NULL) {
+			ULOG_INFO("\"X-Auth-Token\" header not found in the request");
+			//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+
+		user_info_t *creator = dbmanager->getUserByToken(token);
+
+		dbmanager->insertUser((char*)(username.c_str()), hash_pwd, t_group);
+
+		dbmanager->insertResource(BASE_URL_USER, (char*)(username.c_str()), creator->user);
+
+		/* TODO: This is just a provisional solution for handling
+		 * user creation permissions for those users that are
+		 * dynamically created via a POST request
+		 */
+		dbmanager->insertUserCreationPermission((char*)(username.c_str()), BASE_URL_GRAPH, ALLOW);
+		dbmanager->insertUserCreationPermission((char*)(username.c_str()), BASE_URL_USER, ALLOW);
+		dbmanager->insertUserCreationPermission((char*)(username.c_str()), BASE_URL_GROUP, ALLOW);
+
+		delete t_group;
+
+		//return httpResponse(connection, MHD_HTTP_ACCEPTED);
+		response.send(Http::Code::Accepted);
+		return;
+
+	} catch (...) {
+		ULOG_ERR("An error occurred during user login!");
+//		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
 		response.send(Http::Code::Internal_Server_Error);
 		return;
 	}
@@ -242,7 +360,7 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 
 
 //TODO: merge together the two following methods
-bool RestServer::parsePostBody(string content,char *user, char *pwd) 
+bool RestServer::parsePostBody(string content, char *user, char *pwd) 
 {
 	Value value;
 	read(content, value);
@@ -287,6 +405,56 @@ bool RestServer::parseLoginForm(Value value, char *user, char *pwd)
 	return true;
 }
 
+
+//TODO: merge together the two following methods
+//TODO: the user parameter is completely useles!
+bool RestServer::parsePostBody(string content, char **user, char **pwd, char **group) 
+{
+	Value value;
+	read(content, value);
+	return parseUserCreationForm(value, pwd, group);
+}
+
+bool RestServer::parseUserCreationForm(Value value, char **pwd, char **group) 
+{
+	try {
+		Object obj = value.getObject();
+
+		bool foundPwd = false, foundGroup = false;
+
+		//Identify the flow rules
+		for (Object::const_iterator i = obj.begin(); i != obj.end(); ++i) {
+			const string& name = i->first;
+			const Value& value = i->second;
+
+			if (name == PASS) {
+				foundPwd = true;
+				(*pwd) = (char *) value.getString().c_str();
+				ULOG_DBG_INFO("\tPwd: %s", *pwd);
+
+			} else if (name == GROUP) {
+				foundGroup = true;
+				(*group) = (char *) value.getString().c_str();
+				ULOG_DBG_INFO("\tGrp: %s", *group);
+			} else {
+				ULOG_DBG_INFO("Invalid key: %s", name.c_str());
+				return false;
+			}
+		}
+
+		if (!foundPwd) {
+			ULOG_DBG_INFO("Key \"%s\" not found", PASS);
+			return false;
+		} else if (!foundGroup) {
+			ULOG_DBG_INFO("Key \"%s\" not found", GROUP);
+		}
+	} catch (std::exception& e) {
+		ULOG_DBG_INFO("The content does not respect the JSON syntax: ", e.what());
+		return false;
+	}
+
+	return true;
+}
 
 
 /******************************************/
@@ -404,135 +572,6 @@ int RestServer::print_out_key(void *cls, enum MHD_ValueKind kind,
 		const char *key, const char *value) {
 	ULOG_DBG("%s: %s", key, value);
 	return MHD_YES;
-}
-
-int RestServer::createUser(char *username, struct MHD_Connection *connection, connection_info_struct *con_info) {
-	char *group, *password;
-
-	unsigned char *hash_token = new unsigned char[HASH_SIZE]();
-	char *hash_pwd = new char[BUFFER_SIZE]();
-	char *tmp = new char[HASH_SIZE]();
-	char *pwd = new char[HASH_SIZE]();
-
-	assert(con_info != NULL);
-
-	ULOG_INFO("User creation:");
-	ULOG_INFO("%s", con_info->message);
-
-	if (MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host") == NULL) {
-		ULOG_INFO("\"Host\" header not present in the request");
-		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
-	}
-
-	if (!parsePostBody(*con_info, NULL, &password, &group)) {
-		ULOG_INFO("Create user error: Malformed content");
-		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
-	}
-
-	char *t_group = new char[strlen(group)+1]();
-	strncpy(t_group, group, strlen(group));
-
-	try {
-		if (username == NULL || group == NULL || password == NULL) {
-			ULOG_ERR("Client unathorized!");
-			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
-		}
-
-		strncpy(pwd, password, strlen(password));
-
-		SHA256((const unsigned char*)pwd, strlen(pwd), hash_token);
-
-		for (int i = 0; i < HASH_SIZE; i++) {
-			sprintf(tmp, "%.2x", hash_token[i]);
-			strcat(hash_pwd, tmp);
-		}
-
-		if(dbmanager->userExists(username, hash_pwd)) {
-			ULOG_ERR("User creation failed: already existing!");
-			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
-		}
-
-		if(!dbmanager->resourceExists(BASE_URL_GROUP, t_group)) {
-			ULOG_ERR("User creation failed! The group '%s' cannot be recognized!", t_group);
-			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
-		}
-
-		char *token = (char *) MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Auth-Token");
-
-		if(token == NULL) {
-			ULOG_INFO("\"Token\" header not present in the request");
-			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
-		}
-
-		user_info_t *creator = dbmanager->getUserByToken(token);
-
-		dbmanager->insertUser(username, hash_pwd, t_group);
-
-		dbmanager->insertResource(BASE_URL_USER, username, creator->user);
-
-		/* TODO: This is just a provisional solution for handling
-		 * user creation permissions for those users that are
-		 * dynamically created via a POST request
-		 */
-		dbmanager->insertUserCreationPermission(username, BASE_URL_GRAPH, ALLOW);
-		dbmanager->insertUserCreationPermission(username, BASE_URL_USER, ALLOW);
-		dbmanager->insertUserCreationPermission(username, BASE_URL_GROUP, ALLOW);
-
-		delete t_group;
-
-		return httpResponse(connection, MHD_HTTP_ACCEPTED);
-
-	} catch (...) {
-		ULOG_ERR("An error occurred during user login!");
-		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
-	}
-}
-
-bool RestServer::parsePostBody(struct connection_info_struct &con_info,
-		char **user, char **pwd, char **group) {
-	Value value;
-	read(con_info.message, value);
-	return parseUserCreationForm(value, pwd, group);
-}
-
-bool RestServer::parseUserCreationForm(Value value, char **pwd, char **group) {
-	try {
-		Object obj = value.getObject();
-
-		bool foundPwd = false, foundGroup = false;
-
-		//Identify the flow rules
-		for (Object::const_iterator i = obj.begin(); i != obj.end(); ++i) {
-			const string& name = i->first;
-			const Value& value = i->second;
-
-			if (name == PASS) {
-				foundPwd = true;
-				(*pwd) = (char *) value.getString().c_str();
-				ULOG_DBG_INFO("\tPwd: %s", *pwd);
-
-			} else if (name == GROUP) {
-				foundGroup = true;
-				(*group) = (char *) value.getString().c_str();
-				ULOG_DBG_INFO("\tGrp: %s", *group);
-			} else {
-				ULOG_DBG_INFO("Invalid key: %s", name.c_str());
-				return false;
-			}
-		}
-
-		if (!foundPwd) {
-			ULOG_DBG_INFO("Key \"%s\" not found", PASS);
-			return false;
-		} else if (!foundGroup) {
-			ULOG_DBG_INFO("Key \"%s\" not found", GROUP);
-		}
-	} catch (std::exception& e) {
-		ULOG_DBG_INFO("The content does not respect the JSON syntax: ", e.what());
-		return false;
-	}
-
-	return true;
 }
 
 
@@ -684,6 +723,8 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 
 	} else if(strcmp(method, POST) == 0) {
 
+//XXX this operation is not done into the proper method
+#if 0
 		if(strcmp(generic_resource, BASE_URL_USER) == 0) {
 			// Check authorization
 			if (dbmanager != NULL && !secmanager->isAuthorized(usr, _CREATE, generic_resource, resource)) {
@@ -692,6 +733,7 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 			}
 			return createUser((char *) resource, connection, con_info);
 		}
+#endif
 
 		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
 	}

@@ -20,8 +20,11 @@
 
 //XXX the follwing includes are for the new server
 #include <pistache/http.h>
+#include <pistache/http_headers.h>
 #include <pistache/router.h>
 #include <pistache/endpoint.h>
+#include <pistache/net.h>
+#include <pistache/peer.h>
 
 using namespace Pistache;
 
@@ -90,15 +93,10 @@ private:
 	static int doPost(struct MHD_Connection *connection, const char *url, void **con_cls, bool client_auth);
 
 	
-	static bool parsePostBody(struct connection_info_struct &con_info,char **user, char **pwd, char **group);
-
 	
-	static bool parseUserCreationForm(Value value, char **pwd, char **group);
 
 	static int doPut(struct MHD_Connection *connection, const char *url, void **con_cls);
 	static void parsePutBody(struct connection_info_struct &con_info,highlevel::Graph &graph, bool newGraph);
-
-	static int createUser(char *user, struct MHD_Connection *connection, connection_info_struct *con_info);
 
 	static int doDelete(struct MHD_Connection *connection,const char *url, void **con_cls);
 
@@ -167,8 +165,10 @@ private:
 	
 	void setupRoutes();
 	
-	// /login
+	// POST /login
 	void login(const Rest::Request& request, Http::ResponseWriter response);
+	// POST /users/:username
+	void createUser(const Rest::Request& request, Http::ResponseWriter response);
 	
 	bool readGraphFromFile(const string &nffgResourceName, string &nffgFileName);
 	int createGraphFromFile(const string &graphID, string toBeCreated);
@@ -176,6 +176,8 @@ private:
 	
 	bool parsePostBody(string content, char *user, char *pwd);
 	bool parseLoginForm(Value value, char *user, char *pwd);
+	bool parsePostBody(string content, char **user, char **pwd, char **group);
+	bool parseUserCreationForm(Value value, char **pwd, char **group);
 };
 
 #endif //REST_SERVER_H_
