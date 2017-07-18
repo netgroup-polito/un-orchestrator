@@ -90,6 +90,7 @@ void RestServer::setupRoutes() {
 	Routes::Get(router, "/users/:name", Routes::bind(&RestServer::getUser, this));
 	
 	Routes::Put(router, "/NF-FG/:graphID", Routes::bind(&RestServer::putGraph, this));
+	Routes::Get(router, "/NF-FG/:graphID", Routes::bind(&RestServer::getGraph, this));
 }
 
 /************************************************/
@@ -521,6 +522,77 @@ void RestServer::putGraph(const Rest::Request& request, Http::ResponseWriter res
 	return;
 }
 
+// GET /NF-FG/:graphID
+void RestServer::getGraph(const Rest::Request& request, Http::ResponseWriter response)
+{
+	ULOG_INFO("Received a GET request for a graph");
+
+	//Retrieve the graphID
+	auto graphID = request.param(":graphID").as<std::string>();
+	
+	user_info_t *usr = NULL;
+
+	//Authenticate the user, if needed
+	if(dbmanager != NULL)
+	{
+		auto headers = request.headers();
+		auto token_header = headers.get<XAuthToken>();
+		string t = token_header->token();
+		ULOG_DBG_INFO("Header 'X-Auth-Token: %s", t.c_str());
+		
+		usr = dbmanager->getUserByToken(t.c_str());
+		
+		if(usr==NULL)
+		{
+			ULOG_INFO("The token is not valid");
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+		
+		
+		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _READ, /*generic_resource*/"NF-FG", graphID.c_str()))
+		{
+			ULOG_INFO("User not authorized to execute the GET on NF-FG '%s'",graphID.c_str());
+			response.send(Http::Code::Unauthorized);
+			return;
+		}		
+	}
+
+	ULOG_INFO("Required NF-FG: %s", graphID.c_str());
+
+	// Check whether the graph exists in the local database and in the graph manager
+	if ( (dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_GRAPH, graphID.c_str())) || (dbmanager == NULL && !gm->graphExists(graphID.c_str()))) {
+		ULOG_INFO("The required NF-FG does not exist!");
+				
+		response.headers()
+			.add<Pistache::Http::Header::Allow>(Http::Method::Put);
+		
+		response.send(Http::Code::Method_Not_Allowed);//TODO change with Not found?
+		return;
+	}
+
+	try {
+		Object json = gm->toJSON(graphID);
+		stringstream ssj;
+		write_formatted(json, ssj);
+		string sssj = ssj.str();
+		
+		Pistache::Http::CacheDirective cd(Pistache::Http::CacheDirective::NoCache);
+		Pistache::Http::Header::CacheControl cc(cd);
+		response.headers()
+			.add<Pistache::Http::Header::CacheControl>(cd)
+			.add<Pistache::Http::Header::ContentType>(MIME(Text,Json));
+		
+		response.send(Http::Code::Ok,sssj);
+		return;
+		
+	} catch (...) {
+		ULOG_ERR("An error occurred while retrieving the graph description!");
+		response.send(Http::Code::Internal_Server_Error);
+		return;
+	}
+}
+
 
 /*
 *	Helper methods
@@ -851,11 +923,13 @@ int RestServer::doOperationOnResource(struct MHD_Connection *connection, struct 
 			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
 		}
 
+#if 0
 		// Cases currently implemented
 		if(strcmp(generic_resource, BASE_URL_GRAPH) == 0)
 			return readGraph(connection, (char *) resource);
 		//else if(strcmp(generic_resource, BASE_URL_USER) == 0)
 		//	return readUser(connection, (char *) resource);//IVANO implmented in the proper function
+#endif //IVANO put in the proper function
 
 	// PUT: for single resource, it can be only creation... at the moment!
 	} else if(strcmp(method, PUT) == 0) {
@@ -1057,45 +1131,6 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 	return ret;
 }
 
-
-int RestServer::readGraph(struct MHD_Connection *connection, char *graphID)
-{
-	struct MHD_Response *response;
-	int ret;
-
-	ULOG_INFO("Required resource: %s", graphID);
-
-	// Check whether the graph exists in the local database and in the graph manager
-	if ( (dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_GRAPH, graphID)) || (dbmanager == NULL && !gm->graphExists(graphID))) {
-		ULOG_INFO("The required resource does not exist!");
-		response = MHD_create_response_from_buffer(0, (void*) "",
-				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Allow", PUT);
-		ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND,
-				response);
-		MHD_destroy_response(response);
-		return ret;
-	}
-
-	try {
-		Object json = gm->toJSON(graphID);
-		stringstream ssj;
-		write_formatted(json, ssj);
-		string sssj = ssj.str();
-		char *aux = (char*) malloc(sizeof(char) * (sssj.length() + 1));
-		strcpy(aux, sssj.c_str());
-		response = MHD_create_response_from_buffer(strlen(aux), (void*) aux,
-				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Content-Type", JSON_C_TYPE);
-		MHD_add_response_header(response, "Cache-Control", NO_CACHE);
-		ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
-		MHD_destroy_response(response);
-		return ret;
-	} catch (...) {
-		ULOG_ERR("An error occurred while retrieving the graph description!");
-		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
-	}
-}
 
 
 

@@ -81,13 +81,11 @@ private:
 		size_t length;
 	};
 
-	static int print_out_key (void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
-
 	static int doOperation(struct MHD_Connection *connection, void **con_cls, const char *method, const char *url);
 
 	static int doGetStatus(struct MHD_Connection *connection,const char *graphID);
 	
-	static int readGraph(struct MHD_Connection *connection, char *graphID);
+	
 	static int readMultipleGraphs(struct MHD_Connection *connection, user_info_t *usr);
 	static int readMultipleUsers(struct MHD_Connection *connection, user_info_t *usr);
 	static int readConfiguration(struct MHD_Connection *connection);
@@ -175,6 +173,8 @@ private:
 	
 	// PUT /NF-FG/:graphID
 	void putGraph(const Rest::Request& request, Http::ResponseWriter response);
+	// GET /NF-FG/:graphID
+	void getGraph(const Rest::Request& request, Http::ResponseWriter response);
 	
 	bool readGraphFromFile(const string &nffgResourceName, string &nffgFileName);
 	int createGraphFromFile(const string &graphID, string toBeCreated);
