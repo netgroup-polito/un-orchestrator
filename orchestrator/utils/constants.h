@@ -21,21 +21,6 @@
 #define REST_URL 				"http://localhost"
 #define REQ_SIZE 				2*1024*1024
 
-
-
-/*
-*	Rest methods
-*/
-#define PUT					"PUT"
-#define GET					"GET"
-#define DELETE				"DELETE"
-
-/*
-*	HTTP headers
-*/
-#define JSON_C_TYPE				"application/json"
-#define NO_CACHE				"no-cache"
-
 #define TCP			"tcp"
 
 #define FORWARDING_GRAPH	"forwarding-graph"

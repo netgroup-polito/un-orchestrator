@@ -75,35 +75,14 @@ private:
 
 	static GraphManager *gm;
 
-	struct connection_info_struct
-	{
-		char *message;
-		size_t length;
-	};
 
-	static int doOperation(struct MHD_Connection *connection, void **con_cls, const char *method, const char *url);	
-	
-	
+#if 0
 	static int readMultipleUsers(struct MHD_Connection *connection, user_info_t *usr);
 	static int readConfiguration(struct MHD_Connection *connection);
 	static int retrieveTemplateId(struct MHD_Connection *connection, string graphId, string vnfId);
 
-	static int doPost(struct MHD_Connection *connection, const char *url, void **con_cls, bool client_auth);
 
-	
-	
 
-	static int doPut(struct MHD_Connection *connection, const char *url, void **con_cls);
-	
-
-	static int doDelete(struct MHD_Connection *connection,const char *url, void **con_cls);
-
-	
-	
-
-	
-
-	static bool isLoginRequest(const char *method, const char *url);
 
 	static int createGroup(struct MHD_Connection *connection, struct connection_info_struct *con_info, char *resource, user_info_t *usr);
 
@@ -113,25 +92,7 @@ private:
 	static int deleteGroup(struct MHD_Connection *connection, char *group);
 
 	static int readMultipleGroups(struct MHD_Connection *connection, user_info_t *usr);
-
-
-
-
-	/**
-	 * @brief:	The doOperationOnResource methods are responsible for checking user permissions related to the operation to perform
-	 * 			and call the proper handler. The first version is operations on generic resources (e.g. NF-FG, interfaces, users, ...), the
-	 * 			second one is for single resources, which are mapped to a generic one (e.g. NF-FG/myGraph, users/bob, ...). The third
-	 * 			one is for working with some extra details related to a single resource (e.g. NF-FG/myGraph/flow_id).
-	 */
-	static int doOperationOnResource(struct MHD_Connection *connection, struct connection_info_struct *con_info, user_info_t *usr, const char *method, const char *generic_resource);
-	static int doOperationOnResource(struct MHD_Connection *connection, struct connection_info_struct *con_info, user_info_t *usr, const char *method, const char *generic_resource, const char *resource);
-	static int doOperationOnResource(struct MHD_Connection *connection, struct connection_info_struct *con_info, user_info_t *usr, const char *method, const char *generic_resource, const char *resource, const char *extra_info);
-
-	static int doPutOnSingleResource(struct MHD_Connection *connection, void **con_cls, char *generic_resource, char *resource, char *user);
-
-	static int doPutGraph(struct MHD_Connection *connection, struct connection_info_struct *con_info, char *generic_resource, char *resource);
-
-	static int httpResponse(struct MHD_Connection *connection, int code);
+#endif
 
 public:
 	RestServer(Address addr)
@@ -143,12 +104,6 @@ public:
 
 	static void terminate();
 
-	static int answer_to_connection (void *cls, struct MHD_Connection *connection,
-						const char *url, const char *method, const char *version,
-						const char *upload_data, size_t *upload_data_size, void **con_cls);
-
-	static void request_completed (void *cls, struct MHD_Connection *connection, void **con_cls,
-						enum MHD_RequestTerminationCode toe);
 
 //IVANO: XXX: the following variables/methods have been added during the porting
 
