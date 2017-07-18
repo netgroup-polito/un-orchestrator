@@ -35,8 +35,23 @@ bool RestServer::init(SQLiteManager *dbm, int core_mask)
 			return false;
 		}
 	}
+	
+	//Actually inizialize the server
+	auto opts = Http::Endpoint::options()
+            .threads(1) 	//we use just a single thread
+            .flags(Tcp::Options::InstallSignalHandler);	
+        httpEndpoint->init(opts);
+        setupRoutes(); 
+
+	ULOG_INFO("System initialized");
 
 	return true;
+}
+
+void RestServer::start() 
+{
+	httpEndpoint->setHandler(router.handler()); 
+	httpEndpoint->serve();
 }
 
 bool RestServer::readGraphFromFile(const string &nffgResourceName, string &nffgFileName) {
@@ -63,6 +78,219 @@ bool RestServer::readGraphFromFile(const string &nffgResourceName, string &nffgF
 void RestServer::terminate() {
 	delete (gm);
 }
+
+void RestServer::setupRoutes() {
+	using namespace Rest;
+	
+	Routes::Post(router, "/login", Routes::bind(&RestServer::login, this));
+}
+
+/************************************************/
+
+/*
+*	HTTP methods
+*/
+
+//int RestServer::login(struct MHD_Connection *connection, void **con_cls) {
+
+// /login
+void RestServer::login(const Rest::Request& request, Http::ResponseWriter response) 
+{
+	ULOG_INFO("Received a 'login' request");
+
+	int rc = 0;
+	//struct MHD_Response *response;
+	char username[BUFFER_SIZE], password[BUFFER_SIZE];
+	unsigned char hash_token[HASH_SIZE], temp[BUFFER_SIZE];
+	char hash_pwd[BUFFER_SIZE], nonce[BUFFER_SIZE], timestamp[BUFFER_SIZE], tmp[BUFFER_SIZE], user_tmp[BUFFER_SIZE];
+
+/*	struct connection_info_struct *con_info = (struct connection_info_struct *) (*con_cls);
+	assert(con_info != NULL);*/
+
+	if (dbmanager == NULL) {
+		ULOG_INFO("Login can be performed only if authentication is enabled through the configuration file");
+		//return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
+		response.send(Http::Code::Not_Implemented);
+		return;
+	}
+
+	string req = request.body();
+
+	ULOG_INFO("Content:");
+	ULOG_INFO("%s", req.c_str());
+
+	//TODO: do the check
+	//check that the request includes the "host" header
+	/*
+	if (MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host") == NULL) 
+	{
+		ULOG_INFO("\"Host\" header not present in the request");
+		//return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
+		response.send(Http::Code::Bad_Request);
+		return;
+	}*/
+
+	
+	if (!parsePostBody(req, username, password)) 
+	{
+		ULOG_INFO("Login error: Malformed content");
+		//return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
+		response.send(Http::Code::Bad_Request);
+		return;
+	}
+
+	try {
+
+		SHA256((const unsigned char*) password, strlen(password), hash_token);
+
+		strcpy(tmp, "");
+		strcpy(hash_pwd, "");
+		strcpy(nonce, "");
+
+		for (int i = 0; i < HASH_SIZE; i++) {
+			sprintf(tmp, "%.2x", hash_token[i]);
+			strcat(hash_pwd, tmp);
+		}
+
+		strcpy(user_tmp, username);
+
+		if(!dbmanager->userExists(user_tmp, hash_pwd)) 
+		{
+			ULOG_ERR("Login failed: wrong username or password!");
+			//return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+
+		if(dbmanager->isLogged(user_tmp)) {
+			char *token = NULL;
+			user_info_t *pUI = NULL;
+
+			pUI = dbmanager->getLoggedUserByName(user_tmp);
+			token = pUI->token;
+
+			/*
+			response = MHD_create_response_from_buffer (strlen(token),(void*) token, MHD_RESPMEM_PERSISTENT);
+			MHD_add_response_header (response, "Content-Type",TOKEN_TYPE);
+			MHD_add_response_header (response, "Cache-Control",NO_CACHE);
+			ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+			MHD_destroy_response (response);
+
+			return ret;
+			*/
+			//TODO: set the HTTP headers
+			
+			ULOG_INFO("User has been correctly authenticated!");
+			
+			response.send(Http::Code::Ok, token);
+			return;
+		}
+
+		rc = RAND_bytes(temp, sizeof(temp));
+		if (rc != 1) {
+			ULOG_ERR("An error occurred while generating nonce!");
+			//return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
+			response.send(Http::Code::Internal_Server_Error);
+			return;
+		}
+
+		strcpy(tmp, "");
+		strcpy(hash_pwd, "");
+
+		for (int i = 0; i < HASH_SIZE; i++) {
+			sprintf(tmp, "%.2x", temp[i]);
+			strcat(nonce, tmp);
+		}
+
+		time_t now = time(0);
+		tm *ltm = localtime(&now);
+
+		strcpy(timestamp, "");
+		sprintf(timestamp, "%d/%d/%d %d:%d", ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, 1 + ltm->tm_min);
+
+		// Insert login information into the database
+		dbmanager->insertLogin(user_tmp, nonce, timestamp);
+		
+		ULOG_INFO("User has been correctly authenticated!");
+
+	/*
+		response = MHD_create_response_from_buffer (strlen((char *)nonce),(void*) nonce, MHD_RESPMEM_PERSISTENT);
+		MHD_add_response_header (response, "Content-Type",TOKEN_TYPE);
+		MHD_add_response_header (response, "Cache-Control",NO_CACHE);
+		ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+		MHD_destroy_response (response);
+
+		return ret;
+	*/
+		//TODO: set the HTTP headers
+		response.send(Http::Code::Ok, nonce);
+		return;
+
+	} catch (...) {
+		ULOG_ERR("An error occurred during user login!");
+		//return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
+		response.send(Http::Code::Internal_Server_Error);
+		return;
+	}
+}
+
+
+
+/*
+*	Helper methods
+*/
+
+
+//TODO: merge together the two following methods
+bool RestServer::parsePostBody(string content,char *user, char *pwd) 
+{
+	Value value;
+	read(content, value);
+	return parseLoginForm(value, user, pwd);
+}
+
+bool RestServer::parseLoginForm(Value value, char *user, char *pwd) 
+{
+	try {
+		Object obj = value.getObject();
+
+		bool foundUser = false, foundPwd = false;
+
+		//Identify the flow rules
+		for (Object::const_iterator i = obj.begin(); i != obj.end(); ++i) {
+			const string& name = i->first;
+			const Value& value = i->second;
+
+			if (name == USER) {
+				foundUser = true;
+				strcpy(user,value.getString().c_str());
+			} else if (name == PASS) {
+				foundPwd = true;
+				strcpy(pwd, value.getString().c_str());
+			} else {
+				ULOG_DBG_INFO("Invalid key: %s", name.c_str());
+				return false;
+			}
+		}
+		if (!foundUser) {
+			ULOG_DBG_INFO("Key \"%s\" not found", USER);
+			return false;
+		} else if (!foundPwd) {
+			ULOG_DBG_INFO("Key \"%s\" not found", PASS);
+			return false;
+		}
+	} catch (std::exception& e) {
+		ULOG_DBG_INFO("The content does not respect the JSON syntax: ", e.what());
+		return false;
+	}
+
+	return true;
+}
+
+
+
+/******************************************/
+
 
 bool RestServer::isLoginRequest(const char *method, const char *url) {
 	/*
@@ -178,110 +406,6 @@ int RestServer::print_out_key(void *cls, enum MHD_ValueKind kind,
 	return MHD_YES;
 }
 
-int RestServer::login(struct MHD_Connection *connection, void **con_cls) {
-
-	int ret = 0, rc = 0;
-	struct MHD_Response *response;
-	char username[BUFFER_SIZE], password[BUFFER_SIZE];
-	unsigned char hash_token[HASH_SIZE], temp[BUFFER_SIZE];
-	char hash_pwd[BUFFER_SIZE], nonce[BUFFER_SIZE], timestamp[BUFFER_SIZE], tmp[BUFFER_SIZE], user_tmp[BUFFER_SIZE];
-
-	struct connection_info_struct *con_info = (struct connection_info_struct *) (*con_cls);
-	assert(con_info != NULL);
-
-	if (dbmanager == NULL) {
-		con_info->message[con_info->length] = '\0';
-		ULOG_INFO("Login can be performed only if authentication is required.");
-		return httpResponse(connection, MHD_HTTP_NOT_IMPLEMENTED);
-	}
-
-	ULOG_INFO("User login");
-	ULOG_INFO("Content:");
-	ULOG_INFO("%s", con_info->message);
-
-	if (MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Host") == NULL) {
-		ULOG_INFO("\"Host\" header not present in the request");
-		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
-	}
-
-	if (!parsePostBody(*con_info, username, password)) {
-		ULOG_INFO("Login error: Malformed content");
-		return httpResponse(connection, MHD_HTTP_BAD_REQUEST);
-	}
-
-	try {
-
-		SHA256((const unsigned char*) password, strlen(password), hash_token);
-
-		strcpy(tmp, "");
-		strcpy(hash_pwd, "");
-		strcpy(nonce, "");
-
-		for (int i = 0; i < HASH_SIZE; i++) {
-			sprintf(tmp, "%.2x", hash_token[i]);
-			strcat(hash_pwd, tmp);
-		}
-
-		strcpy(user_tmp, username);
-
-		if(!dbmanager->userExists(user_tmp, hash_pwd)) {
-			ULOG_ERR("Login failed: wrong username or password!");
-			return httpResponse(connection, MHD_HTTP_UNAUTHORIZED);
-		}
-
-		if(dbmanager->isLogged(user_tmp)) {
-			char *token = NULL;
-			user_info_t *pUI = NULL;
-
-			pUI = dbmanager->getLoggedUserByName(user_tmp);
-			token = pUI->token;
-
-			response = MHD_create_response_from_buffer (strlen(token),(void*) token, MHD_RESPMEM_PERSISTENT);
-			MHD_add_response_header (response, "Content-Type",TOKEN_TYPE);
-			MHD_add_response_header (response, "Cache-Control",NO_CACHE);
-			ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-			MHD_destroy_response (response);
-
-			return ret;
-		}
-
-		rc = RAND_bytes(temp, sizeof(temp));
-		if (rc != 1) {
-			ULOG_ERR("An error occurred while generating nonce!");
-			return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
-		}
-
-		strcpy(tmp, "");
-		strcpy(hash_pwd, "");
-
-		for (int i = 0; i < HASH_SIZE; i++) {
-			sprintf(tmp, "%.2x", temp[i]);
-			strcat(nonce, tmp);
-		}
-
-		time_t now = time(0);
-		tm *ltm = localtime(&now);
-
-		strcpy(timestamp, "");
-		sprintf(timestamp, "%d/%d/%d %d:%d", ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, 1 + ltm->tm_min);
-
-		// Insert login information into the database
-		dbmanager->insertLogin(user_tmp, nonce, timestamp);
-
-		response = MHD_create_response_from_buffer (strlen((char *)nonce),(void*) nonce, MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header (response, "Content-Type",TOKEN_TYPE);
-		MHD_add_response_header (response, "Cache-Control",NO_CACHE);
-		ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
-		MHD_destroy_response (response);
-
-		return ret;
-
-	} catch (...) {
-		ULOG_ERR("An error occurred during user login!");
-		return httpResponse(connection, MHD_HTTP_INTERNAL_SERVER_ERROR);
-	}
-}
-
 int RestServer::createUser(char *username, struct MHD_Connection *connection, connection_info_struct *con_info) {
 	char *group, *password;
 
@@ -364,56 +488,11 @@ int RestServer::createUser(char *username, struct MHD_Connection *connection, co
 	}
 }
 
-
-bool RestServer::parsePostBody(struct connection_info_struct &con_info,
-		char *user, char *pwd) {
-	Value value;
-	read(con_info.message, value);
-	return parseLoginForm(value, user, pwd);
-}
-
 bool RestServer::parsePostBody(struct connection_info_struct &con_info,
 		char **user, char **pwd, char **group) {
 	Value value;
 	read(con_info.message, value);
 	return parseUserCreationForm(value, pwd, group);
-}
-
-bool RestServer::parseLoginForm(Value value, char *user, char *pwd) {
-	try {
-		Object obj = value.getObject();
-
-		bool foundUser = false, foundPwd = false;
-
-		//Identify the flow rules
-		for (Object::const_iterator i = obj.begin(); i != obj.end(); ++i) {
-			const string& name = i->first;
-			const Value& value = i->second;
-
-			if (name == USER) {
-				foundUser = true;
-				strcpy(user,value.getString().c_str());
-			} else if (name == PASS) {
-				foundPwd = true;
-				strcpy(pwd, value.getString().c_str());
-			} else {
-				ULOG_DBG_INFO("Invalid key: %s", name.c_str());
-				return false;
-			}
-		}
-		if (!foundUser) {
-			ULOG_DBG_INFO("Key \"%s\" not found", USER);
-			return false;
-		} else if (!foundPwd) {
-			ULOG_DBG_INFO("Key \"%s\" not found", PASS);
-			return false;
-		}
-	} catch (std::exception& e) {
-		ULOG_DBG_INFO("The content does not respect the JSON syntax: ", e.what());
-		return false;
-	}
-
-	return true;
 }
 
 bool RestServer::parseUserCreationForm(Value value, char **pwd, char **group) {
@@ -691,12 +770,15 @@ int RestServer::doOperation(struct MHD_Connection *connection, void **con_cls, c
 
 	// ...end of routine HTTP requests checks
 
+//XXX loging is not done in the specific method
+#if 0
 	// If security is required, check whether the current message is a login request
 	if(dbmanager != NULL && isLoginRequest(method, url)) {
 		ULOG_INFO("Received a login request!");
 		// execute login routine
 		return login(connection, con_cls);
 	}
+#endif
 
 	// If security is required, try to authenticate the client
 	char *token = NULL;

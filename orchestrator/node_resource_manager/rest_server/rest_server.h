@@ -17,6 +17,15 @@
 
 #define __STDC_FORMAT_MACROS
 
+
+//XXX the follwing includes are for the new server
+#include <pistache/http.h>
+#include <pistache/router.h>
+#include <pistache/endpoint.h>
+
+using namespace Pistache;
+
+
 #include <microhttpd.h>
 
 #include <string.h>
@@ -80,10 +89,10 @@ private:
 
 	static int doPost(struct MHD_Connection *connection, const char *url, void **con_cls, bool client_auth);
 
-	static bool parsePostBody(struct connection_info_struct &con_info,char *user, char *pwd);
+	
 	static bool parsePostBody(struct connection_info_struct &con_info,char **user, char **pwd, char **group);
 
-	static bool parseLoginForm(Value value, char *user, char *pwd);
+	
 	static bool parseUserCreationForm(Value value, char **pwd, char **group);
 
 	static int doPut(struct MHD_Connection *connection, const char *url, void **con_cls);
@@ -93,10 +102,10 @@ private:
 
 	static int doDelete(struct MHD_Connection *connection,const char *url, void **con_cls);
 
-	static int createGraphFromFile(const string &graphID, string toBeCreated);
-	static void parseGraphFromFile(string toBeCreated,highlevel::Graph &graph, bool newGraph);
+	
+	
 
-	static bool readGraphFromFile(const string &nffgResourceName, string &nffgFileName);
+	
 
 	static bool isLoginRequest(const char *method, const char *url);
 
@@ -124,8 +133,6 @@ private:
 	static int doOperationOnResource(struct MHD_Connection *connection, struct connection_info_struct *con_info, user_info_t *usr, const char *method, const char *generic_resource, const char *resource);
 	static int doOperationOnResource(struct MHD_Connection *connection, struct connection_info_struct *con_info, user_info_t *usr, const char *method, const char *generic_resource, const char *resource, const char *extra_info);
 
-	static int login(struct MHD_Connection *connection, void **con_cls);
-
 	static int doPutOnSingleResource(struct MHD_Connection *connection, void **con_cls, char *generic_resource, char *resource, char *user);
 
 	static int doPutGraph(struct MHD_Connection *connection, struct connection_info_struct *con_info, char *generic_resource, char *resource);
@@ -133,7 +140,12 @@ private:
 	static int httpResponse(struct MHD_Connection *connection, int code);
 
 public:
-	static bool init(SQLiteManager *dbm, int core_mask);
+	RestServer(Address addr)
+        : httpEndpoint(std::make_shared<Http::Endpoint>(addr))
+    { }
+
+
+	
 
 	static void terminate();
 
@@ -143,6 +155,27 @@ public:
 
 	static void request_completed (void *cls, struct MHD_Connection *connection, void **con_cls,
 						enum MHD_RequestTerminationCode toe);
+
+//IVANO: XXX: the following variables/methods have been added during the porting
+
+	bool init(SQLiteManager *dbm, int core_mask);
+	void start();
+
+private:
+	std::shared_ptr<Http::Endpoint> httpEndpoint;
+	Rest::Router router;
+	
+	void setupRoutes();
+	
+	// /login
+	void login(const Rest::Request& request, Http::ResponseWriter response);
+	
+	bool readGraphFromFile(const string &nffgResourceName, string &nffgFileName);
+	int createGraphFromFile(const string &graphID, string toBeCreated);
+	void parseGraphFromFile(string toBeCreated,highlevel::Graph &graph, bool newGraph);
+	
+	bool parsePostBody(string content, char *user, char *pwd);
+	bool parseLoginForm(Value value, char *user, char *pwd);
 };
 
 #endif //REST_SERVER_H_

@@ -502,6 +502,7 @@ TARGET_LINK_LIBRARIES( node-orchestrator
 	xml2
 	sqlite3
 	crypto
+	pistache
 	rt
 )
 
