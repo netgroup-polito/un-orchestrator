@@ -112,6 +112,8 @@ Users and permissions are stored in a local SQLite database.
 
 ### Groups API
 
+**WARNING** currently this API is not supported
+
 Create a new users group called 'myGroup'
 
 	PUT /groups/myGroup HTTP/1.1
@@ -125,6 +127,8 @@ Retrieve the information about all the groups
 	GET /groups HTTP/1.1
 
 ### Users API
+
+**WARNING** currently this API is not supported
 
 Create a new user called 'myUser', specifing the group the user belongs to
 
