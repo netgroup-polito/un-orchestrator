@@ -408,7 +408,6 @@ Object Graph::toJSON()
     if(!ncDG.getId().empty())
 		node_configurations.push_back(ncDG.toJSON());
 #endif
-	forwarding_graph[_ID] = ID;
 	forwarding_graph[_NAME] = name;
 	if(end_points.size() != 0)
 		forwarding_graph[END_POINTS] = end_points;
