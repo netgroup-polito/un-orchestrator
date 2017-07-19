@@ -14,63 +14,67 @@ etc.) are detailed in this document.
     POST /NF-FG HTTP/1.1
     Content-Type : application/json
 
+``` json
     {
-		"forwarding-graph": {
-			"name": "Forwarding graph",
-			"VNFs": [
+	"forwarding-graph": {
+		"name": "Forwarding graph",
+		"VNFs": [
+		  {
+			"id": "00000001",
+			"name": "firewall",
+			"ports": [
 			  {
-				"id": "00000001",
-				"name": "firewall",
-				"ports": [
-				  {
-					"id": "inout:0",
-					"name": "data-port"
-				  },
-				  {
-					"id": "inout:1",
-					"name": "data-port"
-				  }
-				]
-			  }
-			],
-			"end-points": [
+				"id": "inout:0",
+				"name": "data-port"
+			  },
 			  {
-				"id": "00000001",
-				"name": "ingress",
-				"type": "interface",
-				"interface": {
-				  "if-name": "eth1"
-				}
+				"id": "inout:1",
+				"name": "data-port"
 			  }
-			],
-			"big-switch": {
-			  "flow-rules": [
+			]
+		  }
+		],
+		"end-points": [
+		  {
+			"id": "00000001",
+			"name": "ingress",
+			"type": "interface",
+			"interface": {
+			  "if-name": "eth1"
+			}
+		  }
+		],
+		"big-switch": {
+		  "flow-rules": [
+			{
+			  "id": "000000001",
+			  "priority": 1,
+			  "match": {
+				"port_in": "endpoint:00000001"
+			  },
+			  "actions": [
 				{
-				  "id": "000000001",
-				  "priority": 1,
-				  "match": {
-					"port_in": "endpoint:00000001"
-				  },
-				  "actions": [
-					{
-					  "output_to_port": "vnf:00000001:inout:0"
-					}
-				  ]
+				  "output_to_port": "vnf:00000001:inout:0"
 				}
 			  ]
 			}
+		  ]
 		}
 	}
+}
+```
 	
 The body of the message is written according to the graph formalism described in [README_NF-FG.md](README_NF-FG.md):	
 	
 This operation will return back the uuid assigned by the un-orchestrator to the NF-FG:
 
-{
-    "nffg-uuid" : "d3c7f0cf-a9a1-4d5f-a225-d2a1c2b8d866"
-}
+``` json
+    {
+    	"nffg-uuid" : "d3c7f0cf-a9a1-4d5f-a225-d2a1c2b8d866"
+    }
+ ```
 
-#### Update an existing graph
+#### Update an existing NF-FG
 
     PUT /NF-FG/nffg-uuid HTTP/1.1
     Content-Type : application/json
@@ -91,25 +95,25 @@ the graph to be updated (e.g., /NF-FG/myGraph); the un-orchestrator will then ca
 difference between the new version and that already deployed, and will do all the proper
 operations to update the graph as required.
 
-#### Retrieve the description of a graph:
+#### Retrieve the description of an NF-FG:
 
 	GET /NF-FG/nffg-uuid HTTP/1.1
 	
 Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
-#### Retrieve the information of the status of a graph
+#### Retrieve the information of the status of an NF-FG
 
 	GET /NF-FG/status/nffg-uuid HTTP/1.1
 	
 Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
-#### Delete a graph 
+#### Delete an NF-FG 
 
 	DELETE /NF-FG/nffg-uuid HTTP/1.1
 	
 Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
-#### Retrieve the description of all the graphs
+#### Retrieve the description of all the NF-FG
 
 	GET /NF-FG HTTP/1.1
 	
@@ -123,10 +127,12 @@ In case this feature is turned on, all the interactions with the UN must start w
     POST /login	HTTP/1.1
     Content-Type : application/json
 
+``` json
     {
         "username":"admin", 
         "password":"admin"
     }
+ ```
     
 If the authentication is successful, this method will return a token in the response.
 
@@ -159,12 +165,13 @@ Create a new user called 'myUser', specifing the group the user belongs to
 
     POST /users/myUser	HTTP/1.1
     Content-Type : application/json
-
+``` json
     {
         "password":"sample_pwd",
         "group":"sample_group"
     }
-    
+```
+
 Retrieve the information the users called 'myUser'
 
 	GET /users/myUser HTTP/1.1
