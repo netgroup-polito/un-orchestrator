@@ -26,6 +26,11 @@
 
 #include "x-auth-token-header.h"
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
+
 using namespace Pistache;
 
 #include <string.h>
@@ -108,7 +113,7 @@ private:
 	// POST /NF-FG/
 	void newGraph(const Rest::Request& request, Http::ResponseWriter response);
 	// PUT /NF-FG/:graphID
-	void putGraph(const Rest::Request& request, Http::ResponseWriter response);
+	void updateGraph(const Rest::Request& request, Http::ResponseWriter response);
 	// GET /NF-FG/:graphID
 	void getGraph(const Rest::Request& request, Http::ResponseWriter response);
 	// DELETE /NF-FG/:graphID

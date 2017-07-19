@@ -71,7 +71,7 @@ void RestServer::setupRoutes() {
 	Routes::Get(router, "/users/:name", Routes::bind(&RestServer::getUser, this));
 	
 	Routes::Post(router, "/NF-FG/", Routes::bind(&RestServer::newGraph, this));
-	Routes::Put(router, "/NF-FG/:graphID", Routes::bind(&RestServer::putGraph, this));
+	Routes::Put(router, "/NF-FG/:graphID", Routes::bind(&RestServer::updateGraph, this));
 	Routes::Get(router, "/NF-FG/:graphID", Routes::bind(&RestServer::getGraph, this));
 	Routes::Delete(router, "/NF-FG/:graphID", Routes::bind(&RestServer::deleteGraph, this));
 	Routes::Get(router, "/NF-FG/status/:graphID", Routes::bind(&RestServer::getGraphStatus, this));
@@ -373,11 +373,6 @@ void RestServer::getUser(const Rest::Request& request, Http::ResponseWriter resp
 	}
 }
 
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <boost/lexical_cast.hpp>
-
 // POST /NF-FG/
 void RestServer::newGraph(const Rest::Request& request, Http::ResponseWriter response) 
 {
@@ -519,9 +514,9 @@ void RestServer::newGraph(const Rest::Request& request, Http::ResponseWriter res
 }
 
 // PUT /NF-FG/:graphID
-void RestServer::putGraph(const Rest::Request& request, Http::ResponseWriter response) 
+void RestServer::updateGraph(const Rest::Request& request, Http::ResponseWriter response) 
 {
-	ULOG_INFO("Received a PUT request for a graph");
+	ULOG_INFO("Received a PUT request for updating a graph");
 
 	//Retrieve the graphID
 	auto gID = request.param(":graphID").as<std::string>();
@@ -552,13 +547,23 @@ void RestServer::putGraph(const Rest::Request& request, Http::ResponseWriter res
 			response.send(Http::Code::Unauthorized);
 			return;
 		}
-		
-		
 	}
 
 	//TODO check other headers?
-
 	
+	// Check whether the graph exists in the local database and in the graph manager
+	if ( (dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_GRAPH, gID.c_str())) || (dbmanager == NULL && !gm->graphExists(gID.c_str()))) 
+	{
+		ULOG_INFO("The NF-FG to be updated does not exist!");
+				
+		response.headers()
+			.add<Pistache::Http::Header::Allow>(Http::Method::Post);
+		
+		response.send(Http::Code::Method_Not_Allowed);//TODO change with Not found?
+		return;
+	}
+
+
 	// If security is required, check whether the graph already exists in the database
 
 	/* this check prevent updates!
@@ -575,7 +580,7 @@ void RestServer::putGraph(const Rest::Request& request, Http::ResponseWriter res
 
 	highlevel::Graph *graph = new highlevel::Graph(gID);
 
-	ULOG_INFO("Resource to be created/updated: %s/%s", BASE_URL_GRAPH, gID.c_str());
+	ULOG_INFO("Resource to be updated: %s/%s", BASE_URL_GRAPH, gID.c_str());
 	
 	string req = request.body();
 
@@ -611,25 +616,13 @@ void RestServer::putGraph(const Rest::Request& request, Http::ResponseWriter res
 	graph->print();
 
 	try {
-		if(gm->graphExists(gID.c_str())) {
-			ULOG_INFO("An existing graph must be updated");
-			if (!gm->updateGraph(gID,graph)) {
-				ULOG_INFO("The graph description is not valid!");
-				response.send(Http::Code::Bad_Request);
-				return;
-			}
-			ULOG_INFO("The graph has been properly updated!");
-			ULOG_INFO("");
-		}else{
-			ULOG_INFO("A new graph must be created");
-			if (!gm->newGraph(graph)) {
-				ULOG_INFO("The graph description is not valid!");
-				response.send(Http::Code::Bad_Request);
-				return;
-			}
-			ULOG_INFO("The graph has been properly created!");
-			ULOG_INFO("");
+		if (!gm->updateGraph(gID,graph)) {
+			ULOG_INFO("The graph description is not valid!");
+			response.send(Http::Code::Bad_Request);
+			return;
 		}
+		ULOG_INFO("The graph has been properly updated!");
+		ULOG_INFO("");
 	}
 	catch (...) {
 		ULOG_ERR("An error occurred during the creation of the graph!");
@@ -640,16 +633,8 @@ void RestServer::putGraph(const Rest::Request& request, Http::ResponseWriter res
 	// If security is required, update database
 	if(dbmanager != NULL)
 		dbmanager->insertResource(BASE_URL_GRAPH, gID.c_str(), usr->user);
-
-	//TODO: put the proper content in the answer
-	stringstream absolute_url;
-	absolute_url << REST_URL << ":" << REST_PORT << "/" << BASE_URL_GRAPH << "/" << gID;
 	
-	Pistache::Http::Header::Location l(absolute_url.str());
-	response.headers()
-		.add<Pistache::Http::Header::Location>(l);
-	
-	response.send(Http::Code::Created);
+	response.send(Http::Code::Accepted);
 	return;
 }
 
@@ -696,7 +681,7 @@ void RestServer::getGraph(const Rest::Request& request, Http::ResponseWriter res
 		ULOG_INFO("The required NF-FG does not exist!");
 				
 		response.headers()
-			.add<Pistache::Http::Header::Allow>(Http::Method::Put);
+			.add<Pistache::Http::Header::Allow>(Http::Method::Post);
 		
 		response.send(Http::Code::Method_Not_Allowed);//TODO change with Not found?
 		return;
