@@ -8,14 +8,14 @@ etc.) are detailed in this document.
 ## REST commands accepted by the un-orchestrator
 
 ### NF-FG API
-Deploy an NF-FG called ``myGraph'', according to the graph formalism described in [README_NF-FG.md](README_NF-FG.md):
 
-    PUT /NF-FG/myGraph HTTP/1.1
+#### Deploy a new NF-FG
+
+    POST /NF-FG HTTP/1.1
     Content-Type : application/json
 
     {
 		"forwarding-graph": {
-			"id": "00000001",
 			"name": "Forwarding graph",
 			"VNFs": [
 			  {
@@ -61,34 +61,59 @@ Deploy an NF-FG called ``myGraph'', according to the graph formalism described i
 			}
 		}
 	}
+	
+The body of the message is written according to the graph formalism described in [README_NF-FG.md](README_NF-FG.md):	
+	
+This operation will return back the uuid assigned by the un-orchestrator to the NF-FG:
 
-The same message used to create a new graph can be used to update a creaph, i.e., to
+{
+    "nffg-uuid" : "d3c7f0cf-a9a1-4d5f-a225-d2a1c2b8d866"
+}
+
+#### Update an existing graph
+
+    PUT /NF-FG/nffg-uuid HTTP/1.1
+    Content-Type : application/json
+
+The body of the message is written according to the graph formalism described in [README_NF-FG.md](README_NF-FG.md):	
+
+With this command, you can
 
  * add/remove flow-rules from the big-switch
  * add/remove virtual network functions
  * add/remove ports from virtual network functions already deployed
  * add/remove endpoints (interface, gre-tunnel, vlan, internal)
+ 
+Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
 To update a graph, you have just to send the new version of the graph at the same URL of
 the graph to be updated (e.g., /NF-FG/myGraph); the un-orchestrator will then calculate the
 difference between the new version and that already deployed, and will do all the proper
 operations to update the graph as required.
 
-Retrieve the description of the graph with name "myGraph":
+#### Retrieve the description of a graph:
 
-	GET /NF-FG/myGraph HTTP/1.1
+	GET /NF-FG/nffg-uuid HTTP/1.1
+	
+Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
-Retrieve the information of the status of the graph with name "myGraph":
+#### Retrieve the information of the status of a graph
 
-	GET /NF-FG/status/myGraph HTTP/1.1
+	GET /NF-FG/status/nffg-uuid HTTP/1.1
+	
+Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
-Delete the graph with name "myGraph"
+#### Delete a graph 
 
-	DELETE /NF-FG/myGraph HTTP/1.1
+	DELETE /NF-FG/nffg-uuid HTTP/1.1
+	
+Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
-Retrieve the description of all the graphs
+#### Retrieve the description of all the graphs
 
 	GET /NF-FG HTTP/1.1
+	
+Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
 ### Authentication API
 
