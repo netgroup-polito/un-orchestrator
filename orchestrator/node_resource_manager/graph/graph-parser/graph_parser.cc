@@ -72,9 +72,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 					const string& fg_name  = fg->first;
 					const Value&  fg_value = fg->second;
 
-					if(fg_name == _ID)
-						ULOG_DBG("\"%s\"->\"%s\": \"%s\"",FORWARDING_GRAPH,_ID,fg_value.getString().c_str());
-					else if(fg_name == _NAME)
+					if(fg_name == _NAME)
 					{
 						ULOG_DBG("\"%s\"->\"%s\": \"%s\"",FORWARDING_GRAPH,_NAME,fg_value.getString().c_str());
 

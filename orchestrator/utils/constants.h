@@ -22,7 +22,6 @@
 #define REQ_SIZE 				2*1024*1024
 
 #define FORWARDING_GRAPH	"forwarding-graph"
-	//#define F_ID				"id"
 	#define _NAME				"name"
 	#define F_DESCR				"description"
     #define NODE_CONFIG			"node-config"
