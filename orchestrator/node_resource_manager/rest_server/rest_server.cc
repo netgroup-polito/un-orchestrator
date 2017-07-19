@@ -913,7 +913,12 @@ void RestServer::getGraphs(const Rest::Request& request, Http::ResponseWriter re
 		std::list<std::string>::iterator i;
 
 		for(i = names.begin(); i != names.end(); ++i)
-			nffg_array.push_back(gm->toJSON(*i));
+		{
+			Object json = gm->toJSON(*i);
+			json["nffg-uuid"] = (*i);
+			
+			nffg_array.push_back(json);
+		}
 
 		nffg[BASE_URL_GRAPH] = nffg_array;
 
