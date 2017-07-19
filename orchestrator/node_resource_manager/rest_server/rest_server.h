@@ -105,6 +105,8 @@ private:
 	// GET /users/:username
 	void getUser(const Rest::Request& request, Http::ResponseWriter response);
 	
+	// POST /NF-FG/
+	void newGraph(const Rest::Request& request, Http::ResponseWriter response);
 	// PUT /NF-FG/:graphID
 	void putGraph(const Rest::Request& request, Http::ResponseWriter response);
 	// GET /NF-FG/:graphID

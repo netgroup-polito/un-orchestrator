@@ -70,6 +70,7 @@ void RestServer::setupRoutes() {
 	Routes::Post(router, "/users/:name", Routes::bind(&RestServer::createUser, this));
 	Routes::Get(router, "/users/:name", Routes::bind(&RestServer::getUser, this));
 	
+	Routes::Post(router, "/NF-FG/", Routes::bind(&RestServer::newGraph, this));
 	Routes::Put(router, "/NF-FG/:graphID", Routes::bind(&RestServer::putGraph, this));
 	Routes::Get(router, "/NF-FG/:graphID", Routes::bind(&RestServer::getGraph, this));
 	Routes::Delete(router, "/NF-FG/:graphID", Routes::bind(&RestServer::deleteGraph, this));
@@ -370,6 +371,151 @@ void RestServer::getUser(const Rest::Request& request, Http::ResponseWriter resp
 		response.send(Http::Code::Internal_Server_Error);
 		return;
 	}
+}
+
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
+
+// POST /NF-FG/
+void RestServer::newGraph(const Rest::Request& request, Http::ResponseWriter response) 
+{
+	ULOG_INFO("Received a POST request for a new graph");
+
+	user_info_t *usr = NULL;
+	
+	string gID;
+
+	//generate a random UUID for the new NF-FG
+	do
+	{
+		boost::uuids::uuid uuid = boost::uuids::random_generator()();
+		gID = boost::lexical_cast<std::string>(uuid);
+		ULOG_DBG_INFO("The graph will be associated with the UUID: %s", gID.c_str());
+	}while(gm->graphExists(gID.c_str()));
+
+	//Authenticate the user, if needed
+	if(dbmanager != NULL)
+	{
+		auto headers = request.headers();
+		auto token_header = headers.get<XAuthToken>();
+		string t = token_header->token();
+		ULOG_DBG_INFO("Header 'X-Auth-Token: %s", t.c_str());
+		
+		usr = dbmanager->getUserByToken(t.c_str());
+		
+		if(usr==NULL)
+		{
+			ULOG_INFO("The token is not valid");
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+		
+		
+		if (dbmanager != NULL && !secmanager->isAuthorized(usr, _READ, /*generic_resource*/"NF-FG", gID.c_str()))
+		{
+			ULOG_INFO("User not authorized to execute the PUT on NF-FG '%s'",gID.c_str());
+			response.send(Http::Code::Unauthorized);
+			return;
+		}
+		
+		
+	}
+
+	//TODO check other headers?
+
+	
+	// If security is required, check whether the graph already exists in the database
+
+	/* this check prevent updates!
+	if(dbmanager != NULL && dbmanager->resourceExists(BASE_URL_GRAPH, resource)) {
+		ULOG_ERR("Error: cannot deploy an already existing graph in the database!");
+		return httpResponse(connection, MHD_HTTP_FORBIDDEN);
+	}
+
+	// The same check within the graph manager
+	if(gm->graphExists(resource)) {
+		ULOG_ERR("Error: cannot deploy an already existing graph in the manager!");
+		return httpResponse(connection, MHD_HTTP_FORBIDDEN);
+	}*/
+
+
+
+	highlevel::Graph *graph = new highlevel::Graph(gID);
+
+	ULOG_INFO("Resource to be created: %s/%s", BASE_URL_GRAPH, gID.c_str());
+	
+	string req = request.body();
+
+	ULOG_INFO("Content:");
+	ULOG_INFO("%s", req.c_str());
+
+	bool newGraph = true;
+
+	// Check whether the body is well formed
+	try
+	{
+		parsePutBody(req, *graph, newGraph);
+	}catch(GraphParserException* e)
+	{
+		ULOG_INFO("Malformed content");
+		Object json;
+		json["module"]=e->getModule();
+		json["message"]=e->what();
+		stringstream ssj;
+		write_formatted(json, ssj);
+		string sssj = ssj.str();
+	
+		Pistache::Http::CacheDirective cd(Pistache::Http::CacheDirective::NoCache);
+		Pistache::Http::Header::CacheControl cc(cd);
+		response.headers()
+			.add<Pistache::Http::Header::CacheControl>(cd)
+			.add<Pistache::Http::Header::ContentType>(MIME(Text,Json));
+		
+		response.send(Http::Code::Bad_Request,sssj);
+		return;
+	}
+
+	graph->print();
+
+	try {
+		if (!gm->newGraph(graph)) {
+			ULOG_INFO("The graph description is not valid!");
+			response.send(Http::Code::Bad_Request);
+			return;
+		}
+		ULOG_INFO("The graph has been properly created!");
+		ULOG_INFO("");		
+	}
+	catch (...) {
+		ULOG_ERR("An error occurred during the creation of the graph!");
+		response.send(Http::Code::Internal_Server_Error);
+		return;
+	}
+
+	// If security is required, update database
+	if(dbmanager != NULL)
+		dbmanager->insertResource(BASE_URL_GRAPH, gID.c_str(), usr->user);
+
+	//Return the UUID
+	
+	json_spirit::Object json;
+	json["nffg-uuid"] = gID;
+
+	stringstream ssj;
+	write_formatted(json, ssj);
+	string sssj = ssj.str();
+	
+	stringstream absolute_url;
+	absolute_url << REST_URL << ":" << REST_PORT << "/" << BASE_URL_GRAPH << "/" << gID;
+	
+	Pistache::Http::Header::Location l(absolute_url.str());
+	response.headers()
+		.add<Pistache::Http::Header::Location>(l);
+	
+	response.send(Http::Code::Created,sssj);
+	return;
 }
 
 // PUT /NF-FG/:graphID
