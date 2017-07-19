@@ -53,11 +53,13 @@ bool RestServer::init(SQLiteManager *dbm, int core_mask)
 
 void RestServer::start() 
 {
-	httpEndpoint->setHandler(router.handler()); 
+	httpEndpoint->setHandler(router.handler());
 	httpEndpoint->serve();
 }
 
-void RestServer::terminate() { //TODO: probably this is not enough
+void RestServer::shutdown()
+{
+	httpEndpoint->shutdown();
 	delete (gm);
 }
 

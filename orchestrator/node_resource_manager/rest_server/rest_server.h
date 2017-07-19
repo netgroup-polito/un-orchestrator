@@ -2,9 +2,6 @@
 #define REST_SERVER_H_ 1
 
 /**
-*	@brief: the REST server is based on the microhttpd library:
-*				www.gnu.org/software/libmicrohttpd/
-*
 *	Documentation on HTTP return values can be found at:
 *		http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 *
@@ -30,9 +27,6 @@
 #include "x-auth-token-header.h"
 
 using namespace Pistache;
-
-
-#include <microhttpd.h>
 
 #include <string.h>
 #include <assert.h>
@@ -94,16 +88,9 @@ public:
         : httpEndpoint(std::make_shared<Http::Endpoint>(addr))
     { }
 
-
-	
-
-	static void terminate();
-
-
-//IVANO: XXX: the following variables/methods have been added during the porting
-
 	bool init(SQLiteManager *dbm, int core_mask);
 	void start();
+	void shutdown();
 
 private:
 	std::shared_ptr<Http::Endpoint> httpEndpoint;

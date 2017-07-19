@@ -22,12 +22,11 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 	; - cmake: to create cross-platform makefiles
 	; - cmake-curses-gui: nice 'gui' to edit cmake files
 	; - libboost-all-dev: nice c++ library with tons of useful functions
-	; - libmicrohttpd-dev: embedded micro http server
 	; - libxml2-dev: nice library to parse and create xml
 	; - ethtool: utilities to set some parameters on the NICs (e.g., disable TCP offloading)
 	; - gitL utility to download the source code of the universal node and of other libraries
 	
-	$ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libmicrohttpd-dev libxml2-dev ethtool git
+	$ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libxml2-dev ethtool git
 	
 	; Install JSON Spirit (nice library to parse JSON files)
 	; Alternatively, a copy of JSON Spirit is provided in `[un-orchestrator]/contrib/json-spirit.zip`

@@ -62,6 +62,13 @@ struct MHD_Daemon *http_daemon = NULL;
 */
 SQLiteManager *dbm = NULL;
 
+/*
+*
+* Pointer to REST server class
+*
+*/
+RestServer *restServer = NULL;
+
 /**
 *	Private prototypes
 */
@@ -81,12 +88,12 @@ void signal_handler(int sig, siginfo_t *info, void *secret)
 		case SIGINT:
 			ULOG_INFO( "The '%s' is terminating...",MODULE_NAME);
 
-			MHD_stop_daemon(http_daemon);
 			terminateRestServer();
 
 			if(dbm != NULL) {
 				//dbm->updateDatabase();
 				dbm->cleanTables();
+				delete dbm;
 			}
 #ifdef ENABLE_DOUBLE_DECKER_CONNECTION
 			DoubleDeckerClient::terminate();
@@ -210,9 +217,9 @@ int main(int argc, char *argv[])
 
 
 	Address addr(Ipv4::any(),  Configuration::instance()->getRestPort());
-	RestServer restServer(addr);
+	restServer = new RestServer(addr);
 
-	if(!restServer.init(dbm,core_mask))
+	if(!restServer->init(dbm,core_mask))
 	{
 		ULOG_ERR( "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);
@@ -247,35 +254,24 @@ int main(int argc, char *argv[])
 #endif
 	sigaction(SIGINT, &sa, NULL);
 
-
-	 restServer.start();//FIXME: how to check that everything was fine and that the server is actually started?
-#if 0
-	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, Configuration::instance()->getRestPort(), NULL, NULL,&RestServer::answer_to_connection,
-		NULL, MHD_OPTION_NOTIFY_COMPLETED, &RestServer::request_completed, NULL,MHD_OPTION_END);
-
-	if (NULL == http_daemon)
-	{
-		ULOG_ERR( "Cannot start the HTTP deamon. The %s cannot be run.",MODULE_NAME);
-		ULOG_ERR( "Please, check that the TCP port %d is not used (use the command \"netstat -lnp | grep %d\")",Configuration::instance()->getRestPort(),Configuration::instance()->getRestPort());
-
-		terminateRestServer();
-
-		return EXIT_FAILURE;
-	}
-#endif
-
 	printUniversalNodeInfo();
 	ULOG_INFO("The '%s' is started!",MODULE_NAME);
 	ULOG_INFO("Waiting for commands on TCP port \"%d\"",Configuration::instance()->getRestPort());
 
-	while(true) {
-		struct timeval tv;
-		tv.tv_sec = 3600;
-		tv.tv_usec = 0;
-		select(0, NULL, NULL, NULL, &tv);
+	try
+	{
+		restServer->start();//FIXME: how to check that everything was fine and that the server is actually started?
+	}
+	catch(...)
+	{
+		ULOG_ERR( "Cannot start the HTTP server. The %s cannot be run.",MODULE_NAME);
+		ULOG_ERR( "Please, check that the TCP port %d is not used (use the command \"netstat -lnp | grep %d\")",Configuration::instance()->getRestPort(),Configuration::instance()->getRestPort());
+		terminateRestServer();
+
+		return EXIT_FAILURE;
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 bool parse_command_line(int argc, char *argv[],int *core_mask,char **config_file_name)
@@ -428,7 +424,8 @@ ULOG_INFO( "************************************");
 
 void terminateRestServer() {
 	try {
-		RestServer::terminate();
+		restServer->shutdown();
+		delete restServer;
 	} catch(...) {
 		//Do nothing, since the program is terminating
 	}

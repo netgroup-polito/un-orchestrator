@@ -499,7 +499,6 @@ TARGET_LINK_LIBRARIES( node-orchestrator
 	rofl_common
 	json_spirit
 	inih
-	microhttpd
 	boost_system
 	xml2
 	sqlite3

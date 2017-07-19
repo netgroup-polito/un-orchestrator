@@ -30,6 +30,19 @@ In the following we list the steps required on an **Ubuntu 14.04 - 64 bit**.
 	
 	; Update the dynamic libraries cache
 	$ sudo ldconfig
+	
+	; Install Pistache (library that implements the REST server)
+	$ git clone https://github.com/oktal/pistache.git
+	$ cd pistache
+	$ git submodule update --init
+	$ mkdir build
+	$ cd build
+	$ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+	$ make
+	$ sudo make install
+
+	; Update the dynamic libraries cache
+	$ sudo ldconfig
 
 The following libraries are required if you plan to enable the publisher/subscriber 
 mechanism, which is used by the un-orchestrator, for instance, to export the configuration
