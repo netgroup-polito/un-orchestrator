@@ -35,6 +35,25 @@ fi
 
 sudo make install
 
+# pistache
+cd $HOME
+ls
+if [ ! -d "pistache/build" ]; then
+	git clone https://github.com/oktal/pistache.git
+	cd pistache
+	git submodule update --init
+	mkdir build
+	cd build
+	cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+	make -j2
+	sudo make install
+else
+	echo "pistache exists"
+	cd pistache/build
+fi
+
+sudo make install
+
 # json-spirit
 cd $HOME
 if [ ! -d "json-spirit/build" ]; then
