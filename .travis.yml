@@ -20,7 +20,6 @@ addons:
   - cmake
   - libboost-all-dev
   - libxml2-dev
-  - libmicrohttpd-dev
   - sqlite3
   - libsqlite3-dev
   - libssl-dev
@@ -34,6 +33,7 @@ cache:
  - $HOME/rofl-common
  - $HOME/json-spirit
  - $HOME/double_decker
+ - $HOME/pistache
 
 env:
  - KVM=ON DOCKER=ON NATIVE=ON DPDK=ON VSWITCH=XDPD DD=OFF
@@ -50,5 +50,4 @@ notifications:
 branches:
  only:
   - master
-  - stable
-  - test
+  - new-rest-server
