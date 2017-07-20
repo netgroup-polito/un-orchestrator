@@ -31,6 +31,7 @@ In the following we list the steps required on an **Ubuntu 14.04 - 64 bit**.
 	; Update the dynamic libraries cache
 	$ sudo ldconfig
 
+
 The following libraries are required if you plan to enable the publisher/subscriber 
 mechanism, which is used by the un-orchestrator, for instance, to export the configuration
 of the universal node.
@@ -174,7 +175,7 @@ Two flavors of virtual machines are supported:
 In order to start/stop virtual machines, a recent version of Libvirt must be used. 
 You can build it from sources using the following commands:
 
-	$ sudo apt-get install libxml-xpath-perl libyajl-dev libdevmapper-dev libpciaccess-dev libnl-dev python-dev xsltproc autopoint uuid-dev libxml2-utils
+	$ sudo apt-get install libxml-xpath-perl libyajl-dev libdevmapper-dev libpciaccess-dev libnl-dev python-dev xsltproc autopoint uuid-dev libxml2-utils libguestmount jq
 	$ git clone git://libvirt.org/libvirt.git
 	; select the commit that is known to work and have the necessary support
 	$ cd libvirt
@@ -185,6 +186,9 @@ You can build it from sources using the following commands:
 	
 	; Update the dynamic libraries cache
 	$ sudo ldconfig
+
+WARNING!
+If you are using software that consume entropy from the system (reads /dev/random e.g. doubledecker) it's suggested the installation of haveged (inside the host and the guest).
 
 #### QEMU/KVM
 

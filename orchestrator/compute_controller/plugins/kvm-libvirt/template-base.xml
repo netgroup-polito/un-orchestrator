@@ -6,6 +6,15 @@
 	<resource>
 		<partition>/machine</partition>
 	</resource>
+	<sysinfo type='smbios'>
+		<bios>
+			<entry name='vendor'>UN-ORCHESTRATOR</entry>
+			<entry name='version'>0.01</entry>
+		</bios>
+		<system>
+			<entry name='serial'>template-base</entry>
+		</system>
+	</sysinfo>
 	<os>
 		<type arch='x86_64' machine='pc-i440fx-2.2'>hvm</type> <!--TODO: this must be set according to the template-->
 		<boot dev='hd'/>
@@ -21,6 +30,10 @@
 	<on_reboot>restart</on_reboot>
 	<on_crash>destroy</on_crash>
 	<devices>
+  		<rng model='virtio'>
+	    		<rate period="2000" bytes="1234"/>
+    			<backend model='random'>/dev/random</backend>
+  		</rng>
 		<disk type='block' device='cdrom'>
 			<driver name='qemu' type='raw'/>
 			<backingStore/>
@@ -52,7 +65,7 @@
 		</console>
 		<input type='mouse' bus='ps2'/>
 		<input type='keyboard' bus='ps2'/>
-		<graphics type='vnc' port='5900' autoport='yes' listen='127.0.0.1'>
+		<graphics type='vnc' port='5900' autoport='yes' listen='127.0.0.1' keymap='it'>
 			<listen type='address' address='127.0.0.1'/>
 		</graphics>
 		<video>

@@ -22,15 +22,15 @@ extern void logger(int LoggingLevel, const char *ModuleName, const char *File, i
 	struct timeval tv;
 	time_t CurrentTime;
 
+	if (LoggingLevel < LOGGING_LEVEL)
+		return;
+
 #ifdef LOG_ON_FILE
 	// The file is open in append
 	FILE *DestFile = fopen(LOG_FILE,"a");
 #else
 	FILE *DestFile= stdout;//stderr;
 #endif
-
-	if (LoggingLevel < LOGGING_LEVEL)
-		return;
 
 #ifndef LOG_1024X768
 	switch(LoggingLevel)
