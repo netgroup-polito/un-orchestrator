@@ -9,7 +9,7 @@ if [ ! -d "glog" ]; then
 	git clone https://github.com/google/glog
 	cd glog
 	./autogen.sh 
-	./configure 
+	./configure --without-gflags 
 	make -j2
 else
 	echo "glog exists"
