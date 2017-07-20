@@ -3,7 +3,7 @@ container.
 
 ###############################################################################
 
-Reqiured libraries:
+Required libraries:
 
 * Docker and LXC
      http://docs.docker.com/installation/

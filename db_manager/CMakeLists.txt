@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-PROJECT(db_initializer)
+PROJECT(db_manager)
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
         ADD_DEFINITIONS(-Wall -Werror -Wno-write-strings)
@@ -20,7 +20,7 @@ ENDIF(LOG_ON_FILE)
 
 # Set source files
 SET(SOURCES
-	db_initializer.cc	
+		db_manager.cc
 	
 	../orchestrator/node_resource_manager/database_manager/SQLite/SQLiteManager.cc
 	../orchestrator/node_resource_manager/database_manager/SQLite/SQLiteManager.h
@@ -42,14 +42,14 @@ LINK_DIRECTORIES(
 
 # Create the executable
 ADD_EXECUTABLE(
-	db_initializer
+	db_manager
 	${SOURCES}
 )
 
-ADD_DEPENDENCIES(db_initializer Inih)
+ADD_DEPENDENCIES(db_manager Inih)
 
 
-TARGET_LINK_LIBRARIES( db_initializer
+TARGET_LINK_LIBRARIES( db_manager
 	inih
 	rt
 	sqlite3

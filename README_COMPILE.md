@@ -2,6 +2,8 @@
 
 ## Automatic set up
 
+**WARNING (June 2017)**: the automatic setup is broken and needs to be fixed.
+
 It is possible to set up the Universal Node (UN) in two ways:
 
   * by compiling each component by hand; this allows to have the complete control on the UN set up.
@@ -23,8 +25,9 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 	; - libmicrohttpd-dev: embedded micro http server
 	; - libxml2-dev: nice library to parse and create xml
 	; - ethtool: utilities to set some parameters on the NICs (e.g., disable TCP offloading)
+	; - gitL utility to download the source code of the universal node and of other libraries
 	
-	$ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libmicrohttpd-dev libxml2-dev ethtool
+	$ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libmicrohttpd-dev libxml2-dev ethtool git
 	
 	; Install JSON Spirit (nice library to parse JSON files)
 	; Alternatively, a copy of JSON Spirit is provided in `[un-orchestrator]/contrib/json-spirit.zip`
@@ -37,12 +40,6 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 	
 	; Update the dynamic libraries cache
 	$ sudo ldconfig
-
-Some components of the UN are available as git submodules. To retrieve such modules, type the
-following commands
-
-	$ cd [un-orchestrator]
-	$ git submodule update --init --recursive
 
 ## Getting the code
 
@@ -60,6 +57,11 @@ Getting the code through GIT:
 	$ git clone https://github.com/netgroup-polito/un-orchestrator.git
 	
 	; Your code is now in the `un-orchestrator` folder.
+		
+	$ cd [un-orchestrator]
+	; Update the submodules
+	$ git submodule update --init --recursive
+	
 
 Simply downloading source code:
 

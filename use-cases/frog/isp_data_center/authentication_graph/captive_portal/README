@@ -2,7 +2,7 @@ This is a captive portal running in a Docker container.
 
 ###############################################################################
 
-Reqiured libraries:
+Required libraries:
 
 * Docker and LXC
      http://docs.docker.com/installation/
@@ -17,7 +17,7 @@ Reqiured libraries:
      running at localhost:5000)
 
 * Code of the captive portal
-     svn checkout https://netgroup.polito.it/svn/neutronExtension/Mauro/captive_portal/
+     https://github.com/netgroup-polito/vnfs/tree/master/Captive-portal
      
      (This code must then be converted into a WAR file with name root.war, and
      put in this folder)

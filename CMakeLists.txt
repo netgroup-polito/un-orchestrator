@@ -28,7 +28,7 @@ ENDIF()
 
 OPTION(BUILD_ExternalProjects "Build external projects (json-spirit, rofl, ...)" OFF)
 OPTION(BUILD_Orchestrator "Build orchestrator" ON)
-OPTION(BUILD_DBInitializer "Build db_initializer (need if you plan to use authentication on the orchestrator)" OFF)
+OPTION(BUILD_DBManager "Build db_manager (need if you plan to use authentication on the orchestrator)" ON)
 
 include (ExternalProject)
 IF(BUILD_ExternalProjects)
@@ -67,6 +67,6 @@ IF(BUILD_Orchestrator)
 	ADD_SUBDIRECTORY(orchestrator)
 ENDIF(BUILD_Orchestrator)
 
-IF(BUILD_DBInitializer)
-	ADD_SUBDIRECTORY(db_initializer)
-ENDIF(BUILD_DBInitializer)
+IF(BUILD_DBManager)
+	ADD_SUBDIRECTORY(db_manager)
+ENDIF(BUILD_DBManager)
