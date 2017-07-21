@@ -851,7 +851,7 @@ The `host-stack` endpoint is defined as follows:
 	}
 
 Three type of `configuration` are allowed: `static`, `dhcp` and `pppoe`.
-In case of `static` configuration, the IP address and the netmask must be specified through the `ipv4` field.
+In case of `static` configuration, the IP address and the netmask must be specified through the `IPv4` field.
 
 The following example shows a graph with two endpoints of type `host-stack` and `interface` connected together.
 All the incoming traffic from eth0 reachs the tcp-ip stack of the host, if the packets match the host-stack IP.
@@ -869,7 +869,7 @@ Vice versa the traffic sent through the host-stack port is provided to eth0.
 				"type": "host-stack",
 				"host-stack": {
 					"configuration": "STATIC",
-					"ipv4": "10.0.0.1/24"
+					"IPv4": "10.0.0.1/24"
 				}
 			},
 			{
