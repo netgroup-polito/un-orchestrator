@@ -4,3 +4,4 @@ This folder contains some scripts that automatize some annoying operations:
      boot of the UN
   * `cleaner.sh`: remove all the bridges created in OvS and the Docker containers.
      It is usefull in case the un-orchestrator crashes
+  * 'ovs_dump_flows.php' : equal to ovs-ofctl dump-flows but use interface name instead of interface number

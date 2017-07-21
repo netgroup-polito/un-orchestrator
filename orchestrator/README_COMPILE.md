@@ -187,7 +187,7 @@ You can build it from sources using the following commands:
 	; Update the dynamic libraries cache
 	$ sudo ldconfig
 
-WARNING!
+****WARNING!
 If you are using software that consume entropy from the system (reads /dev/random e.g. doubledecker) it's suggested the installation of haveged (inside the host and the guest).
 
 #### QEMU/KVM
