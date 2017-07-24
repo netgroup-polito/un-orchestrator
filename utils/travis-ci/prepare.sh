@@ -8,8 +8,9 @@ cd $HOME
 if [ ! -d "glog" ]; then
 	git clone https://github.com/google/glog
 	cd glog
+	git checkout 4f3e18bf26cdb794fc66cec348f57b5838a0c929
 	./autogen.sh 
-	./configure 
+	./configure
 	make -j2
 else
 	echo "glog exists"

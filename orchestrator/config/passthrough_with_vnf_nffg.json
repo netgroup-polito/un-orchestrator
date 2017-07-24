@@ -1,6 +1,5 @@
 {
   "forwarding-graph": {
-    "id": "00000001",
     "name": "Forwarding graph",
     "VNFs": [
       {
