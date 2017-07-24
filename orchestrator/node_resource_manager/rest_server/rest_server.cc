@@ -163,7 +163,7 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 			return;
 		}
 
-		rc = RAND_bytes(temp, sizeof(temp));
+		rc = RAND_bytes(temp, /*sizeof(temp)*/HASH_SIZE);
 		if (rc != 1) {
 			ULOG_ERR("An error occurred while generating nonce!");
 			response.send(Http::Code::Internal_Server_Error);
@@ -173,10 +173,12 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 		strcpy(tmp, "");
 		strcpy(hash_pwd, "");
 
-		for (int i = 0; i < HASH_SIZE; i++) {
+		int i = 0;
+		for (; i < HASH_SIZE; i++) {
 			sprintf(tmp, "%.2x", temp[i]);
 			strcat(nonce, tmp);
 		}
+		nonce[i] = '\0';
 
 		time_t now = time(0);
 		tm *ltm = localtime(&now);
@@ -194,6 +196,7 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 			.add<Pistache::Http::Header::ContentType>(MIME(Text,Plain));
 			
 		ULOG_INFO("User has been correctly authenticated!");
+		ULOG_DBG_INFO("Token generated: %s", nonce);
 
 		response.send(Http::Code::Ok, nonce);
 		return;
