@@ -13,7 +13,7 @@ using namespace std;
 class XAuthToken : public Header::Header 
 {
 public:
-	NAME("XAuth-Token");
+	NAME("X-Auth-Token");
 	
 	XAuthToken()
 		: token_("")
