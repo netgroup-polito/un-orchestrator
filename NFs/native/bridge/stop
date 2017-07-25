@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#Author: Roberto Bonafiglia
+#
+
+#command line: 
+#	sudo ./start $1 $2 $3 $4 $5
+
+#dependencies: strongswan 
+
+#$1 LSI ID								(e.g., 2)
+#$2 NF name								(e.g., firewall)
+#$3 number_of_ports							(it is supposed to be 2 for this NF)
+#$4 and $5 names of port1 and port2 respectively			(e.g., vEth0 vEth1)
+
+if (( $EUID != 0 )) 
+then
+    echo "[nativeNF_example_start] This script must be executed with ROOT privileges"
+    exit 0
+fi
+
+
+
+namespace_name=$1_$2_ns
+
+brctl delbr br0
+exit 1
