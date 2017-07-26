@@ -50,5 +50,3 @@ notifications:
 branches:
  only:
   - master
-  - new-rest-server
-  - new-rest-api
