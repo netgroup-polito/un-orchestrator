@@ -4,3 +4,5 @@ nffglib.py
 virtualizer3.py
 *~
 orchestrator/virtualizer
+.idea/
+*.project

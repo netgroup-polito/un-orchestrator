@@ -4,13 +4,13 @@
 
 using namespace std;
 
-class Port{
+class TPort{
 private:
 	string portsRange;
 	PortTechnology technology;
 
 public:
-	Port();
+	TPort();
 	void setPortsRange(string portsRange);
 	void setTechnology(PortTechnology technology);
 	string getPortsRange();

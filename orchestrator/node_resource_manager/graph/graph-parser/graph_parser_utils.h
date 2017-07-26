@@ -9,6 +9,8 @@
 #include <exception>
 #include "address_validator.h"
 #include "../../../utils/constants.h"
+#include "../high_level_graph/high_level_graph.h"
+
 using namespace std;
 
 typedef struct
@@ -19,6 +21,13 @@ typedef struct
 	string ttl;
 	bool safe=false;
 } gre_info_t;
+
+typedef struct
+{
+	hoststack_conf_t configuration;
+	string ipAddress;
+	string macAddress;
+} hoststack_info_t;
 
 class GraphParserUtils
 {

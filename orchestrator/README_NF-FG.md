@@ -13,7 +13,6 @@ VNF.
 	{
 		"forwarding-graph": 
 		{
-			"id": "00000001",
 			"name": "Forwarding graph",
 			"end-points": [
 		  	{
@@ -62,7 +61,6 @@ function (`firewall:inout:1`) are sent on the network interface `eth2`.
 	{
 		"forwarding-graph": 
 		{
-			"id": "00000001",
 			"name": "Forwarding graph",
 			"VNFs": [
 		  	{
@@ -147,7 +145,6 @@ Json description of the graph:
 	{
 		"forwarding-graph": 
 		{
-			"id": "00000001",
 			"name": "Forwarding graph",
 			"VNFs": [
 		  	{
@@ -348,7 +345,6 @@ on the network through the physical port `eth1`, without any VLAN tag.
 	{
 		"forwarding-graph": 
 		{
-			"id": "00000001",
 			"name": "Forwarding graph",
 			"VNFs": [
 		  	{
@@ -497,7 +493,6 @@ UN through the physical interface `eth1` and then again tagged with the VLAN ID 
 	{
 		"forwarding-graph": 
 		{
-			"id": "00000001",
 			"name": "Only network graph",
 			"VNFs": [
 		  	{
@@ -637,7 +632,6 @@ leaves the UN again through the `gre-tunnel` endpoint.
  	{
 		"forwarding-graph": 
 		{
-			"id": "00000001",
 			"name": "Only network graph",
 			"VNFs": [
 		  	{
@@ -724,7 +718,6 @@ provided to the `internal` endpoint and vice versa.
 
 	{
 	  "forwarding-graph": {
-	    "id": "myGraph",
 	    "name": "Forwarding graph",
 	    "end-points": [
 	      {
@@ -783,7 +776,6 @@ provided to the `internal` endpoint and vice versa.
 
 	{
 	  "forwarding-graph": {
-	    "id": "00000002",
 	    "name": "Forwarding graph",
 	    "end-points": [
 	      {
@@ -851,7 +843,7 @@ The `host-stack` endpoint is defined as follows:
 	}
 
 Three type of `configuration` are allowed: `static`, `dhcp` and `pppoe`.
-In case of `static` configuration, the IP address and the netmask must be specified through the `ipv4` field.
+In case of `static` configuration, the IP address and the netmask must be specified through the `IPv4` field.
 
 The following example shows a graph with two endpoints of type `host-stack` and `interface` connected together.
 All the incoming traffic from eth0 reachs the tcp-ip stack of the host, if the packets match the host-stack IP.
@@ -860,7 +852,6 @@ Vice versa the traffic sent through the host-stack port is provided to eth0.
 	{
 		"forwarding-graph":
 		{
-			"id": "00000001",
 			"name": "Forwarding graph",
 			"end-points": [
 			{
@@ -869,7 +860,7 @@ Vice versa the traffic sent through the host-stack port is provided to eth0.
 				"type": "host-stack",
 				"host-stack": {
 					"configuration": "STATIC",
-					"ipv4": "10.0.0.1/24"
+					"IPv4": "10.0.0.1/24"
 				}
 			},
 			{
@@ -925,7 +916,6 @@ An example of NF-FG that specifies the coordinates for the elements is the follo
 
 	{
 	  "forwarding-graph": {
-	    "id": "1",
 	    "name": "simple graph",
 	    "end-points": [
 	      {

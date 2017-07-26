@@ -88,7 +88,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate *temp,Object obj)
 			ULOG_DBG("Parsing 'expandable'");
 			temp->setExpandable(value.getBool());
 		}
-		else if(name == "uri")
+		else if(name == "uri-image")
 		{
 			ULOG_DBG("Parsing 'uri'");
 			temp->setURI(value.getString());
@@ -107,7 +107,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate *temp,Object obj)
 			}
 
 		}
-		else if(name == "uri-type"){
+		else if(name == "uri-image-type"){
 			ULOG_DBG("Parsing 'uri-type'");
 			if(stringToUriType(value.getString()) != UNDEFINED_URITYPE){
 				temp->setURIType(stringToUriType(value.getString()));
@@ -157,7 +157,7 @@ void Template_Parser::setTemplateFromJson(NFtemplate *temp,Object obj)
 
 bool Template_Parser::parsePort(NFtemplate* temp, Object obj) {
 	PortTechnology port_technology = UNDEFINED_PORT;
-	Port port;
+	TPort port;
 	for( Object::const_iterator port_el = obj.begin(); port_el != obj.end(); ++port_el ) {
 		const string &pel_name = port_el->first;
 		const Value &pel_value = port_el->second;

@@ -74,7 +74,6 @@ class Dhcp(object):
         self.get_interfaces()
         self.get_dhcp_configuration()
         self.get_interfaces_dict()
-        logging.debug(json.dumps(self.json_instance))
         return self.json_instance
     
     def get_dhcp_configuration(self):
@@ -85,12 +84,16 @@ class Dhcp(object):
         self.json_instance[self.yang_module_name+':'+'server']['globalIpPool'] = self.parse_dhcpd_dot_conf()
         self.json_instance[self.yang_module_name+':'+'server']['clients'] = self.parse_dhcpd_lease()
         with open('/etc/default/isc-dhcp-server', 'r') as isc_dhcp_server_file:
-            interface_lines = isc_dhcp_server_file.readlines() 
-        interfaces = interface_lines[0].split('INTERFACES="')[1].split('"')[0].split(' ')
-        for dhcp_interface in interfaces:
-            for interface in self.interfaces:
-                if interface.name == dhcp_interface:
-                    interface.type = 'dhcp'
+            interface_lines = isc_dhcp_server_file.readlines()
+
+        try:
+            interfaces = interface_lines[0].split('INTERFACES="')[1].split('"')[0].split(' ')
+            for dhcp_interface in interfaces:
+                for interface in self.interfaces:
+                    if interface.name == dhcp_interface:
+                        interface.type = 'dhcp'
+        except Exception:
+            logging.debug("no interface assigned to the DHCP server")
 
     def get_interfaces_dict(self):
         '''

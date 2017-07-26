@@ -13,8 +13,6 @@
 
 #define __STDC_FORMAT_MACROS
 
-#include <microhttpd.h>
-
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>

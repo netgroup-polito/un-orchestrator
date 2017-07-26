@@ -1,0 +1,103 @@
+Index: DoubleDecker-0.4/src/lib/keys.c
+===================================================================
+--- DoubleDecker-0.4.orig/src/lib/keys.c	2017-05-12 14:41:58.000000000 +0200
++++ DoubleDecker-0.4/src/lib/keys.c	2017-05-12 15:43:06.357486038 +0200
+@@ -122,7 +122,7 @@
+             retval = base64_decode_block(
+                 json_object_get_string(val2), json_object_get_string_len(val2),
+                 (char *)ddkeys->publicpubkey, &state_in);
+-            if (retval != 32) {
++            if (retval != 33) {
+               fprintf(stderr, "Error during base64_decode of %s\n", key2);
+               return NULL;
+             }
+@@ -132,7 +132,7 @@
+             retval = base64_decode_block(json_object_get_string(val2),
+                                          json_object_get_string_len(val2),
+                                          (char *)ddkeys->ddpubkey, &state_in);
+-            if (retval != 32) {
++            if (retval != 33) {
+               fprintf(stderr, "Error during base64_decode of %s\n", key2);
+               return NULL;
+             }
+@@ -142,7 +142,7 @@
+             retval = base64_decode_block(json_object_get_string(val2),
+                                          json_object_get_string_len(val2),
+                                          (char *)ddkeys->privkey, &state_in);
+-            if (retval != 32) {
++            if (retval != 33) {
+               fprintf(stderr, "Error during base64_decode of %s\n", key2);
+               return NULL;
+             }
+@@ -152,7 +152,7 @@
+             retval = base64_decode_block(json_object_get_string(val2),
+                                          json_object_get_string_len(val2),
+                                          (char *)ddkeys->pubkey, &state_in);
+-            if (retval != 32) {
++            if (retval != 33) {
+               fprintf(stderr, "Error during base64_decode of %s\n", key2);
+               return NULL;
+             }
+@@ -205,7 +205,7 @@
+         retval = base64_decode_block(json_object_get_string(val2),
+                                      json_object_get_string_len(val2),
+                                      (char *)ddkeys->publicpubkey, &state_in);
+-        if (retval != 32) {
++        if (retval != 33) {
+           fprintf(stderr, "Error during base64_decode of %s\n", key2);
+           return NULL;
+         }
+@@ -215,7 +215,7 @@
+         retval = base64_decode_block(json_object_get_string(val2),
+                                      json_object_get_string_len(val2),
+                                      (char *)ddkeys->ddpubkey, &state_in);
+-        if (retval != 32) {
++        if (retval != 33) {
+           fprintf(stderr, "Error during base64_decode of %s\n", key2);
+           return NULL;
+         }
+@@ -225,7 +225,7 @@
+         retval = base64_decode_block(json_object_get_string(val2),
+                                      json_object_get_string_len(val2),
+                                      (char *)ddkeys->privkey, &state_in);
+-        if (retval != 32) {
++        if (retval != 33) {
+           fprintf(stderr, "Error during base64_decode of %s\n", key2);
+           return NULL;
+         }
+@@ -235,7 +235,7 @@
+         retval = base64_decode_block(json_object_get_string(val2),
+                                      json_object_get_string_len(val2),
+                                      (char *)ddkeys->pubkey, &state_in);
+-        if (retval != 32) {
++        if (retval != 33) {
+           fprintf(stderr, "Error during base64_decode of %s\n", key2);
+           return NULL;
+         }
+@@ -346,7 +346,7 @@
+           retval = base64_decode_block(json_object_get_string(val2),
+                                        json_object_get_string_len(val2),
+                                        (char *)ddkeys->privkey, &state_in);
+-          if (retval != 32) {
++          if (retval != 33) {
+             fprintf(stderr, "Error during base64_decode of %s\n", key2);
+             return NULL;
+           }
+@@ -357,7 +357,7 @@
+           retval = base64_decode_block(json_object_get_string(val2),
+                                        json_object_get_string_len(val2),
+                                        (char *)ddkeys->pubkey, &state_in);
+-          if (retval != 32) {
++          if (retval != 33) {
+             fprintf(stderr, "Error during base64_decode of %s\n", key2);
+             return NULL;
+           }
+@@ -389,7 +389,7 @@
+           retval = base64_decode_block(json_object_get_string(val4),
+                                        json_object_get_string_len(val4), pubkey,
+                                        &state_in);
+-          if (retval != 32) {
++          if (retval != 33) {
+             fprintf(stderr, "Error during base64_decode of %s\n", key4);
+             return NULL;
+           }

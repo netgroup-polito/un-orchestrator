@@ -21,26 +21,7 @@
 #define REST_URL 				"http://localhost"
 #define REQ_SIZE 				2*1024*1024
 
-
-
-/*
-*	Rest methods
-*/
-#define PUT					"PUT"
-#define GET					"GET"
-#define DELETE				"DELETE"
-#define POST				"POST"
-
-/*
-*	HTTP headers
-*/
-#define JSON_C_TYPE				"application/json"
-#define NO_CACHE				"no-cache"
-
-#define TCP			"tcp"
-
 #define FORWARDING_GRAPH	"forwarding-graph"
-	//#define F_ID				"id"
 	#define _NAME				"name"
 	#define F_DESCR				"description"
     #define NODE_CONFIG			"node-config"
@@ -50,6 +31,7 @@
 	#define VNFS 				"VNFs"
 		//#define VNF_NAME			"name"
 		#define	VNF_TEMPLATE		"vnf_template"
+		#define FUNCTIONAL_CAPABILITY "functional-capability"
 		#define UNIFY_CONTROL			"unify-control"
 			#define HOST_PORT			"host-tcp-port"
 			#define VNF_PORT			"vnf-tcp-port"
@@ -86,7 +68,7 @@
 				#define CONF_DHCP	"DHCP"
 				#define CONF_STATIC	"static"
 				#define CONF_PPPOE	"pppoe"
-			#define IP_ADDRESS		"ipv4"
+			#define IP_ADDRESS		"IPv4"
 			#define MAC_ADDRESS		"mac"
 	#define BIG_SWITCH		"big-switch"
 		#define FLOW_RULES		"flow-rules"
@@ -139,7 +121,7 @@
 				#define MPLS_LABEL		"mpls_label"
 				#define MPLS_TC			"mpls_tc"
 				#define ACTIONS			"actions"
-				#define OUTPUT				"output_to_port"
+				#define OUTPUTX				"output_to_port"
 					#define	PORT				"port"
 					//#define	VNF_ID				"id"
 					#define ENDPOINT			"endpoint"
@@ -208,7 +190,6 @@ extern ofp_version_t OFP_VERSION;
 #define PASS				"password"
 #define GROUP				"group"
 #define HASH_SIZE			20
-#define TOKEN_TYPE			"application/token"
 #define DB_NAME				"users.db"
 #define DEFAULT_FILE			"config/default-config.ini"
 

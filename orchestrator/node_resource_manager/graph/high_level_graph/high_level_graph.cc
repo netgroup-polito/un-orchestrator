@@ -405,9 +405,9 @@ Object Graph::toJSON()
 		vnf.push_back(v->toJSON());
 	}
 #ifdef ENABLE_NODE_CONFIG
-    node_configurations.push_back(ncDG.toJSON());
+    if(!ncDG.getId().empty())
+		node_configurations.push_back(ncDG.toJSON());
 #endif
-	forwarding_graph[_ID] = ID;
 	forwarding_graph[_NAME] = name;
 	if(end_points.size() != 0)
 		forwarding_graph[END_POINTS] = end_points;
@@ -618,9 +618,9 @@ Graph *Graph::calculateDiff(Graph *other, string graphID)
 				{
 					ULOG_DBG_INFO("\tUpdate for VNF '%s' is added to the diff graph",(it->getName()).c_str());
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
-					highlevel::VNFs the_vnf(it->getId(), it->getName(), it->getGroups(), it->getVnfTemplate(), ports_needed_by_diff, it->getControlPorts(),it->getEnvironmentVariables());
+					highlevel::VNFs the_vnf(it->getId(), it->getName(), it->getGroups(), it->getVnfTemplate(), it->getFunctionalCapability(), ports_needed_by_diff, it->getControlPorts(),it->getEnvironmentVariables());
 #else
-					highlevel::VNFs the_vnf(it->getId(), it->getName(), it->getGroups(), it->getVnfTemplate(), ports_needed_by_diff);
+					highlevel::VNFs the_vnf(it->getId(), it->getName(), it->getGroups(), it->getVnfTemplate(), it->getFunctionalCapability(), ports_needed_by_diff);
 #endif
 					diff->addVNF(the_vnf);
 				}

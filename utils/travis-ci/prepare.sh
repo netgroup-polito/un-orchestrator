@@ -3,11 +3,27 @@ set -ev	#print every line before executing it and exit if one command fails
 
 BASE=`pwd`
 
+# glog
+cd $HOME
+if [ ! -d "glog" ]; then
+	git clone https://github.com/google/glog
+	cd glog
+	git checkout 4f3e18bf26cdb794fc66cec348f57b5838a0c929
+	./autogen.sh 
+	./configure
+	make -j2
+else
+	echo "glog exists"
+	cd glog
+fi
+
+sudo make install
+
 # rofl
 cd $HOME
 ls
 if [ ! -d "rofl-common/build" ]; then
-	git clone https://github.com/toanju/rofl-common -b fix-ovs
+	git clone https://github.com/bisdn/rofl-common
 	cd rofl-common/
 	./autogen.sh
 	cd build
@@ -16,6 +32,25 @@ if [ ! -d "rofl-common/build" ]; then
 else
 	echo "rofl-common exists"
 	cd rofl-common/build
+fi
+
+sudo make install
+
+# pistache
+cd $HOME
+ls
+if [ ! -d "pistache/build" ]; then
+	git clone https://github.com/oktal/pistache.git
+	cd pistache
+	git submodule update --init
+	mkdir build
+	cd build
+	cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+	make -j2
+	sudo make install
+else
+	echo "pistache exists"
+	cd pistache/build
 fi
 
 sudo make install

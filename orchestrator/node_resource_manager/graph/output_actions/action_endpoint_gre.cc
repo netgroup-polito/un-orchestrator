@@ -56,7 +56,7 @@ string ActionEndpointGre::toString()
 Object ActionEndpointGre::toJSON()
 {
     Object action;
-    action[OUTPUT] = endpointName.c_str();
+    action[OUTPUTX] = endpointName.c_str();
 
     return action;
 }

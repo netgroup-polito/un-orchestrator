@@ -8,87 +8,116 @@ etc.) are detailed in this document.
 ## REST commands accepted by the un-orchestrator
 
 ### NF-FG API
-Deploy an NF-FG called ``myGraph'', according to the graph formalism described in [README_NF-FG.md](README_NF-FG.md):
 
-    PUT /NF-FG/myGraph HTTP/1.1
+#### Deploy a new NF-FG
+
+    POST /NF-FG HTTP/1.1
     Content-Type : application/json
 
+``` json
     {
-		"forwarding-graph": {
+	"forwarding-graph": {
+		"name": "Forwarding graph",
+		"VNFs": [
+		  {
 			"id": "00000001",
-			"name": "Forwarding graph",
-			"VNFs": [
+			"name": "firewall",
+			"ports": [
 			  {
-				"id": "00000001",
-				"name": "firewall",
-				"ports": [
-				  {
-					"id": "inout:0",
-					"name": "data-port"
-				  },
-				  {
-					"id": "inout:1",
-					"name": "data-port"
-				  }
-				]
-			  }
-			],
-			"end-points": [
+				"id": "inout:0",
+				"name": "data-port"
+			  },
 			  {
-				"id": "00000001",
-				"name": "ingress",
-				"type": "interface",
-				"interface": {
-				  "if-name": "eth1"
-				}
+				"id": "inout:1",
+				"name": "data-port"
 			  }
-			],
-			"big-switch": {
-			  "flow-rules": [
+			]
+		  }
+		],
+		"end-points": [
+		  {
+			"id": "00000001",
+			"name": "ingress",
+			"type": "interface",
+			"interface": {
+			  "if-name": "eth1"
+			}
+		  }
+		],
+		"big-switch": {
+		  "flow-rules": [
+			{
+			  "id": "000000001",
+			  "priority": 1,
+			  "match": {
+				"port_in": "endpoint:00000001"
+			  },
+			  "actions": [
 				{
-				  "id": "000000001",
-				  "priority": 1,
-				  "match": {
-					"port_in": "endpoint:00000001"
-				  },
-				  "actions": [
-					{
-					  "output_to_port": "vnf:00000001:inout:0"
-					}
-				  ]
+				  "output_to_port": "vnf:00000001:inout:0"
 				}
 			  ]
 			}
+		  ]
 		}
 	}
+}
+```
+	
+The body of the message is written according to the graph formalism described in [README_NF-FG.md](README_NF-FG.md):	
+	
+This operation will return back the uuid assigned by the un-orchestrator to the NF-FG:
 
-The same message used to create a new graph can be used to update a creaph, i.e., to
+``` json
+    {
+    	"nffg-uuid" : "d3c7f0cf-a9a1-4d5f-a225-d2a1c2b8d866"
+    }
+ ```
+
+#### Update an existing NF-FG
+
+    PUT /NF-FG/nffg-uuid HTTP/1.1
+    Content-Type : application/json
+
+The body of the message is written according to the graph formalism described in [README_NF-FG.md](README_NF-FG.md):	
+
+With this command, you can
 
  * add/remove flow-rules from the big-switch
  * add/remove virtual network functions
  * add/remove ports from virtual network functions already deployed
  * add/remove endpoints (interface, gre-tunnel, vlan, internal)
+ 
+Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
 To update a graph, you have just to send the new version of the graph at the same URL of
 the graph to be updated (e.g., /NF-FG/myGraph); the un-orchestrator will then calculate the
 difference between the new version and that already deployed, and will do all the proper
 operations to update the graph as required.
 
-Retrieve the description of the graph with name "myGraph":
+#### Retrieve the description of an NF-FG:
 
-	GET /NF-FG/myGraph HTTP/1.1
+	GET /NF-FG/nffg-uuid HTTP/1.1
+	
+Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
-Retrieve the information of the status of the graph with name "myGraph":
+#### Retrieve the information of the status of an NF-FG
 
-	GET /NF-FG/status/myGraph HTTP/1.1
+	GET /NF-FG/status/nffg-uuid HTTP/1.1
+	
+Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
-Delete the graph with name "myGraph"
+#### Delete an NF-FG 
 
-	DELETE /NF-FG/myGraph HTTP/1.1
+	DELETE /NF-FG/nffg-uuid HTTP/1.1
+	
+Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
-Retrieve the description of all the graphs
+#### Retrieve the description of all the NF-FG
 
 	GET /NF-FG HTTP/1.1
+	
+Please, note that the `nffg-uuid` in the URL is the same obtained when the NF-FG was deployed,
 
 ### Authentication API
 
@@ -98,10 +127,12 @@ In case this feature is turned on, all the interactions with the UN must start w
     POST /login	HTTP/1.1
     Content-Type : application/json
 
+``` json
     {
         "username":"admin", 
         "password":"admin"
     }
+ ```
     
 If the authentication is successful, this method will return a token in the response.
 
@@ -111,6 +142,8 @@ In this way the UN will know the identity of the user and it will be able to che
 Users and permissions are stored in a local SQLite database.
 
 ### Groups API
+
+**WARNING** currently this API is not supported
 
 Create a new users group called 'myGroup'
 
@@ -126,16 +159,19 @@ Retrieve the information about all the groups
 
 ### Users API
 
+**WARNING** currently this API is not supported
+
 Create a new user called 'myUser', specifing the group the user belongs to
 
     POST /users/myUser	HTTP/1.1
     Content-Type : application/json
-
+``` json
     {
         "password":"sample_pwd",
         "group":"sample_group"
     }
-    
+```
+
 Retrieve the information the users called 'myUser'
 
 	GET /users/myUser HTTP/1.1

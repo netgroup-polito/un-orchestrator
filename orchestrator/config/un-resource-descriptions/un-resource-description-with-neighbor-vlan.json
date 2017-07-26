@@ -1,0 +1,91 @@
+{
+  "netgroup-domain:informations": {
+    "id":"00000003",
+    "name": "universal-node",
+    "management-address": "192.168.0.25:8080",
+    "type": "universal_node",
+    "hardware-informations": {
+      "interfaces": {
+        "interface": [
+         {
+            "index": 1,
+            "name": "of:000028c7ce9f66040/5104",
+            "netgroup-neighbor:neighbors": {
+              "netgroup-neighbor:neighbor": [
+                {
+                  "remote-interface": "of:000028c7ce9f66040/5104",
+                  "domain-name": "openstack-domain",
+                  "neighbor-type": "domain"
+                }
+              ]
+            },
+            "subinterfaces": {
+              "subinterface": [
+                {
+                  "index": 1,
+                  "netgroup-if-capabilities:capabilities": {
+                    "netgroup-if-capabilities:gre": false
+                  },
+                  "netgroup-if-gre:gre": [],
+                  "config": {
+                    "name": "eth1"
+                  }
+                }
+              ]
+            },
+             "openconfig-if-ethernet:ethernet": {
+              "netgroup-vlan:vlans": {
+                "netgroup-vlan:vlans": [
+                  {
+                    "netgroup-vlan:config": {
+                      "netgroup-vlan:vlan-id": 223
+                    },
+                    "netgroup-vlan:vlan-id": 223
+                  }
+                ]
+              }
+            },
+            "config": {
+              "enabled": true
+            }
+          }
+        ]
+      }
+    },
+    "capabilities": {
+      "infrastructural-capabilities": {
+        "infrastructural-capability": [
+          {
+            "name": "x86-64",
+            "type": "cpu_architecture"
+          }
+
+        ]
+      },
+      "functional-capabilities": {
+        "functional-capability": [
+          {
+            "type": "nat",
+            "name": "nat",
+            "ready": true,
+            "template": "nat.json",
+            "family": "Network",
+            "function-specifications": {
+              "function-specification": []
+            }
+          },
+            {
+            "type": "dhcp",
+            "name": "dhcp",
+            "ready": true,
+            "template": "dhcp.json",
+            "family": "Network",
+            "function-specifications": {
+              "function-specification": []
+            }
+          }
+        ]
+      }
+    }
+  }
+}

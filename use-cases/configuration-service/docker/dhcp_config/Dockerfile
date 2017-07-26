@@ -12,14 +12,10 @@ RUN apt-get update && apt-get install -y dnsmasq ssh iptraf
 
 #Prepare the ssh server
 
-RUN mkdir -p /var/run/sshd && \
-	mkdir -p /root/.ssh && \
-	echo 'root:root' | chpasswd
+RUN mkdir -p /var/run/sshd && mkdir -p /root/.ssh && echo 'root:root' | chpasswd
 	
 RUN echo "UseDNS no" >> /etc/ssh/sshd_config
-RUN sed '/PermitRootLogin without-password/d' /etc/ssh/sshd_config > tmp_file && \
-	rm /etc/ssh/sshd_config && \
-	mv tmp_file /etc/ssh/sshd_config
+RUN sed '/PermitRootLogin without-password/d' /etc/ssh/sshd_config > tmp_file && rm /etc/ssh/sshd_config && mv tmp_file /etc/ssh/sshd_config
 
 RUN apt-get install -y isc-dhcp-server
 ADD sysctl.conf /etc/sysctl.conf
@@ -73,6 +69,16 @@ ADD ./configuration_agent configuration_agent
 
 RUN echo "configuration_interface='eth0'" > ./configuration_agent/dhcp_server_config/constants.py
 RUN echo "# Configuration Agent - configuration file \ndealer = 'tcp://10.0.0.2:5555' \nkeyfile = '/etc/doubledecker/a-keys.json' " > ./configuration_agent/constants.py
+
+#########################
+#
+# DATADISK EMULATION
+#
+#########################
+
+RUN mkdir datadisk
+ADD ./metadata datadisk/metadata
+RUN chmod 777 datadisk/metadata
 
 #########################################################################
 #									#

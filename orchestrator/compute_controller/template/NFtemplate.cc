@@ -36,7 +36,7 @@ void NFtemplate::setPlatform(string platform) {
 	this->platformType = platform;
 }
 
-void NFtemplate::addPort(Port port) {
+void NFtemplate::addPort(TPort port) {
 	this->ports.push_back(port);
 }
 
@@ -60,7 +60,7 @@ nf_t NFtemplate::getVnfType() {
 	return this->vnfType;
 }
 
-list<Port>& NFtemplate::getPorts() {
+list<TPort>& NFtemplate::getPorts() {
 	return this->ports;
 }
 

@@ -14,9 +14,9 @@
 {
 	"name": "switch",
 	"functional-capability" : "l2-switch",
-	"uri": "http://localhost:8081/v2/nf_image/1",
+	"uri-image": "http://localhost:8081/v2/nf_image/1",
 	"vnf-type": "virtual-machine-kvm",
-	"uri-type": "remote-file",
+	"uri-image-type": "remote-file",
 	"ports": [
 		{
 			"position": "1-2",
@@ -56,7 +56,7 @@ private:
 	bool expandable;
 	int memorySize;
 	string platformType;
-	list<Port> ports;
+	list<TPort> ports;
 	list<string> requirements;
 	int cores;
 	string id;
@@ -74,8 +74,8 @@ public:
 	void setURI(string uri);
 	string getURI();
 	void setVnfType(nf_t type);
-	void addPort(Port port);
-	list<Port>& getPorts();
+	void addPort(TPort port);
+	list<TPort>& getPorts();
 	void setCores(int cores);
 	int getCores();
 	void setPlatform(string platform);
