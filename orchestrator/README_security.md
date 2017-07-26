@@ -46,5 +46,5 @@ On the other hand, authorization handling is more complex when the user asks to 
 Since creation permissions are related to not existing resources, they cannot be included in the CURRENT_RESOURCES_PERMISSIONS. For this reason, the authorization phase is slightly different in case of creation requests. In particular, the UN executes a lookup in the USER_CREATION_PERMISSION table, which specifies the authorization to create an instance of a generic resource for each user. In case the previous phases are completed successfully, the new resource is created with default permissions, which are related to the generic reosurce it belongs to (see DEFAULT_RESOURCES_PERMISSIONS table).
 
 ## Creating the database and enabling the security in the UN
-The database structure described above is created by the [db_initializer](../db_initializer) module.
+The database structure described above is created by the [db_manager](../db_initializer) module.
 In order to enable the security in the un-orchestrator, you have to edit its configuration file [config/default-config.ini](config/default-config.ini#L16) by setting `user_authentication = true`.
