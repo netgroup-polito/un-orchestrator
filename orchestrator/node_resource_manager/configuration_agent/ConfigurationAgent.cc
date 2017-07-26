@@ -13,6 +13,19 @@ ConfigurationAgent::~ConfigurationAgent()
 
 }
 
+void ConfigurationAgent::on_configurationEvent(char *configuration){
+    ULOG_DBG_INFO("Received: '%s'", configuration);
+    highlevel::Graph *graph = new highlevel::Graph("");
+    Value value;
+    read(configuration, value);
+    NodeConfigurationParser::nodeConfigurationParser(value, *graph);
+    if(!setNodeConfiguration(graph)){
+        ULOG_ERR("An error occurred setting the node configuration");
+        throw ConfigurationAgentException();
+    }
+    //FIXME: the setting received from the DD is not added to the graph
+}
+
 bool ConfigurationAgent::setDefaultGateway(string ipAddress)
 {
     stringstream cmd_set_default_gateway;

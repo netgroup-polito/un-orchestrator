@@ -6,12 +6,9 @@
 #include <sstream>
 #include <stdlib.h>
 #include <fstream>
-#include <signal.h>
 
-#include "../../utils/constants.h"
-#include "../../utils/logger.h"
 #include "../graph/high_level_graph/high_level_graph.h"
-
+#include "../graph/graph-parser/node_configuration_parser.h"
 
 using namespace std;
 
@@ -20,6 +17,11 @@ class ConfigurationAgent {
 public:
     ConfigurationAgent();
     ~ConfigurationAgent();
+
+    /**
+    *	@brief: callback called after a subscription to the topic of configuration of the DoubleDecker
+    */
+    void on_configurationEvent(char *graph);
 
     /**
     *	@brief: set the IP address of the default gateway
@@ -31,6 +33,15 @@ public:
     */
     bool setNodeConfiguration(highlevel::Graph *graph);
 
+};
+
+class ConfigurationAgentException: public std::exception
+{
+public:
+    virtual const char* what() const throw()
+    {
+        return "ConfigurationAgentException";
+    }
 };
 
 

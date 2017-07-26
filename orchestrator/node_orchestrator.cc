@@ -229,7 +229,6 @@ int main(int argc, char *argv[])
 	ResourceManager::publishDescriptionFromFile(Configuration::instance()->getDescriptionFileName());
 #endif
 
-
 	// Ignore all signals but SIGSEGV and SIGINT
 	sigset_t mask;
 	sigfillset(&mask);
@@ -253,7 +252,11 @@ int main(int argc, char *argv[])
 	sigaction(SIGSEGV, &sa, NULL);
 #endif
 	sigaction(SIGINT, &sa, NULL);
-
+  
+#ifdef ENABLE_DOUBLE_DECKER_CONNECTION
+    DoubleDeckerClient::subscribe(UN_CONFIGURATION);
+#endif  
+  
 	printUniversalNodeInfo();
 	ULOG_INFO("The '%s' is started!",MODULE_NAME);
 	ULOG_INFO("Waiting for commands on TCP port \"%d\"",Configuration::instance()->getRestPort());

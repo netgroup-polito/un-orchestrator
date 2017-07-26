@@ -5,12 +5,14 @@ static const char LOG_MODULE_NAME[] = "Double-Decker-Client";
 zactor_t *DoubleDeckerClient::client = NULL;
 bool DoubleDeckerClient::connected = false;
 list<publish_t> DoubleDeckerClient::messages;
+list<subscribe_t> DoubleDeckerClient::topics;
 pthread_mutex_t DoubleDeckerClient::connected_mutex;
 // Store the configuration in the DoubleDeckerClient object
 char *DoubleDeckerClient::clientName;
 char *DoubleDeckerClient::brokerAddress;
 char *DoubleDeckerClient::keyPath;
 bool keep_looping = true;
+ConfigurationAgent DoubleDeckerClient::configurationAgent;
 
 bool DoubleDeckerClient::init(char *_clientName, char *_brokerAddress, char *_keyPath)
 {
@@ -76,6 +78,10 @@ void *DoubleDeckerClient::loop(void *param)
 				//Let's send all the messages stored in the list
 				for(list<publish_t>::iterator m = messages.begin(); m != messages.end(); m++)
 					publish(m->topic,m->message);
+
+                //Let's subscribe on all the topic stored in the list
+                for(list<subscribe_t>::iterator t = topics.begin(); t != topics.end(); t++)
+                    subscribe(t->topic/*, t->scope*/);
 			}
 			else if (streq("discon",event))
 			{
@@ -85,9 +91,16 @@ void *DoubleDeckerClient::loop(void *param)
 			}
 			else if (streq("pub",event))
 			{
-				ULOG_WARN("Received a 'publication' event. This event is ignored");
-				free(event);
-				//TODO: add here a callback that handle the proper event
+                free(event);
+                char *source = zmsg_popstr(msg);
+                char *topic = zmsg_popstr(msg);
+                zmsg_pop(msg);
+                char *message = zmsg_popstr(msg);
+                ULOG_DBG_INFO("Received a 'publication' event on topic '%s'. Message sent from '%s': '%s'", topic, source, message);
+				if (streq(topicToString(UN_CONFIGURATION),topic)){
+                    ULOG_DBG_INFO("Publication on topic of the interest of the configuration agent");
+                    configurationAgent.on_configurationEvent(message);
+                }
 			}
 			else if (streq("data",event))
 			{
@@ -160,16 +173,58 @@ void DoubleDeckerClient::publish(topic_t topic, const char *message)
 	zsock_send(client,"sssb", "publish", topicToString(topic), message,&len, sizeof(len));
 }
 
+void DoubleDeckerClient::subscribe(topic_t topic/*, scope_t scope*/)
+{
+    assert(client != NULL);
+
+    pthread_mutex_lock(&connected_mutex);
+    if(!connected)
+    {
+        subscribe_t subscribe;
+        subscribe.topic=topic;
+        topics.push_back(subscribe);
+        pthread_mutex_unlock(&connected_mutex);
+        return;
+    }
+    pthread_mutex_unlock(&connected_mutex);
+
+    ULOG_INFO("Subscribing on topic '%s'", topicToString(topic));
+
+    zsock_send(client,"sss", "subscribe", topicToString(topic)/*, scopeToString(scope)*/);
+}
+
 char *DoubleDeckerClient::topicToString(topic_t topic)
 {
 	switch(topic)
 	{
 		case FROG_DOMAIN_DESCRIPTION:
 			return "frog:domain-description";
+        case UN_CONFIGURATION:
+            return "un-configuration";
 		default:
 			assert(0 && "This is impossible!");
 			return "";
 	}
+}
+
+char *DoubleDeckerClient::scopeToString(scope_t scope)
+{
+    switch(scope)
+    {
+        case ALL:
+            return "all";
+        case REGION:
+            return "region";
+        case CLUSTER:
+            return "cluster";
+        case NODE:
+            return "node";
+        case NOSCOPE:
+            return "noscope";
+        default:
+            assert(0 && "This is impossible!");
+            return "";
+    }
 }
 /*
 void DoubleDeckerClient::sigalarm_handler(int sig)
