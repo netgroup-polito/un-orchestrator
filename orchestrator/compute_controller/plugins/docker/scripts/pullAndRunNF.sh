@@ -12,7 +12,7 @@
 #$4 NF name				(e.g., firewall)
 #$5 URI type				(e.g., docker-registry)
 #$6 host_dir_to_mount   (it must be an absolute path, e.g., /home/myDir)
-#$7 dst_path            (it can be a relative path, e.g., /datadisk)
+#$7 dst_path            (it must be an absolute path, e.g., /datadisk)
 #$8 number_of_ports			(e.g., 2)
 
 #The next $8 *3 parameters are:
