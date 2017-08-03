@@ -93,8 +93,8 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 	int rc = 0;
 	//struct MHD_Response *response;
 	char username[BUFFER_SIZE], password[BUFFER_SIZE];
-	unsigned char hash_token[HASH_SIZE], temp[BUFFER_SIZE];
-	char hash_pwd[BUFFER_SIZE], nonce[BUFFER_SIZE], timestamp[BUFFER_SIZE], tmp[BUFFER_SIZE], user_tmp[BUFFER_SIZE];
+	unsigned char hash_token[HASH_SIZE+1], temp[HASH_SIZE+1];
+	char hash_pwd[BUFFER_SIZE], nonce[HASH_SIZE+1], timestamp[BUFFER_SIZE], tmp[BUFFER_SIZE], user_tmp[BUFFER_SIZE];
 
 	if (dbmanager == NULL) {
 		ULOG_INFO("Login can be performed only if authentication is enabled through the configuration file");
@@ -123,8 +123,8 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 	}
 
 	try {
-
 		SHA256((const unsigned char*) password, strlen(password), hash_token);
+		hash_token[HASH_SIZE] = '\0';
 
 		strcpy(tmp, "");
 		strcpy(hash_pwd, "");
@@ -139,6 +139,8 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 
 		if(!dbmanager->userExists(user_tmp, hash_pwd)) 
 		{
+			// It is checking whether the user exists or not. Note that it does not use the "plain" password, 
+			// but the sha256 version of the password.
 			ULOG_ERR("Login failed: wrong username or password!");
 			response.send(Http::Code::Unauthorized);
 			return;
@@ -169,6 +171,7 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 			response.send(Http::Code::Internal_Server_Error);
 			return;
 		}
+		tmp[HASH_SIZE] = '\0';
 
 		strcpy(tmp, "");
 		strcpy(hash_pwd, "");
@@ -178,7 +181,7 @@ void RestServer::login(const Rest::Request& request, Http::ResponseWriter respon
 			sprintf(tmp, "%.2x", temp[i]);
 			strcat(nonce, tmp);
 		}
-		nonce[i] = '\0';
+		nonce[HASH_SIZE] = '\0';
 
 		time_t now = time(0);
 		tm *ltm = localtime(&now);
@@ -390,7 +393,6 @@ void RestServer::newGraph(const Rest::Request& request, Http::ResponseWriter res
 	{
 		boost::uuids::uuid uuid = boost::uuids::random_generator()();
 		gID = boost::lexical_cast<std::string>(uuid);
-		ULOG_DBG_INFO("The graph will be associated with the UUID: %s", gID.c_str());
 	}while(gm->graphExists(gID.c_str()));
 
 	//Authenticate the user, if needed
@@ -420,6 +422,8 @@ void RestServer::newGraph(const Rest::Request& request, Http::ResponseWriter res
 		
 		
 	}
+
+	ULOG_DBG_INFO("The graph will be associated with the UUID: %s", gID.c_str());
 
 	//TODO check other headers?
 
