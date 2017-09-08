@@ -1067,7 +1067,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
                         	}
                         }
                         catch(const std::exception &e){
-                            ULOG_DBG_INFO("Non dovrei essere qui");
+                            ULOG_DBG_INFO("I should not be here");
                             ULOG_WARN("Trying to retrieve file: %s...Error! Exception: %s", filename.c_str(), e.what());
                             throw;
                         }
