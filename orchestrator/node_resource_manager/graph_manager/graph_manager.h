@@ -1,8 +1,6 @@
 #ifndef GRAPH_MANAGER_H_
 #define GRAPH_MANAGER_H_ 1
 
-#define DIR_TO_SAVE_VNF_FILE "vnfFileTmp"
-
 #pragma once
 
 #include "graph_info.h"
@@ -58,8 +56,10 @@ typedef struct
 		list<port_mapping_t > controlConfiguration;
 		list<string> environmentVariables;
 #endif
-        string dir_to_mount;
-        string dst_path;
+#ifdef ENABLE_NFs_CONFIGURATION
+		string dir_to_mount;
+        string datadisk_dst_path;
+#endif
 	}to_thread_t;
 
 class GraphManager

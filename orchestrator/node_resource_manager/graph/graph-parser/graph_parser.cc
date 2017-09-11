@@ -270,6 +270,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								Object network_function = vnfs_array[vnf].getObject();
 
 								bool foundName = false;
+								bool foundFunctionalCapability = false;
 
 								string id, name, vnf_template, functional_capability, port_id, port_name;
 								list<string> groups;
@@ -305,6 +306,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									else if(nf_name == FUNCTIONAL_CAPABILITY)
 									{
 										ULOG_DBG("\"%s\"->\"%s\": \"%s\"",VNFS,FUNCTIONAL_CAPABILITY,nf_value.getString().c_str());
+										foundFunctionalCapability = true;
 										functional_capability = nf_value.getString();
 									}
 									else if(nf_name == _ID)
@@ -655,6 +657,11 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									string error = string("Key ") + _NAME + " not found in an element of " + VNFS;
 									ULOG_WARN(error.c_str());
 									throw new GraphParserException(std::move(error));
+								}
+								if(!foundFunctionalCapability){
+									string error = string("Functional capability not found in a VNF of ") + VNFS;
+									ULOG_WARN(error.c_str());
+									functional_capability = "";
 								}
 
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION

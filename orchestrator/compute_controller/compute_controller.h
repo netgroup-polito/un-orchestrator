@@ -54,8 +54,9 @@ using namespace web::http::client;
 
 #define VNF_REPOSITORY_TEMPLATE_URL    "/v2/nf_template/"
 #define VNF_REPOSITORY_TEMPLATES_URL   "/v2/nf_capability/"
-#define CONFIG_SERVICE_FILELIST_URL    "/config/files/"
-#define CONFIG_SERVICE_FILE_URL        "/config/files/"
+#define CONFIG_ORCH_FILELIST_URL    "/config/files/"
+#define CONFIG_ORCH_FILE_URL        "/config/files/"
+#define CONFIG_ORCH_FILE_DEFAULT_URL        "/config/files/"
 #define CODE_POSITION				    9
 #define CODE_METHOD_NOT_ALLLOWED	    "405"
 #define CODE_HTTP_NOT_FOUND	    			"404"
@@ -156,13 +157,19 @@ public:
 	*   have to be mounted into the datadisk. It returns an empty list if the VNF
 	*   not requires any file.
 	*/
-    list<string> retrieveFileList(string tenant_id, string graph_id, string vnf_id);
+    list<string> retrieveFileList(string nf_functional_capability);
 
     /**
 	*	@brief: Retrieve, from the configuration service, the specified file and returns
 	*   the full path where is saved.
 	*/
     string retrieveFile(string tenant_id, string graph_id, string vnf_id, string filename, string dst_path);
+
+	/**
+	*	@brief: Retrieve, from the configuration service, the specified file and returns
+	*   the full path where is saved.
+	*/
+	string retrieveFileDefault(string nf_functional_capability, string filename, string dst_path);
 
 	/**
 	*	@brief: Retrieve, from the Vnf Repository, the informations for a specific NF
@@ -225,13 +232,15 @@ public:
 	*	@param: controlConfiguration	Control ports configuration (host TCP port, VNF TCP port)
 	*	@param: environmentVariables	Environment variables to be set to the VNF
 	*   @param: dir_to_mount            host directory to mount into the NF as datadisk
-	*   @param: dst_path                path where the datadisk has to be mounted into the NF
+	*   @param: datadisk_dst_path       path where the datadisk has to be mounted into the NF
 	*/
 	bool startNF(string nf_id, map<unsigned int, string> namesOfPortsOnTheSwitch, map<unsigned int, port_network_config_t > portsConfiguration
 #ifdef ENABLE_UNIFY_PORTS_CONFIGURATION
 		, list<port_mapping_t > controlConfiguration, list<string> environmentVariables
 #endif
-        ,string dir_to_mount, string dst_path
+#ifdef ENABLE_NFs_CONFIGURATION
+        ,string dir_to_mount, string datadisk_dst_path
+#endif
 		);
 	
 	/**

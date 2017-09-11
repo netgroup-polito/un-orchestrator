@@ -216,4 +216,12 @@ extern ofp_version_t OFP_VERSION;
 //graph with rules for control in band
 #define IN_BAND_GRAPH 		"IN-BAND-GRAPH"
 
+#ifdef ENABLE_NFs_CONFIGURATION
+	/*
+	*	NFs Configuration
+	*/
+	#define DIR_TO_SAVE_NF_FILE "nfFilesListTmp"
+	#define DATADISK_DESTINATION_PATH "/datadisk"
+#endif
+
 #endif //CONSTANTS_H_
