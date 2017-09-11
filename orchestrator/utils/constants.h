@@ -21,6 +21,30 @@
 #define REST_URL 				"http://localhost"
 #define REQ_SIZE 				2*1024*1024
 
+#if 0
+<<<<<<< HEAD
+=======
+
+
+/*
+*	Rest methods
+*/
+#define _PUT				"PUT"
+#define _GET				"GET"
+#define _DELETE				"DELETE"
+#define _POST				"POST"
+
+/*
+*	HTTP headers
+*/
+#define JSON_C_TYPE				"application/json"
+#define NO_CACHE				"no-cache"
+
+#define TCP			"tcp"
+
+>>>>>>> renamed http methods constants because they were in conflict with the library cpprest
+#endif
+
 #define FORWARDING_GRAPH	"forwarding-graph"
 	#define _NAME				"name"
 	#define F_DESCR				"description"

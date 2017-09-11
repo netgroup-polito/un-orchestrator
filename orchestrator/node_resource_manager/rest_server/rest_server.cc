@@ -1116,7 +1116,6 @@ bool RestServer::parseUserCreationForm(Value value, char **pwd, char **group)
 	return true;
 }
 
-
 //TODO: remove this method and put the code in the caller
 void RestServer::parsePutBody(string content, highlevel::Graph &graph, bool newGraph) 
 {
@@ -1125,7 +1124,6 @@ void RestServer::parsePutBody(string content, highlevel::Graph &graph, bool newG
 	GraphParser::parseGraph(value, graph, newGraph, gm);
 	return;
 }
-
 
 /******************************************/
 
@@ -1145,7 +1143,7 @@ int RestServer::readMultipleGroups(struct MHD_Connection *connection, user_info_
 		ULOG_INFO("The generic resource %s does not exist in the local database", BASE_URL_GROUP);
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Allow", PUT);
+		MHD_add_response_header(response, "Allow", _PUT);
 		ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED,
 				response);
 		MHD_destroy_response(response);
@@ -1201,7 +1199,7 @@ int RestServer::readMultipleUsers(struct MHD_Connection *connection, user_info_t
 		ULOG_INFO("The generic resource %s does not exist in the local database", BASE_URL_GRAPH);
 		response = MHD_create_response_from_buffer(0, (void*) "",
 				MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header(response, "Allow", PUT);
+		MHD_add_response_header(response, "Allow", _PUT);
 		ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED,
 				response);
 		MHD_destroy_response(response);
@@ -1283,8 +1281,6 @@ int RestServer::createGroup(struct MHD_Connection *connection, struct connection
 	return ret;
 }
 
-
-
 int RestServer::deleteGroup(struct MHD_Connection *connection, char *group) {
 	assert(dbmanager != NULL);
 
@@ -1297,7 +1293,7 @@ int RestServer::deleteGroup(struct MHD_Connection *connection, char *group) {
 	if(!dbmanager->resourceExists(BASE_URL_GROUP, group)) {
 		ULOG_INFO("Cannot delete a non-existing group in the database!");
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header (response, "Allow", PUT);
+		MHD_add_response_header (response, "Allow", _PUT);
 		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
 		MHD_destroy_response (response);
 		return ret;
@@ -1324,7 +1320,7 @@ int RestServer::deleteUser(struct MHD_Connection *connection, char *username) {
 	if(dbmanager != NULL && !dbmanager->resourceExists(BASE_URL_USER, username)) {
 		ULOG_INFO("Cannot delete a non-existing user in the database!");
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
-		MHD_add_response_header (response, "Allow", PUT);
+		MHD_add_response_header (response, "Allow", _PUT);
 		ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
 		MHD_destroy_response (response);
 		return ret;
