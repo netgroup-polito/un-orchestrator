@@ -302,6 +302,8 @@ SET(SOURCES1
 	network_controller/switch_manager/addEndpointGre_out.h
 	network_controller/switch_manager/addEndpointHoststack_in.h
 	network_controller/switch_manager/addEndpointHoststack_out.h
+	network_controller/switch_manager/addLinkToL3Port_in.h
+	network_controller/switch_manager/addLinkToL3Port_out.h
 	network_controller/switch_manager/createLSIout.h
 	network_controller/switch_manager/destroyNFports_in.h
 	network_controller/switch_manager/destroyVirtualLink_in.h
@@ -309,6 +311,9 @@ SET(SOURCES1
 
 	network_controller/openflow_controller/controller.h
 	network_controller/openflow_controller/controller.cc
+
+	network_controller/L3port_manager/L3PortManager.h
+	network_controller/L3port_manager/L3PortManager.cc
 
 	compute_controller/nfs_manager.h
 	compute_controller/nfs_manager.cc
@@ -466,7 +471,7 @@ IF(ENABLE_RESOURCE_MANAGER)
 ELSE()
 	SET(SOURCES8
 		${SOURCES7}
-    )
+			network_controller/L3port_manager/L3PortManager.cc network_controller/L3port_manager/L3PortManager.h network_controller/L3port_manager/CreateNamespacePPPoE.h network_controller/switch_manager/addLinkToL3Port_out.h network_controller/switch_manager/addLinkToL3Port_in.h node_resource_manager/graph_manager/link_to_l3_port.cc node_resource_manager/graph_manager/link_to_l3_port.h)
 ENDIF(ENABLE_RESOURCE_MANAGER)
 
 INCLUDE_DIRECTORIES (

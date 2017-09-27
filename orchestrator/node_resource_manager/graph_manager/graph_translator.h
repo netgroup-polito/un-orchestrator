@@ -140,22 +140,22 @@ protected:
 
 	static void handleMatchOnPortLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
 									  highlevel::Action *action, uint64_t priority,
-									  map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+									  map<string, unsigned int> &ports_lsi0, map<string, unsigned int> &ports_toL3, vector<VLink> &tenantVirtualLinks,
 									  lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections);
 
 	static void handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
 									  highlevel::Action *action, uint64_t priority,
-									  map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+									  map<string, unsigned int> &ports_lsi0, map<string, unsigned int> &ports_toL3, vector<VLink> &tenantVirtualLinks,
 									  lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections);
 
 	static void handleMatchOnEndpointInternalLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
 											 highlevel::Action *action, uint64_t priority,
-											 map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+											 map<string, unsigned int> &ports_lsi0, map<string, unsigned int> &ports_toL3, vector<VLink> &tenantVirtualLinks,
 											 lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections);
 
 	static void handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
 												  highlevel::Action *action, uint64_t priority,
-												  map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+												  map<string, unsigned int> &ports_lsi0, map<string, unsigned int> &ports_toL3, vector<VLink> &tenantVirtualLinks,
 												  lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections);
 
 	static void handleMatchOnPortLSITenant(highlevel::Graph *graph, LSI *tenantLSI, string ruleID,
@@ -172,7 +172,7 @@ protected:
 
 	static void handleMatchOnEndpointHoststackLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
 												   highlevel::Action *action, uint64_t priority,
-												   map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+												   map<string, unsigned int> &ports_lsi0, map<string, unsigned int> &ports_toL3, vector<VLink> &tenantVirtualLinks,
 												   lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections);
 
 	static void handleMatchOnEndpointHoststackLSITenant(highlevel::Graph *graph, LSI *tenantLSI, string ruleID,

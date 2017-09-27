@@ -26,7 +26,7 @@ friend class GraphParser;
 
 protected:
 
-	static void parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string > &internal_id, map<string,pair<string,string> > &vlan_id, map<string,gre_info_t> &gre_id, map<string,hoststack_info_t> &hoststack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses);
+	static void parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &ifL3_id, map<string,string > &internal_id, map<string,pair<string,string> > &vlan_id, map<string,gre_info_t> &gre_id, map<string,hoststack_info_t> &hoststack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses);
 
 };
 

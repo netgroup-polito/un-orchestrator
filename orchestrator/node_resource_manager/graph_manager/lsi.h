@@ -4,6 +4,7 @@
 #pragma once
 
 #include "virtual_link.h"
+#include "link_to_l3_port.h"
 #include "../../compute_controller/description.h"
 #include "../graph/high_level_graph/high_level_graph_endpoint_gre.h"
 #include "../graph/high_level_graph/high_level_graph_endpoint_hostStack.h"
@@ -154,6 +155,16 @@ private:
 	*/
 	map<string,string> hoststack_endpoints_port_name;
 
+	/**
+    *	@brief: list of links to L3 port connected to the LSI
+    */
+    list<LinkToL3Port> links_toL3Port;
+
+    /**
+    *	@brief: the map is <L3 port name, link id>
+    */
+    map<string, unsigned int> linksToL3Port_ports;
+
 public:
 
 	LSI(string controllerAddress, unsigned controllerPort, set<string> physical_ports, list<highlevel::VNFs> network_functions,
@@ -192,6 +203,9 @@ public:
 	map<string, uint64_t> getEndPointsGreVlinks();
 	map<string, uint64_t> getEndPointsHoststackVlinks();
 
+    list<LinkToL3Port> getLinksToL3Port();
+    map<string,unsigned int> getPortOfLinkToL3Port();
+
 	//FIXME: public is not a good choice
 	void setNFsVLinks(map<string, uint64_t> nfs_vlinks);
 	void addNFvlink(string NF, uint64_t vlinkID);
@@ -223,6 +237,9 @@ protected:
 
 	int addVlink(VLink vlink);
 	void removeVlink(uint64_t ID);
+
+    void addPortOfLinkToL3Port(string port_name, unsigned int id);
+    void addLinkToL3Port(LinkToL3Port l3p);
 
 	bool addNF(string id, list< unsigned int> ports, const map<unsigned int, PortTechnology>& nf_ports_type);
 	void removeNF(string nf_id);

@@ -15,7 +15,7 @@ uint64_t dnumber = 1;
 
 //gnumber: progressive number assigned to gre ports
 //hsnumber: progressive number assigned to hoststack ports
-int pnumber = 1, nfnumber = 0, gnumber = 1, hsnumber=0;
+int pnumber = 1, nfnumber = 0, gnumber = 1, hsnumber=0, l3number=0;
 
 /* Transaction ID */
 static int tid = 0;
@@ -36,6 +36,10 @@ map<uint64_t, list<string> > hoststack_endpoint_l;
 map<uint64_t, map<string, string> > gre_endpoints_name;
 // switch id, (hoststack EP ID - name on switch)
 map<uint64_t, map<string, string> > hoststackPortsName;
+// switch id, (L3port ID - name on switch)
+map<uint64_t, map<string, string> > L3PortName;
+/*switch id, L3 port (ID)*/
+map<uint64_t, list<string> > L3port_l;
 /*switch id, list of virtual link name*/
 map<uint64_t, list<string> > vport_l;
 /*switch id, list of ports uuid*/
@@ -165,6 +169,8 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 	map<string,unsigned int> physical_ports;
 	//map [hoststack EP ID - openflow ID]
 	map<string,unsigned int> hoststack_endpoints_ports;
+    //map [L3 port ID - openflow ID]
+    map<string,unsigned int> L3_port;
 	map<string,map<string, unsigned int> >  network_functions_ports;
 	map<string,unsigned int >  gre_endpoints_ports;
 	list<pair<unsigned int, unsigned int> > virtual_links;
@@ -436,7 +442,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 	if(physicalPortsName.size() !=0){
 		for(list<string>::iterator p = physicalPortsName.begin(); p != physicalPortsName.end(); p++)
 		{
-			add_port((*p), dnumber, false, s);
+			add_port((*p), dnumber, false, false, s);
 
 			port_l[dnumber].push_back((*p).c_str());
 			physical_ports[(*p)] = rnumber-1;
@@ -452,7 +458,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 
 			ULOG_DBG_INFO("Hoststack Endpoint -> id: %s - nameOnSwitch: %s",(*p).c_str(), port_name);
 
-			add_port(port_name, dnumber, false, s);
+			add_port(port_name, dnumber, false, false, s);
 
 			hoststack_endpoints_ports[(*p)] = rnumber-1;
 
@@ -477,7 +483,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli, int s)
 
 			/*for each network function port in the list of nfs_ports*/
 			for(list<struct nf_port_info>::iterator nfp = nfs_ports.begin(); nfp != nfs_ports.end(); nfp++){
-				string name_on_switch = add_port(nfp->port_name, dnumber, true, s, nfp->port_technology);
+				string name_on_switch = add_port(nfp->port_name, dnumber, true, false, s, nfp->port_technology);
 
 				port2.push_back("named-uuid");
 
@@ -685,7 +691,7 @@ string find_free_dpdkr()
 }
 #endif
 
-string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, PortTechnology port_technology)
+string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, bool is_L3_port, int s, PortTechnology port_technology)
 {
 	int r = 0;
 	ssize_t nwritten;
@@ -719,7 +725,7 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 
 	//Create the current name of a interface
 	sprintf(ifac, "iface%d", rnumber);
-	if (!is_nf_port) {
+	if (!is_nf_port || is_L3_port) { //not sure the second condition is necessary now
 		uuid_name = p;
 		/**
 		* Build name that is valid as UUID: no '.', no '_' ...
@@ -816,7 +822,31 @@ string commands::add_port(string p, uint64_t dnumber, bool is_nf_port, int s, Po
 			break;
 		}
 	}
-	else { // External ports
+	else if (is_L3_port)
+    {
+        //a veth pair needs to be created
+        stringstream p_name;
+        p_name << port_name;
+        stringstream peer_port_name;
+        peer_port_name << port_name << ".d";
+        stringstream cmd_create_veth_pair;
+        cmd_create_veth_pair << getenv("un_script_path") << CREATE_VETH_PAIR << " " << p_name.str() << " " << peer_port_name.str();
+        ULOG_DBG_INFO("Executing command \"%s\"", cmd_create_veth_pair.str().c_str());
+
+        int retVal = system(cmd_create_veth_pair.str().c_str());
+        retVal = retVal >> 8;
+        if(retVal == 0) {
+            ULOG_WARN("Failed to create 'veth' port");
+            throw OVSDBManagerException();
+        }
+
+        //the veth pair peer we add to OVS is the one with the name: port_name.graphID
+        peersNames[p_name.str()] = peer_port_name.str();
+
+        port_name = p_name.str();
+        port_name_on_switch = p_name.str();
+    }
+    else { // External ports
 		if (p.compare(0, 4, "dpdk") == 0)
 			row["type"] = "dpdk";
 		else if (p.compare(0, 6, "hsport") == 0)
@@ -1574,6 +1604,42 @@ void commands::cmd_editconfig_lsi_delete(uint64_t dpi, int s)
 #endif
 }
 
+AddLinkToL3PortOut *commands::cmd_addLinkToL3Port(AddLinkToL3PortIn al3i, int s)
+{
+	AddLinkToL3PortOut *al3o = NULL;
+
+    //map [L3 port ID - openflow ID]
+    map<string,unsigned int> L3_port;
+    /*L3 port name on the switch*/
+    string L3port_name_on_switch;
+    /*peer of the L3 port name on the switch*/
+    string L3port_name_on_switch_peer;
+
+	string L3portName = "L3." + al3i.getGraphID();
+    uint64_t dpid0 = al3i.getDpid0();
+
+    if(L3portName!="")
+    {
+        map<string, unsigned int> port_name_and_id;
+        map<string,unsigned int> n_port_1;
+
+        L3port_name_on_switch = add_port(L3portName, dpid0, false, true, s);
+
+        L3_port[L3portName] = rnumber-1;
+
+        L3PortName[dpid0][L3portName] = L3port_name_on_switch;
+
+        L3port_name_on_switch_peer = peersNames[L3port_name_on_switch];
+        L3port_l[dpid0].push_back(L3portName);
+
+        ULOG_DBG_INFO("L3 port ID and name on the switch: %u - %s", L3_port[L3portName], L3PortName[dpid0][L3portName].c_str());
+        ULOG_DBG_INFO("port name on LSI: %s",L3port_name_on_switch.c_str());
+    }
+
+    al3o = new AddLinkToL3PortOut(L3port_name_on_switch, rnumber-1, L3port_name_on_switch_peer);
+	return al3o;
+}
+
 AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi, int socketNumber)
 {
 	list<struct nf_port_info> portInfo = anpi.getNetworkFunctionsPorts();//each element of portInfo contains the port name and the port type
@@ -1585,7 +1651,7 @@ AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi, int socketNum
 
 	for(list<struct nf_port_info>::iterator pinfo = portInfo.begin(); pinfo != portInfo.end(); pinfo++)
 	{
-		string nameOnSwitch = add_port(pinfo->port_name, datapathNumber, true, socketNumber, pinfo->port_technology);
+		string nameOnSwitch = add_port(pinfo->port_name, datapathNumber, true, false, socketNumber, pinfo->port_technology);
 		ports_name_on_switch.push_back(nameOnSwitch);
 		ports[pinfo->port_name] = rnumber - 1;
 		port_names_and_id[nameOnSwitch] = rnumber - 1;
@@ -1644,7 +1710,7 @@ AddEndpointHoststackOut *commands::cmd_editconfig_hoststack_endpoint(AddEndpoint
 
 	ULOG_DBG_INFO("Hoststack Endpoint -> id: %s - nameOnSwitch: %s",aepi.getEpId().c_str(), port_name);
 
-	add_port(port_name, aepi.getDpid(), false, s);
+	add_port(port_name, aepi.getDpid(), false, false, s);
 
 	//hoststackPortsName[(*p)] = port_name;
 

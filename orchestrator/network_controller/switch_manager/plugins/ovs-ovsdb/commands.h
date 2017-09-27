@@ -220,7 +220,7 @@ public:
 	/**
 	 * Add a port to the LSI identifed by dnumber. Returns the port name on as known on the switch.
 	 */
-	string add_port(string p, uint64_t dnumber, bool is_nf_port, int s, PortTechnology port_technology = UNDEFINED_PORT);
+	string add_port(string p, uint64_t dnumber, bool is_nf_port, bool is_L3_port, int s, PortTechnology port_technology = UNDEFINED_PORT);
 
 	/*
 	*	Example of command to create a new GRE PORT
@@ -426,6 +426,8 @@ public:
 	AddEndpointHoststackOut* cmd_editconfig_hoststack_endpoint(AddEndpointHoststackIn aepi, int s);
 
 	AddVirtualLinkOut *cmd_addVirtualLink(AddVirtualLinkIn avli, int s);
+
+	AddLinkToL3PortOut *cmd_addLinkToL3Port(AddLinkToL3PortIn al3i, int s);
 
 	/*
 	*	Example of command to create a new PATCH PORT

@@ -16,6 +16,8 @@
 #include "addEndpointGre_out.h"
 #include "addEndpointHoststack_in.h"
 #include "addEndpointHoststack_out.h"
+#include "addLinkToL3Port_out.h"
+#include "addLinkToL3Port_in.h"
 #include "destroyEndpoint_in.h"
 #include "destroyHoststackEndpoint_in.h"
 
@@ -63,6 +65,14 @@ public:
 	*/
 	virtual AddEndpointHoststackOut *addHoststackEndpoint(AddEndpointHoststackIn aepi) = 0;
 #endif
+
+	/**
+	*	@brief: Connect together LSI-0 and the helper namespace
+	*
+	*	@param: al3i	Description of the connection to be created
+	*	@return:		Information on the connection created
+	*/
+	virtual AddLinkToL3PortOut *addLinkToL3Port(AddLinkToL3PortIn al3i) = 0;
 
 	/**
 	*	@brief: Connect together two lsis

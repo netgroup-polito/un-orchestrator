@@ -14,6 +14,7 @@
 #include "../graph/high_level_graph/high_level_graph_endpoint_interface.h"
 #include "../graph/high_level_graph/high_level_graph_vnf.h"
 #include "../interface_manager/InterfaceManager.h"
+#include "../../network_controller/L3port_manager/L3PortManager.h"
 
 #ifdef ENABLE_NODE_CONFIG
 	#include "../configuration_agent/ConfigurationAgent.h"
@@ -122,7 +123,10 @@ private:
 	*	The module that interacts with the virtual switch
 	*/
 	SWITCH_MANAGER_IMPLEMENTATION switchManager;
-
+    /**
+	*	The module that configure some structures necessary to PPPoE communication
+	*/
+	L3PortManager L3Port_Manager;
 	
 	/**
 	*	@brief: identify the virtual links required to implement the graph: each action
@@ -186,6 +190,12 @@ private:
 	*			- update the LSI representing such an endpoint, if the LSI already exists
 	*/
 	void handleGraphForInternalEndpoint(highlevel::Graph *graph);
+
+	/**
+	*	@brief: for each graph, this function:
+	*			- create an new link that connect the LSI-0 to the namespace necessary for PPPoE connection
+	*/
+	void handleGraphForLinkToL3Port(highlevel::Graph *graph);
 
 	/**
 	*	@brief: add a new piece to an existing graph with
@@ -272,7 +282,10 @@ public:
 	void removeUselessVlinks(RuleRemovedInfo rri, highlevel::Graph *graph, LSI *lsi);
 
 	void getGraphsNames(std::list<std::string> *l);
-	
+
+    //Return the L3 port name
+    string getL3port();
+
 	//Returns the ip address + port of the vnf repository
 	string getVnfRepoEndpoint();
 

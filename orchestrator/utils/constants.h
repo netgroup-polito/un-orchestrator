@@ -144,6 +144,9 @@
 		#define Y_POSITION	"y"
 
 
+#define L2_PORT_TYPE "L2_PORT"
+#define L3_PORT_TYPE "L3_PORT"
+
 /*
 *	Misc
 */

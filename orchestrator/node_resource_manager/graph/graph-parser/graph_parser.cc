@@ -5,8 +5,10 @@ static const char LOG_MODULE_NAME[] = "Graph-Parser";
 
 void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph, GraphManager *gm)
 {
-	//for each endpoint (interface), contains the id
+	//for each endpoint L2 (interface), contains the id
 	map<string, string> iface_id;
+    //for each endpoint L3 (interface), contains the id
+    map<string, string> ifL3_id;
 	//for each endpoint (internal), contains the internal-group id
 	map<string, string > internal_id;
 	//for each endpoint (gre), contains the gre informations (local-ip, remote-ip ..)
@@ -62,7 +64,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 				}
 				for(Object::const_iterator fg = forwarding_graph.begin(); fg != forwarding_graph.end(); fg++)
 				{
-					bool e_if = false, e_vlan = false, e_internal = false, e_gre=false, e_hs=false;
+					bool e_if = false, e_if3 = false, e_vlan = false, e_internal = false, e_gre=false, e_hs=false;
 #ifdef ENABLE_NODE_CONFIG
                     bool nc_dg = false;
                     string dgIP;
@@ -801,8 +803,19 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 												ULOG_DBG("\"%s\"->\"%s\": \"%s\"",EP_IFACE,IF_NAME,epi_value.getString().c_str());
 
 												interface = epi_value.getString();
-												iface_id[id] = epi_value.getString();
-												ULOG_DBG("\"%s\"->\"%s\"",id.c_str(), iface_id[id].c_str());
+
+                                                if(interface == gm->getL3port())
+                                                {
+                                                  ifL3_id[id] = "L3." + graph.getID();
+                                                  e_if=false;
+                                                  e_if3 = true;
+                                                  ULOG_DBG_INFO("\"%s\"->\"%s\"",id.c_str(), ifL3_id[id].c_str());
+                                                }
+                                                else
+                                                {
+                                                    iface_id[id] = epi_value.getString();
+                                                    ULOG_DBG("\"%s\"->\"%s\"",id.c_str(), iface_id[id].c_str());
+                                                }
 											}
 											else
 											{
@@ -1100,16 +1113,22 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 								}//End of iteration on the elements of an endpoint
 
 								//add interface end-points
-								if(e_if)
-								{
-									//FIXME: are we sure that "interface" has been specified?
-									highlevel::EndPointInterface ep_if(id, e_name, interface);
-									if(endpointPosition!=NULL)
-										ep_if.setPosition(endpointPosition);
-									graph.addEndPointInterface(ep_if);
-									e_if = false;
-								}
-								//add internal end-points
+								if(e_if) {
+                                    //FIXME: are we sure that "interface" has been specified?
+                                    highlevel::EndPointInterface ep_if(id, e_name, interface, L2_PORT_TYPE);
+                                    if (endpointPosition != NULL)
+                                        ep_if.setPosition(endpointPosition);
+                                    graph.addEndPointInterface(ep_if);
+                                    e_if = false;
+                                }
+                                //add L3 end-point
+                                else if(e_if3)
+                                {
+                                    highlevel::EndPointInterface ep_if3(id, e_name, interface, L3_PORT_TYPE);
+                                    graph.addEndPointInterface(ep_if3);
+                                    e_if3 = false;
+                                }
+                                //add internal end-points
 								else if(e_internal)
 								{
 									highlevel::EndPointInternal ep_internal(id, e_name, in_group);
@@ -1252,7 +1271,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 									{
 										try{
 											foundMatch = true;
-											MatchParser::parseMatch(fr_value.getObject(),match,(*action),iface_id,internal_id,vlan_id,gre_id,hoststack_id,trusted_ports,trusted_ports_mac_addresses);
+											MatchParser::parseMatch(fr_value.getObject(),match,(*action),iface_id,ifL3_id,internal_id,vlan_id,gre_id,hoststack_id,trusted_ports,trusted_ports_mac_addresses);
 										} catch(std::exception& e)
 										{
 											string error = string("The ") + MATCH + " element does not respect the JSON syntax: " + e.what();
@@ -1401,7 +1420,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 														{
 															//This is an output action referred to an endpoint
 
-															bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false, hostStack_found=false;
+															bool iface_found = false, ifL3_found = false, internal_found = false, vlan_found = false, gre_found=false, hostStack_found=false;
 
 															char *s_a_value = new char[BUFFER_SIZE];
 															strcpy(s_a_value, (char *)a_value.getString().c_str());
@@ -1409,6 +1428,7 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 															if(epID != "")
 															{
 																map<string,string>::iterator it = iface_id.find(epID);
+                                                                map<string,string>::iterator itL3 = ifL3_id.find(epID);
 																map<string,string>::iterator it1 = internal_id.find(epID);
 																map<string,pair<string,string> >::iterator it2 = vlan_id.find(epID);
 																map<string,gre_info_t>::iterator it3 = gre_id.find(epID);
@@ -1420,6 +1440,12 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																	realName.assign(iface_id[epID]);
 																	iface_found = true;
 																}
+                                                                else if(itL3 != ifL3_id.end())
+                                                                {
+                                                                    //L3 port
+                                                                    realName.assign(ifL3_id[epID]);
+                                                                    ifL3_found = true;
+                                                                }
 																else if(it1 != internal_id.end())
 																{
 																	//internal
@@ -1441,8 +1467,8 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 																	hostStack_found = true;
 																}
 															}
-															//physical endpoint
-															if(iface_found)
+															// L2/L3 endpoint
+															if(iface_found || ifL3_found)
 															{
 																action->addOutputAction(new ActionPort(realName, string(s_a_value)));
 															}

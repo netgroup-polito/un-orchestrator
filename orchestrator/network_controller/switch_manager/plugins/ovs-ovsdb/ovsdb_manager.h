@@ -34,6 +34,8 @@ public:
 
 	AddVirtualLinkOut *addVirtualLink(AddVirtualLinkIn avli);
 
+	AddLinkToL3PortOut *addLinkToL3Port(AddLinkToL3PortIn al3i);
+
 	void destroyLsi(uint64_t dpid);
 
 	void destroyNFPorts(DestroyNFportsIn dnpi);

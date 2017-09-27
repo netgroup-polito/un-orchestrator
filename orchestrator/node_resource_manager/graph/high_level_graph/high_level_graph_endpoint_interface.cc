@@ -3,8 +3,8 @@
 namespace highlevel
 {
 
-EndPointInterface::EndPointInterface(string id, string name, string interface) :
-	id(id), name(name), interface(interface)
+EndPointInterface::EndPointInterface(string id, string name, string interface, string type) :
+	id(id), name(name), interface(interface), type(type)
 {
 }
 
@@ -33,6 +33,11 @@ string EndPointInterface::getName()
 string EndPointInterface::getInterface()
 {
 	return interface;
+}
+
+string EndPointInterface::getType()
+{
+	return type;
 }
 
 void EndPointInterface::setPosition(Position *position){

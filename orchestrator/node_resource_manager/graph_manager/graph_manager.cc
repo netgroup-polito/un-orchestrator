@@ -10,7 +10,7 @@ void GraphManager::mutexInit()
 	pthread_mutex_init(&graph_manager_mutex, NULL);
 }
 
-GraphManager::GraphManager(int core_mask) : switchManager()
+GraphManager::GraphManager(int core_mask) : switchManager(), L3Port_Manager()
 {
 	//TODO: this code can be simplified. Why don't providing the set<string> to the switch manager?
 	list<string> phisicalPorts = Configuration::instance()->getPhisicalPorts();
@@ -20,6 +20,10 @@ GraphManager::GraphManager(int core_mask) : switchManager()
 		CheckPhysicalPortsIn cppi(*pp);
 		phyPortsRequired.insert(cppi);
 	}
+
+    string L3port = Configuration::instance()->getL3port();
+    L3Port_Manager.setL3Port(L3port);
+    ULOG_DBG_INFO("L3 port: %s",L3port.c_str());
 
 	set<string> phyPorts;//maps the name into the side
 	for(set<CheckPhysicalPortsIn>::iterator pp = phyPortsRequired.begin(); pp != phyPortsRequired.end(); pp++)
@@ -87,9 +91,12 @@ GraphManager::GraphManager(int core_mask) : switchManager()
 		assert(lsi->getGreEndpointsPorts().size() == 0);
 		map<string,nf_t>  nf_types;
 		map<string,list<nf_port_info> > netFunctionsPortsInfo;
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort,lsi->getPhysicalPortsName(),lsi->getHostackEndpointID(), nf_types,netFunctionsPortsInfo,lsi->getGreEndpointsDescription(),lsi->getVirtualLinksRemoteLSI(), Configuration::instance()->getUnAddress(), Configuration::instance()->getIpsecCertificate());
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort,lsi->getPhysicalPortsName(),lsi->getHostackEndpointID(),
+                        nf_types,netFunctionsPortsInfo,lsi->getGreEndpointsDescription(),lsi->getVirtualLinksRemoteLSI(),
+                        Configuration::instance()->getUnAddress(), Configuration::instance()->getIpsecCertificate());
 
 		CreateLsiOut *clo = switchManager.createLsi(cli);
+        L3Port_Manager.createNamespacePPPoE();
 
 		lsi->setDpid(clo->getDpid());
 		map<string,unsigned int> physicalPorts = clo->getPhysicalPorts();
@@ -257,6 +264,8 @@ GraphManager::~GraphManager()
 		ULOG_WARN("%s",e.what());
 		//we don't throw any exception here, since the graph manager is terminating
 	}
+
+	//TODO: Deleting namespace helper for PPPoE
 
 	Controller *controller = graphInfoLSI0.getController();
 	delete(controller);
@@ -488,14 +497,24 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController
 	map<string,unsigned int> physicalPorts = lsi0->getPhysicalPorts();
 	for(list<highlevel::EndPointInterface>::iterator p = phyPorts.begin(); p != phyPorts.end(); p++)
 	{
-		string interfaceName = p->getInterface();
-		ULOG_DBG_INFO("* %s",interfaceName.c_str());
-		if((physicalPorts.count(interfaceName)) == 0)
-		{
-			ULOG_WARN("Physical port \"%s\" does not exist",interfaceName.c_str());
-			return false;
-		}
+        if(p->getType()=="L2_PORT")
+        {
+            string interfaceName = p->getInterface();
+            ULOG_DBG_INFO("* %s",interfaceName.c_str());
+            if((physicalPorts.count(interfaceName)) == 0)
+            {
+                ULOG_WARN("Physical port \"%s\" does not exist",interfaceName.c_str());
+                return false;
+            }
+        }
+
 	}
+
+    // TODO: check validity of L3 interface endpoints.
+    for(list<highlevel::EndPointInterface>::iterator p = phyPorts.begin(); p != phyPorts.end(); p++)
+    {
+        //type: L3_PORT
+    }
 
 	// TODO: check the validity of hoststack endpoints.
 	for(list<highlevel::EndPointHostStack>::iterator e = endPointsHoststack.begin(); e != endPointsHoststack.end(); e++)
@@ -589,7 +608,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*		0) check the validity of the graph
 	*		1) create the Openflow controller for the tenant LSI
 	*		2) select an implementation for each NF of the graph
-	*		3) create the LSI, with the proper ports
+	*		3) create the LSI, with the proper ports and the link for the PPPoE connection if necessary
 	*		4) start the network functions
 	*		5) create the OpenFlow controller for the internal LSIs (if it does not exist yet)
 	*		6) create the internal LSI (if it does not exist yet), with the proper vlinks and download the rules in internal-LSI
@@ -679,6 +698,17 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	list<highlevel::EndPointGre> endpointsGre = graph->getEndPointsGre();
 	list<highlevel::EndPointHostStack> endpointsHoststack = graph->getEndPointsHostStack();
 
+    if(L3Port_Manager.getL3Port()!="")
+    {
+        try{
+            handleGraphForLinkToL3Port(graph);
+        }
+        catch(GraphManagerException e)
+        {
+
+            throw GraphManagerException();
+        }
+    }
 
 	vector<set<string> > vlVector = identifyVirtualLinksRequired(graph);
 	set<string> vlNFs = vlVector[0];
@@ -702,7 +732,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	for(unsigned int i = 0; i < numberOfVLrequired; i++)
 		virtual_links.push_back(VLink(dpid0));
 
-	//The tenant-LSI is not connected to physical ports, but just the LSI-0
+	//The tenant-LSI is not connected to physical ports and to L3 port, but just the LSI-0
 	//through virtual links, to network functions through virtual ports, and to gre tunnels and hoststack endpoint through proper ports
 	set<string> dummyPhyPorts;
 
@@ -748,7 +778,9 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	{
 		//Create a new tenant-LSI
 
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(), lsi->getHostackEndpointID(), nf_types, lsi->getNetworkFunctionsPortsInfo(), lsi->getGreEndpointsDescription(), lsi->getVirtualLinksRemoteLSI(), string(OF_CONTROLLER_ADDRESS), Configuration::instance()->getIpsecCertificate());
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),controllerPort, lsi->getPhysicalPortsName(), lsi->getHostackEndpointID(),
+                        nf_types, lsi->getNetworkFunctionsPortsInfo(), lsi->getGreEndpointsDescription(), lsi->getVirtualLinksRemoteLSI(),
+                        string(OF_CONTROLLER_ADDRESS), Configuration::instance()->getIpsecCertificate());
 
 		clo = switchManager.createLsi(cli);
 
@@ -1448,6 +1480,32 @@ void GraphManager::handleGraphForInternalEndpoint(highlevel::Graph *graph)
 
 		}
 	}//end iteration on the internal endpoints of the graph
+}
+
+void GraphManager::handleGraphForLinkToL3Port(highlevel::Graph * graph)
+{
+    list<highlevel::EndPointInterface> epL3 = graph->getEndPointsInterface();
+
+    for(list<highlevel::EndPointInterface>::iterator e = epL3.begin(); e != epL3.end(); e++){
+        if(e->getType() == "L3_PORT"){
+            ULOG_DBG_INFO("Handling connection to %s: %s", e->getType().c_str(), e->getInterface().c_str());
+            AddLinkToL3PortIn *al3i = new AddLinkToL3PortIn(/*e->getInterface(),*/graph->getID());
+            AddLinkToL3PortOut *al3o = switchManager.addLinkToL3Port(*al3i);
+
+            list<LinkToL3Port> lL3p;
+            LinkToL3Port *l = new LinkToL3Port(al3o->getEpIdLsi(), al3o->getOfId(), al3o->getEpIdNs());
+            lL3p.push_back(*l);
+
+            ULOG_DBG_INFO("PORT L3 on LSI-0: %s -- OpenFlowId: %d", al3o->getEpIdLsi().c_str(), l->getLSIPortID());
+            ULOG_DBG_INFO("PEER on the namespace: %s", l->getNsPortName().c_str(), l->getLSIPortID());
+
+            LSI *lsi = graphInfoLSI0.getLSI();
+            lsi->addLinkToL3Port(*l);
+            lsi->addPortOfLinkToL3Port(l->getLSIPortName(),l->getLSIPortID());
+
+            L3Port_Manager.addPortToNs(l->getNsPortName());
+        }
+    }
 }
 
 bool GraphManager::updateGraph(string graphID, highlevel::Graph *newGraph)
@@ -3138,3 +3196,6 @@ string GraphManager::getVnfTemplateId(string graphId, string macAddress)
 	return templateId;
 }
 
+string GraphManager::getL3port() {
+    return L3Port_Manager.getL3Port();
+}

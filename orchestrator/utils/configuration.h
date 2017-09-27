@@ -19,6 +19,7 @@ class Configuration {
 public:
     bool init(string configurationFile);
     list<string> getPhisicalPorts();
+    string getL3port();
     map<string,string> getBootGraphs();
     int getRestPort();
     bool getUserAuthentication();
@@ -38,6 +39,7 @@ public:
 
 private:
     list<string> physicalPorts;
+    string L3port;
     map<string,string> bootGraphs;
     int restPort;
     bool userAuth;

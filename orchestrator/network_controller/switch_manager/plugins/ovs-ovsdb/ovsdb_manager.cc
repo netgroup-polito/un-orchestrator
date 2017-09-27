@@ -25,6 +25,11 @@ void OVSDBManager::destroyLsi(uint64_t dpid){
 	c->cmd_editconfig_lsi_delete(dpid, s);
 }
 
+//implementation of cmd_addLinkToL3Port
+AddLinkToL3PortOut *OVSDBManager::addLinkToL3Port(AddLinkToL3PortIn al3i){
+    return c->cmd_addLinkToL3Port(al3i, s);
+}
+
 //implementation of addNFPorts
 AddNFportsOut *OVSDBManager::addNFPorts(AddNFportsIn anpi){
 	return c->cmd_editconfig_NFPorts(anpi, s);

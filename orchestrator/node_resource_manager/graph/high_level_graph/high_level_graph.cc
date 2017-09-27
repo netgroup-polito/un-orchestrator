@@ -48,7 +48,7 @@ bool Graph::addEndPointInterface(EndPointInterface endpoint)
 {
 	for(list<EndPointInterface>::iterator e = endPointsInterface.begin(); e != endPointsInterface.end(); e++)
 	{
-		if(*e == endpoint)
+		if(*e == endpoint || endpoint.getType() == "L3_PORT")
 			return false;
 	}
 

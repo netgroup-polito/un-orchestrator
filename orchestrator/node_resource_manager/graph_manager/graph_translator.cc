@@ -7,6 +7,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 	ULOG_DBG_INFO("Creating rules for LSI-0");
 
 	map<string,unsigned int> ports_lsi0 = lsi0->getPhysicalPorts();
+    map<string,unsigned int> linkToL3Port_ports = lsi0->getPortOfLinkToL3Port();
+	list<LinkToL3Port> link_toL3Port = lsi0->getLinksToL3Port();
 	vector<VLink> tenantVirtualLinks = tenantLSI->getVirtualLinks();//FIXME: a map <emulated port name, vlink> would be better
 	lowlevel::Graph lsi0Graph;
 
@@ -21,21 +23,21 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 		uint64_t priority = hlr->getPriority();
 
 		if(match.matchOnPort())
-			handleMatchOnPortLSI0(graph, tenantLSI, hlr->getRuleID(), match, action, priority, ports_lsi0,
+			handleMatchOnPortLSI0(graph, tenantLSI, hlr->getRuleID(), match, action, priority, ports_lsi0, linkToL3Port_ports,
 								  tenantVirtualLinks, lsi0Graph, internalLSIsConnections);
 		else if(match.matchOnEndPointGre())
-		 handleMatchOnEndpointGreLSI0(graph, tenantLSI, hlr->getRuleID(), match, action, priority, ports_lsi0,
+		 handleMatchOnEndpointGreLSI0(graph, tenantLSI, hlr->getRuleID(), match, action, priority, ports_lsi0, linkToL3Port_ports,
 							   tenantVirtualLinks, lsi0Graph, internalLSIsConnections);
 		else if (match.matchOnEndPointInternal())
-		 	handleMatchOnEndpointInternalLSI0(graph, tenantLSI, hlr->getRuleID(), match, action, priority, ports_lsi0,
+		 	handleMatchOnEndpointInternalLSI0(graph, tenantLSI, hlr->getRuleID(), match, action, priority, ports_lsi0, linkToL3Port_ports,
 									  tenantVirtualLinks, lsi0Graph, internalLSIsConnections);
 		else if(match.matchOnEndPointHoststack())
-			handleMatchOnEndpointHoststackLSI0(graph, tenantLSI, hlr->getRuleID(), match, action, priority, ports_lsi0,
+			handleMatchOnEndpointHoststackLSI0(graph, tenantLSI, hlr->getRuleID(), match, action, priority, ports_lsi0, linkToL3Port_ports,
 										 tenantVirtualLinks, lsi0Graph, internalLSIsConnections);
 		else
 		{
 			assert(match.matchOnNF());
-			handleMatchOnNetworkFunctionLSI0(graph, tenantLSI, hlr->getRuleID(), match, action, priority, ports_lsi0,
+			handleMatchOnNetworkFunctionLSI0(graph, tenantLSI, hlr->getRuleID(), match, action, priority, ports_lsi0, linkToL3Port_ports,
 											  tenantVirtualLinks, lsi0Graph, internalLSIsConnections);
 		}
 	}
@@ -77,7 +79,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 
 void GraphTranslator::handleMatchOnPortLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID,
 											highlevel::Match &match, highlevel::Action *action, uint64_t priority,
-											map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+											map<string, unsigned int> &ports_lsi0, map<string, unsigned int> &ports_toL3, vector<VLink> &tenantVirtualLinks,
 											lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections)
 {
 
@@ -85,7 +87,7 @@ void GraphTranslator::handleMatchOnPortLSI0(highlevel::Graph *graph, LSI *tenant
 	newRuleID << graph->getID() << "_" << ruleID;
 
 	string port = match.getPhysicalPort();
-	if(ports_lsi0.count(port) == 0)
+    if(ports_lsi0.count(port) == 0 && ports_toL3.size() == 0)
 	{
 		ULOG_WARN("The tenant graph expresses a match on port \"%s\", which is not attached to LSI-0",port.c_str());
 		throw GraphManagerException();
@@ -94,7 +96,15 @@ void GraphTranslator::handleMatchOnPortLSI0(highlevel::Graph *graph, LSI *tenant
 	//Translate the match
 	lowlevel::Match lsi0Match;
 	lsi0Match.setAllCommonFields(match);
-	map<string,unsigned int>::iterator translation = ports_lsi0.find(port);
+	map<string,unsigned int>::iterator translation;
+
+    if (ports_toL3.size() != 0){
+        stringstream portL3;
+        portL3 << port;
+        translation = ports_toL3.find(portL3.str());
+    }
+    else translation = ports_lsi0.find(port);
+
 	lsi0Match.setInputPort(translation->second);
 
 	lowlevel::Action lsi0Action;
@@ -237,7 +247,7 @@ void GraphTranslator::handleMatchOnPortLSI0(highlevel::Graph *graph, LSI *tenant
 
 void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
 										 highlevel::Action *action, uint64_t priority,
-										 map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+										 map<string, unsigned int> &ports_lsi0, map<string, unsigned int> &ports_toL3, vector<VLink> &tenantVirtualLinks,
 										 lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections )
 {
 	list<lowlevel::Rule> rulesList;
@@ -328,13 +338,19 @@ void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI 
 			ULOG_DBG("\tIt matches a gre tunnel \"%s\", and the action is the output to port \"%s\"",match.getEndPointGre().c_str(),action_info.c_str());
 
 			//The port name must be replaced with the port identifier
-			if(ports_lsi0.count(action_info) == 0)
+			if(ports_lsi0.count(action_info) == 0 && ports_toL3.size() == 0)
 			{
 				ULOG_WARN("The tenant graph expresses an action on port \"%s\", which is not attached to LSI-0",action_info.c_str());
 				throw GraphManagerException();
 			}
 
-			map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
+			map<string,unsigned int>::iterator translation;
+			if (ports_toL3.size() != 0){
+				stringstream portL3;
+				portL3 << action_info;
+				translation = ports_toL3.find(portL3.str());
+			}
+			else translation = ports_lsi0.find(action_info);
 			unsigned int portForAction = translation->second;
 			lowlevel::Action lsi0Action;
 			lsi0Action.addOutputPort(portForAction);
@@ -366,7 +382,7 @@ void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI 
 
 void GraphTranslator::handleMatchOnEndpointInternalLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
 											  highlevel::Action *action, uint64_t priority,
-											  map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+											  map<string, unsigned int> &ports_lsi0, map<string, unsigned int> &ports_toL3, vector<VLink> &tenantVirtualLinks,
 											  lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections)
 {
 
@@ -470,13 +486,19 @@ void GraphTranslator::handleMatchOnEndpointInternalLSI0(highlevel::Graph *graph,
 			ULOG_DBG("\tIt matches the endpoint \"%s\", and the action is output to port %s",ss.str().c_str(),action_info.c_str());
 
 			//The port name must be replaced with the port identifier
-			if(ports_lsi0.count(action_info) == 0)
+			if(ports_lsi0.count(action_info) == 0 && ports_toL3.size() == 0)
 			{
 				ULOG_WARN("The tenant graph expresses an action on port \"%s\", which is not attached to LSI-0",action_info.c_str());
 				throw GraphManagerException();
 			}
 
-			map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
+			map<string,unsigned int>::iterator translation;
+			if (ports_toL3.size() != 0){
+				stringstream portL3;
+				portL3 << action_info;
+				translation = ports_toL3.find(portL3.str());
+			}
+			else translation = ports_lsi0.find(action_info);
 			unsigned int portForAction = translation->second;
 
 			lsi0Action.addOutputPort(portForAction);
@@ -528,7 +550,7 @@ void GraphTranslator::handleMatchOnEndpointInternalLSI0(highlevel::Graph *graph,
 
 void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
 											 highlevel::Action *action, uint64_t priority,
-											 map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+											 map<string, unsigned int> &ports_lsi0, map<string, unsigned int> &ports_toL3, vector<VLink> &tenantVirtualLinks,
 											 lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections)
 {
 	list<lowlevel::Rule> rulesList;
@@ -562,7 +584,7 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, 
 
 			string action_info = (*outputAction)->getInfo();
 			ULOG_DBG("Match on NF \"%s\", action is on port \"%s\"",match.getNF().c_str(),action_info.c_str());
-			if(ports_lsi0.count(action_info) == 0)
+			if(ports_lsi0.count(action_info) == 0 && ports_toL3.size() == 0)
 			{
 				ULOG_WARN("The tenant graph expresses an action on port \"%s\", which is not attached to LSI-0",action_info.c_str());
 				throw GraphManagerException();
@@ -588,7 +610,13 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, 
 			lsi0Match.setInputPort(vlink->getRemoteID());
 
 			//Translate the action
-			map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
+			map<string,unsigned int>::iterator translation;
+			if (ports_toL3.size() != 0){
+				stringstream portL3;
+				portL3 << action_info;
+				translation = ports_toL3.find(portL3.str());
+			}
+			else translation = ports_lsi0.find(action_info);
 			unsigned int portForAction = translation->second;
 
 			lowlevel::Action lsi0Action;
@@ -1166,7 +1194,7 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSITenant(highlevel::Graph *gr
 
 void GraphTranslator::handleMatchOnEndpointHoststackLSI0(highlevel::Graph *graph, LSI *tenantLSI, string ruleID, highlevel::Match &match,
 														 highlevel::Action *action, uint64_t priority,
-														 map<string, unsigned int> &ports_lsi0, vector<VLink> &tenantVirtualLinks,
+														 map<string, unsigned int> &ports_lsi0, map<string, unsigned int> &ports_toL3, vector<VLink> &tenantVirtualLinks,
 														 lowlevel::Graph &lsi0Graph, map<string, map <string, unsigned int> >& internalLSIsConnections) {
 	list<lowlevel::Rule> rulesList;
 
@@ -1264,13 +1292,19 @@ void GraphTranslator::handleMatchOnEndpointHoststackLSI0(highlevel::Graph *graph
 					 match.getEndPointHoststack().c_str(), action_info.c_str());
 
 			//The port name must be replaced with the port identifier
-			if (ports_lsi0.count(action_info) == 0) {
+			if (ports_lsi0.count(action_info) == 0 && ports_toL3.size() == 0) {
 				ULOG_WARN("The tenant graph expresses an action on port \"%s\", which is not attached to LSI-0",
 						  action_info.c_str());
 				throw GraphManagerException();
 			}
 
-			map<string, unsigned int>::iterator translation = ports_lsi0.find(action_info);
+			map<string, unsigned int>::iterator translation;
+			if (ports_toL3.size() != 0){
+				stringstream portL3;
+				portL3 << action_info;
+				translation = ports_toL3.find(portL3.str());
+			}
+			else translation = ports_lsi0.find(action_info);
 			unsigned int portForAction = translation->second;
 			lowlevel::Action lsi0Action;
 			lsi0Action.addOutputPort(portForAction);

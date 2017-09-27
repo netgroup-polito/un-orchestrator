@@ -12,7 +12,7 @@
 
 static const char LOG_MODULE_NAME[] = "Match-Parser";
 
-void MatchParser::parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,gre_info_t> &gre_id, map<string,hoststack_info_t> &hostStack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses)
+void MatchParser::parseMatch(Object match_element, highlevel::Match &match, highlevel::Action &action, map<string,string > &iface_id, map<string,string> &ifL3_id, map<string,string> &internal_id, map<string,pair<string,string> > &vlan_id, map<string,gre_info_t> &gre_id, map<string,hoststack_info_t> &hostStack_id, map<string, map<string, bool> > trusted_ports, map<string, map<string,string> >trusted_ports_mac_addresses)
 {
 	bool foundOne = false;
 	bool foundEndPointID = false, foundProtocolField = false, definedInCurrentGraph = false;
@@ -139,12 +139,13 @@ void MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 			//endpoints port type
 			else if(p_type == EP_PORT_TYPE)
 			{
-				bool iface_found = false, internal_found = false, vlan_found = false, gre_found=false, hoststack_found=false;
+				bool iface_found = false, ifL3_found = false, internal_found = false, vlan_found = false, gre_found=false, hoststack_found=false;
 				char *s_value = new char[BUFFER_SIZE];
 				strcpy(s_value, (char *)value.getString().c_str());
 				string eP = GraphParserUtils::epName(value.getString());
 				if(eP != ""){
 					map<string,string>::iterator it = iface_id.find(eP);
+					map<string,string>::iterator itL3 = ifL3_id.find(eP);
 					map<string,string>::iterator it1 = internal_id.find(eP);
 					map<string,pair<string,string> >::iterator it2 = vlan_id.find(eP); //check if the endpoint has a vlan ID associated (in this case, the endpoint is a vlan endpoint)
 					map<string,gre_info_t>::iterator it3 = gre_id.find(eP);
@@ -155,6 +156,12 @@ void MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 						//physical port
 						realName.assign(iface_id[eP]);
 						iface_found = true;
+					}
+					else if(itL3 != ifL3_id.end())
+					{
+						//L3 port
+						realName.assign(ifL3_id[eP]);
+						ifL3_found = true;
 					}
 					else if(it1 != internal_id.end())
 					{
@@ -180,10 +187,7 @@ void MatchParser::parseMatch(Object match_element, highlevel::Match &match, high
 					}
 				}
 				/*physical endpoint*/
-				if(iface_found)
-				{
-					match.setInputPort(realName);
-				}
+				if(iface_found || ifL3_found) match.setInputPort(realName);
 				else if(internal_found)
 				{
 					//unsigned int endPoint = epPort(string(endpoint_internal));

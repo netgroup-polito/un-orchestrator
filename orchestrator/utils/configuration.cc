@@ -26,7 +26,7 @@ bool Configuration::init(string configurationFile)
     }
 
     // ports_name : optional
-    string tmp_physical_ports = reader.Get("physical ports", "ports_name", "");
+    string tmp_physical_ports = reader.Get("physical ports", "L2_ports", "");
     if(tmp_physical_ports!="")
     {
         ULOG_DBG( "Physical ports read from configuation file: %s",tmp_physical_ports.c_str());
@@ -44,6 +44,15 @@ bool Configuration::init(string configurationFile)
             physicalPorts.push_back(item);
         }
 
+    }
+
+    // L3_port : optional
+    string tmp_L3_port = reader.Get("L3 port", "L3_port", "");
+    if(tmp_L3_port!="")
+    {
+        ULOG_DBG_INFO( "L3 port read from configuration file: %s",tmp_L3_port.c_str());
+        L3port=tmp_L3_port;
+        ULOG_DBG_INFO( "L3 port stored: %s",L3port.c_str());
     }
 
     // nf-fgs : optional
@@ -167,6 +176,10 @@ bool Configuration::init(string configurationFile)
 list<string> Configuration::getPhisicalPorts()
 {
     return physicalPorts;
+}
+
+string Configuration::getL3port() {
+    return L3port;
 }
 
 map<string,string> Configuration::getBootGraphs()

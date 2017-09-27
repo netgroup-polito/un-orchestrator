@@ -60,6 +60,26 @@ list<string> LSI::getPhysicalPortsName()
 	return names;
 }
 
+list<LinkToL3Port> LSI::getLinksToL3Port()
+{
+	return links_toL3Port;
+}
+
+map<string,unsigned int> LSI::getPortOfLinkToL3Port()
+{
+    return linksToL3Port_ports;
+}
+
+void LSI::addPortOfLinkToL3Port(string port_name, unsigned int id)
+{
+    linksToL3Port_ports.insert(pair<string, unsigned int>(port_name,id));
+}
+
+void LSI::addLinkToL3Port(LinkToL3Port l3p)
+{
+	links_toL3Port.push_back(l3p);
+}
+
 list<string> LSI::getHostackEndpointID()
 {
 	list<string> hoststack_endpoints_id;

@@ -40,12 +40,17 @@ private:
 	string interface;
 
 	/**
+	*	@brief: the type of the endpoint port (e.g., L2_PORT or L3_PORT)
+	*/
+	string type;
+
+	/**
 	*	@brief: coordinates of the endpoint (used and setted by the GUI)
 	*/
 	Position *position = NULL;
 
 public:
-	EndPointInterface(string id, string name, string interface);
+	EndPointInterface(string id, string name, string interface, string type);
 	
 	/**
 	*	@brief: return the ID of the endpoint
@@ -61,6 +66,11 @@ public:
 	*	@brief: return the physical interface corresponding to the endpoint
 	*/
 	string getInterface();
+
+	/**
+	*	@brief: return the type of the endpoint
+	*/
+	string getType();
 
 	void setPosition(Position *position);
 
