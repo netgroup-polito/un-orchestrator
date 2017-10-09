@@ -35,6 +35,8 @@ In the following we list the steps required on an **Ubuntu 14.04 - 64 bit**.
 	$ git clone https://github.com/oktal/pistache.git
 	$ cd pistache
 	$ git submodule update --init
+	; Before compiling the library, you must set the constant MaxBuffer (https://github.com/oktal/pistache/blob/master/include/pistache/common.h#L57)
+	; at least to 131072 (i.e., 128 KB)
 	$ mkdir build
 	$ cd build
 	$ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
