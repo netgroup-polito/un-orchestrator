@@ -100,9 +100,9 @@ if [ ! -d "double_decker/DoubleDecker" ]; then
 
 	# - libsodium
 	cd $HOME/double_decker
-	wget http://download.libsodium.org/libsodium/releases/libsodium-1.0.7.tar.gz
-	tar xvfz libsodium-1.0.7.tar.gz
-	cd libsodium-1.0.7
+	wget http://download.libsodium.org/libsodium/releases/libsodium-1.0.15.tar.gz
+	tar xvfz libsodium-1.0.15.tar.gz
+	cd libsodium-1.0.15
 	./configure
 	make -j2
 	sudo make install
@@ -124,7 +124,7 @@ else
 	cd $HOME/double_decker/userspace-rcu-0.9.1
 	sudo make install
 
-	cd $HOME/double_decker/libsodium-1.0.7
+	cd $HOME/double_decker/libsodium-1.0.15
 	sudo make install
 
 	cd $HOME/double_decker/DoubleDecker
