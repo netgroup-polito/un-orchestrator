@@ -18,12 +18,12 @@ L3PortManager::~L3PortManager()
 {
 }
 
-CreateNamespacePPPoE *L3PortManager::createNamespacePPPoE(/*string port_name*/) {
+CreateNamespacePPPoE *L3PortManager::createNamespacePPPoE() {
 
-    CreateNamespacePPPoE *cnPPPoE = new CreateNamespacePPPoE(/*port_name,*/ NAMESPACE_HELPER);
+    CreateNamespacePPPoE *cnPPPoE = new CreateNamespacePPPoE(NAMESPACE_HELPER, L3Port);
 
     stringstream cmd_create_namespace_pppoe;
-    cmd_create_namespace_pppoe << getenv("un_script_path") << CREATE_NAMESPACE_PPPoE << " " << NAMESPACE_HELPER << " " << cnPPPoE->getInernalIfToPPP() << " " << cnPPPoE->getExternalIf();
+    cmd_create_namespace_pppoe << getenv("un_script_path") << CREATE_NAMESPACE_PPPoE << " " << NAMESPACE_HELPER << " " << cnPPPoE->getPPPport();
     ULOG_DBG_INFO("Executing command \"%s\"", cmd_create_namespace_pppoe.str().c_str());
 
     int retVal = system(cmd_create_namespace_pppoe.str().c_str());
@@ -58,15 +58,3 @@ void L3PortManager::addPortToNs(string port_name)
     }
 }
 
-/*void L3PortManager::create(string port_name) {
-    stringstream cmd_create_namespace_pppoe;
-    cmd_create_namespace_pppoe << getenv("un_script_path") << CREATE_NAMESPACE_PPPoE << " " << port_name;
-    ULOG_DBG_INFO("Executing command \"%s\"", cmd_create_namespace_pppoe.str().c_str());
-
-    int retVal = system(cmd_create_namespace_pppoe.str().c_str());
-    retVal = retVal >> 8;
-    if(retVal == 0) {
-        ULOG_WARN("Failed to create 'veth' port");
-        throw L3PortManagerException();
-    }
-}*/

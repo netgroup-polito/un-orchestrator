@@ -24,9 +24,7 @@ public:
 
     ~L3PortManager();
 
-    CreateNamespacePPPoE *createNamespacePPPoE(/*string port_name*/);
-
-    //void create(string port_name);
+    CreateNamespacePPPoE *createNamespacePPPoE();
 
     void setL3Port(string L3Port);
     string getL3Port();

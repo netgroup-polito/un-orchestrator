@@ -1489,7 +1489,7 @@ void GraphManager::handleGraphForLinkToL3Port(highlevel::Graph * graph)
     for(list<highlevel::EndPointInterface>::iterator e = epL3.begin(); e != epL3.end(); e++){
         if(e->getType() == "L3_PORT"){
             ULOG_DBG_INFO("Handling connection to %s: %s", e->getType().c_str(), e->getInterface().c_str());
-            AddLinkToL3PortIn *al3i = new AddLinkToL3PortIn(/*e->getInterface(),*/graph->getID());
+            AddLinkToL3PortIn *al3i = new AddLinkToL3PortIn(graph->getID());
             AddLinkToL3PortOut *al3o = switchManager.addLinkToL3Port(*al3i);
 
             list<LinkToL3Port> lL3p;

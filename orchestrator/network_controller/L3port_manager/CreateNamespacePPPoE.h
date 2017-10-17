@@ -11,16 +11,13 @@ using namespace std;
 class CreateNamespacePPPoE {
 private:
     string namespace_name;
-    string internal_if_to_switch;
-    //list<string,string> internal_ifs_to_switch;
-    string internal_if_to_ppp;
-    string external_if;
+    string pppPort; //is the ppp port
 public:
 
-    CreateNamespacePPPoE(/*string internal_if_to_switch,*/ string namespace_name): namespace_name(namespace_name)//internal_if_to_switch(internal_if_to_switch)
+    CreateNamespacePPPoE(string namespace_name, string pppPort): namespace_name(namespace_name), pppPort(pppPort)
     {
-        internal_if_to_ppp = namespace_name + ".i";
-        external_if = namespace_name + ".e";
+        //internal_if_to_ppp = namespace_name + ".i";
+        //external_if = namespace_name + ".e";
     }
 
     ~CreateNamespacePPPoE();
@@ -29,25 +26,13 @@ public:
       return namespace_name;
     };
 
-    /*void setInternalIfsToSwitch(){
-
-    };*/
-
-    /*list<string,string> getInternalIfsToSwitch(){
-        return internal_ifs_to_switch;
-    };*/
-
-    string getInternalIfToSwitch(){
-        return internal_if_to_switch;
+    string getPPPport(){
+        return pppPort;
     };
 
-    string getInernalIfToPPP(){
-        return internal_if_to_ppp;
-    };
-
-    string getExternalIf(){
+    /*string getExternalIf(){
         return external_if;
-    };
+    };*/
 
 };
 
