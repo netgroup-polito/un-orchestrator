@@ -98,11 +98,9 @@ void GraphTranslator::handleMatchOnPortLSI0(highlevel::Graph *graph, LSI *tenant
 	lsi0Match.setAllCommonFields(match);
 	map<string,unsigned int>::iterator translation;
 
-    if (ports_toL3.size() != 0){
-        stringstream portL3;
-        portL3 << port;
-        translation = ports_toL3.find(portL3.str());
-    }
+    if (ports_toL3.count(port) != 0)
+        //port is L3 type
+        translation = ports_toL3.find(port);
     else translation = ports_lsi0.find(port);
 
 	lsi0Match.setInputPort(translation->second);
@@ -345,11 +343,9 @@ void GraphTranslator::handleMatchOnEndpointGreLSI0(highlevel::Graph *graph, LSI 
 			}
 
 			map<string,unsigned int>::iterator translation;
-			if (ports_toL3.size() != 0){
-				stringstream portL3;
-				portL3 << action_info;
-				translation = ports_toL3.find(portL3.str());
-			}
+            if (ports_toL3.count(action_info) != 0)
+                //port is L3 type
+                translation = ports_toL3.find(action_info);
 			else translation = ports_lsi0.find(action_info);
 			unsigned int portForAction = translation->second;
 			lowlevel::Action lsi0Action;
@@ -493,11 +489,9 @@ void GraphTranslator::handleMatchOnEndpointInternalLSI0(highlevel::Graph *graph,
 			}
 
 			map<string,unsigned int>::iterator translation;
-			if (ports_toL3.size() != 0){
-				stringstream portL3;
-				portL3 << action_info;
-				translation = ports_toL3.find(portL3.str());
-			}
+            if (ports_toL3.count(action_info) != 0)
+                //port is L3 type
+                translation = ports_toL3.find(action_info);
 			else translation = ports_lsi0.find(action_info);
 			unsigned int portForAction = translation->second;
 
@@ -611,11 +605,9 @@ void GraphTranslator::handleMatchOnNetworkFunctionLSI0(highlevel::Graph *graph, 
 
 			//Translate the action
 			map<string,unsigned int>::iterator translation;
-			if (ports_toL3.size() != 0){
-				stringstream portL3;
-				portL3 << action_info;
-				translation = ports_toL3.find(portL3.str());
-			}
+            if (ports_toL3.count(action_info) != 0)
+                //port is L3 type
+                translation = ports_toL3.find(action_info);
 			else translation = ports_lsi0.find(action_info);
 			unsigned int portForAction = translation->second;
 
@@ -1299,11 +1291,9 @@ void GraphTranslator::handleMatchOnEndpointHoststackLSI0(highlevel::Graph *graph
 			}
 
 			map<string, unsigned int>::iterator translation;
-			if (ports_toL3.size() != 0){
-				stringstream portL3;
-				portL3 << action_info;
-				translation = ports_toL3.find(portL3.str());
-			}
+            if (ports_toL3.count(action_info) != 0)
+                //port is L3 type
+                translation = ports_toL3.find(action_info);
 			else translation = ports_lsi0.find(action_info);
 			unsigned int portForAction = translation->second;
 			lowlevel::Action lsi0Action;
