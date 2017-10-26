@@ -19,8 +19,6 @@ case "$2" in
 		echo "ifconfig $1 $3"
 		ifconfig $1 $3
    ;;
-   "ppoe") echo "pppoe not supported yet" 
-   ;;
 esac
 
 ip link set $1 up

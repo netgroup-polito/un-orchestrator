@@ -67,9 +67,6 @@ Object EndPointHostStack::toJSON()
 			hostStack[CONFIGURATION]=CONF_STATIC;
 			hostStack[IP_ADDRESS] = ipAddress.c_str();
 			break;
-		case PPPOE:
-			hostStack[CONFIGURATION]=CONF_PPPOE;
-			break;
 		default:
 			break;
 	}

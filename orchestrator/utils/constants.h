@@ -67,7 +67,6 @@
 			#define CONFIGURATION	"configuration"
 				#define CONF_DHCP	"DHCP"
 				#define CONF_STATIC	"static"
-				#define CONF_PPPOE	"pppoe"
 			#define IP_ADDRESS		"IPv4"
 			#define MAC_ADDRESS		"mac"
 	#define BIG_SWITCH		"big-switch"

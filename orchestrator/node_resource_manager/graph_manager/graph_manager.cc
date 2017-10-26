@@ -1146,8 +1146,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	{
 		if (hs->getConfiguration()==DHCP)
 			interfaceManager.getIpAddressFromDhcp(hsPortsName[hs->getId()]);
-		else if (hs->getConfiguration()==PPPOE)
-			interfaceManager.getIpAddressFromPppoe(hsPortsName[hs->getId()]);
 		else
 			interfaceManager.setStaticIpAddress(hsPortsName[hs->getId()],hs->getIpAddress());
 
@@ -1498,8 +1496,6 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newGraph)
 	{
 		if (hs->getConfiguration()==DHCP)
 			interfaceManager.getIpAddressFromDhcp(hsPortsName[hs->getId()]);
-		else if (hs->getConfiguration()==PPPOE)
-			interfaceManager.getIpAddressFromPppoe(hsPortsName[hs->getId()]);
 		else
 			interfaceManager.setStaticIpAddress(hsPortsName[hs->getId()],hs->getIpAddress());
 

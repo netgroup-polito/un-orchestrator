@@ -18,7 +18,7 @@ using namespace json_spirit;
 
 using namespace std;
 
-enum hoststack_conf_t { NONE, DHCP, STATIC, PPPOE};
+enum hoststack_conf_t { NONE, DHCP, STATIC};
 
 namespace highlevel
 {
