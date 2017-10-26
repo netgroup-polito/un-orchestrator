@@ -11,7 +11,7 @@ then
 fi
 
 case "$2" in
-   "dhcp")
+   "DHCP")
         echo "dhclient $1 -v"
         dhclient $1 -v
    ;;
