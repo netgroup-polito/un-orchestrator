@@ -842,7 +842,7 @@ The `host-stack` endpoint is defined as follows:
 		}
 	}
 
-Three type of `configuration` are allowed: `static`, `dhcp` and `pppoe`.
+Two type of `configuration` are allowed: `static` and `DHCP`.
 In case of `static` configuration, the IP address and the netmask must be specified through the `IPv4` field.
 
 The following example shows a graph with two endpoints of type `host-stack` and `interface` connected together.

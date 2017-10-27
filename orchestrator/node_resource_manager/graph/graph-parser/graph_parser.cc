@@ -1038,8 +1038,6 @@ void GraphParser::parseGraph(Value value, highlevel::Graph &graph, bool newGraph
 													hs_info.configuration=DHCP;
 												else if(strcmp(confTemp.c_str(),CONF_STATIC)==0)
 													hs_info.configuration=STATIC;
-												else if(strcmp(confTemp.c_str(),CONF_PPPOE)==0)
-													hs_info.configuration=PPPOE;
 												else
 												{
 													string error = string("Invalid value ") + confTemp.c_str() + " for key " + eph_name.c_str() + " inside " + EP_HOSTSTACK;

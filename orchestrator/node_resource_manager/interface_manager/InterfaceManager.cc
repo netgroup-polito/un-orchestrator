@@ -45,19 +45,15 @@ void InterfaceManager::getIpAddressFromDhcp(string portName)
         ULOG_WARN("Failed to get an ip address to port %s", portName.c_str() );
         return;
     }
+    sleep(1);
     unsigned int pid;
     ifstream f("/var/run/dhclient.pid");
     f >> pid;
-    dhclientPID[portName]=pid;
-}
-
-void InterfaceManager::getIpAddressFromPppoe(string portName)
-{
-    ULOG_WARN("Getting address from PPPOE is not supported yey", portName.c_str() );
+    dhclientPID.push_back(pid);
 }
 
 void InterfaceManager::closeDhcpClients()
 {
-    for(map<string,unsigned int>::iterator dhclient = dhclientPID.begin(); dhclient!=dhclientPID.end(); dhclient++)
-        kill(dhclient->second,SIGINT);
+    for(list<unsigned int>::iterator dhclient = dhclientPID.begin(); dhclient!=dhclientPID.end(); dhclient++)
+        kill(*dhclient,SIGINT);
 }

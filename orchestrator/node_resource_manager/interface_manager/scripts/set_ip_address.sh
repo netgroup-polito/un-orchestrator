@@ -11,15 +11,13 @@ then
 fi
 
 case "$2" in
-   "dhcp")
+   "DHCP")
         echo "dhclient $1 -v"
         dhclient $1 -v
    ;;
    "static")
 		echo "ifconfig $1 $3"
 		ifconfig $1 $3
-   ;;
-   "ppoe") echo "pppoe not supported yet" 
    ;;
 esac
 
