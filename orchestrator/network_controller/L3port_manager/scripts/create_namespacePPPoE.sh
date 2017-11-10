@@ -21,8 +21,8 @@ ip netns del $1 &> /dev/null
 
 ip netns add $1
 
-inet=$(/sbin/ip -o -4 addr list ppp0 | awk '{print $4}' | cut -d/ -f1)
-peer=$(/sbin/ip -o -4 addr list ppp0 | awk '{print $6}' | cut -d/ -f1)
+inet=$(/sbin/ip -o -4 addr list $2 | awk '{print $4}' | cut -d/ -f1)
+peer=$(/sbin/ip -o -4 addr list $2 | awk '{print $6}' | cut -d/ -f1)
 
 #ip link add $2 type veth peer name $3
 
