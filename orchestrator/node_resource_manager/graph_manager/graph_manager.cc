@@ -21,9 +21,12 @@ GraphManager::GraphManager(int core_mask) : switchManager(), L3Port_Manager()
 		phyPortsRequired.insert(cppi);
 	}
 
-    string L3port = Configuration::instance()->getL3port();
-    L3Port_Manager.setL3Port(L3port);
-    ULOG_DBG_INFO("L3 port: %s",L3port.c_str());
+    	string L3port = Configuration::instance()->getL3port();
+    	if (L3port != "")
+	{
+		L3Port_Manager.setL3Port(L3port);
+		ULOG_DBG_INFO("L3 port: %s",L3port.c_str());
+	}
 
 	set<string> phyPorts;//maps the name into the side
 	for(set<CheckPhysicalPortsIn>::iterator pp = phyPortsRequired.begin(); pp != phyPortsRequired.end(); pp++)
@@ -96,7 +99,7 @@ GraphManager::GraphManager(int core_mask) : switchManager(), L3Port_Manager()
                         Configuration::instance()->getUnAddress(), Configuration::instance()->getIpsecCertificate());
 
 		CreateLsiOut *clo = switchManager.createLsi(cli);
-        L3Port_Manager.createNamespacePPPoE();
+        	if (L3port != "") L3Port_Manager.createNamespacePPPoE();
 
 		lsi->setDpid(clo->getDpid());
 		map<string,unsigned int> physicalPorts = clo->getPhysicalPorts();
