@@ -193,6 +193,6 @@ also use the CURL command line tool, such as in the following example (where the
 NF-FG to be instantiated is stored in the file 'myGraph.json'):
 
 	$ curl -i -H "Content-Type: application/json" -d "@myGraph.json" \
-		-X PUT  http://un-orchestrator-address:port/NF-FG/myGraph
+		-X POST  http://un-orchestrator-address:port/NF-FG
 		
 
