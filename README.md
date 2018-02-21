@@ -84,7 +84,7 @@ controller, according to the commands supported by the hypervisor itself.
 Currently, the prototype supports virtual network functions as (KVM) VMs, Docker,
 DPDK processes and native functions, although only a subset of them can be
 available depending on the chosen vSwitch.
-Also in thuis case, further execution environments can be supported through the implementation
+Also in this case, further execution environments can be supported through the implementation
 of a proper API. 
 If you are interested to add the support for a new hypervisor, please check the
 file [compute_controller/README.md](compute_controller/README.md).
@@ -120,7 +120,7 @@ resources and capabilities), you have also to run the [virtualizer](../virtualiz
 The datastore is an helper module that contains NF images and templates, NF-FGs, and more.
 It is exploited by the un-orchestrator each time that a NF must be started, in 
 order to:
-  * retrive the NF template(s)
+  * retrieve the NF template(s)
   * download the software image implementing the NF to be started
 Particularly, in case the NF-FG indicates a specific template for the network 
 function (e.g., *firewall_vmimage_abc*), only such a template is retrieved from 
