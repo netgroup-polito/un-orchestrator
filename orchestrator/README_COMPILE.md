@@ -20,13 +20,13 @@ In the following we list the steps required on an **Ubuntu 14.04 - 64 bit**.
 	$ sudo apt-get install sqlite3 libsqlite3-dev libssl-dev
 
 	; Install ROFL-common (library to parse OpenFlow messages)
-	; Alternatively, a copy of ROFL-common is provided in `[un-orchestrator]/contrib/rofl-common.zip`
+	; A copy of ROFL-common is provided in `[un-orchestrator]/contrib/rofl-common.zip`
 
-	$ git clone https://github.com/bisdn/rofl-common
-	$ cd rofl-common/
+	$ cd [un-orchestrator]/contrib/rofl-common.zip
+	$ unzip rofl-common.zip
 
 	; Now install the above library according to the description provided
-	; in the cloned folder
+	; in the extracted "rofl-common-master" folder
 	
 	; Update the dynamic libraries cache
 	$ sudo ldconfig
