@@ -2,6 +2,7 @@
 set -ev	#print every line before executing it and exit if one command fails
 
 BASE=`pwd`
+echo $BASE
 
 # glog
 cd $HOME
@@ -20,7 +21,7 @@ fi
 sudo make install
 
 # rofl
-cd $HOME/un-orchestrator/contrib
+cd $BASE/contrib
 ls
 if [ ! -d "rofl-common/build" ]; then
         unzip rofl-common.zip
