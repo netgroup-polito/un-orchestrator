@@ -23,17 +23,17 @@ sudo make install
 # rofl
 cd $BASE/contrib
 ls
-if [ ! -d "rofl-common/build" ]; then
+if [ ! -d "rofl-common-master/build" ]; then
         unzip rofl-common.zip
 #	git clone https://github.com/bisdn/rofl-common
-	cd rofl-common/
+	cd rofl-common-master/
 	./autogen.sh
 	cd build
 	../configure
 	make -j2
 else
 	echo "rofl-common exists"
-	cd rofl-common/build
+	cd rofl-common-master/build
 fi
 
 sudo make install
