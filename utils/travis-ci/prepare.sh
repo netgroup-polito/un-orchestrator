@@ -20,10 +20,11 @@ fi
 sudo make install
 
 # rofl
-cd $HOME
+cd $HOME/un-orchestrator/contrib
 ls
 if [ ! -d "rofl-common/build" ]; then
-	git clone https://github.com/bisdn/rofl-common
+        unzip rofl-common.zip
+#	git clone https://github.com/bisdn/rofl-common
 	cd rofl-common/
 	./autogen.sh
 	cd build
