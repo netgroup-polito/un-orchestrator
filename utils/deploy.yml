@@ -50,6 +50,7 @@
         - libjson-c-dev
         - libjson-c2
         - libzmq3-dev
+        - unzip
         
     - name: "install dependencies for KVM environment"
       apt: pkg={{item}} state=installed
