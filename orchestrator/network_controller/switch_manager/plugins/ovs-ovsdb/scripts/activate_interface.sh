@@ -39,12 +39,11 @@ address=`ifconfig $1 | grep HWaddr  | awk {'print $5'}`
 if [ `cat /etc/NetworkManager/NetworkManager.conf  | grep unmanaged-devices | wc -l` -eq 0 ]
 then
 	echo "[keyfile]" >> /etc/NetworkManager/NetworkManager.conf
-	echo "unmanaged-devices=mac:$address" >> /etc/NetworkManager/NetworkManager.conf
+	echo "unmanaged-devices=mac:$address;" >> /etc/NetworkManager/NetworkManager.conf
 else
 	string=`cat /etc/NetworkManager/NetworkManager.conf | grep unmanaged-devices`
-	new=`echo $string $address`
-	ok=`echo ${new// /;}`
-	sed "s/$string/$ok/g" /etc/NetworkManager/NetworkManager.conf > /etc/NetworkManager/un-tmp.conf
+	new=`echo ${string}mac:$address`
+	sed "s/$string/$new/g" /etc/NetworkManager/NetworkManager.conf > /etc/NetworkManager/un-tmp.conf
 	mv /etc/NetworkManager/un-tmp.conf /etc/NetworkManager/NetworkManager.conf
 fi
 
