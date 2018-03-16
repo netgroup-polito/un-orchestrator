@@ -23,7 +23,7 @@ do
 	sleep 0.5
 done
 
-echo "[$0] Activatig interface $1"
+echo "[$0] Activating interface $1"
 
 sudo ethtool --offload $1 rx off tx off &> /dev/null
 sudo ethtool -K $1 gso off &> /dev/null
