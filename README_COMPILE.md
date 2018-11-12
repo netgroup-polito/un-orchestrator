@@ -29,7 +29,7 @@ In the following we list the steps required on an **Ubuntu 14.04**.
 	$ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libxml2-dev ethtool git
 	
 	; Install JSON Spirit (nice library to parse JSON files)
-	; Alternatively, a copy of JSON Spirit is provided in `[un-orchestrator]/contrib/json-spirit.zip`
+	; Alternatively, a copy of JSON Spirit is provided in `[un-orchestrator]/contrib/json-spirit.zip` (WARNING: the provided copy does not work on more recent version of Ubuntu, please download the updated source code).
 	
 	$ git clone https://github.com/sirikata/json-spirit
 	$ cd json-spirit/
