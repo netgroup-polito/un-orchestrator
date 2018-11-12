@@ -42,7 +42,8 @@ bool RestServer::init(SQLiteManager *dbm, int core_mask)
 	//Actually inizialize the server
 	auto opts = Http::Endpoint::options()
             .threads(1) 	//we use just a single thread
-            .flags(Tcp::Options::InstallSignalHandler);	
+            .maxPayload(131072)
+            .flags(Tcp::Options::InstallSignalHandler);
         httpEndpoint->init(opts);
         setupRoutes(); 
 
