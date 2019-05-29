@@ -12,7 +12,7 @@ In order to execute the un-orchestrator, we need to setup different components, 
 
 In addition to the libraries already listed in the main [../README_COMPILE.md](../README_COMPILE.md),
 some more components are required to compile the un-orchestrator.
-In the following we list the steps required on an **Ubuntu 14.04 - 64 bit**.
+In the following we list the steps required on an **Ubuntu 18.04 - 64 bit**.
 
 	; - sqlite3: command line interface for SQLite 3
 	; - libsqlite3-dev: SQLite 3 development files
@@ -33,6 +33,7 @@ In the following we list the steps required on an **Ubuntu 14.04 - 64 bit**.
 	; Install Pistache (library that implements the REST server)
 	$ git clone https://github.com/oktal/pistache.git
 	$ cd pistache
+	$ git checkout 2f5f5193ab2aaa74c08945fe4e2c20f9c572efec
 	$ git submodule update --init
 	; Before compiling the library, you must set the constant MaxBuffer (https://github.com/oktal/pistache/blob/master/include/pistache/common.h#L57)
 	; at least to 131072 (i.e., 128 KB)
