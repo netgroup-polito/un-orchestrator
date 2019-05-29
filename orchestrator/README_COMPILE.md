@@ -70,7 +70,11 @@ possibilities listed in this section.
 
 ### Open vSwitch (OVSDB)
 
-At first, download the Open vSwitch source code from:
+On latest version of debian based distribution (e.g., ubuntu 18.04), you can simply install opevswitch though the repositories:
+
+    $ sudo apt install openvswitch-switch
+
+Otherwise, please download the Open vSwitch source code from:
 
     http://openvswitch.org/releases/openvswitch-2.6.0.tar.gz
 
