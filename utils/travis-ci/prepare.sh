@@ -41,21 +41,20 @@ sudo make install
 # pistache
 cd $HOME
 ls
-#if [ ! -d "pistache/build" ]; then
-rm -rf pistache
-git clone https://github.com/oktal/pistache.git
-cd pistache
-git checkout ca316d37bb6e3caf2a7f21f8f6f93d41bece0119
-git submodule update --init
-mkdir build
-cd build
-cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-make -j2
-sudo make install
-#else
-#	echo "pistache exists"
-#	cd pistache/build
-#fi
+if [ ! -d "pistache/build" ]; then
+	git clone https://github.com/oktal/pistache.git
+	cd pistache
+	git checkout ca316d37bb6e3caf2a7f21f8f6f93d41bece0119
+	git submodule update --init
+	mkdir build
+	cd build
+	cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+	make -j2
+	sudo make install
+else
+	echo "pistache exists"
+	cd pistache/build
+fi
 
 sudo make install
 
@@ -104,7 +103,7 @@ if [ ! -d "double_decker/DoubleDecker" ]; then
 
 	# - libsodium
 	cd $HOME/double_decker
-	wget http://download.libsodium.org/libsodium/releases/libsodium-1.0.15.tar.gz
+	wget http://download.libsodium.org/libsodium/releases/old/libsodium-1.0.15.tar.gz
 	tar xvfz libsodium-1.0.15.tar.gz
 	cd libsodium-1.0.15
 	./configure
