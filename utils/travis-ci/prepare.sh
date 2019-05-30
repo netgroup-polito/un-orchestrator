@@ -42,10 +42,10 @@ sudo make install
 cd $HOME
 ls
 #if [ ! -d "pistache/build" ]; then
-rm -r pistache
+rm -rf pistache
 git clone https://github.com/oktal/pistache.git
 cd pistache
-git checkout 2f5f5193ab2aaa74c08945fe4e2c20f9c572efec
+git checkout ca316d37bb6e3caf2a7f21f8f6f93d41bece0119
 git submodule update --init
 mkdir build
 cd build
