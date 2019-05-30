@@ -12,12 +12,23 @@ In order to execute the un-orchestrator, we need to setup different components, 
 
 In addition to the libraries already listed in the main [../README_COMPILE.md](../README_COMPILE.md),
 some more components are required to compile the un-orchestrator.
-In the following we list the steps required on an **Ubuntu 18.04 - 64 bit**.
+In the following we list the steps required on an **Ubuntu 14.04 - 64 bit**.
 
 	; - sqlite3: command line interface for SQLite 3
 	; - libsqlite3-dev: SQLite 3 development files
 	; - libssl-dev: SSL development libraries, header files and documentation
 	$ sudo apt-get install sqlite3 libsqlite3-dev libssl-dev
+	
+	; Install glog (Google logging module)
+	$ git clone https://github.com/google/glog
+	$ cd glog
+	$ git checkout 4f3e18bf26cdb794fc66cec348f57b5838a0c929
+	$ ./autogen.sh 
+	$ ./configure
+	$ make
+	$ sudo make install
+	; Update the dynamic libraries cache
+	$ sudo ldconfig
 
 	; Install ROFL-common (library to parse OpenFlow messages)
 
@@ -37,6 +48,7 @@ In the following we list the steps required on an **Ubuntu 18.04 - 64 bit**.
 	$ git submodule update --init
 	; Before compiling the library, you must set the constant MaxBuffer (https://github.com/oktal/pistache/blob/master/include/pistache/common.h#L57)
 	; at least to 131072 (i.e., 128 KB)
+	; (using this version of pistache you may also need to set this size at runtime; decomment line orchestrator/node_resource_manager/rest_server/rest_server.cc#L45)
 	$ mkdir build
 	$ cd build
 	$ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
