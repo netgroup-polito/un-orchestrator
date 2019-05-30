@@ -44,6 +44,7 @@ ls
 if [ ! -d "pistache/build" ]; then
 	git clone https://github.com/oktal/pistache.git
 	cd pistache
+	git checkout 2f5f5193ab2aaa74c08945fe4e2c20f9c572efec
 	git submodule update --init
 	mkdir build
 	cd build
